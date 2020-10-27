@@ -26,41 +26,59 @@ setwd("C:/Users/Daniel/Documents/Git/dlcomeaux/mydailytravel")
 #
 # weekdays(too)
 
-trips_in_motion <- data_place18[1:50000,] %>%
+# Convert to datetime object and add day of week
+trips_in_motion <- data_place18 %>%
   mutate(arrtime = ymd_hms(arrtime),
          deptime = ymd_hms(deptime),
          ) %>%
   mutate(day_of_week = wday(arrtime))
 
+# Process data
 trips_in_motion_wday_wip <-
   trips_in_motion %>%
+  # Remove weekends
   filter(day_of_week != 1 & day_of_week != 7) %>%
+  # Remove trips > 15 hours
+  filter(travtime < 15 * 60) %>%
+  # Group to establish single trips
   group_by(placeGroup,sampno,perno) %>%
+  # Pull data for single trips
   summarize(perno = perno,
             sampno = sampno,
             placeGroup = placeGroup,
             mode = mode,
-            travtime = sum(travtime, na.rm = TRUE),
-            trip_end = min(arrtime,na.rm = TRUE),
+            travtime = sum(travtime, na.rm = TRUE), # sum multi-leg trip times
+            trip_end = max(arrtime,na.rm = TRUE), # find latest arrival time, as that is the end of the multi-leg trip
             day_of_week = day_of_week) %>%
+  # Make every trip on the same day (for graphing)
   mutate(trip_end = force_tz(ymd_hms(paste0("2020-01-01 ",substr(trip_end,12,19))),tzone = "America/Chicago")) %>%
+  # Make trips that end before 3am into trips on the next day (given survey timing)
   mutate(trip_end = case_when(
     trip_end < 1577869201 ~ trip_end + 60 * 60 * 24,
     TRUE ~ trip_end)
   ) %>%
+  # Remove trips with no travel time (not in motion)
   filter(travtime > 0) %>%
+  # Calculate trip start time as end time minus travel time
   mutate(trip_start = trip_end - 60*travtime) %>%
+  # Create trip interval using the Lubridate package
   mutate(trip_interval = interval(trip_start,trip_end,tz = "America/Chicago")) %>%
+  # Add weights
   left_join(.,data_person18[,c(1,2,116)],by = c("sampno","perno"))
 
+# Extract possible modes
 possible_modes <- tibble(mode = unique(trips_in_motion_wday_wip$mode))
 
+# Calculate trips in motion by mode
 trip_times <-
+  # Establish sequence of times over the day (in one minute increments)
   tibble(time_band = seq.POSIXt(
     from = as.POSIXct("2020-01-01 03:00:00", tz = "America/Chicago"),
     to = as.POSIXct("2020-01-02 03:00:00", tz = "America/Chicago"),
     by = "min")) %>%
+  # Add all possible modes to each time
   full_join(.,possible_modes, by = character()) %>%
+  # Calculate the number of trips that meet the criteria (in the interval and correct mode)
   mutate(trip_count = mapply(function(x,y) sum(trips_in_motion_wday_wip$wtperfin[which(
                                             x %within% trips_in_motion_wday_wip$trip_interval &
                                             y == trips_in_motion_wday_wip$mode)]),
@@ -70,6 +88,7 @@ trip_times <-
   ) %>%
   group_by(mode) %>%
   arrange(time_band) %>%
+  # Calculate rolling average
   mutate(rolling_count = slide_dbl(trip_count,mean,.before = 12,.after = 12)) %>%
   ungroup()
 
