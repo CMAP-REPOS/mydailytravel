@@ -6,13 +6,14 @@ library(tidyverse)
 library(slider)
 
 # Load data
-setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
+setwd("C:/Users/dlcom/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
 
 data_place18 <- read.csv("place.csv")
 data_household18 <- read.csv("household.csv")
 data_person18 <- read.csv("person.csv")
+data_location18 <- read.csv("location.csv")
 
-setwd("C:/Users/Daniel/Documents/Git/dlcomeaux/mydailytravel")
+setwd("C:/Users/dlcom/Documents/Git/dlcomeaux/mydailytravel")
 
 
 # Analyze data
@@ -96,3 +97,68 @@ trip_times <-
 trip_times %>% ggplot(aes(x = time_band,y = rolling_count)) +
   geom_area(aes(fill = as.character(mode))) +
   scale_x_datetime()
+
+
+#########
+
+tnc_data <- data_person18 %>%
+  select(sampno,
+         perno,
+         age,
+         sex,
+         hisp,
+         race,
+         smrtphn,
+         wkstat,
+         tnc_use,
+         tnc_typ,
+         tnc_purp,
+         disab,
+         wtperfin) %>%
+  left_join(.,data_location18 %>% filter(home == 1) %>% select(sampno,county_fips),by = "sampno")
+
+# Breakdown by age
+tnc_data %>%
+  filter(!(age %in% c(-8,-7,-1))) %>%
+  mutate(age_bucket = case_when(
+    age <= 24 & age >=18 ~ "18-24",
+    age <= 34 & age >= 25 ~ "25-34",
+    age <= 44 & age >= 35 ~ "35-44",
+    age <= 54 & age >= 45 ~ "45-54",
+    age <= 64 & age >= 55 ~ "55-64",
+    age > 65 ~ "65 and above",
+    TRUE ~ "Other"
+  )) %>%
+  filter(!(tnc_use %in% c(-9,-8,-1))) %>%
+  group_by(age_bucket) %>%
+  summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+            n = n())
+
+# Breakdown by race
+tnc_data %>%
+  filter(!(race %in% c(-8,-7,-1))) %>%
+  filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
+  filter(county_fips != -9) %>%
+  mutate(race_ethn = case_when(
+    race == 1 & hisp != 1 ~ "White",
+    hisp == 1 ~ "Hispa",
+    race == 2 & hisp != 1 ~ "Black",
+    race == 3 & hisp != 1 ~ "Asian",
+    race == 4 & hisp != 1 ~ "Amer. Indian/AK Native",
+    race == 5 & hisp != 1 ~ "HI/Pac. Islander",
+    race == 6 & hisp != 1 ~ "Multiracial",
+    TRUE ~ "Other"
+  )) %>%
+  group_by(race,county_fips) %>%
+  summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+            n = n()) %>%
+  View()
+
+# Breakdown by home location
+tnc_data %>%
+  filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
+  filter(county_fips != -9) %>%
+  group_by(county_fips) %>%
+  summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+            n = n()) %>%
+  View()
