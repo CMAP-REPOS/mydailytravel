@@ -112,14 +112,14 @@ tnc_data <- data_person18 %>%
          wkstat,
          tnc_use,
          tnc_typ,
+         tnc_cost,
          tnc_purp,
          disab,
          wtperfin) %>%
   left_join(.,data_location18 %>% filter(home == 1) %>% select(sampno,county_fips),by = "sampno")
 
 # Breakdown by age
-tnc_data %>%
-  filter(!(age %in% c(-8,-7,-1))) %>%
+tnc_data <- tnc_data %>%
   mutate(age_bucket = case_when(
     age <= 24 & age >=18 ~ "18-24",
     age <= 34 & age >= 25 ~ "25-34",
@@ -128,10 +128,18 @@ tnc_data %>%
     age <= 64 & age >= 55 ~ "55-64",
     age > 65 ~ "65 and above",
     TRUE ~ "Other"
-  )) %>%
+  ))
+
+tnc_data %>%
   filter(!(tnc_use %in% c(-9,-8,-1))) %>%
   group_by(age_bucket) %>%
   summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+            n = n())
+
+tnc_data %>%
+  filter(tnc_cost >0) %>%
+  group_by(age_bucket) %>%
+  summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
             n = n())
 
 # Breakdown by race
@@ -162,3 +170,12 @@ tnc_data %>%
   summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
             n = n()) %>%
   View()
+
+tnc_data %>%
+  filter(tnc_cost>0) %>%
+  filter(county_fips != -9) %>%
+  group_by(county_fips) %>%
+  summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
+            n = n()) %>%
+  View()
+
