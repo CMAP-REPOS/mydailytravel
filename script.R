@@ -4,6 +4,7 @@ library(ggplot2)
 library(lubridate)
 library(tidyverse)
 library(slider)
+library(cmapplot)
 
 # Load data
 setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
@@ -116,13 +117,13 @@ trip_times_mode <- trip_times %>%
   # Calculate the number of trips that meet the criteria (in the interval and correct purpose)
   mutate(mode_count = mapply(function(x,y) sum(trips_in_motion_wday_wip$wtperfin[which(
                                             x %within% trips_in_motion_wday_wip$trip_interval &
-                                            y == trips_in_motion_wday_wip$tmode)]),
+                                            y == trips_in_motion_wday_wip$mode)]),
     time_band,
     mode
   )) %>%
   group_by(mode) %>%
   # Calculate rolling average
-  mutate(rolling_mode_count = slide_dbl(trip_purp, mean, .before = 12, .after = 12)) %>%
+  mutate(rolling_mode_count = slide_dbl(mode_count, mean, .before = 12, .after = 12)) %>%
   ungroup()
 
 trip_times_tpurp <- trip_times %>%
@@ -147,7 +148,44 @@ trip_times_mode %>%
   ggplot(aes(x = time_band,y = rolling_mode_count)) +
   geom_area(aes(fill = as.character(mode))) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago")) +
+  scale_y_continuous(label = scales::comma) +
+  cmap_fill_discrete(palette = "mobility") +
+  theme_cmap()
+
+# Graph output of bike trips in motion
+trip_times_mode %>%
+  filter(mode %in% c(102,103,104)) %>%
+  ggplot(aes(x = time_band,y = rolling_mode_count)) +
+  geom_area(aes(fill = as.character(mode))) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago")) +
+  scale_y_continuous(label = scales::comma) +
+  cmap_fill_discrete(palette = "mobility") +
+  theme_cmap()
+
+# Graph output of divvy trips in motion by purpose
+trip_times_mode_and_purp %>%
+  filter(mode == 103) %>%
+  filter(tpurp > 0) %>%
+  mutate(tpurp_bucket = case_when(
+    tpurp == 1 ~ "Home",
+    tpurp %in% c(2,3,4,5) ~ "Work",
+    tpurp == 6 ~ "School",
+    tpurp %in% c(8,9,10,11,15) ~ "Shopping/Errands",
+    tpurp %in% c(12,13,22,23) ~ "Healthcare/Fitness",
+    tpurp %in% c(14,18,19,20,21,7) ~ "Friends/Family/Community",
+    tpurp %in% c(16,17) ~ "Food",
+    tpurp %in% c(26,27,28) ~ "Travel",
+    tpurp %in% c(24,97) ~ "Other",
+    TRUE ~ "Other"
+    )) %>%
+  group_by(tpurp_bucket,time_band) %>%
+  summarize(rolling_count = sum(rolling_count)) %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = tpurp_bucket)) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago")) +
   scale_y_continuous(label = scales::comma)
+  cmap_fill_discrete(palette = "mobility")
+  theme_cmap()
 
 # Graph output of trips in motion by purpose
 trip_times_tpurp %>%
@@ -155,7 +193,8 @@ trip_times_tpurp %>%
   ggplot(aes(x = time_band,y = rolling_tpurp_count)) +
   geom_area(aes(fill = as.character(tpurp))) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago")) +
-  scale_y_continuous(label = scales::comma)
+  scale_y_continuous(label = scales::comma) +
+  theme_cmap()
 
 # Graph output of school trips in motion by mode
 trip_times_mode_and_purp %>%
@@ -164,7 +203,9 @@ trip_times_mode_and_purp %>%
   ggplot(aes(x = time_band, y = rolling_count)) +
   geom_area(aes(fill = as.character(mode))) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago")) +
-  scale_y_continuous(label = scales::comma)
+  scale_y_continuous(label = scales::comma) +
+  theme_cmap()
+
 
 #########
 
