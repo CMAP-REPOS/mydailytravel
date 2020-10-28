@@ -157,6 +157,15 @@ trip_times_tpurp %>%
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago")) +
   scale_y_continuous(label = scales::comma)
 
+# Graph output of school trips in motion by mode
+trip_times_mode_and_purp %>%
+  filter(tpurp == 6) %>%
+  filter(!(mode %in% c(-9,-8,-7,-1))) %>%
+  ggplot(aes(x = time_band, y = rolling_count)) +
+  geom_area(aes(fill = as.character(mode))) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago")) +
+  scale_y_continuous(label = scales::comma)
+
 #########
 
 tnc_data <- data_person18 %>%
