@@ -29,12 +29,20 @@ setwd("C:/Users/Daniel/Documents/Git/dlcomeaux/mydailytravel")
 # Convert to datetime object and add day of week
 trips_in_motion <- data_place18 %>%
   mutate(arrtime = ymd_hms(arrtime),
-         deptime = ymd_hms(deptime),
          ) %>%
   mutate(day_of_week = wday(arrtime))
 
+# Create helper values
+threshold <- as.numeric(ymd_hms("2020-01-01 03:00:00", tz = "America/Chicago"))
+day_value <- 60*60*24
+person_weights <- data_person18[,c(1,2,116)] %>%
+  mutate(samp_per_no = paste0(sampno,perno)) %>%
+  select(samp_per_no,
+         wtperfin)
+
+
 # Process data
-trips_in_motion_wday_wip <-
+trips_in_motion_wday_wip3 <-
   trips_in_motion %>%
   # Remove weekends
   filter(day_of_week != 1 & day_of_week != 7) %>%
@@ -50,11 +58,12 @@ trips_in_motion_wday_wip <-
             travtime = sum(travtime, na.rm = TRUE), # sum multi-leg trip times
             trip_end = max(arrtime,na.rm = TRUE), # find latest arrival time, as that is the end of the multi-leg trip
             day_of_week = day_of_week) %>%
-  # Make every trip on the same day (for graphing)
+  ungroup() %>%
+  # Make every trip on the same day (for analysis and graphing)
   mutate(trip_end = force_tz(ymd_hms(paste0("2020-01-01 ",substr(trip_end,12,19))),tzone = "America/Chicago")) %>%
   # Make trips that end before 3am into trips on the next day (given survey timing)
   mutate(trip_end = case_when(
-    trip_end < 1577869201 ~ trip_end + 60 * 60 * 24,
+    trip_end <= threshold ~ trip_end + day_value,
     TRUE ~ trip_end)
   ) %>%
   # Remove trips with no travel time (not in motion)
@@ -63,8 +72,10 @@ trips_in_motion_wday_wip <-
   mutate(trip_start = trip_end - 60*travtime) %>%
   # Create trip interval using the Lubridate package
   mutate(trip_interval = interval(trip_start,trip_end,tz = "America/Chicago")) %>%
+  # Create combined sample and person number
+  mutate(samp_per_no = paste0(sampno,perno)) %>%
   # Add weights
-  left_join(.,data_person18[,c(1,2,116)],by = c("sampno","perno"))
+  left_join(., person_weights, by = "samp_per_no")
 
 # Extract possible modes
 possible_modes <- tibble(mode = unique(trips_in_motion_wday_wip$mode))
@@ -92,7 +103,10 @@ trip_times <-
   mutate(rolling_count = slide_dbl(trip_count,mean,.before = 12,.after = 12)) %>%
   ungroup()
 
-
-trip_times %>% ggplot(aes(x = time_band,y = rolling_count)) +
+# Graph output
+trip_times %>%
+  filter(mode != -1, mode != -9) %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
   geom_area(aes(fill = as.character(mode))) +
-  scale_x_datetime()
+  scale_x_datetime(labels = scales::date_format("%H:%M"), timezone = "CDT") +
+  scale_y_continuous(label = scales::comma)
