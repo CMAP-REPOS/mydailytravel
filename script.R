@@ -6,14 +6,14 @@ library(tidyverse)
 library(slider)
 
 # Load data
-setwd("C:/Users/dlcom/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
+setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
 
 data_place18 <- read.csv("place.csv")
 data_household18 <- read.csv("household.csv")
 data_person18 <- read.csv("person.csv")
 data_location18 <- read.csv("location.csv")
 
-setwd("C:/Users/dlcom/Documents/Git/dlcomeaux/mydailytravel")
+setwd("C:/Users/Daniel/Documents/Git/dlcomeaux/mydailytravel")
 
 
 # Analyze data
@@ -43,7 +43,7 @@ person_weights <- data_person18[,c(1,2,116)] %>%
 
 
 # Process data
-trips_in_motion_wday_wip3 <-
+trips_in_motion_wday_wip <-
   trips_in_motion %>%
   # Remove weekends
   filter(day_of_week != 1 & day_of_week != 7) %>%
@@ -56,6 +56,7 @@ trips_in_motion_wday_wip3 <-
             sampno = sampno,
             placeGroup = placeGroup,
             mode = mode,
+            tpurp = tpurp,
             travtime = sum(travtime, na.rm = TRUE), # sum multi-leg trip times
             trip_end = max(arrtime,na.rm = TRUE), # find latest arrival time, as that is the end of the multi-leg trip
             day_of_week = day_of_week) %>%
@@ -75,11 +76,15 @@ trips_in_motion_wday_wip3 <-
   mutate(trip_interval = interval(trip_start,trip_end,tz = "America/Chicago")) %>%
   # Create combined sample and person number
   mutate(samp_per_no = paste0(sampno,perno)) %>%
+  # Create combined mode and purpose
+  mutate(mode_tpurp = paste(mode,tpurp,sep = "_")) %>%
   # Add weights
   left_join(., person_weights, by = "samp_per_no")
 
 # Extract possible modes
 possible_modes <- tibble(mode = unique(trips_in_motion_wday_wip$mode))
+possible_tpurp <- tibble(tpurp = unique(trips_in_motion_wday_wip$tpurp))
+possible_mode_tpurp <- tibble(mode_tpurp = unique(trips_in_motion_wday_wip$mode_tpurp))
 
 # Calculate trips in motion by mode
 trip_times <-
@@ -87,31 +92,70 @@ trip_times <-
   tibble(time_band = seq.POSIXt(
     from = as.POSIXct("2020-01-01 03:00:00", tz = "America/Chicago"),
     to = as.POSIXct("2020-01-02 03:00:00", tz = "America/Chicago"),
-    by = "min")) %>%
+    by = "min"))
+
+trip_times_mode_and_purp <- trip_times %>%
   # Add all possible modes to each time
-  full_join(.,possible_modes, by = character()) %>%
+  full_join(.,possible_mode_tpurp, by = character()) %>%
   # Calculate the number of trips that meet the criteria (in the interval and correct mode)
   mutate(trip_count = mapply(function(x,y) sum(trips_in_motion_wday_wip$wtperfin[which(
                                             x %within% trips_in_motion_wday_wip$trip_interval &
-                                            y == trips_in_motion_wday_wip$mode)]),
+                                            y == trips_in_motion_wday_wip$mode_tpurp)]),
                         time_band,
-                        mode
-                        )
-  ) %>%
-  group_by(mode) %>%
-  arrange(time_band) %>%
+                        mode_tpurp
+  )) %>%
+  separate(col = mode_tpurp, into = c("mode","tpurp"), sep = "_") %>%
+  group_by(mode,tpurp) %>%
   # Calculate rolling average
-  mutate(rolling_count = slide_dbl(trip_count,mean,.before = 12,.after = 12)) %>%
+  mutate(rolling_count = slide_dbl(trip_count, mean, .before = 12, .after = 12)) %>%
   ungroup()
 
-# Graph output
-trip_times %>%
-  filter(mode != -1, mode != -9) %>%
-  ggplot(aes(x = time_band,y = rolling_count)) +
+trip_times_mode <- trip_times %>%
+  # Add all possible modes to each time
+  full_join(.,possible_modes, by = character()) %>%
+  # Calculate the number of trips that meet the criteria (in the interval and correct purpose)
+  mutate(mode_count = mapply(function(x,y) sum(trips_in_motion_wday_wip$wtperfin[which(
+                                            x %within% trips_in_motion_wday_wip$trip_interval &
+                                            y == trips_in_motion_wday_wip$tmode)]),
+    time_band,
+    mode
+  )) %>%
+  group_by(mode) %>%
+  # Calculate rolling average
+  mutate(rolling_mode_count = slide_dbl(trip_purp, mean, .before = 12, .after = 12)) %>%
+  ungroup()
+
+trip_times_tpurp <- trip_times %>%
+  # Add all possible modes to each time
+  full_join(.,possible_tpurp, by = character()) %>%
+  # Calculate the number of trips that meet the criteria (in the interval and correct purpose)
+  mutate(trip_purp = mapply(function(x,y) sum(trips_in_motion_wday_wip$wtperfin[which(
+    x %within% trips_in_motion_wday_wip$trip_interval &
+      y == trips_in_motion_wday_wip$tpurp)]),
+    time_band,
+    tpurp
+  )) %>%
+  group_by(tpurp) %>%
+  # Calculate rolling average
+  mutate(rolling_tpurp_count = slide_dbl(trip_purp, mean, .before = 12, .after = 12)) %>%
+  ungroup()
+
+
+# Graph output of trips in motion by mode
+trip_times_mode %>%
+  filter(!(mode %in% c(-9,-8,-7,-1))) %>%
+  ggplot(aes(x = time_band,y = rolling_mode_count)) +
   geom_area(aes(fill = as.character(mode))) +
-  scale_x_datetime(labels = scales::date_format("%H:%M"), timezone = "CDT") +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago")) +
   scale_y_continuous(label = scales::comma)
 
+# Graph output of trips in motion by purpose
+trip_times_tpurp %>%
+  filter(!(tpurp %in% c(-9,-8,-7))) %>%
+  ggplot(aes(x = time_band,y = rolling_tpurp_count)) +
+  geom_area(aes(fill = as.character(tpurp))) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago")) +
+  scale_y_continuous(label = scales::comma)
 
 #########
 
