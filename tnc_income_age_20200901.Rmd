@@ -1,0 +1,294 @@
+---
+title: 'MDT: TNC takeaways'
+author: "Greta Ritzenthaler"
+date: "9/1/2020"
+output: html_document
+---
+
+Compare My Daily Travel to Travel tracker for TNC/taxi use, by age and income categories.
+
+```{r setup, results='hide', echo=FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(nord)
+library(knitr)
+library(kableExtra)
+```
+
+```{r}
+#################################################
+#                                               #
+#                 Data Prep                     #
+#                                               #
+#################################################
+
+# Load My Daily Travel
+setwd("C:/Users/greta/OneDrive - Chicago Metropolitan Agency for Planning/MDT/public")
+
+# latest edits as of 8/31
+
+# trips
+trips <- read_csv("place.csv") %>% 
+    select(sampno, locno, perno, placeno, placeGroup, mode, distance)
+
+# person info
+ppl <- read_csv("person.csv") %>%
+    select(sampno, perno, age, hisp, race, wtperfin)
+
+# household info
+hh <- read_csv("household.csv") %>% 
+    select(sampno, hhinc, hhveh, wthhfin)
+
+# location file w/region flag
+region <- read_csv("location.csv") %>% 
+    select(sampno, locno, out_region)
+
+# merge datasets
+mdt <- trips %>%
+    inner_join(ppl, by = c("sampno", "perno")) %>% 
+    inner_join(hh, by = "sampno") %>% 
+    inner_join(region, by = c("sampno", "locno")) %>% 
+    filter(out_region==0 & distance<=100)
+
+# take care of collapsed trips with placeGroup
+mdt <- mdt %>% 
+    arrange(desc(distance)) %>% 
+    distinct(sampno, perno, placeGroup, .keep_all = TRUE)
+    # distinct takes the first row for duplicates, so order by distance to get right mode
+
+rm(list = c("trips", "ppl", "hh", "region"))
+```
+
+```{r}
+# Load Travel Tracker
+# Downloaded from CMAP data portal; exported from Microsoft Access database to csv.
+setwd("C:/Users/greta/OneDrive - Chicago Metropolitan Agency for Planning/MDT/traveltracker")
+
+# Household
+tt_hh <- read_csv("hh_public.csv") %>%
+    select(SAMPN, SURVEY, ASSN, DAY, HHVEH, INCOM)
+
+# people
+tt_ppl <- read_csv("per_public.csv") %>%
+    select(SAMPN, PERNO, SURVEY, AGE, HISP, RACE, WGTP)
+
+# trips
+#   day beginning/place #1 already null in mode var
+tt_place <- read_csv("place_public.csv") %>%
+    select(MPO, SAMPN, PERNO, DAYNO, PLANO, locno, TPURP, MODE, DIST)
+
+# Combine datasets
+#   Remove trips ending outside the region
+tt <- tt_place %>%
+    inner_join(tt_ppl, by = c("SAMPN", "PERNO")) %>%
+    inner_join(tt_hh, by = c("SAMPN", "SURVEY"))
+
+# Flag weekend trips and adjust weights accordingly 
+tt <- tt %>%
+    mutate(weekend = if_else(SURVEY==2 & DAY==5 & DAYNO==2, 1,
+                             if_else(SURVEY==2 & DAY==7 & DAYNO==1, 1, 0)),
+           weekdays2 = if_else(SURVEY==2 & DAY==1 | 
+                               SURVEY==2 & DAY==2 | 
+                               SURVEY==2 & DAY==3 | 
+                               SURVEY==2 & DAY==4, 1, 0),
+           # If respondent recorded two weekdays, divide weight in half
+           weight = if_else(weekdays2==1, WGTP/2, WGTP))
+
+tt <- tt %>%
+    filter(MPO==1 & DIST<=100 & weekend==0)
+
+rm(list = c("tt_place", "tt_ppl", "tt_hh"))
+```
+
+
+```{r}
+# recode mode factors
+mdt <- mdt %>%
+    mutate(mode = factor(mode),
+           mode = recode(mode,
+                 "101" = "walk",
+                 "102" = "personal bike",
+                 "103" = "bike share",
+                 "104" = "bike share", 
+                 "201" = "motorcyle", 
+                 "202" = "personal auto (driver)",
+                 "203" = "personal auto (passenger)",
+                 "301" = "carpool",
+                 "401" = "school bus",
+                 "500" = "rail and bus",
+                 "501" = "bus",
+                 "502" = "paratransit", 
+                 "503" = "paratransit", 
+                 "504" = "paratransit",
+                 "505" = "train", 
+                 "506" = "local transit",
+                 "509" = "transit",
+                 "601" = "private shuttle",
+                 "701" = "taxi",
+                 "702" = "private limo",
+                 "703" = "private car",
+                 "704" = "rideshare",
+                 "705" = "shared rideshare",
+                 "801" = "airplane",
+                 "997" = "other",
+                 "-9"  = "missing",
+                 "-1" = "beginning"))
+
+tt <- tt %>% 
+    mutate(MODE = factor(MODE),
+           MODE = recode(MODE,
+                 "1"  = "walk",
+                 "2"  = "bike",
+                 "3"  = "personal auto (driver)",
+                 "4"  = "personal auto (passenger)",
+                 "5"  = "CTA bus",
+                 "6"  = "CTA train",
+                 "7"  = "Pace",
+                 "8"  = "Metra",
+                 "9"  = "private shuttle",
+                 "10" = "paratransit",
+                 "11" = "school bus",
+                 "12" = "taxi",
+                 "14" = "local transit",
+                 "15" = "transit (many)",
+                 "97" = "other",
+                 "98" = "missing",
+                 "99" = "missing"))
+
+# condense into mode categories
+mdt <- mdt %>%
+    mutate(mode_c = fct_collapse(mode,
+                     walk = "walk",
+                     bike = c("personal bike", "bike share"),
+                     transit = c("rail and bus", "bus", "train", "local transit", "transit"),
+                     driver = c("motorcyle", "personal auto (driver)"),
+                     passenger = c("personal auto (passenger)", "carpool"),
+                     other = c("school bus", "paratransit", "private shuttle", 
+                               "taxi", "private limo", "private car", "rideshare", 
+                               "shared rideshare", "airplane", "other"),
+                     missing = "missing", 
+                     beginning = "beginning")) %>% 
+    filter(mode_c!="missing" & mode_c!="beginning")
+
+tt <- tt %>%
+    mutate(mode_c = fct_collapse(MODE,
+                    walk = "walk",
+                    bike = "bike",
+                    transit = c("CTA bus", "CTA train", "Pace", "Metra", 
+                                "local transit", "transit (many)"),
+                    driver = "personal auto (driver)",
+                    passenger = "personal auto (passenger)",
+                    other = c("private shuttle", "paratransit", "school bus", 
+                              "taxi", "other"),
+                    missing = "missing")) %>% 
+    filter(mode_c!="missing")
+```
+
+```{r}
+# Age bins
+decades <- c(-1, 10, 20, 30, 40, 50, 60, 70, 80, 90)
+age_labels <- c("9 and under", "10 to 19", "20 to 29", "30 to 39", "40 to 49", 
+                "50 to 59", "60 to 69", "70 to 79", "80 to 89")
+
+mdt <- mdt %>%
+    mutate(age_bin = cut(age, breaks = decades, 
+                         labels = age_labels))
+
+tt <- tt %>%
+    mutate(age_bin = cut(AGE, breaks = decades,
+                         labels = age_labels))
+```
+
+
+```{r}
+# Income categories
+tt <- tt %>% 
+    mutate(income = factor(INCOM),
+           income = recode(income, 
+                "1" = "less than $20,000", 
+                "2" = "$20,000 to $34,999", 
+                "3" = "$35,000 to $49,999", 
+                "4" = "$50,000 to $59,999", 
+                "5" = "$60,000 to $74,999", 
+                "6" = "$75,000 to $99,999", 
+                "7" = "$100,000 or more",
+                "9" = "refused"))
+
+mdt <- mdt %>% 
+    mutate(income = factor(hhinc),
+           income = recode(income,
+                "1" = "less than $15,000", 
+                "2" = "$15,000 to $24,999",
+                "3" = "$25,000 to $29,999",
+                "4" = "$30,000 to $34,999", 
+                "5" = "$35,000 to $49,999", 
+                "6" = "$50,000 to $59,999", 
+                "7" = "$60,000 to $74,999", 
+                "8" = "$75,000 to $99,999", 
+                "9" = "$100,000 to $149,999",
+                "10" = "$150,000 or more",
+                "-9" = "not ascertained",
+                "-8" = "don't know", 
+                "-7" = "prefer not to answer"))
+
+tt <- tt %>% 
+    mutate(income_c = fct_collapse(income,
+                low = c("less than $20,000", "$20,000 to $34,999"),
+                `middle-low` = c("$35,000 to $49,999", "$50,000 to $59,999"),
+                `middle-high` = c("$60,000 to $74,999", "$75,000 to $99,999"),
+                high = "$100,000 or more",
+                missing = "refused"))
+
+mdt <- mdt %>% 
+    mutate(income_c = fct_collapse(income,
+                low = c("less than $15,000", "$15,000 to $24,999", "$25,000 to $29,999"),
+                `middle-low` = c("$30,000 to $34,999", "$35,000 to $49,999", "$50,000 to $59,999"),
+                `middle-high` = c("$60,000 to $74,999", "$75,000 to $99,999"),
+                high = c("$100,000 to $149,999", "$150,000 or more"),
+                missing = c("not ascertained", "don't know", "prefer not to answer")))
+```
+
+
+### TNC users by age
+
+```{r}
+tnc.age <- mdt %>% 
+    filter(mode=="rideshare" | mode=="shared rideshare") %>% 
+    mutate(total = sum(wthhfin)) %>% 
+    group_by(age_bin) %>% 
+    summarize(count = round(sum(wthhfin)),
+              share = round((count/median(total))*100, digits = 1))
+    
+kable(tnc.age) %>% 
+    kable_styling(bootstrap_options = "striped")
+```
+
+
+### TNC users by income
+
+```{r}
+tnc.income <- mdt %>% 
+    filter(mode=="rideshare" | mode=="shared rideshare") %>% 
+    filter(income_c!="missing") %>% 
+    mutate(total = sum(wthhfin)) %>% 
+    group_by(income) %>% 
+    summarize(count = round(sum(wthhfin)),
+              share = round((count/median(total))*100, digits = 1))
+    
+kable(tnc.income, caption = "All rideshare types") %>% 
+    kable_styling(bootstrap_options = "striped")
+```
+
+```{r}
+tnc.income <- mdt %>% 
+    filter(mode=="shared rideshare") %>% 
+    filter(income_c!="missing") %>% 
+    mutate(total = sum(wthhfin)) %>% 
+    group_by(income) %>% 
+    summarize(count = round(sum(wthhfin)),
+              share = round((count/median(total))*100, digits = 1))
+    
+kable(tnc.income, caption = "Shared/Pooled rideshare only") %>% 
+    kable_styling(bootstrap_options = "striped")
+```
