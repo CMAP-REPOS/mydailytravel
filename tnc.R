@@ -99,7 +99,9 @@ active_travel <- mdt %>%
   group_by(sampno,perno) %>%
   summarize(takes_transit = sum(mode_c == "transit"),
             takes_bike = sum(mode_c == "bike"),
-            takes_walk = sum(mode_c == "walk"))
+            takes_walk = sum(mode_c == "walk"),
+            takes_tnc = sum((mode == "rideshare") | mode == "shared rideshare")) %>%
+  mutate(takes_active = min(sum(takes_transit,takes_bike,takes_walk),1))
 
 
 tnc <- read_csv("person.csv") %>%
@@ -117,15 +119,35 @@ tnc <- read_csv("person.csv") %>%
          tnc_purp,
          disab,
          wtperfin) %>%
-  left_join(.,region %>% filter(home == 1) %>% select(sampno,county_fips),by = "sampno") %>%
-  inner_join(.,active_travel, by = c("sampno","perno"))
+  left_join(.,region %>% filter(home == 1) %>% select(sampno,county_fips) %>% distinct(),by = "sampno") %>%
+  inner_join(.,active_travel, by = c("sampno","perno")) %>%
+  mutate(n = 1,
+         county = as.character(county_fips)) %>%
+  select(-county_fips)
+
+tnc <- tnc %>%
+  tidyr::pivot_wider(
+    .,
+    names_from = county,
+    id_cols = c(sampno:takes_active),
+    values_from = n,
+    names_prefix = 'county_',
+    values_fill = list(n = 0))
 
 
 
 foo <- tnc %>%
   filter(!(tnc_use %in% c(-9,-8,-1))) %>%
-  group_by(county_fips) %>%
-  do(model = lm(tnc_use ~ takes_transit + takes_walk + takes_bike,.))
+  #filter(county_fips == 31) %>%
+  #group_by(county_fips) %>%
+  lm(tnc_use ~
+       takes_transit +
+       takes_bike +
+       takes_walk +
+       county_31 + county_43 + county_89 + county_93 +
+       county_97 + county_111 + county_197,
+      .,
+      weights = wtperfin)
 
 summary(foo)
 
