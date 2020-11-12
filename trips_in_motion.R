@@ -205,6 +205,51 @@ mdt <- mdt %>%
                         "-9" = "Missing"
                           ))
 
+# condense into trip purpose categories
+mdt <- mdt %>%
+  mutate(tpurp.c = fct_collapse(tpurp,
+
+                                home = "Typical home activities",
+
+                                work = c("Worked at home (paid)",
+                                         "Worked at fixed work location",
+                                         "Worked at non-fixed work location",
+                                         "Work related (off-site meeting)"),
+
+                                school = "Attended school or daycare / studied",
+
+                                "shopping/errands" =
+                                         c("Shopped (non-routine like for appliances, cars, home furnishings)",
+                                           "Shopped (routine like grocery, clothing)",
+                                           "Drive-thru errands (ATM, dry cleaning, pharmacy, etc.)",
+                                           "Non-shopping errands (banking, post office, government, etc.)",
+                                           "Serviced a vehicle (purchased gas, regular maintenance)"),
+
+                                health = c("Health care visit for self",
+                                           "Exercised outdoors",
+                                           "Went to the gym",
+                                           "Health care visit for someone else"),
+
+                                dining = c("Drive thru / take-out dining",
+                                           "Ate / dined out"),
+
+                                community = c("Socialized with friends",
+                                              "Socialized with relatives",
+                                              "Attended a community event",
+                                              "Attended a religious event",
+                                              "Visited a person staying at the hospital",
+                                              "Volunteered"),
+
+                                transport = c("Drop off / Pick up passenger(s) / child(ren)",
+                                              "Accompanied someone else",
+                                              "Changed travel mode / transferred"),
+
+                                other = c("Attended a major special event",
+                                          "Other recreation",
+                                          "Something else"),
+
+                                missing = "Missing")
+  )
 
 
 # Convert to datetime object and add day of week
@@ -241,7 +286,9 @@ tip_mdt_wip <-
   # Create combined sample and person number
   mutate(samp_per_no = paste0(sampno,perno)) %>%
   # Create combined mode and purpose
-  mutate(mode_tpurp = paste(mode,tpurp,sep = "_"))
+  mutate(mode_tpurp = paste(mode,tpurp,sep = "_")) %>%
+  # Create combined mode and purpose category
+  mutate(mode_tpurp.c = paste(mode,tpurp.c,sep = "_"))
 
 
 
@@ -249,7 +296,7 @@ tip_mdt_wip <-
 possible_modes <- tibble(mode_c = unique(tip_mdt_wip$mode_c))
 possible_tpurp <- tibble(tpurp = unique(tip_mdt_wip$tpurp))
 possible_mode_tpurp <- tibble(mode_tpurp = unique(tip_mdt_wip$mode_tpurp))
-
+possible_mode_tpurp.c <- tibble(mode_tpurp.c = unique(tip_mdt_wip$mode_tpurp.c))
 
 
 # Calculate trips in motion by mode
@@ -258,7 +305,7 @@ trip_times <-
   tibble(time_band = seq.POSIXt(
     from = as.POSIXct("2020-01-01 03:00:00", tz = "America/Chicago"),
     to = as.POSIXct("2020-01-02 03:00:00", tz = "America/Chicago"),
-    by = "min"))
+    by = "5 min"))
 
 trip_times_mode_mdt <- trip_times %>%
   # Add all possible modes to each time
@@ -292,3 +339,93 @@ finalize_plot(chart2,
               "Source: CMAP analysis of My Daily Travel survey.",
               width = 10)
 
+
+### Mode and purpose
+
+
+trip_times_mode_and_purp.c_mdt <- trip_times %>%
+  # Add all possible modes to each time
+  full_join(.,possible_mode_tpurp.c, by = character()) %>%
+  # Calculate the number of trips that meet the criteria (in the interval and correct mode)
+  mutate(trip_count = mapply(function(x,y) sum(tip_mdt_wip$wtperfin[which(
+    x %within% tip_mdt_wip$trip_interval &
+      y == tip_mdt_wip$mode_tpurp.c)]),
+    time_band,
+    mode_tpurp.c
+  )) %>%
+  separate(col = mode_tpurp.c, into = c("mode","tpurp.c"), sep = "_") %>%
+  group_by(mode,tpurp.c) %>%
+  # Calculate rolling average
+  mutate(rolling_count = slide_dbl(trip_count, mean, .before = 12, .after = 12)) %>%
+  ungroup()
+
+
+# Graph output of trips in motion by purpose for bike trips
+chart3 <- trip_times_mode_and_purp.c_mdt %>%
+  filter(mode == "bike share") %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = tpurp.c)) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),date_breaks = "4 hours") +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
+  cmap_fill_discrete(palette = "mobility") +
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"))
+
+finalize_plot(chart3,
+              "Bike trips in motion by travel purpose.",
+              "Source: CMAP analysis of My Daily Travel survey.",
+              width = 10)
+
+# Graph output of trips in motion by purpose for bike trips
+chart4 <- trip_times_mode_and_purp.c_mdt %>%
+  filter(mode == "rideshare" | mode == "bike share") %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = tpurp.c)) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),date_breaks = "6 hours") +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
+  facet_grid(~mode) +
+  cmap_fill_discrete(palette = "mobility") +
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"))
+
+finalize_plot(chart4,
+              "TNC and bike share trips in motion by travel purpose.",
+              "Source: CMAP analysis of My Daily Travel survey.",
+              width = 10)
+
+
+# Graph output of trips in motion by purpose for bike trips
+chart5 <- trip_times_mode_and_purp.c_mdt %>%
+  filter(mode == "personal bike" | mode == "bike share") %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = tpurp.c)) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),date_breaks = "6 hours") +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
+  facet_grid(~mode) +
+  cmap_fill_discrete(palette = "mobility") +
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"))
+
+finalize_plot(chart5,
+              "Bicycling trips in motion by travel purpose.",
+              "Source: CMAP analysis of My Daily Travel survey.",
+              width = 10)
+
+
+# Graph output of trips in motion by purpose for bike trips
+chart6 <- trip_times_mode_and_purp.c_mdt %>%
+  filter(mode %in% c("rail and bus", "bus", "train", "local transit", "transit")) %>%
+  group_by(time_band,tpurp.c) %>%
+  summarize(rolling_count = sum(rolling_count)) %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = tpurp.c)) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),date_breaks = "6 hours") +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
+  cmap_fill_discrete(palette = "mobility") +
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"))
+
+finalize_plot(chart6,
+              "Transit trips in motion by travel purpose.",
+              "Source: CMAP analysis of My Daily Travel survey.",
+              width = 10)
