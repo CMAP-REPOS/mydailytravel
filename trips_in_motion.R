@@ -33,11 +33,14 @@ hh <- read_csv("household.csv") %>%
 region <- read_csv("location.csv") %>%
   select(sampno, locno, out_region)
 
+chains <- read_csv("chains.csv")
+
 # merge datasets
 mdt <- trips %>%
   inner_join(ppl, by = c("sampno", "perno")) %>%
   inner_join(hh, by = "sampno") %>%
   inner_join(region, by = c("sampno", "locno")) %>%
+  inner_join(chains, by = c("sampno", "perno", "placeno")) %>%
   filter(out_region==0 & distance<=100)
 
 mdt <- mdt %>%
@@ -151,7 +154,22 @@ mdt <- mdt %>%
                                          "taxi", "private limo", "private car", "rideshare",
                                          "shared rideshare", "airplane", "other"),
                                missing = "missing",
-                               beginning = "beginning"))
+                               beginning = "beginning")) %>%
+  mutate(trip_bucket = case_when(
+    home_to_work == 1 ~ "Work trip",
+    work_to_work == 1 ~ "Work trip",
+    work_to_home == 1 ~ "Return home (work)",
+    home_to_shop == 1 ~ "Shopping trip",
+    shop_to_shop == 1 ~ "Shopping trip",
+    shop_to_home == 1 ~ "Return home (shopping)",
+    TRUE ~ "Other trip"
+  )) %>%
+  mutate(trip_bucket = factor(trip_bucket,
+                              levels = c("Work trip",
+                                         "Return home (work)",
+                                         "Shopping trip",
+                                         "Return home (shopping)",
+                                         "Other trip")))
 
 tt <- tt %>%
   mutate(mode_c = fct_collapse(MODE,
@@ -166,7 +184,6 @@ tt <- tt %>%
                                missing = "missing"))
 
 
-# Recode trip purpose factors
 
 mdt <- mdt %>%
   mutate(tpurp = factor(tpurp)) %>%
@@ -203,7 +220,7 @@ mdt <- mdt %>%
                         "-7" = "Missing",
                         "-8" = "Missing",
                         "-9" = "Missing"
-                          ))
+  ))
 
 # condense into trip purpose categories
 mdt <- mdt %>%
@@ -219,16 +236,15 @@ mdt <- mdt %>%
                                 school = "Attended school or daycare / studied",
 
                                 "shopping/errands" =
-                                         c("Shopped (non-routine like for appliances, cars, home furnishings)",
-                                           "Shopped (routine like grocery, clothing)",
-                                           "Drive-thru errands (ATM, dry cleaning, pharmacy, etc.)",
-                                           "Non-shopping errands (banking, post office, government, etc.)",
-                                           "Serviced a vehicle (purchased gas, regular maintenance)"),
+                                  c("Shopped (non-routine like for appliances, cars, home furnishings)",
+                                    "Shopped (routine like grocery, clothing)",
+                                    "Drive-thru errands (ATM, dry cleaning, pharmacy, etc.)",
+                                    "Non-shopping errands (banking, post office, government, etc.)",
+                                    "Serviced a vehicle (purchased gas, regular maintenance)"),
 
                                 health = c("Health care visit for self",
-                                           "Exercised outdoors",
-                                           "Went to the gym",
-                                           "Health care visit for someone else"),
+                                           "Health care visit for someone else",
+                                           "Visited a person staying at the hospital"),
 
                                 dining = c("Drive thru / take-out dining",
                                            "Ate / dined out"),
@@ -236,24 +252,91 @@ mdt <- mdt %>%
                                 community = c("Socialized with friends",
                                               "Socialized with relatives",
                                               "Attended a community event",
-                                              "Attended a religious event",
-                                              "Visited a person staying at the hospital",
-                                              "Volunteered"),
+                                              "Attended a religious event"),
+
+                                "recreation/fitness" = c("Other recreation",
+                                                         "Attended a major special event",
+                                                         "Exercised outdoors",
+                                                         "Went to the gym"),
 
                                 transport = c("Drop off / Pick up passenger(s) / child(ren)",
-                                              "Accompanied someone else",
-                                              "Changed travel mode / transferred"),
+                                              "Accompanied someone else"),
 
-                                other = c("Attended a major special event",
-                                          "Other recreation",
-                                          "Something else"),
+                                transfer = "Changed travel mode / transferred",
+
+                                other = c("Something else",
+                                          "Volunteered"),
 
                                 missing = "Missing")
   )
 
 
+tt <- tt %>%
+  mutate(tpurp = factor(TPURP)) %>%
+  mutate(tpurp = recode(tpurp,
+                        "1"	= "Working at home (for pay)",
+                        "2"	= "All other home activities",
+                        "3" = "Work/Job",
+                        "4"	= "All other activities at work",
+                        "5"	= "Attending class",
+                        "6"	= "All other activities at school",
+                        "7"	= "Change type of transportation/transfer",
+                        "8" = "Dropped off passenger from car",
+                        "9"	= "Picked up passenger",
+                        "10" = "Other - transportation",
+                        "11" = "Work/Business related",
+                        "12" = "Service private vehicle",
+                        "13" = "Routine shopping",
+                        "14" = "Shopping for major purpose",
+                        "15" = "Household errands",
+                        "16" = "Personal business",
+                        "17" = "Eat meal outside of home",
+                        "18" = "Health care",
+                        "19" = "Civic/religious activities",
+                        "20" = "Recreation/entertainment",
+                        "21" = "Visit friends/relatives",
+                        "24" = "Loop trip",
+                        "97" = "Other")) %>%
+  mutate(tpurp.c = fct_collapse(tpurp,
+                                home = "All other home activities",
+
+                                work = c("Working at home (for pay)",
+                                         "Work/Job",
+                                         "All other activities at work",
+                                         "Work/Business related"),
+
+                                school = c("Attending class",
+                                           "All other activities at school"),
+
+                                "shopping/errands" =
+                                  c("Routine shopping",
+                                    "Shopping for major purpose",
+                                    "Personal business",
+                                    "Service private vehicle",
+                                    "Household errands"),
+
+                                health = "Health care",
+
+                                dining = "Eat meal outside of home",
+
+                                community = c("Civic/religious activities",
+                                              "Visit friends/relatives"),
+
+                                "recreation/fitness" = "Recreation/entertainment",
+
+                                transport = c("Dropped off passenger from car",
+                                              "Picked up passenger",
+                                              "Other - transportation"),
+
+                                transfer = "Change type of transportation/transfer",
+
+                                other = c("Other",
+                                          "Loop trip")))
+
+
+
 # Convert to datetime object and add day of week
-tip_mdt <- mdt %>%
+tim_mdt <- mdt %>%
   mutate(arrtime = ymd_hms(arrtime),
   ) %>%
   mutate(day_of_week = wday(arrtime))
@@ -264,8 +347,8 @@ day_value <- 60*60*24
 
 
 # Process data
-tip_mdt_wip <-
-  tip_mdt %>%
+tim_mdt_wip <-
+  tim_mdt %>%
   # Remove weekends
   filter(day_of_week != 1 & day_of_week != 7,
          # Remove trips > 15 hours
@@ -293,11 +376,11 @@ tip_mdt_wip <-
 
 
 # Extract possible modes
-possible_modes <- tibble(mode_c = unique(tip_mdt_wip$mode_c))
-possible_tpurp <- tibble(tpurp = unique(tip_mdt_wip$tpurp))
-possible_mode_tpurp <- tibble(mode_tpurp = unique(tip_mdt_wip$mode_tpurp))
-possible_mode_tpurp.c <- tibble(mode_tpurp.c = unique(tip_mdt_wip$mode_tpurp.c))
-
+possible_modes <- tibble(mode_c = unique(tim_mdt_wip$mode_c))
+possible_tpurp <- tibble(tpurp = unique(tim_mdt_wip$tpurp))
+possible_mode_tpurp <- tibble(mode_tpurp = unique(tim_mdt_wip$mode_tpurp))
+possible_mode_tpurp.c <- tibble(mode_tpurp.c = unique(tim_mdt_wip$mode_tpurp.c))
+possible_buckets <- tibble(trip_bucket = unique(tim_mdt_wip$trip_bucket))
 
 # Calculate trips in motion by mode
 trip_times <-
@@ -311,9 +394,9 @@ trip_times_mode_mdt <- trip_times %>%
   # Add all possible modes to each time
   full_join(.,possible_modes, by = character()) %>%
   # Calculate the number of trips that meet the criteria (in the interval and correct purpose)
-  mutate(mode_count = mapply(function(x,y) sum(tip_mdt_wip$wtperfin[which(
-    x %within% tip_mdt_wip$trip_interval &
-      y == tip_mdt_wip$mode_c)]),
+  mutate(mode_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
+    x %within% tim_mdt_wip$trip_interval &
+      y == tim_mdt_wip$mode_c)]),
     time_band,
     mode_c
   )) %>%
@@ -321,6 +404,10 @@ trip_times_mode_mdt <- trip_times %>%
   # Calculate rolling average
   mutate(rolling_mode_count = slide_dbl(mode_count, mean, .before = 12, .after = 12)) %>%
   ungroup()
+
+
+
+#### Charts
 
 
 # Graph output of trips in motion by mode
@@ -347,9 +434,9 @@ trip_times_mode_and_purp.c_mdt <- trip_times %>%
   # Add all possible modes to each time
   full_join(.,possible_mode_tpurp.c, by = character()) %>%
   # Calculate the number of trips that meet the criteria (in the interval and correct mode)
-  mutate(trip_count = mapply(function(x,y) sum(tip_mdt_wip$wtperfin[which(
-    x %within% tip_mdt_wip$trip_interval &
-      y == tip_mdt_wip$mode_tpurp.c)]),
+  mutate(trip_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
+    x %within% tim_mdt_wip$trip_interval &
+      y == tim_mdt_wip$mode_tpurp.c)]),
     time_band,
     mode_tpurp.c
   )) %>%
@@ -429,3 +516,37 @@ finalize_plot(chart6,
               "Transit trips in motion by travel purpose.",
               "Source: CMAP analysis of My Daily Travel survey.",
               width = 10)
+
+
+#### Group by trip chain buckets
+
+trip_times_bucket_mdt <- trip_times %>%
+  full_join(.,possible_buckets, by = character()) %>%
+  # Calculate the number of trips that meet the criteria (in the interval and correct bucket)
+  mutate(bucket_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
+    x %within% tim_mdt_wip$trip_interval &
+      y == tim_mdt_wip$trip_bucket)]),
+    time_band,
+    trip_bucket
+  )) %>%
+  group_by(trip_bucket) %>%
+  # Calculate rolling average
+  mutate(rolling_bucket_count = slide_dbl(bucket_count, mean, .before = 12, .after = 12)) %>%
+  ungroup()
+
+
+chart7 <- trip_times_bucket_mdt %>%
+  ggplot(aes(x = time_band,y = rolling_bucket_count)) +
+  geom_area(aes(fill = reorder(trip_bucket,desc(trip_bucket)))) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),date_breaks = "4 hours") +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
+  cmap_fill_discrete(palette = "friday") +
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"),
+             legend.max.columns = 3)
+
+finalize_plot(chart7,
+              "Trips in motion in the CMAP region by trip chain type on weekdays.",
+              "Source: CMAP analysis of My Daily Travel survey.",
+              width = 10)
+
