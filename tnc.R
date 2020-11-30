@@ -1,8 +1,6 @@
 
 library(ggplot2)
-library(lubridate)
 library(tidyverse)
-library(slider)
 library(cmapplot)
 
 
@@ -22,7 +20,7 @@ trips <- read_csv("place.csv") %>%
 
 # person info
 ppl <- read_csv("person.csv") %>%
-  select(sampno, perno, age, hisp, race, wtperfin)
+  select(sampno, perno, age, hisp, race, pertrips, wtperfin)
 
 # household info
 hh <- read_csv("household.csv") %>%
@@ -39,11 +37,11 @@ mdt <- trips %>%
   inner_join(region, by = c("sampno", "locno")) %>%
   filter(out_region==0 & distance<=100)
 
+# take care of collapsed trips with placeGroup
 mdt <- mdt %>%
   arrange(desc(distance)) %>%
   distinct(sampno, perno, placeGroup, .keep_all = TRUE)
 # distinct takes the first row for duplicates, so order by distance to get right mode
-
 
 # recode mode factors
 mdt <- mdt %>%
@@ -77,8 +75,6 @@ mdt <- mdt %>%
                        "-9"  = "missing",
                        "-1" = "beginning"))
 
-
-
 # condense into mode categories
 mdt <- mdt %>%
   mutate(mode_c = fct_collapse(mode,
@@ -92,6 +88,92 @@ mdt <- mdt %>%
                                          "shared rideshare", "airplane", "other"),
                                missing = "missing",
                                beginning = "beginning"))
+
+mdt <- mdt %>%
+  mutate(tpurp = factor(tpurp)) %>%
+  mutate(tpurp = recode(tpurp,
+                        "1"	= "Typical home activities",
+                        "2"	= "Worked at home (paid)",
+                        "3" = "Worked at fixed work location",
+                        "4"	= "Worked at non-fixed work location",
+                        "5"	= "Work related (off-site meeting)",
+                        "6"	= "Attended school or daycare / studied",
+                        "7"	= "Volunteered",
+                        "8" = "Shopped (non-routine like for appliances, cars, home furnishings)",
+                        "9"	= "Shopped (routine like grocery, clothing)",
+                        "10" = "Drive-thru errands (ATM, dry cleaning, pharmacy, etc.)",
+                        "11" = "Serviced a vehicle (purchased gas, regular maintenance)",
+                        "12" = "Health care visit for self",
+                        "13" = "Health care visit for someone else",
+                        "14" = "Visited a person staying at the hospital",
+                        "15" = "Non-shopping errands (banking, post office, government, etc.)",
+                        "16" = "Drive thru / take-out dining",
+                        "17" = "Ate / dined out",
+                        "18" = "Socialized with friends",
+                        "19" = "Socialized with relatives",
+                        "20" = "Attended a community event",
+                        "21" = "Attended a religious event",
+                        "22" = "Exercised outdoors",
+                        "23" = "Went to the gym",
+                        "24" = "Other recreation",
+                        "25" = "Attended a major special event",
+                        "26" = "Drop off / Pick up passenger(s) / child(ren)",
+                        "27" = "Accompanied someone else",
+                        "28" = "Changed travel mode / transferred",
+                        "97" = "Something else",
+                        "-7" = "Missing",
+                        "-8" = "Missing",
+                        "-9" = "Missing"
+  ))
+
+# condense into trip purpose categories
+mdt <- mdt %>%
+  mutate(tpurp.c = fct_collapse(tpurp,
+
+                                home = "Typical home activities",
+
+                                work = c("Worked at home (paid)",
+                                         "Worked at fixed work location",
+                                         "Worked at non-fixed work location",
+                                         "Work related (off-site meeting)"),
+
+                                school = "Attended school or daycare / studied",
+
+                                "shopping/errands" =
+                                  c("Shopped (non-routine like for appliances, cars, home furnishings)",
+                                    "Shopped (routine like grocery, clothing)",
+                                    "Drive-thru errands (ATM, dry cleaning, pharmacy, etc.)",
+                                    "Non-shopping errands (banking, post office, government, etc.)",
+                                    "Serviced a vehicle (purchased gas, regular maintenance)"),
+
+                                health = c("Health care visit for self",
+                                           "Health care visit for someone else",
+                                           "Visited a person staying at the hospital"),
+
+                                dining = c("Drive thru / take-out dining",
+                                           "Ate / dined out"),
+
+                                community = c("Socialized with friends",
+                                              "Socialized with relatives",
+                                              "Attended a community event",
+                                              "Attended a religious event"),
+
+                                "recreation/fitness" = c("Other recreation",
+                                                         "Attended a major special event",
+                                                         "Exercised outdoors",
+                                                         "Went to the gym"),
+
+                                transport = c("Drop off / Pick up passenger(s) / child(ren)",
+                                              "Accompanied someone else"),
+
+                                transfer = "Changed travel mode / transferred",
+
+                                other = c("Something else",
+                                          "Volunteered"),
+
+                                missing = "Missing")
+  )
+
 
 #########
 
@@ -118,18 +200,28 @@ tnc <- read_csv("person.csv") %>%
          tnc_cost,
          tnc_purp,
          disab,
+         pertrips,
          wtperfin) %>%
   left_join(.,region %>% filter(home == 1) %>% select(sampno,county_fips) %>% distinct(),by = "sampno") %>%
+  left_join(.,hh %>% select(sampno,hhinc,hhveh), by = "sampno") %>%
   inner_join(.,active_travel, by = c("sampno","perno")) %>%
   mutate(n = 1,
-         county = as.character(county_fips)) %>%
+         county = as.character(county_fips),
+         white = case_when(
+           race == 1 ~ 1,
+           TRUE ~ 0
+         ),
+         high_income = case_when(
+           hhinc >= 8 ~ 1,
+           TRUE ~ 0
+         )) %>%
   select(-county_fips)
 
 tnc <- tnc %>%
   tidyr::pivot_wider(
     .,
     names_from = county,
-    id_cols = c(sampno:takes_active),
+    id_cols = c(sampno:takes_active,white:high_income),
     values_from = n,
     names_prefix = 'county_',
     values_fill = list(n = 0))
@@ -138,14 +230,23 @@ tnc <- tnc %>%
 
 foo <- tnc %>%
   filter(!(tnc_use %in% c(-9,-8,-1))) %>%
+  filter(!(hhinc %in% c(-9,-8,-7))) %>%
+  filter(!(hhveh %in% c(-9,-8,-7)),
+         pertrips != -1,
+         !(race %in% c(-8,-7))) %>%
   #filter(county_fips == 31) %>%
   #group_by(county_fips) %>%
   lm(tnc_use ~
        takes_transit +
        takes_bike +
        takes_walk +
-       county_31 + county_43 + county_89 + county_93 +
-       county_97 + county_111 + county_197,
+       county_31 +
+       #county_43 + county_89 + county_93 +
+       #county_97 + county_111 + county_197 +
+       high_income +
+       white +
+       hhveh +
+       pertrips,
       .,
       weights = wtperfin)
 
