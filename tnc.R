@@ -43,136 +43,38 @@ mdt <- mdt %>%
   distinct(sampno, perno, placeGroup, .keep_all = TRUE)
 # distinct takes the first row for duplicates, so order by distance to get right mode
 
-# recode mode factors
+
+# recode mode factors and group into buckets
 mdt <- mdt %>%
   mutate(mode = factor(mode),
-         mode = recode(mode,
-                       "101" = "walk",
-                       "102" = "personal bike",
-                       "103" = "bike share",
-                       "104" = "bike share",
-                       "201" = "motorcyle",
-                       "202" = "personal auto (driver)",
-                       "203" = "personal auto (passenger)",
-                       "301" = "carpool",
-                       "401" = "school bus",
-                       "500" = "rail and bus",
-                       "501" = "bus",
-                       "502" = "paratransit",
-                       "503" = "paratransit",
-                       "504" = "paratransit",
-                       "505" = "train",
-                       "506" = "local transit",
-                       "509" = "transit",
-                       "601" = "private shuttle",
-                       "701" = "taxi",
-                       "702" = "private limo",
-                       "703" = "private car",
-                       "704" = "rideshare",
-                       "705" = "shared rideshare",
-                       "801" = "airplane",
-                       "997" = "other",
-                       "-9"  = "missing",
-                       "-1" = "beginning"))
-
-# condense into mode categories
-mdt <- mdt %>%
+         mode = recode_factor(mode,
+                              !!!recode_mode_detailed_mdt))%>%
   mutate(mode_c = fct_collapse(mode,
-                               walk = "walk",
-                               bike = c("personal bike", "bike share"),
-                               transit = c("rail and bus", "bus", "train", "local transit", "transit"),
-                               driver = c("motorcyle", "personal auto (driver)"),
-                               passenger = c("personal auto (passenger)", "carpool"),
-                               other = c("school bus", "paratransit", "private shuttle",
-                                         "taxi", "private limo", "private car", "rideshare",
-                                         "shared rideshare", "airplane", "other"),
-                               missing = "missing",
-                               beginning = "beginning"))
+                               !!!recode_mode_buckets_mdt))
 
+tt <- tt %>%
+  mutate(MODE = factor(MODE),
+         MODE = recode_factor(MODE,
+                              !!!recode_mode_detailed_tt)) %>%
+  mutate(mode_c = fct_collapse(MODE,
+                               !!!recode_mode_buckets_tt))
+
+
+
+# Recode trip purposes and group into buckets for comparison
 mdt <- mdt %>%
   mutate(tpurp = factor(tpurp)) %>%
-  mutate(tpurp = recode(tpurp,
-                        "1"	= "Typical home activities",
-                        "2"	= "Worked at home (paid)",
-                        "3" = "Worked at fixed work location",
-                        "4"	= "Worked at non-fixed work location",
-                        "5"	= "Work related (off-site meeting)",
-                        "6"	= "Attended school or daycare / studied",
-                        "7"	= "Volunteered",
-                        "8" = "Shopped (non-routine like for appliances, cars, home furnishings)",
-                        "9"	= "Shopped (routine like grocery, clothing)",
-                        "10" = "Drive-thru errands (ATM, dry cleaning, pharmacy, etc.)",
-                        "11" = "Serviced a vehicle (purchased gas, regular maintenance)",
-                        "12" = "Health care visit for self",
-                        "13" = "Health care visit for someone else",
-                        "14" = "Visited a person staying at the hospital",
-                        "15" = "Non-shopping errands (banking, post office, government, etc.)",
-                        "16" = "Drive thru / take-out dining",
-                        "17" = "Ate / dined out",
-                        "18" = "Socialized with friends",
-                        "19" = "Socialized with relatives",
-                        "20" = "Attended a community event",
-                        "21" = "Attended a religious event",
-                        "22" = "Exercised outdoors",
-                        "23" = "Went to the gym",
-                        "24" = "Other recreation",
-                        "25" = "Attended a major special event",
-                        "26" = "Drop off / Pick up passenger(s) / child(ren)",
-                        "27" = "Accompanied someone else",
-                        "28" = "Changed travel mode / transferred",
-                        "97" = "Something else",
-                        "-7" = "Missing",
-                        "-8" = "Missing",
-                        "-9" = "Missing"
-  ))
-
-# condense into trip purpose categories
-mdt <- mdt %>%
+  mutate(tpurp = recode_factor(tpurp,
+                               !!!recode_tpurp_detailed_mdt)) %>%
   mutate(tpurp.c = fct_collapse(tpurp,
+                                !!!recode_tpurp_buckets_mdt))
 
-                                home = "Typical home activities",
-
-                                work = c("Worked at home (paid)",
-                                         "Worked at fixed work location",
-                                         "Worked at non-fixed work location",
-                                         "Work related (off-site meeting)"),
-
-                                school = "Attended school or daycare / studied",
-
-                                "shopping/errands" =
-                                  c("Shopped (non-routine like for appliances, cars, home furnishings)",
-                                    "Shopped (routine like grocery, clothing)",
-                                    "Drive-thru errands (ATM, dry cleaning, pharmacy, etc.)",
-                                    "Non-shopping errands (banking, post office, government, etc.)",
-                                    "Serviced a vehicle (purchased gas, regular maintenance)"),
-
-                                health = c("Health care visit for self",
-                                           "Health care visit for someone else",
-                                           "Visited a person staying at the hospital"),
-
-                                dining = c("Drive thru / take-out dining",
-                                           "Ate / dined out"),
-
-                                community = c("Socialized with friends",
-                                              "Socialized with relatives",
-                                              "Attended a community event",
-                                              "Attended a religious event"),
-
-                                "recreation/fitness" = c("Other recreation",
-                                                         "Attended a major special event",
-                                                         "Exercised outdoors",
-                                                         "Went to the gym"),
-
-                                transport = c("Drop off / Pick up passenger(s) / child(ren)",
-                                              "Accompanied someone else"),
-
-                                transfer = "Changed travel mode / transferred",
-
-                                other = c("Something else",
-                                          "Volunteered"),
-
-                                missing = "Missing")
-  )
+tt <- tt %>%
+  mutate(tpurp = factor(TPURP)) %>%
+  mutate(tpurp = recode_factor(tpurp,
+                               !!!recode_tpurp_detailed_tt)) %>%
+  mutate(tpurp.c = fct_collapse(tpurp,
+                                !!!recode_tpurp_buckets_tt))
 
 
 #########

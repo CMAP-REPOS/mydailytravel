@@ -82,234 +82,38 @@ tt <- tt %>%
   filter(MPO==1 & DIST<=100 & weekend==0)
 
 
-# recode mode factors
+# recode mode factors and group into buckets
 mdt <- mdt %>%
   mutate(mode = factor(mode),
-         mode = recode(mode,
-                       "101" = "walk",
-                       "102" = "personal bike",
-                       "103" = "bike share",
-                       "104" = "bike share",
-                       "201" = "motorcyle",
-                       "202" = "personal auto (driver)",
-                       "203" = "personal auto (passenger)",
-                       "301" = "carpool",
-                       "401" = "school bus",
-                       "500" = "rail and bus",
-                       "501" = "bus",
-                       "502" = "paratransit",
-                       "503" = "paratransit",
-                       "504" = "paratransit",
-                       "505" = "train",
-                       "506" = "local transit",
-                       "509" = "transit",
-                       "601" = "private shuttle",
-                       "701" = "taxi",
-                       "702" = "private limo",
-                       "703" = "private car",
-                       "704" = "rideshare",
-                       "705" = "shared rideshare",
-                       "801" = "airplane",
-                       "997" = "other",
-                       "-9"  = "missing",
-                       "-1" = "beginning"))
+         mode = recode_factor(mode,
+                              !!!recode_mode_detailed_mdt))%>%
+  mutate(mode_c = fct_collapse(mode,
+                               !!!recode_mode_buckets_mdt))
 
 tt <- tt %>%
   mutate(MODE = factor(MODE),
-         MODE = recode(MODE,
-                       "1"  = "walk",
-                       "2"  = "bike",
-                       "3"  = "personal auto (driver)",
-                       "4"  = "personal auto (passenger)",
-                       "5"  = "CTA bus",
-                       "6"  = "CTA train",
-                       "7"  = "Pace",
-                       "8"  = "Metra",
-                       "9"  = "private shuttle",
-                       "10" = "paratransit",
-                       "11" = "school bus",
-                       "12" = "taxi",
-                       "14" = "local transit",
-                       "15" = "transit (many)",
-                       "97" = "other",
-                       "98" = "missing",
-                       "99" = "missing"))
-
-# condense into mode categories
-mdt <- mdt %>%
-  mutate(mode_c = fct_collapse(mode,
-                               walk = "walk",
-                               bike = c("personal bike", "bike share"),
-                               transit = c("rail and bus", "bus", "train", "local transit", "transit"),
-                               driver = c("motorcyle", "personal auto (driver)"),
-                               passenger = c("personal auto (passenger)", "carpool"),
-                               other = c("school bus", "paratransit", "private shuttle",
-                                         "taxi", "private limo", "private car", "rideshare",
-                                         "shared rideshare", "airplane", "other"),
-                               missing = "missing",
-                               beginning = "beginning"))
-
-tt <- tt %>%
+         MODE = recode_factor(MODE,
+                              !!!recode_mode_detailed_tt)) %>%
   mutate(mode_c = fct_collapse(MODE,
-                               walk = "walk",
-                               bike = "bike",
-                               transit = c("CTA bus", "CTA train", "Pace", "Metra",
-                                           "local transit", "transit (many)"),
-                               driver = "personal auto (driver)",
-                               passenger = "personal auto (passenger)",
-                               other = c("private shuttle", "paratransit", "school bus",
-                                         "taxi", "other"),
-                               missing = "missing"))
+                               !!!recode_mode_buckets_tt))
 
 
 
+# Recode trip purposes and group into buckets for comparison
 mdt <- mdt %>%
   mutate(tpurp = factor(tpurp)) %>%
-  mutate(tpurp = recode(tpurp,
-                        "1"	= "Typical home activities",
-                        "2"	= "Worked at home (paid)",
-                        "3" = "Worked at fixed work location",
-                        "4"	= "Worked at non-fixed work location",
-                        "5"	= "Work related (off-site meeting)",
-                        "6"	= "Attended school or daycare / studied",
-                        "7"	= "Volunteered",
-                        "8" = "Shopped (non-routine like for appliances, cars, home furnishings)",
-                        "9"	= "Shopped (routine like grocery, clothing)",
-                        "10" = "Drive-thru errands (ATM, dry cleaning, pharmacy, etc.)",
-                        "11" = "Serviced a vehicle (purchased gas, regular maintenance)",
-                        "12" = "Health care visit for self",
-                        "13" = "Health care visit for someone else",
-                        "14" = "Visited a person staying at the hospital",
-                        "15" = "Non-shopping errands (banking, post office, government, etc.)",
-                        "16" = "Drive thru / take-out dining",
-                        "17" = "Ate / dined out",
-                        "18" = "Socialized with friends",
-                        "19" = "Socialized with relatives",
-                        "20" = "Attended a community event",
-                        "21" = "Attended a religious event",
-                        "22" = "Exercised outdoors",
-                        "23" = "Went to the gym",
-                        "24" = "Other recreation",
-                        "25" = "Attended a major special event",
-                        "26" = "Drop off / Pick up passenger(s) / child(ren)",
-                        "27" = "Accompanied someone else",
-                        "28" = "Changed travel mode / transferred",
-                        "97" = "Something else",
-                        "-7" = "Missing",
-                        "-8" = "Missing",
-                        "-9" = "Missing"
-  ))
-
-# condense into trip purpose categories
-mdt <- mdt %>%
+  mutate(tpurp = recode_factor(tpurp,
+                               !!!recode_tpurp_detailed_mdt)) %>%
   mutate(tpurp.c = fct_collapse(tpurp,
-
-                                home = "Typical home activities",
-
-                                work = c("Worked at home (paid)",
-                                         "Worked at fixed work location",
-                                         "Worked at non-fixed work location",
-                                         "Work related (off-site meeting)"),
-
-                                school = "Attended school or daycare / studied",
-
-                                "shopping/errands" =
-                                  c("Shopped (non-routine like for appliances, cars, home furnishings)",
-                                    "Shopped (routine like grocery, clothing)",
-                                    "Drive-thru errands (ATM, dry cleaning, pharmacy, etc.)",
-                                    "Non-shopping errands (banking, post office, government, etc.)",
-                                    "Serviced a vehicle (purchased gas, regular maintenance)"),
-
-                                health = c("Health care visit for self",
-                                           "Health care visit for someone else",
-                                           "Visited a person staying at the hospital"),
-
-                                dining = c("Drive thru / take-out dining",
-                                           "Ate / dined out"),
-
-                                community = c("Socialized with friends",
-                                              "Socialized with relatives",
-                                              "Attended a community event",
-                                              "Attended a religious event"),
-
-                                "recreation/fitness" = c("Other recreation",
-                                               "Attended a major special event",
-                                               "Exercised outdoors",
-                                               "Went to the gym"),
-
-                                transport = c("Drop off / Pick up passenger(s) / child(ren)",
-                                              "Accompanied someone else"),
-
-                                transfer = "Changed travel mode / transferred",
-
-                                other = c("Something else",
-                                          "Volunteered"),
-
-                                missing = "Missing")
-  )
-
+                                !!!recode_tpurp_buckets_mdt))
 
 tt <- tt %>%
   mutate(tpurp = factor(TPURP)) %>%
-  mutate(tpurp = recode(tpurp,
-                        "1"	= "Working at home (for pay)",
-                        "2"	= "All other home activities",
-                        "3" = "Work/Job",
-                        "4"	= "All other activities at work",
-                        "5"	= "Attending class",
-                        "6"	= "All other activities at school",
-                        "7"	= "Change type of transportation/transfer",
-                        "8" = "Dropped off passenger from car",
-                        "9"	= "Picked up passenger",
-                        "10" = "Other - transportation",
-                        "11" = "Work/Business related",
-                        "12" = "Service private vehicle",
-                        "13" = "Routine shopping",
-                        "14" = "Shopping for major purpose",
-                        "15" = "Household errands",
-                        "16" = "Personal business",
-                        "17" = "Eat meal outside of home",
-                        "18" = "Health care",
-                        "19" = "Civic/religious activities",
-                        "20" = "Recreation/entertainment",
-                        "21" = "Visit friends/relatives",
-                        "24" = "Loop trip",
-                        "97" = "Other")) %>%
+  mutate(tpurp = recode_factor(tpurp,
+                               !!!recode_tpurp_detailed_tt)) %>%
   mutate(tpurp.c = fct_collapse(tpurp,
-                                home = "All other home activities",
+                                !!!recode_tpurp_buckets_tt))
 
-                                work = c("Working at home (for pay)",
-                                         "Work/Job",
-                                         "All other activities at work",
-                                         "Work/Business related"),
-
-                                school = c("Attending class",
-                                           "All other activities at school"),
-
-                                "shopping/errands" =
-                                  c("Routine shopping",
-                                    "Shopping for major purpose",
-                                    "Personal business",
-                                    "Service private vehicle",
-                                    "Household errands"),
-
-                                health = "Health care",
-
-                                dining = "Eat meal outside of home",
-
-                                community = c("Civic/religious activities",
-                                              "Visit friends/relatives"),
-
-                                "recreation/fitness" = "Recreation/entertainment",
-
-                                transport = c("Dropped off passenger from car",
-                                              "Picked up passenger",
-                                              "Other - transportation"),
-
-                                transfer = "Change type of transportation/transfer",
-
-                                other = c("Other",
-                                          "Loop trip")))
 
 
 #################################################
