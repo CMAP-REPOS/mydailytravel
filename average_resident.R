@@ -37,7 +37,7 @@ mdt <- trips %>%
   inner_join(hh, by = "sampno") %>%
   inner_join(region %>% select(-county_fips,-home), by = c("sampno", "locno"))
 
-# add combined duration adn distance for placeGroup trips
+# add combined duration and distance for placeGroup trips
 placeGroupStats <- mdt %>%
   filter(hdist >= 0,
          distance >= 0,
@@ -70,13 +70,48 @@ tt_ppl <- read_csv("per_public.csv") %>%
 # trips
 #   day beginning/place #1 already null in mode var
 tt_place <- read_csv("place_public.csv") %>%
-  select(MPO, SAMPN, PERNO, DAYNO, PLANO, locno, TPURP, MODE, DIST)
+  select(MPO, SAMPN, PERNO, DAYNO, PLANO, locno, TPURP, MODE, DIST, TRPDUR)
+
+# home location
+tt_home <- read_csv("loc_public.csv") %>%
+  select(LOCNO, FIPS) %>%
+  mutate(home = case_when(
+    substr(LOCNO,1,1) == "9" ~ 1,
+    TRUE ~ 0)) %>%
+  filter(home == 1) %>%
+  mutate(home_county = as.integer(substr(FIPS,3,5))) %>%
+  select(-FIPS,home) %>%
+  inner_join(.,
+            tt_place %>% select(SAMPN,PERNO,PLANO,locno),
+            by = c("LOCNO" = "locno"))
+
+# Check - is each sample associated with exactly one home
+test1 <- tt_home %>% distinct(SAMPN,LOCNO,home_county,.keep_all = TRUE)
+
+number <- test1 %>%
+  group_by(SAMPN) %>%
+  summarize(n = n())
+
+test1 %>%
+  left_join(.,
+            number,
+            by = "SAMPN") %>%
+  filter(n > 1)
+
+test2 <- tt_home %>% distinct(SAMPN,.keep_all = TRUE)
+# Answer: Yes - except for 14 records with no sample number
+
+tt_home <- tt_home %>%
+  select(SAMPN,home_county) %>%
+  distinct()
+
 
 # Combine datasets
 #   Remove trips ending outside the region
 tt <- tt_place %>%
   inner_join(tt_ppl, by = c("SAMPN", "PERNO")) %>%
-  inner_join(tt_hh, by = c("SAMPN", "SURVEY"))
+  inner_join(tt_hh, by = c("SAMPN", "SURVEY")) %>%
+  left_join(tt_home, by = "SAMPN")
 
 # Flag weekend trips and adjust weights accordingly
 tt <- tt %>%
@@ -90,8 +125,10 @@ tt <- tt %>%
          weight = if_else(weekdays2==1, WGTP/2, WGTP))
 
 tt <- tt %>%
+  # Keep only trips in the CMAP mpo region (exluding NIRPC) and on weekdays
   filter(MPO==1 & weekend==0) %>%
-  mutate(pertrips = mean(PTRIPS1,PTRIPS2,na.rm = TRUE))
+  # Select the correct number of trips per day (based on day number)
+  mutate(pertrips = ifelse(DAYNO == 1,PTRIPS1,PTRIPS2))
 
 
 # recode mode factors and group into buckets
@@ -146,7 +183,7 @@ tt <- tt %>%
 #################################################
 
 
-### MY DAILY TRAVEL
+### MY DAILY TRAVEL - closely aligns with Sarah's work, seem to be right
 
 # filter out trips we don't want to evaluate
 avgtravel_mdt <- mdt %>%
@@ -224,14 +261,67 @@ sum(avgtravel_mdt$wtperfin) / daily_travelers_mdt
 
 
 
-##### TRAVEL TRACKER
+##### TRAVEL TRACKER - don't trust these numbers right now
 
-tt %>%
-  filter(AGE >= 5) %>%
-  select(SAMPN,PERNO,PTRIPS1,PTRIPS2,weight,income_c) %>%
+avgtravel_tt <-
+  tt %>%
+  filter(
+    # Keep only trips by travelers at least 5 years old
+    AGE >= 5,
+    # Keep only trips less than 100 miles
+    DIST >= 0 & DIST < 100,
+    # Include only travelers who made at least one trip
+    pertrips > 0
+  ) %>%
+  mutate(dist_weight = DIST * weight)
+
+
+# Calculate total number of daily travelers who take at least one trip
+daily_travelers_tt <-
+  avgtravel_tt %>%
+  select(SAMPN,PERNO,weight,home_county) %>%
   distinct() %>%
-  group_by() %>%
-  summarize(pertrips = weighted.mean(PTRIPS1,weight, na.rm = TRUE))
+  group_by(home_county) %>%
+  summarize(total_travelers = sum(weight))
+
+daily_travelers_tt <-
+  daily_travelers_tt %>%
+  rbind(.,
+        tibble(home_county = 999,
+               total_travelers = sum(daily_travelers_tt$total_travelers)))
+
+# Calculate summary statistics by county
+avgtravel_tt %>%
+  rbind(.,
+        avgtravel_tt %>% mutate(home_county = 999)) %>%
+  group_by(home_county) %>%
+  summarize(
+    total_distance = sum(dist_weight),
+    total_trips = sum(weight),
+    avg_trip_length = total_distance / total_trips,
+  ) %>%
+  left_join(.,
+            daily_travelers_tt,
+            by = "home_county") %>%
+  mutate(distance_per_capita = total_distance / total_travelers,
+         trips_per_capita = total_trips / total_travelers) %>%
+  filter(home_county %in% c(cmap_counties,999)) %>%
+  View()
+
+
+# Total distance
+sum(avgtravel_tt$dist_weight)
+
+# Mileage per traveler
+sum(avgtravel_tt$dist_weight) / daily_travelers_tt
+
+# Average trip length
+sum(avgtravel_tt$dist_weight) / sum(avgtravel_tt$weight)
+
+# Trips per person
+sum(avgtravel_tt$weight) / daily_travelers_tt
+
+
 
 tt %>%
   filter(AGE >= 5,
@@ -239,3 +329,7 @@ tt %>%
   summarize(total_distance = sum(DIST * weight, na.rm = TRUE),
             avg_distance = weighted.mean(DIST,weight, na.rm = TRUE))
 
+avgtravel_tt %>%
+  select(SAMPN,PERNO,DAYNO,pertrips,weight) %>%
+  distinct() %>%
+  summarize(total_trips = weighted.mean(pertrips,weight))
