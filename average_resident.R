@@ -65,7 +65,7 @@ tt_hh <- read_csv("hh_public.csv") %>%
 
 # people
 tt_ppl <- read_csv("per_public.csv") %>%
-  select(SAMPN, PERNO, SURVEY, AGE, HISP, RACE, WGTP, PTRIPS1,PTRIPS2)
+  select(SAMPN, PERNO, MPO, SURVEY, AGE, AGEB, HISP, RACE, WGTP, PTRIPS1,PTRIPS2)
 
 # trips
 #   day beginning/place #1 already null in mode var
@@ -269,18 +269,42 @@ avgtravel_tt <-
     # Keep only trips by travelers at least 5 years old
     AGE >= 5,
     # Keep only trips less than 100 miles
-    DIST >= 0 & DIST < 100,
+    DIST > 0 & DIST < 100,
     # Include only travelers who made at least one trip
     pertrips > 0
   ) %>%
   mutate(dist_weight = DIST * weight)
 
 
+# calculate total number of daily travelers who take at least one trip
+daily_travelers_tt_test <-
+  tt_ppl %>%
+  mutate(
+
+    age5 = case_when(
+      (AGE >= 5 & AGE < 99) ~ 1,
+      AGEB == 2 ~ 1,
+      TRUE ~ 0),
+
+    notravel = case_when(
+      SURVEY == 1 & PTRIPS1 == 0 ~ 1,
+      SURVEY == 2 & PTRIPS1 == 0 & PTRIPS2 == 0 ~ 1,
+      TRUE ~ 0
+
+      )) %>%
+  filter(age5 == 1,
+         notravel == 0,
+         MPO == 1)
+
+daily_travelers_tt_test %>%
+  summarize(sum = sum(WGTP))
+
+
 # Calculate total number of daily travelers who take at least one trip
 daily_travelers_tt <-
   avgtravel_tt %>%
-  select(SAMPN,PERNO,weight,home_county) %>%
-  distinct() %>%
+  select(SAMPN,PERNO,DAYNO,weight,home_county) %>%
+  distinct() %>% View()
   group_by(home_county) %>%
   summarize(total_travelers = sum(weight))
 
