@@ -71,7 +71,7 @@ tt_ppl <- read_csv("per_public.csv") %>%
 # trips
 #   day beginning/place #1 already null in mode var
 tt_place <- read_csv("place_public.csv") %>%
-  select(MPO, SAMPN, PERNO, DAYNO, PLANO, locno, TPURP, MODE, DIST)
+  select(MPO, SAMPN, PERNO, DAYNO, PLANO, locno, TPURP, MODE, DIST, TRPDUR)
 
 # Combine datasets
 tt <- tt_place %>%
@@ -327,3 +327,82 @@ finalize_plot(school_pct_inc_plot2,
               Source: CMAP analysis of MDT and TT data.",
               height = 8)
 
+## What about travel times by income for school trips
+
+
+
+school_time_mdt <-
+  all_school_mdt %>%
+  filter(travtime_pg < 150 & travtime_pg > 0,
+         income_c != "missing") %>%
+  group_by(income_c) %>%
+  summarize(travtime = weighted.mean(travtime_pg, w = wtperfin)) %>%
+  mutate(survey = "My Daily Travel (2018)")
+
+school_time_tt <-
+  all_school_tt %>%
+  filter(TRPDUR < 150 & TRPDUR > 0,
+         income_c != "missing") %>%
+  group_by(income_c) %>%
+  summarize(travtime = weighted.mean(TRPDUR, w = weight)) %>%
+  mutate(survey = "Travel Tracker (2008)")
+
+school_time_plot <-
+  school_time_mdt %>%
+  rbind(.,
+        school_time_tt) %>%
+  ggplot(aes(x = income_c, y = travtime, fill = reorder(survey,desc(survey)))) +
+  geom_col(position = position_dodge2()) +
+  theme_cmap(gridlines = "h",
+             legend.position = "None",
+             axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~survey,ncol = 2) +
+  cmap_fill_discrete(palette = "prosperity")
+
+finalize_plot(school_time_plot,
+              "Travel time to school by household income (minutes).",
+              "Note: Includes trips for travelers between 5 and 18 years old
+              (inclusive). Trips with no travel time or lasting 150 minutes or
+              more are excluded as outliers.
+              <br><br>
+              Source: CMAP analysis of MDT and TT.")
+
+
+## What about trip distances by income for school trips
+
+
+
+school_distance_mdt <-
+  all_school_mdt %>%
+  filter(distance_pg > 0,
+         income_c != "missing") %>%
+  group_by(income_c) %>%
+  summarize(tripdist = weighted.mean(distance_pg, w = wtperfin)) %>%
+  mutate(survey = "My Daily Travel (2018)")
+
+school_distance_tt <-
+  all_school_tt %>%
+  filter(DIST > 0,
+         income_c != "missing") %>%
+  group_by(income_c) %>%
+  summarize(tripdist = weighted.mean(DIST, w = weight)) %>%
+  mutate(survey = "Travel Tracker (2008)")
+
+school_distance_plot <-
+  school_distance_mdt %>%
+  rbind(.,
+        school_distance_tt) %>%
+  ggplot(aes(x = income_c, y = tripdist, fill = reorder(survey,desc(survey)))) +
+  geom_col(position = position_dodge2()) +
+  theme_cmap(gridlines = "h",
+             legend.position = "None",
+             axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~survey,ncol = 2) +
+  cmap_fill_discrete(palette = "legislation")
+
+finalize_plot(school_distance_plot,
+              "Trip distance to school by household income (miles).",
+              "Note: Includes trips for travelers between 5 and 18 years old
+              (inclusive) that are greater than 0 miles.
+              <br><br>
+              Source: CMAP analysis of MDT and TT.")
