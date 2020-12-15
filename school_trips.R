@@ -16,7 +16,8 @@ setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/My Da
 
 # trips
 trips <- read_csv("place.csv") %>%
-  select(sampno, locno, perno, placeno, placeGroup, mode, distance, arrtime, deptime, travtime, tpurp)
+  select(sampno, locno, perno, placeno, placeGroup, mode, distance, arrtime,
+         deptime, travtime, tpurp)
 
 # person info
 ppl <- read_csv("person.csv") %>%
@@ -155,16 +156,24 @@ setwd("~/Git/dlcomeaux/mydailytravel")
 
 ### Filter data
 all_school_mdt <- mdt %>%
-  filter(age <= 18 & age >= 5,
-         !(mode_c %in% c("missing","beginning")),
-         tpurp_c == "school") %>%
+  filter(
+    # Keep only trips by school-aged travelers
+    age <= 18 & age >= 5,
+    # Remove trips with modes either beginning or missing
+    !(mode_c %in% c("missing","beginning")),
+    # Keep only school trips
+    tpurp_c == "school") %>%
+  # Mutate to character to allow case_when modification
   mutate(mode_c_school = as.character(mode_c)) %>%
+  # Separate out school buses from "other"
   mutate(mode_c_school = case_when(
     mode == "school bus" ~ "school bus",
     TRUE ~ mode_c_school
   )) %>%
+  # Reconvert to factor
   mutate(mode_c_school = factor(mode_c_school))
 
+# Repeat same filtering and mutation for TT
 all_school_tt <- tt %>%
   filter(AGE <= 18 & AGE >= 5,
          mode_c != "missing",
@@ -195,6 +204,7 @@ total_school_mode_c <-
   rbind(all_school_mode_c_tt,
         all_school_mode_c_mdt)
 
+# Chart of mode share for K-12 trips, MDT vs TT
 school_pct_plot <-
   total_school_mode_c %>%
   mutate(survey = recode_factor(survey,
@@ -217,7 +227,7 @@ finalize_plot(school_pct_plot,
               <br><br>
               Source: CMAP analysis of MDT and TT data.")
 
-
+# Chart of absolute numbers of school trips, MDT vs TT
 school_abs_plot <-
   total_school_mode_c %>%
   mutate(survey = recode_factor(survey,
@@ -247,6 +257,8 @@ finalize_plot(school_abs_plot,
 ## Create totals for trips by mode category (within universe of school trips)
 
 ### Calculate proportions for TT
+
+# Total trips by income bucket
 all_school_inc_total_tt <- all_school_tt %>%
   group_by(income_c) %>%
   summarize(total = sum(weight))
@@ -254,13 +266,15 @@ all_school_inc_total_tt <- all_school_tt %>%
 all_school_inc_mode_c_tt <- all_school_tt %>%
   group_by(mode_c_school,income_c) %>%
   summarize(mode_c_total = sum(weight)) %>%
+  # join with total trips by income bucket to allow for percentages
   left_join(.,
             all_school_inc_total_tt,
             by = c("income_c")) %>%
+  # Calculate mode share percents
   mutate(mode_c_pct = mode_c_total / total,
          survey = "tt")
 
-### Calculate proportions for MDT
+### Calculate proportions for MDT (repeat from TT)
 all_school_inc_total_mdt <- all_school_mdt %>%
   group_by(income_c) %>%
   summarize(total = sum(wtperfin))
@@ -279,6 +293,7 @@ total_school_inc_mode_c <-
   rbind(all_school_inc_mode_c_tt,
         all_school_inc_mode_c_mdt)
 
+# Chart of walking mode share
 school_pct_inc_plot1 <-
   total_school_inc_mode_c %>%
   mutate(survey = recode_factor(survey,
@@ -303,7 +318,7 @@ finalize_plot(school_pct_inc_plot1,
               Source: CMAP analysis of MDT and TT data.",
               height = 5)
 
-
+# Chart of mode share by income category
 school_pct_inc_plot2 <-
   total_school_inc_mode_c %>%
   mutate(survey = recode_factor(survey,
@@ -329,16 +344,19 @@ finalize_plot(school_pct_inc_plot2,
 
 ## What about travel times by income for school trips
 
-
-
+# Filter data for MDT
 school_time_mdt <-
   all_school_mdt %>%
-  filter(travtime_pg < 150 & travtime_pg > 0,
-         income_c != "missing") %>%
+  filter(
+    # Only include trips that are more than 0 minutes and less than 2.5 hours
+    travtime_pg < 150 & travtime_pg > 0,
+    # Exclude households with missing income information
+    income_c != "missing") %>%
   group_by(income_c) %>%
   summarize(travtime = weighted.mean(travtime_pg, w = wtperfin)) %>%
   mutate(survey = "My Daily Travel (2018)")
 
+# Repeat for TT
 school_time_tt <-
   all_school_tt %>%
   filter(TRPDUR < 150 & TRPDUR > 0,
@@ -347,6 +365,7 @@ school_time_tt <-
   summarize(travtime = weighted.mean(TRPDUR, w = weight)) %>%
   mutate(survey = "Travel Tracker (2008)")
 
+# Chart of travel time to school by household income
 school_time_plot <-
   school_time_mdt %>%
   rbind(.,
@@ -370,11 +389,10 @@ finalize_plot(school_time_plot,
 
 ## What about trip distances by income for school trips
 
-
-
+# Repeat filtering from above (travel time) for trip distances
 school_distance_mdt <-
   all_school_mdt %>%
-  filter(distance_pg > 0,
+  filter(distance_pg > 0, # use distance_pg as it is the consolidated distance from the placegroup
          income_c != "missing") %>%
   group_by(income_c) %>%
   summarize(tripdist = weighted.mean(distance_pg, w = wtperfin)) %>%
@@ -388,6 +406,7 @@ school_distance_tt <-
   summarize(tripdist = weighted.mean(DIST, w = weight)) %>%
   mutate(survey = "Travel Tracker (2008)")
 
+# Chart of trip distances by household income
 school_distance_plot <-
   school_distance_mdt %>%
   rbind(.,
