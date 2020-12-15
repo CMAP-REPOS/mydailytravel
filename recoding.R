@@ -260,8 +260,8 @@ recode_income_buckets_tt <-
        missing = "refused")
 
 recode_income_buckets_mdt <-
-  list(low = c("less than $15,000", "$15,000 to $24,999", "$25,000 to $29,999"),
-       `middle-low` = c("$30,000 to $34,999", "$35,000 to $49,999", "$50,000 to $59,999"),
+  list(low = c("less than $15,000", "$15,000 to $24,999", "$25,000 to $29,999","$30,000 to $34,999"),
+       `middle-low` = c("$35,000 to $49,999", "$50,000 to $59,999"),
        `middle-high` = c("$60,000 to $74,999", "$75,000 to $99,999"),
        high = c("$100,000 to $149,999", "$150,000 or more"),
        missing = c("not ascertained", "don't know", "prefer not to answer"))
