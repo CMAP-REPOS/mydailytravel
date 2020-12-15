@@ -35,13 +35,25 @@ mdt <- trips %>%
   inner_join(ppl, by = c("sampno", "perno")) %>%
   inner_join(hh, by = "sampno") %>%
   inner_join(region, by = c("sampno", "locno")) %>%
-  filter(out_region==0 & distance<=100)
+  filter(out_region==0 & distance<100)
+
+# add combined duration and distance for placeGroup trips
+placeGroupStats <- mdt %>%
+  filter(hdist >= 0,
+         distance >= 0,
+         travtime >= 0) %>%
+  group_by(sampno,perno,placeGroup) %>%
+  summarize(hdist_pg = sum(hdist, na.rm = TRUE),
+            distance_pg = sum(distance, na.rm = TRUE),
+            travtime_pg = sum(travtime, na.rm = TRUE))
 
 # take care of collapsed trips with placeGroup
 mdt <- mdt %>%
+  # distinct takes the first row for duplicates, so order by distance to get right mode
   arrange(desc(distance)) %>%
-  distinct(sampno, perno, placeGroup, .keep_all = TRUE)
-# distinct takes the first row for duplicates, so order by distance to get right mode
+  distinct(sampno, perno, placeGroup, .keep_all = TRUE) %>%
+  # add combined distance and time values calculated above
+  left_join(.,placeGroupStats, by = c("sampno","perno","placeGroup"))
 
 
 # recode mode factors and group into buckets
@@ -66,14 +78,14 @@ mdt <- mdt %>%
   mutate(tpurp = factor(tpurp)) %>%
   mutate(tpurp = recode_factor(tpurp,
                                !!!recode_tpurp_detailed_mdt)) %>%
-  mutate(tpurp.c = fct_collapse(tpurp,
+  mutate(tpurp_c = fct_collapse(tpurp,
                                 !!!recode_tpurp_buckets_mdt))
 
 tt <- tt %>%
   mutate(tpurp = factor(TPURP)) %>%
   mutate(tpurp = recode_factor(tpurp,
                                !!!recode_tpurp_detailed_tt)) %>%
-  mutate(tpurp.c = fct_collapse(tpurp,
+  mutate(tpurp_c = fct_collapse(tpurp,
                                 !!!recode_tpurp_buckets_tt))
 
 

@@ -41,7 +41,7 @@ mdt <- trips %>%
   inner_join(hh, by = "sampno") %>%
   inner_join(region, by = c("sampno", "locno")) %>%
   inner_join(chains, by = c("sampno", "perno", "placeno")) %>%
-  filter(out_region==0 & distance<=100)
+  filter(out_region==0 & distance<100)
 
 mdt <- mdt %>%
   arrange(desc(distance)) %>%
@@ -86,7 +86,7 @@ tt <- tt %>%
          weight = if_else(weekdays2==1, WGTP/2, WGTP))
 
 tt <- tt %>%
-  filter(MPO==1 & DIST<=100 & weekend==0)
+  filter(MPO==1 & DIST<100 & weekend==0)
 
 
 # recode mode factors and group into buckets
@@ -124,14 +124,14 @@ mdt <- mdt %>%
   mutate(tpurp = factor(tpurp)) %>%
   mutate(tpurp = recode_factor(tpurp,
                                !!!recode_tpurp_detailed_mdt)) %>%
-  mutate(tpurp.c = fct_collapse(tpurp,
+  mutate(tpurp_c = fct_collapse(tpurp,
                                 !!!recode_tpurp_buckets_mdt))
 
 tt <- tt %>%
   mutate(tpurp = factor(TPURP)) %>%
   mutate(tpurp = recode_factor(tpurp,
                                !!!recode_tpurp_detailed_tt)) %>%
-  mutate(tpurp.c = fct_collapse(tpurp,
+  mutate(tpurp_c = fct_collapse(tpurp,
                                 !!!recode_tpurp_buckets_tt))
 
 
@@ -172,7 +172,7 @@ tim_mdt_wip <-
   # Create combined mode and purpose
   mutate(mode_tpurp = paste(mode,tpurp,sep = "_")) %>%
   # Create combined mode and purpose category
-  mutate(mode_tpurp.c = paste(mode,tpurp.c,sep = "_"))
+  mutate(mode_tpurp_c = paste(mode,tpurp_c,sep = "_"))
 
 
 
@@ -181,7 +181,7 @@ possible_modes <- tibble(mode_c = unique(tim_mdt_wip$mode_c))
 possible_modes_detailed <- tibble(mode = unique(tim_mdt_wip$mode))
 possible_tpurp <- tibble(tpurp = unique(tim_mdt_wip$tpurp))
 possible_mode_tpurp <- tibble(mode_tpurp = unique(tim_mdt_wip$mode_tpurp))
-possible_mode_tpurp.c <- tibble(mode_tpurp.c = unique(tim_mdt_wip$mode_tpurp.c))
+possible_mode_tpurp_c <- tibble(mode_tpurp_c = unique(tim_mdt_wip$mode_tpurp_c))
 possible_buckets <- tibble(trip_bucket = unique(tim_mdt_wip$trip_bucket))
 
 # Calculate trips in motion by mode
@@ -237,16 +237,16 @@ finalize_plot(chart2,
 
 trip_times_mode_and_purp.c_mdt <- trip_times %>%
   # Add all possible modes to each time
-  full_join(.,possible_mode_tpurp.c, by = character()) %>%
+  full_join(.,possible_mode_tpurp_c, by = character()) %>%
   # Calculate the number of trips that meet the criteria (in the interval and correct mode)
   mutate(trip_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
     x %within% tim_mdt_wip$trip_interval &
-      y == tim_mdt_wip$mode_tpurp.c)]),
+      y == tim_mdt_wip$mode_tpurp_c)]),
     time_band,
-    mode_tpurp.c
+    mode_tpurp_c
   )) %>%
-  separate(col = mode_tpurp.c, into = c("mode","tpurp.c"), sep = "_") %>%
-  group_by(mode,tpurp.c) %>%
+  separate(col = mode_tpurp_c, into = c("mode","tpurp_c"), sep = "_") %>%
+  group_by(mode,tpurp_c) %>%
   # Calculate rolling average
   mutate(rolling_count = slide_dbl(trip_count, mean, .before = 5, .after = 5)) %>%
   ungroup()
@@ -256,7 +256,7 @@ trip_times_mode_and_purp.c_mdt <- trip_times %>%
 chart3 <- trip_times_mode_and_purp.c_mdt %>%
   filter(mode == "bike share") %>%
   ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = tpurp.c)) +
+  geom_area(aes(fill = tpurp_c)) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
@@ -274,7 +274,7 @@ finalize_plot(chart3,
 chart4 <- trip_times_mode_and_purp.c_mdt %>%
   filter(mode == "rideshare" | mode == "bike share") %>%
   ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = tpurp.c)) +
+  geom_area(aes(fill = tpurp_c)) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks[c(2,4,6,8)]) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
@@ -294,7 +294,7 @@ finalize_plot(chart4,
 chart5 <- trip_times_mode_and_purp.c_mdt %>%
   filter(mode == "personal bike" | mode == "bike share") %>%
   ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = tpurp.c)) +
+  geom_area(aes(fill = tpurp_c)) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks[c(2,4,6,8)]) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
@@ -313,10 +313,10 @@ finalize_plot(chart5,
 # Graph output of trips in motion by purpose for transit trips
 chart6 <- trip_times_mode_and_purp.c_mdt %>%
   filter(mode %in% c("rail and bus", "bus", "train", "local transit", "transit")) %>%
-  group_by(time_band,tpurp.c) %>%
+  group_by(time_band,tpurp_c) %>%
   summarize(rolling_count = sum(rolling_count)) %>%
   ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = tpurp.c)) +
+  geom_area(aes(fill = tpurp_c)) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +

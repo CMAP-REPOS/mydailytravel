@@ -35,7 +35,7 @@ mdt <- trips %>%
   inner_join(ppl, by = c("sampno", "perno")) %>%
   inner_join(hh, by = "sampno") %>%
   inner_join(region, by = c("sampno", "locno")) %>%
-  filter(out_region==0 & distance<=100)
+  filter(out_region==0 & distance<100)
 
 # take care of collapsed trips with placeGroup
 mdt <- mdt %>%
@@ -79,7 +79,7 @@ tt <- tt %>%
          weight = if_else(weekdays2==1, WGTP/2, WGTP))
 
 tt <- tt %>%
-  filter(MPO==1 & DIST<=100 & weekend==0)
+  filter(MPO==1 & DIST<100 & weekend==0)
 
 
 # recode mode factors and group into buckets
@@ -104,17 +104,18 @@ mdt <- mdt %>%
   mutate(tpurp = factor(tpurp)) %>%
   mutate(tpurp = recode_factor(tpurp,
                                !!!recode_tpurp_detailed_mdt)) %>%
-  mutate(tpurp.c = fct_collapse(tpurp,
+  mutate(tpurp_c = fct_collapse(tpurp,
                                 !!!recode_tpurp_buckets_mdt))
 
 tt <- tt %>%
   mutate(tpurp = factor(TPURP)) %>%
   mutate(tpurp = recode_factor(tpurp,
                                !!!recode_tpurp_detailed_tt)) %>%
-  mutate(tpurp.c = fct_collapse(tpurp,
+  mutate(tpurp_c = fct_collapse(tpurp,
                                 !!!recode_tpurp_buckets_tt))
 
 
+setwd("~/Git/dlcomeaux/mydailytravel")
 
 #################################################
 #                                               #
@@ -209,13 +210,13 @@ all_tt <- tt %>%
 
 ### Calculate total number of trips
 all_purp_mdt <- all_mdt %>%
-  group_by(tpurp.c) %>%
-  summarize(tpurp.c_total = sum(wtperfin)) %>%
-  filter(tpurp.c != "missing")
+  group_by(tpurp_c) %>%
+  summarize(tpurp_c_total = sum(wtperfin)) %>%
+  filter(tpurp_c != "missing")
 
 all_purp_tt <- all_tt %>%
-  group_by(tpurp.c) %>%
-  summarize(tpurp.c_total = sum(weight))
+  group_by(tpurp_c) %>%
+  summarize(tpurp_c_total = sum(weight))
 
 
 # Create totals for trips by purpose category, specifically for bikes (reuse logic from above)
@@ -226,31 +227,31 @@ bikes_tt <- tt %>%
   filter(AGE < 90 & AGE>=5 & mode_c == "bike")
 
 bike_purp_mdt <- bikes_mdt %>%
-  group_by(tpurp.c) %>%
-  summarize(tpurp.c_count = sum(wtperfin)) %>%
-  inner_join(., all_purp_mdt, by = "tpurp.c") %>%
-  mutate(tpurp.c_pct = tpurp.c_count / tpurp.c_total, # Calculate share of bike trips out of all
+  group_by(tpurp_c) %>%
+  summarize(tpurp_c_count = sum(wtperfin)) %>%
+  inner_join(., all_purp_mdt, by = "tpurp_c") %>%
+  mutate(tpurp_c_pct = tpurp_c_count / tpurp_c_total, # Calculate share of bike trips out of all
          survey = "mdt") %>% # add identifier
-  arrange(tpurp.c_pct) # sort by mode share
+  arrange(tpurp_c_pct) # sort by mode share
 
 bike_purp_tt <- bikes_tt %>%
-  group_by(tpurp.c) %>%
-  summarize(tpurp.c_count = sum(weight)) %>%
-  inner_join(., all_purp_tt, by = "tpurp.c") %>%
-  mutate(tpurp.c_pct = tpurp.c_count / tpurp.c_total, # Calculate share of bike trips out of all
+  group_by(tpurp_c) %>%
+  summarize(tpurp_c_count = sum(weight)) %>%
+  inner_join(., all_purp_tt, by = "tpurp_c") %>%
+  mutate(tpurp_c_pct = tpurp_c_count / tpurp_c_total, # Calculate share of bike trips out of all
          survey = "tt") %>% # add identifier
-  arrange(tpurp.c_pct) # sort by mode share
+  arrange(tpurp_c_pct) # sort by mode share
 
 # Combine data from MDT and TT
 bike_purp <-
   rbind(bike_purp_mdt,bike_purp_tt) %>%
-  select(-tpurp.c_total) # Remove total by purpose (now that bike share is calculated)
+  select(-tpurp_c_total) # Remove total by purpose (now that bike share is calculated)
 
 # Graph mode share for the two surveys
 bike_mode_share <-
   bike_purp %>%
-  filter(tpurp.c != "other") %>%
-  ggplot(aes(x = reorder(tpurp.c,desc(tpurp.c)), y = tpurp.c_pct, fill = survey)) +
+  filter(tpurp_c != "other") %>%
+  ggplot(aes(x = reorder(tpurp_c,desc(tpurp_c)), y = tpurp_c_pct, fill = survey)) +
   geom_bar(stat = "identity",position = position_dodge2(width = .65, reverse = TRUE), width = .7) +
   scale_y_continuous(labels = scales::label_percent()) +
   coord_flip() +
@@ -263,6 +264,6 @@ finalize_plot(bike_mode_share,
 
 # Generate output table
 bike_purp %>%
-  mutate(tpurp.c_pct = paste0(round(tpurp.c_pct * 100,1),"%")) %>%
+  mutate(tpurp_c_pct = paste0(round(tpurp_c_pct * 100,1),"%")) %>%
   pivot_wider(names_from = "survey",
-              values_from = c("tpurp.c_count","tpurp.c_pct"))
+              values_from = c("tpurp_c_count","tpurp_c_pct"))

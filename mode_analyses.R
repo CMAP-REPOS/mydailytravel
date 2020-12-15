@@ -39,7 +39,7 @@ mdt <- trips %>%
   inner_join(hh, by = "sampno") %>%
   inner_join(region, by = c("sampno", "locno")) %>%
   inner_join(chains, by = c("sampno", "perno", "placeno")) %>%
-  filter(out_region==0 & distance<=100)
+  filter(out_region==0 & distance<100)
 
 mdt <- mdt %>%
   arrange(desc(distance)) %>%
@@ -84,7 +84,7 @@ tt <- tt %>%
          weight = if_else(weekdays2==1, WGTP/2, WGTP))
 
 tt <- tt %>%
-  filter(MPO==1 & DIST<=100 & weekend==0)
+  filter(MPO==1 & DIST<100 & weekend==0)
 
 
 # recode mode factors and group into buckets
@@ -122,14 +122,14 @@ mdt <- mdt %>%
   mutate(tpurp = factor(tpurp)) %>%
   mutate(tpurp = recode_factor(tpurp,
                                !!!recode_tpurp_detailed_mdt)) %>%
-  mutate(tpurp.c = fct_collapse(tpurp,
+  mutate(tpurp_c = fct_collapse(tpurp,
                                 !!!recode_tpurp_buckets_mdt))
 
 tt <- tt %>%
   mutate(tpurp = factor(TPURP)) %>%
   mutate(tpurp = recode_factor(tpurp,
                                !!!recode_tpurp_detailed_tt)) %>%
-  mutate(tpurp.c = fct_collapse(tpurp,
+  mutate(tpurp_c = fct_collapse(tpurp,
                                 !!!recode_tpurp_buckets_tt))
 
 
@@ -143,12 +143,12 @@ tt <- tt %>%
 all_dining_mdt <- mdt %>%
   filter(age < 90 & age >= 5,
          !(mode_c %in% c("missing","beginning")),
-         tpurp.c == "dining")
+         tpurp_c == "dining")
 
 all_dining_tt <- tt %>%
   filter(AGE < 90 & AGE >= 5,
          mode_c != "missing",
-         tpurp.c == "dining")
+         tpurp_c == "dining")
 
 ### Calculate proportions for TT
 all_dining_mode_c_tt <- all_dining_tt %>%
@@ -222,12 +222,12 @@ finalize_plot(dining_plot,
 all_health_mdt <- mdt %>%
   filter(age < 90 & age >= 5,
          !(mode_c %in% c("missing","beginning")),
-         tpurp.c == "health")
+         tpurp_c == "health")
 
 all_health_tt <- tt %>%
   filter(AGE < 90 & AGE >= 5,
          mode_c != "missing",
-         tpurp.c == "health")
+         tpurp_c == "health")
 
 ### Calculate proportions for TT
 all_health_mode_c_tt <- all_health_tt %>%
@@ -302,12 +302,12 @@ finalize_plot(health_plot,
 all_community_mdt <- mdt %>%
   filter(age < 90 & age >= 5,
          !(mode_c %in% c("missing","beginning")),
-         tpurp.c == "community")
+         tpurp_c == "community")
 
 all_community_tt <- tt %>%
   filter(AGE < 90 & AGE >= 5,
          mode_c != "missing",
-         tpurp.c == "community")
+         tpurp_c == "community")
 
 ### Calculate proportions for TT
 all_community_mode_c_tt <- all_community_tt %>%
@@ -409,31 +409,31 @@ finalize_plot(community_plot,
 all_passenger_mdt <- mdt %>%
   filter(age < 90 & age >= 5,
          mode_c == "passenger",
-         tpurp.c != "Missing")
+         tpurp_c != "Missing")
 
 all_passenger_tt <- tt %>%
   filter(AGE < 90 & AGE >= 5,
          mode_c == "passenger",
-         tpurp.c != "Missing")
+         tpurp_c != "Missing")
 
 ### Calculate proportions for TT
-all_passenger_tpurp.c_tt <- all_passenger_tt %>%
-  group_by(tpurp.c) %>%
-  summarize(tpurp.c_total = sum(weight)) %>%
-  mutate(tpurp.c_pct = tpurp.c_total / sum(.$tpurp.c_total),
+all_passenger_tpurp_c_tt <- all_passenger_tt %>%
+  group_by(tpurp_c) %>%
+  summarize(tpurp_c_total = sum(weight)) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / sum(.$tpurp_c_total),
          survey = "tt")
 
 ### Calculate proportions for MDT
-all_passenger_tpurp.c_mdt <- all_passenger_mdt %>%
-  group_by(tpurp.c) %>%
-  summarize(tpurp.c_total = sum(wtperfin)) %>%
-  mutate(tpurp.c_pct = tpurp.c_total / sum(.$tpurp.c_total),
+all_passenger_tpurp_c_mdt <- all_passenger_mdt %>%
+  group_by(tpurp_c) %>%
+  summarize(tpurp_c_total = sum(wtperfin)) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / sum(.$tpurp_c_total),
          survey = "mdt")
 
 ### Join MDT and TT
-total_passenger_tpurp.c <-
-  rbind(all_passenger_tpurp.c_tt,
-        all_passenger_tpurp.c_mdt) %>%
+total_passenger_tpurp_c <-
+  rbind(all_passenger_tpurp_c_tt,
+        all_passenger_tpurp_c_mdt) %>%
   mutate(mode = "Passenger (all)")
 
 
@@ -442,28 +442,28 @@ detailed_passenger_totals_mdt <- all_passenger_mdt %>%
   group_by(mode) %>%
   summarize(trip_total = sum(wtperfin))
 
-detailed_passenger_tpurp.c_mdt <- all_passenger_mdt %>%
-  group_by(tpurp.c,mode) %>%
-  summarize(tpurp.c_total = sum(wtperfin)) %>%
+detailed_passenger_tpurp_c_mdt <- all_passenger_mdt %>%
+  group_by(tpurp_c,mode) %>%
+  summarize(tpurp_c_total = sum(wtperfin)) %>%
   left_join(.,detailed_passenger_totals_mdt,by = "mode") %>%
-  mutate(tpurp.c_pct = tpurp.c_total / trip_total) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / trip_total) %>%
   select(-trip_total) %>%
   mutate(survey = "mdt")
 
-all_passenger_tpurp.c <-
-  rbind(total_passenger_tpurp.c,
-        detailed_passenger_tpurp.c_mdt)
+all_passenger_tpurp_c <-
+  rbind(total_passenger_tpurp_c,
+        detailed_passenger_tpurp_c_mdt)
 
 
 passenger_plot <-
-  all_passenger_tpurp.c %>%
-  filter(tpurp.c != "missing") %>%
+  all_passenger_tpurp_c %>%
+  filter(tpurp_c != "missing") %>%
   mutate(survey = factor(survey,levels = c("tt","mdt")),
          mode = factor(mode, levels = c("Passenger (all)","carpool","personal auto (passenger)"))) %>%
   mutate(survey = recode_factor(survey,
                                 "tt" = "Travel Tracker ('08)",
                                 "mdt" = "My Daily Travel ('18)")) %>%
-  ggplot(aes(y = reorder(tpurp.c,desc(-tpurp.c_pct)), x = tpurp.c_pct, fill = mode)) +
+  ggplot(aes(y = reorder(tpurp_c,desc(-tpurp_c_pct)), x = tpurp_c_pct, fill = mode)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   facet_wrap(~survey,ncol = 1) +
   theme_cmap(gridlines = "v",legend.max.columns = 3) +
@@ -482,10 +482,10 @@ finalize_plot(passenger_plot,
 
 
 passenger_totals_plot <-
-  all_passenger_tpurp.c %>%
+  all_passenger_tpurp_c %>%
   filter(!(survey == "mdt" & mode == "Passenger (all)")) %>%
   group_by(survey,mode) %>%
-  summarize(total = sum(tpurp.c_total)) %>%
+  summarize(total = sum(tpurp_c_total)) %>%
   mutate(survey = factor(survey,levels = c("tt","mdt")),
          mode = factor(mode, levels = c("Passenger (all)","carpool","personal auto (passenger)"))) %>%
   mutate(survey = recode_factor(survey,
@@ -516,31 +516,31 @@ finalize_plot(passenger_totals_plot,
 all_bike_mdt <- mdt %>%
   filter(age < 90 & age >= 5,
          mode_c == "bike",
-         tpurp.c != "Missing")
+         tpurp_c != "Missing")
 
 all_bike_tt <- tt %>%
   filter(AGE < 90 & AGE >= 5,
          mode_c == "bike",
-         tpurp.c != "Missing")
+         tpurp_c != "Missing")
 
 ### Calculate proportions for TT
-all_bike_tpurp.c_tt <- all_bike_tt %>%
-  group_by(tpurp.c) %>%
-  summarize(tpurp.c_total = sum(weight)) %>%
-  mutate(tpurp.c_pct = tpurp.c_total / sum(.$tpurp.c_total),
+all_bike_tpurp_c_tt <- all_bike_tt %>%
+  group_by(tpurp_c) %>%
+  summarize(tpurp_c_total = sum(weight)) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / sum(.$tpurp_c_total),
          survey = "tt")
 
 ### Calculate proportions for MDT
-all_bike_tpurp.c_mdt <- all_bike_mdt %>%
-  group_by(tpurp.c) %>%
-  summarize(tpurp.c_total = sum(wtperfin)) %>%
-  mutate(tpurp.c_pct = tpurp.c_total / sum(.$tpurp.c_total),
+all_bike_tpurp_c_mdt <- all_bike_mdt %>%
+  group_by(tpurp_c) %>%
+  summarize(tpurp_c_total = sum(wtperfin)) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / sum(.$tpurp_c_total),
          survey = "mdt")
 
 ### Join MDT and TT
-total_bike_tpurp.c <-
-  rbind(all_bike_tpurp.c_tt,
-        all_bike_tpurp.c_mdt) %>%
+total_bike_tpurp_c <-
+  rbind(all_bike_tpurp_c_tt,
+        all_bike_tpurp_c_mdt) %>%
   mutate(mode = "Bike (all)")
 
 
@@ -549,28 +549,28 @@ detailed_bike_totals_mdt <- all_bike_mdt %>%
   group_by(mode) %>%
   summarize(trip_total = sum(wtperfin))
 
-detailed_bike_tpurp.c_mdt <- all_bike_mdt %>%
-  group_by(tpurp.c,mode) %>%
-  summarize(tpurp.c_total = sum(wtperfin)) %>%
+detailed_bike_tpurp_c_mdt <- all_bike_mdt %>%
+  group_by(tpurp_c,mode) %>%
+  summarize(tpurp_c_total = sum(wtperfin)) %>%
   left_join(.,detailed_bike_totals_mdt,by = "mode") %>%
-  mutate(tpurp.c_pct = tpurp.c_total / trip_total) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / trip_total) %>%
   select(-trip_total) %>%
   mutate(survey = "mdt")
 
-all_bike_tpurp.c <-
-  rbind(total_bike_tpurp.c,
-        detailed_bike_tpurp.c_mdt)
+all_bike_tpurp_c <-
+  rbind(total_bike_tpurp_c,
+        detailed_bike_tpurp_c_mdt)
 
 
 bike_plot <-
-  all_bike_tpurp.c %>%
-  filter(tpurp.c != "missing") %>%
+  all_bike_tpurp_c %>%
+  filter(tpurp_c != "missing") %>%
   mutate(survey = factor(survey,levels = c("tt","mdt")),
          mode = factor(mode, levels = c("Bike (all)","bike share","personal bike"))) %>%
   mutate(survey = recode_factor(survey,
                                 "tt" = "Travel Tracker ('08)",
                                 "mdt" = "My Daily Travel ('18)")) %>%
-  ggplot(aes(y = reorder(tpurp.c,desc(-tpurp.c_pct)), x = tpurp.c_pct, fill = mode)) +
+  ggplot(aes(y = reorder(tpurp_c,desc(-tpurp_c_pct)), x = tpurp_c_pct, fill = mode)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   facet_wrap(~survey,ncol = 1) +
   theme_cmap(gridlines = "v",legend.max.columns = 3) +
@@ -589,10 +589,10 @@ finalize_plot(bike_plot,
 
 
 bike_totals_plot <-
-  all_bike_tpurp.c %>%
+  all_bike_tpurp_c %>%
   filter(!(survey == "mdt" & mode == "Bike (all)")) %>%
   group_by(survey,mode) %>%
-  summarize(total = sum(tpurp.c_total)) %>%
+  summarize(total = sum(tpurp_c_total)) %>%
   mutate(survey = factor(survey,levels = c("tt","mdt")),
          mode = factor(mode, levels = c("Bike (all)","bike share","personal bike"))) %>%
   mutate(survey = recode_factor(survey,
@@ -622,31 +622,31 @@ finalize_plot(bike_totals_plot,
 all_tnc_mdt <- mdt %>%
   filter(age < 90 & age >= 5,
          mode %in% c("rideshare","shared rideshare","taxi"),
-         tpurp.c != "Missing")
+         tpurp_c != "Missing")
 
 all_tnc_tt <- tt %>%
   filter(AGE < 90 & AGE >= 5,
          MODE == "taxi",
-         tpurp.c != "Missing")
+         tpurp_c != "Missing")
 
 ### Calculate proportions for TT
-all_tnc_tpurp.c_tt <- all_tnc_tt %>%
-  group_by(tpurp.c) %>%
-  summarize(tpurp.c_total = sum(weight)) %>%
-  mutate(tpurp.c_pct = tpurp.c_total / sum(.$tpurp.c_total),
+all_tnc_tpurp_c_tt <- all_tnc_tt %>%
+  group_by(tpurp_c) %>%
+  summarize(tpurp_c_total = sum(weight)) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / sum(.$tpurp_c_total),
          survey = "tt")
 
 ### Calculate proportions for MDT
-all_tnc_tpurp.c_mdt <- all_tnc_mdt %>%
-  group_by(tpurp.c) %>%
-  summarize(tpurp.c_total = sum(wtperfin)) %>%
-  mutate(tpurp.c_pct = tpurp.c_total / sum(.$tpurp.c_total),
+all_tnc_tpurp_c_mdt <- all_tnc_mdt %>%
+  group_by(tpurp_c) %>%
+  summarize(tpurp_c_total = sum(wtperfin)) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / sum(.$tpurp_c_total),
          survey = "mdt")
 
 ### Join MDT and TT
-total_tnc_tpurp.c <-
-  rbind(all_tnc_tpurp.c_tt,
-        all_tnc_tpurp.c_mdt) %>%
+total_tnc_tpurp_c <-
+  rbind(all_tnc_tpurp_c_tt,
+        all_tnc_tpurp_c_mdt) %>%
   mutate(mode = case_when(
     survey == "mdt" ~ "tnc (all)",
     TRUE ~ "taxi"))
@@ -657,25 +657,25 @@ detailed_tnc_totals_mdt <- all_tnc_mdt %>%
   group_by(mode) %>%
   summarize(trip_total = sum(wtperfin))
 
-detailed_tnc_tpurp.c_mdt <- all_tnc_mdt %>%
-  group_by(tpurp.c,mode) %>%
-  summarize(tpurp.c_total = sum(wtperfin)) %>%
+detailed_tnc_tpurp_c_mdt <- all_tnc_mdt %>%
+  group_by(tpurp_c,mode) %>%
+  summarize(tpurp_c_total = sum(wtperfin)) %>%
   left_join(.,detailed_tnc_totals_mdt,by = "mode") %>%
-  mutate(tpurp.c_pct = tpurp.c_total / trip_total) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / trip_total) %>%
   select(-trip_total) %>%
   mutate(survey = "mdt")
 
-all_tnc_tpurp.c <-
-  rbind(total_tnc_tpurp.c,
-        detailed_tnc_tpurp.c_mdt)
+all_tnc_tpurp_c <-
+  rbind(total_tnc_tpurp_c,
+        detailed_tnc_tpurp_c_mdt)
 
 
 tnc_plot <-
-  all_tnc_tpurp.c %>%
-  filter(tpurp.c != "missing",
+  all_tnc_tpurp_c %>%
+  filter(tpurp_c != "missing",
          survey == "mdt") %>%
   mutate(mode = factor(mode, levels = c("tnc (all)","taxi","shared rideshare","rideshare"))) %>%
-  ggplot(aes(y = reorder(tpurp.c,desc(-tpurp.c_pct)), x = tpurp.c_pct, fill = mode)) +
+  ggplot(aes(y = reorder(tpurp_c,desc(-tpurp_c_pct)), x = tpurp_c_pct, fill = mode)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   theme_cmap(gridlines = "v",legend.max.columns = 3) +
   scale_x_continuous(labels = scales::label_percent()) +
@@ -689,10 +689,10 @@ finalize_plot(tnc_plot,
 
 
 tnc_totals_plot <-
-  all_tnc_tpurp.c %>%
+  all_tnc_tpurp_c %>%
   filter(!(survey == "mdt" & mode == "tnc (all)")) %>%
   group_by(survey,mode) %>%
-  summarize(total = sum(tpurp.c_total)) %>%
+  summarize(total = sum(tpurp_c_total)) %>%
   mutate(survey = factor(survey,levels = c("tt","mdt")),
          mode = factor(mode, levels = c("shared rideshare","rideshare","taxi"))) %>%
   mutate(survey = recode_factor(survey,

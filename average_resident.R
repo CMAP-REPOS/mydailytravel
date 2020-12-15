@@ -153,14 +153,14 @@ mdt <- mdt %>%
   mutate(tpurp = factor(tpurp)) %>%
   mutate(tpurp = recode_factor(tpurp,
                                !!!recode_tpurp_detailed_mdt)) %>%
-  mutate(tpurp.c = fct_collapse(tpurp,
+  mutate(tpurp_c = fct_collapse(tpurp,
                                 !!!recode_tpurp_buckets_mdt))
 
 tt <- tt %>%
   mutate(tpurp = factor(TPURP)) %>%
   mutate(tpurp = recode_factor(tpurp,
                                !!!recode_tpurp_detailed_tt)) %>%
-  mutate(tpurp.c = fct_collapse(tpurp,
+  mutate(tpurp_c = fct_collapse(tpurp,
                                 !!!recode_tpurp_buckets_tt))
 
 
