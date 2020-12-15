@@ -37,6 +37,16 @@ mdt <- trips %>%
   inner_join(region, by = c("sampno", "locno")) %>%
   filter(out_region==0 & distance<100)
 
+# add combined duration and distance for placeGroup trips
+placeGroupStats <- mdt %>%
+  filter(hdist >= 0,
+         distance >= 0,
+         travtime >= 0) %>%
+  group_by(sampno,perno,placeGroup) %>%
+  summarize(hdist_pg = sum(hdist, na.rm = TRUE),
+            distance_pg = sum(distance, na.rm = TRUE),
+            travtime_pg = sum(travtime, na.rm = TRUE))
+
 # take care of collapsed trips with placeGroup
 mdt <- mdt %>%
   arrange(desc(distance)) %>%
@@ -128,42 +138,38 @@ breaks <- c(-1, 10, 17, 25, 30, 40, 50, 60, 70, 80, 90)
 age_labels <- c("5 to 9", "10 to 17", "18 to 24", "25 to 29", "30 to 39", "40 to 49",
                 "50 to 59", "60 to 69", "70 to 79", "80 to 89")
 
-mdt <- mdt %>%
+mdt_age <- mdt %>%
   mutate(age_bin = cut(age, breaks = breaks,
-                       labels = age_labels))
+                       labels = age_labels)) %>%
+filter(age < 90 & age>=5 & mode_c %in% c("driver","passenger"))
 
-tt <- tt %>%
+tt_age <- tt %>%
   mutate(age_bin = cut(AGE, breaks = breaks,
-                       labels = age_labels))
+                       labels = age_labels)) %>%
+  filter(AGE < 90 & AGE>=5 & PLANO!=1 & mode_c %in% c("driver","passenger"))
 
-d_and_p_total_mdt <- mdt %>%
-  filter(age < 90 & age>=5 & mode_c %in% c("driver","passenger")) %>%
+d_and_p_total_mdt <- mdt_age %>%
   group_by(age_bin) %>%
-  summarise(total = sum(wthhfin))
+  summarise(total = sum(wtperfin))
 
-d_vs_p_age_mdt <- mdt %>%
-  filter(age < 90 & age>=5 & mode_c %in% c("driver","passenger")) %>%
+d_vs_p_age_mdt <- mdt_age %>%
   group_by(age_bin, mode_c) %>%
-  summarise(mode_count = sum(wthhfin)) %>%
+  summarise(mode_count = sum(wtperfin)) %>%
+  ungroup() %>%
   left_join(d_and_p_total_mdt, by = "age_bin") %>%
   mutate(mode_share = (mode_count / total)) %>%
-  mutate(mode_c = fct_relevel(mode_c,
-                              levels = c("driver", "passenger"))) %>%
   mutate(survey = "2018 - My Daily Travel")
 
-d_and_p_total_tt <- tt %>%
-  filter(AGE < 90 & AGE>=5 & PLANO!=1 & mode_c %in% c("driver","passenger")) %>%
+d_and_p_total_tt <- tt_age %>%
   group_by(age_bin) %>%
   summarise(total = sum(weight))
 
-d_vs_p_age_tt <- tt %>%
-  filter(AGE < 90 & AGE>=5 & PLANO!=1 & mode_c %in% c("driver","passenger")) %>%
+d_vs_p_age_tt <- tt_age %>%
   group_by(age_bin, mode_c) %>%
   summarise(mode_count = sum(weight)) %>%
+  ungroup() %>%
   left_join(d_and_p_total_tt, by = "age_bin") %>%
   mutate(mode_share = (mode_count / total)) %>%
-  mutate(mode_c = fct_relevel(mode_c,
-                              levels = c("driver", "passenger"))) %>%
   mutate(survey = "2008 - Travel Tracker")
 
 chart1 <- rbind(d_vs_p_age_mdt %>% select(age_bin,mode_c,mode_share,survey),
@@ -191,6 +197,20 @@ rbind(d_vs_p_age_mdt, d_vs_p_age_tt) %>%
   mutate(pax_share = passenger/driver)
 
 
+
+chart1_1 <- rbind(d_vs_p_age_mdt %>% select(age_bin,mode_c,mode_count,survey),
+                d_vs_p_age_tt  %>% select(age_bin,mode_c,mode_count,survey)) %>%
+  filter(!(age_bin %in% c("5 to 9","10 to 17"))) %>%
+  group_by(survey,mode_c) %>%
+  summarize(mode_count = sum(mode_count)) %>%
+  ggplot(aes(y = survey, x = mode_count, fill = mode_c)) +
+  geom_col() +
+  theme_cmap(gridlines = "v") +
+  cmap_fill_discrete(palette = "mobility") +
+  scale_x_continuous(labels = scales::label_comma())
+  facet_wrap(~survey,ncol = 1)
+
+chart1_1
 
 #################################################
 #                                               #
