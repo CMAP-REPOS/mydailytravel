@@ -140,11 +140,9 @@ mdt <- mdt %>%
                            "-7" = "missing")) %>%
   mutate(race_eth = case_when(
     hisp == 1 ~ "hispanic",
+    hisp %in% c(-8,-7,97) ~ "missing",
     TRUE ~ race_eth))
 
-
-
-setwd("~/GitHub/mydailytravel")
 
 #################################################
 #                                               #
@@ -218,3 +216,88 @@ rbind(d_vs_p_age_mdt, d_vs_p_age_tt) %>%
   pivot_wider(id_cols = c("survey"),names_from = "mode_c",values_from = c("mode_count")) %>%
   mutate(pax_share = passenger/driver)
 
+
+### Same analysis, looking at income instead
+
+d_and_p_total_inc_mdt <- mdt %>%
+  filter(age < 90 & age>=5 & mode_c %in% c("driver","passenger")) %>%
+  group_by(income_c) %>%
+  summarise(total = sum(wthhfin))
+
+d_vs_p_inc_mdt <- mdt %>%
+  filter(age < 90 & age>=5 & mode_c %in% c("driver","passenger")) %>%
+  group_by(income_c, mode_c) %>%
+  summarise(mode_count = sum(wthhfin)) %>%
+  left_join(d_and_p_total_inc_mdt, by = "income_c") %>%
+  mutate(mode_share = (mode_count / total)) %>%
+  mutate(survey = "2018 - My Daily Travel")
+
+d_and_p_total_inc_tt <- tt %>%
+  filter(AGE < 90 & AGE>=5 & PLANO!=1 & mode_c %in% c("driver","passenger")) %>%
+  group_by(income_c) %>%
+  summarise(total = sum(weight))
+
+d_vs_p_inc_tt <- tt %>%
+  filter(AGE < 90 & AGE>=5 & PLANO!=1 & mode_c %in% c("driver","passenger")) %>%
+  group_by(income_c, mode_c) %>%
+  summarise(mode_count = sum(weight)) %>%
+  left_join(d_and_p_total_inc_tt, by = "income_c") %>%
+  mutate(mode_share = (mode_count / total)) %>%
+  mutate(survey = "2008 - Travel Tracker")
+
+chart_passengers_income <- rbind(d_vs_p_inc_mdt %>%
+                                   select(income_c,mode_c,mode_share,survey),
+                                 d_vs_p_inc_tt  %>%
+                                   select(income_c,mode_c,mode_share,survey)) %>%
+  filter(mode_c == "passenger", income_c != "missing") %>%
+  ggplot(aes(y = income_c, x = mode_share, fill = survey)) +
+  geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
+  theme_cmap(gridlines = "v") +
+  cmap_fill_discrete(palette = "mobility") +
+  scale_x_continuous(labels = scales::label_percent())
+
+
+finalize_plot(chart_passengers_income,
+              title = "Share of weekday car trips in the CMAP region where the
+              traveler is a passenger and not a driver, over time.",
+              caption = "Note: Excludes trips out of the CMAP region, as well as
+              travelers younger than 5 and older than 90.<br><br>
+              Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
+)
+
+
+### Same analysis, looking at race and ethnicity instead - only looking at MDT
+### since TT only asked about race and ethnicity for primary household
+### responder.
+
+d_and_p_total_race_mdt <- mdt %>%
+  filter(age < 90 & age>=5 & mode_c %in% c("driver","passenger")) %>%
+  group_by(race_eth) %>%
+  summarise(total = sum(wthhfin))
+
+d_vs_p_race_mdt <- mdt %>%
+  filter(age < 90 & age>=5 & mode_c %in% c("driver","passenger")) %>%
+  group_by(race_eth, mode_c) %>%
+  summarise(mode_count = sum(wthhfin)) %>%
+  left_join(d_and_p_total_race_mdt, by = "race_eth") %>%
+  mutate(mode_share = (mode_count / total)) %>%
+  mutate(survey = "2018 - My Daily Travel")
+
+
+chart_passengers_race <- d_vs_p_race_mdt %>%
+  select(race_eth,mode_c,mode_share,survey) %>%
+  filter(mode_c == "passenger", race_eth != "missing") %>%
+  ggplot(aes(y = reorder(race_eth,desc(mode_share)), x = mode_share)) +
+  geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
+  theme_cmap(gridlines = "v") +
+  cmap_fill_discrete(palette = "mobility") +
+  scale_x_continuous(labels = scales::label_percent())
+
+
+finalize_plot(chart_passengers_race,
+              title = "Share of weekday car trips in the CMAP region where the
+              traveler is a passenger and not a driver.",
+              caption = "Note: Excludes trips out of the CMAP region, as well as
+              travelers younger than 5 and older than 90.<br><br>
+              Source: CMAP analysis of My Daily Travel surveys.",
+)
