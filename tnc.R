@@ -64,14 +64,6 @@ mdt <- mdt %>%
   mutate(mode_c = fct_collapse(mode,
                                !!!recode_mode_buckets_mdt))
 
-tt <- tt %>%
-  mutate(MODE = factor(MODE),
-         MODE = recode_factor(MODE,
-                              !!!recode_mode_detailed_tt)) %>%
-  mutate(mode_c = fct_collapse(MODE,
-                               !!!recode_mode_buckets_tt))
-
-
 
 # Recode trip purposes and group into buckets for comparison
 mdt <- mdt %>%
@@ -81,15 +73,12 @@ mdt <- mdt %>%
   mutate(tpurp_c = fct_collapse(tpurp,
                                 !!!recode_tpurp_buckets_mdt))
 
-tt <- tt %>%
-  mutate(tpurp = factor(TPURP)) %>%
-  mutate(tpurp = recode_factor(tpurp,
-                               !!!recode_tpurp_detailed_tt)) %>%
-  mutate(tpurp_c = fct_collapse(tpurp,
-                                !!!recode_tpurp_buckets_tt))
 
-
-#########
+#################################################
+#                                               #
+#                  Analysis                     #
+#                                               #
+#################################################
 
 active_travel <- mdt %>%
   group_by(sampno,perno) %>%

@@ -11,7 +11,7 @@ library(cmapplot)
 #################################################
 
 # Load My Daily Travel
-setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
+setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
 
 # trips
 trips <- read_csv("place.csv") %>%
@@ -45,7 +45,7 @@ mdt <- mdt %>%
 
 # Load Travel Tracker
 # Downloaded from CMAP data portal; exported from Microsoft Access database to csv.
-setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/travel_tracker")
+setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2008 survey")
 
 # Household
 tt_hh <- read_csv("hh_public.csv") %>%
@@ -81,85 +81,70 @@ tt <- tt %>%
   filter(MPO==1 & DIST<=100 & weekend==0)
 
 
-# recode mode factors
+# recode mode factors and group into buckets
 mdt <- mdt %>%
   mutate(mode = factor(mode),
-         mode = recode(mode,
-                       "101" = "walk",
-                       "102" = "personal bike",
-                       "103" = "bike share",
-                       "104" = "bike share",
-                       "201" = "motorcyle",
-                       "202" = "personal auto (driver)",
-                       "203" = "personal auto (passenger)",
-                       "301" = "carpool",
-                       "401" = "school bus",
-                       "500" = "rail and bus",
-                       "501" = "bus",
-                       "502" = "paratransit",
-                       "503" = "paratransit",
-                       "504" = "paratransit",
-                       "505" = "train",
-                       "506" = "local transit",
-                       "509" = "transit",
-                       "601" = "private shuttle",
-                       "701" = "taxi",
-                       "702" = "private limo",
-                       "703" = "private car",
-                       "704" = "rideshare",
-                       "705" = "shared rideshare",
-                       "801" = "airplane",
-                       "997" = "other",
-                       "-9"  = "missing",
-                       "-1" = "beginning"))
+         mode = recode_factor(mode,
+                              !!!recode_mode_detailed_mdt))%>%
+  mutate(mode_c = fct_collapse(mode,
+                               !!!recode_mode_buckets_mdt))
 
 tt <- tt %>%
   mutate(MODE = factor(MODE),
-         MODE = recode(MODE,
-                       "1"  = "walk",
-                       "2"  = "bike",
-                       "3"  = "personal auto (driver)",
-                       "4"  = "personal auto (passenger)",
-                       "5"  = "CTA bus",
-                       "6"  = "CTA train",
-                       "7"  = "Pace",
-                       "8"  = "Metra",
-                       "9"  = "private shuttle",
-                       "10" = "paratransit",
-                       "11" = "school bus",
-                       "12" = "taxi",
-                       "14" = "local transit",
-                       "15" = "transit (many)",
-                       "97" = "other",
-                       "98" = "missing",
-                       "99" = "missing"))
+         MODE = recode_factor(MODE,
+                              !!!recode_mode_detailed_tt)) %>%
+  mutate(mode_c = fct_collapse(MODE,
+                               !!!recode_mode_buckets_tt))
 
-# condense into mode categories
+
+
+# Recode trip purposes and group into buckets for comparison
 mdt <- mdt %>%
-  mutate(mode_c = fct_collapse(mode,
-                               walk = "walk",
-                               bike = c("personal bike", "bike share"),
-                               transit = c("rail and bus", "bus", "train", "local transit", "transit"),
-                               driver = c("motorcyle", "personal auto (driver)"),
-                               passenger = c("personal auto (passenger)", "carpool"),
-                               other = c("school bus", "paratransit", "private shuttle",
-                                         "taxi", "private limo", "private car", "rideshare",
-                                         "shared rideshare", "airplane", "other"),
-                               missing = "missing",
-                               beginning = "beginning"))
+  mutate(tpurp = factor(tpurp)) %>%
+  mutate(tpurp = recode_factor(tpurp,
+                               !!!recode_tpurp_detailed_mdt)) %>%
+  mutate(tpurp_c = fct_collapse(tpurp,
+                                !!!recode_tpurp_buckets_mdt))
 
 tt <- tt %>%
-  mutate(mode_c = fct_collapse(MODE,
-                               walk = "walk",
-                               bike = "bike",
-                               transit = c("CTA bus", "CTA train", "Pace", "Metra",
-                                           "local transit", "transit (many)"),
-                               driver = "personal auto (driver)",
-                               passenger = "personal auto (passenger)",
-                               other = c("private shuttle", "paratransit", "school bus",
-                                         "taxi", "other"),
-                               missing = "missing"))
+  mutate(tpurp = factor(TPURP)) %>%
+  mutate(tpurp = recode_factor(tpurp,
+                               !!!recode_tpurp_detailed_tt)) %>%
+  mutate(tpurp_c = fct_collapse(tpurp,
+                                !!!recode_tpurp_buckets_tt))
 
+
+# Recode incomes and group into buckets for comparison
+mdt <- mdt %>%
+  mutate(income = factor(hhinc),
+         income = recode_factor(income,!!!recode_income_detailed_mdt)) %>%
+  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_mdt))
+
+tt <- tt %>%
+  mutate(income = factor(INCOM),
+         income = recode_factor(income,!!!recode_income_detailed_tt)) %>%
+  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_tt))
+
+
+# Recode into race and ethnicity groups
+mdt <- mdt %>%
+  mutate(race_eth = recode(race,
+                           "1" = "white",
+                           "2" = "black",
+                           "3" = "asian",
+                           "4" = "other",
+                           "5" = "other",
+                           "6" = "other",
+                           "97" = "other",
+                           "-8" = "missing",
+                           "-7" = "missing")) %>%
+  mutate(race_eth = case_when(
+    hisp == 1 ~ "hispanic",
+    TRUE ~ race_eth))
+
+
+
+setwd("~/GitHub/mydailytravel")
 
 #################################################
 #                                               #

@@ -57,7 +57,7 @@ mdt <- mdt %>%
 
 # Load Travel Tracker
 # Downloaded from CMAP data portal; exported from Microsoft Access database to csv.
-setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/travel_tracker")
+setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2008 survey")
 
 # Household
 tt_hh <- read_csv("hh_public.csv") %>%
@@ -175,6 +175,7 @@ tt <- tt %>%
          income = recode_factor(income,!!!recode_income_detailed_tt)) %>%
   mutate(income_c = fct_collapse(income,!!!recode_income_buckets_tt))
 
+setwd("~/GitHub/mydailytravel")
 
 #################################################
 #                                               #
