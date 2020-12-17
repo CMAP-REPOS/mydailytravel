@@ -13,7 +13,7 @@ library(cmapplot)
 #################################################
 
 # Load My Daily Travel
-setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
+setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
 
 # trips
 trips <- read_csv("place.csv") %>%
@@ -51,7 +51,7 @@ mdt <- mdt %>%
 
 # Load Travel Tracker
 # Downloaded from CMAP data portal; exported from Microsoft Access database to csv.
-setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/travel_tracker")
+setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/travel_tracker")
 
 # Household
 tt_hh <- read_csv("hh_public.csv") %>%
@@ -133,6 +133,43 @@ tt <- tt %>%
                                 !!!recode_tpurp_buckets_tt))
 
 
+
+# Recode incomes and group into buckets for comparison
+mdt <- mdt %>%
+  mutate(income = factor(hhinc),
+         income = recode_factor(income,!!!recode_income_detailed_mdt)) %>%
+  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_mdt))
+
+tt <- tt %>%
+  mutate(income = factor(INCOM),
+         income = recode_factor(income,!!!recode_income_detailed_tt)) %>%
+  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_tt))
+
+
+# Recode into race and ethnicity groups
+mdt <- mdt %>%
+  mutate(race_eth = recode(race,
+                           "1" = "white",
+                           "2" = "black",
+                           "3" = "asian",
+                           "4" = "other",
+                           "5" = "other",
+                           "6" = "other",
+                           "97" = "other",
+                           "-8" = "missing",
+                           "-7" = "missing")) %>%
+  mutate(race_eth = case_when(
+    hisp == 1 ~ "hispanic",
+    TRUE ~ race_eth))
+
+
+setwd("~/GitHub/mydailytravel")
+
+#################################################
+#                                               #
+#                  Analysis                     #
+#                                               #
+#################################################
 
 #### Mode breakdown of different dining trips
 
@@ -707,3 +744,17 @@ tnc_totals_plot <-
 finalize_plot(tnc_totals_plot,
               "Change in daily TNC and taxi trips, 2018 vs. 2008.",
               "Source: CMAP analysis of MDT and TT data.")
+
+
+
+##### Examination of TNC school trips
+
+### Filter data
+all_tnc_school_mdt <- mdt %>%
+  filter(age < 18 & age >= 5,
+         mode %in% c("rideshare","shared rideshare","taxi"),
+         tpurp_c == "school")
+
+all_tnc_school_mdt %>%
+  group_by(income_c, mode) %>%
+  summarize(trips = sum(wtperfin))
