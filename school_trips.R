@@ -12,7 +12,7 @@ library(cmapplot)
 #################################################
 
 # Load My Daily Travel
-setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
+setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
 
 # trips
 trips <- read_csv("place.csv") %>%
@@ -59,7 +59,7 @@ mdt <- mdt %>%
 
 # Load Travel Tracker
 # Downloaded from CMAP data portal; exported from Microsoft Access database to csv.
-setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/travel_tracker")
+setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2008 survey")
 
 # Household
 tt_hh <- read_csv("hh_public.csv") %>%
@@ -141,7 +141,7 @@ tt <- tt %>%
   mutate(income_c = fct_collapse(income,!!!recode_income_buckets_tt))
 
 
-setwd("~/Git/dlcomeaux/mydailytravel")
+setwd("~/GitHub/mydailytravel")
 
 
 #################################################
