@@ -3,8 +3,6 @@ library(ggplot2)
 library(tidyverse)
 library(cmapplot)
 
-
-
 #################################################
 #                                               #
 #                 Data Prep                     #
@@ -12,7 +10,7 @@ library(cmapplot)
 #################################################
 
 # Load My Daily Travel
-setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
+setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
 
 # trips
 trips <- read_csv("place.csv") %>%
@@ -66,7 +64,7 @@ mdt <- mdt %>%
 
 # Load Travel Tracker
 # Downloaded from CMAP data portal; exported from Microsoft Access database to csv.
-setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/travel_tracker")
+setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/travel_tracker")
 
 # Household
 tt_hh <- read_csv("hh_public.csv") %>%
@@ -201,7 +199,7 @@ mdt <- mdt %>%
     TRUE ~ race_eth))
 
 
-setwd("~/Git/dlcomeaux/mydailytravel")
+setwd("~/GitHub/mydailytravel")
 
 
 #################################################
@@ -433,3 +431,64 @@ finalize_plot(wfh_chart2,
               <br><br>
               Source: CMAP analysis of MDT data.",
               title_width = 2)
+
+# Specific analysis of work trips for individuals who report working from home (survey)
+wfh_worktrips_person_level <-
+  wfh_mdt %>%
+  filter(wfo_today == 1) %>%
+  filter(tpurp %in% c("Worked at fixed work location",
+                      "Worked at non-fixed work location",
+                      "Work related (off-site meeting)")) %>%
+  group_by(sampno,perno) %>%
+  summarize(pertrips = first(pertrips),
+            wfh = first(wfh),
+            wfh_today = first(wfh_today),
+            wfo_today = first(wfo_today),
+            distance_pg = sum(distance_pg, na.rm = TRUE),
+            travtime_pg = sum(travtime_pg, na.rm = TRUE),
+            wtperfin = first(wtperfin),
+            home_county = first(home_county)) %>%
+  ungroup()
+
+wfh_worktrips_general <-
+  wfh_worktrips_person_level %>%
+  mutate(cook = case_when(
+    home_county == "31" ~ 1,
+    TRUE ~ 0
+  )) %>%
+  group_by(wfh,cook) %>%
+  summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
+            pertrips = weighted.mean(pertrips, w = wtperfin),
+            travtime_pg = weighted.mean(travtime_pg, w = wtperfin)) %>%
+  pivot_longer(cols = distance_pg:travtime_pg) %>%
+  rename(flag = wfh)
+
+
+# Chart of work trips for individuals who report working from home sometimes but
+# worked from the office today vs. those who do not telecommute but worked from
+# the office today
+wfh_chart3 <-
+  wfh_worktrips_general %>%
+  mutate(flag = recode(flag,
+                       "0" = "Do not telecommute and worked from outside the home today",
+                       "1" = "Telecommute at least one day a week and worked from outside the home today"),
+         name = recode_factor(name,
+                              "distance_pg" = "Distance (mi.)",
+                              "pertrips" = "Trips",
+                              "travtime_pg" = "Travel time (min.)"),
+         cook = recode_factor(cook,
+                              "0" = "Rest of the region",
+                              "1" = "Cook County")) %>%
+  ggplot(aes(x = value, y = cook, fill = flag)) +
+  geom_col(position = position_dodge2(reverse = T)) +
+  facet_wrap(~name,scales = "free_x") +
+  theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),legend.max.columns = 1) +
+  cmap_fill_discrete(palette = "legislation")
+
+finalize_plot(wfh_chart3,
+              "Travel characteristics for individuals who telecommute vs. those who do not, on days when they are <i>not</i> telecommuting.",
+              "Note: These estimates are based on on answers given in
+              both the survey and travel diary components of MDT.
+              <br><br>
+              Source: CMAP analysis of MDT data.",
+              title_width = 2.5)
