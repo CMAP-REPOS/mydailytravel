@@ -31,11 +31,32 @@ hh <- read_csv("household.csv") %>%
 region <- read_csv("location.csv") %>%
   select(sampno, locno, out_region, county_fips, home)
 
+# home location flag
+home_wip <- region %>%
+  filter(home == 1) %>% # identify home locations
+  select(sampno,
+         home_county = county_fips) %>%
+  distinct() # keep distinct home locations based on sample
+
+# Some households are coded as having home locations in multiple counties. Identify them.
+two_homes <- (home_wip %>%
+                group_by(sampno) %>%
+                summarize(n = n()) %>%
+                filter(n > 1))$sampno
+
+# Replace multi-county samples with a county_fips of 999
+home <- home_wip %>%
+  mutate(home_county = case_when(
+    sampno %in% two_homes ~ 999,
+    TRUE ~ home_county)) %>%
+  distinct()
+
 # merge datasets
 mdt <- trips %>%
   inner_join(ppl, by = c("sampno", "perno")) %>%
   inner_join(hh, by = "sampno") %>%
   inner_join(region, by = c("sampno", "locno")) %>%
+  inner_join(home, by = c("sampno")) %>%
   filter(out_region==0 & distance<100)
 
 # add combined duration and distance for placeGroup trips
@@ -139,6 +160,25 @@ tt <- tt %>%
   mutate(income = factor(INCOM),
          income = recode_factor(income,!!!recode_income_detailed_tt)) %>%
   mutate(income_c = fct_collapse(income,!!!recode_income_buckets_tt))
+
+
+
+# Recode into race and ethnicity groups
+mdt <- mdt %>%
+  mutate(race_eth = recode(race,
+                           "1" = "white",
+                           "2" = "black",
+                           "3" = "asian",
+                           "4" = "other",
+                           "5" = "other",
+                           "6" = "other",
+                           "97" = "other",
+                           "-8" = "missing",
+                           "-7" = "missing")) %>%
+  mutate(race_eth = case_when(
+    hisp == 1 ~ "hispanic",
+    hisp == -7 | hisp == -8 ~ "missing",
+    TRUE ~ race_eth))
 
 
 setwd("~/GitHub/mydailytravel")
@@ -425,3 +465,108 @@ finalize_plot(school_distance_plot,
               (inclusive) that are greater than 0 miles.
               <br><br>
               Source: CMAP analysis of MDT and TT.")
+
+
+## What about travel times by race for school trips
+
+# Filter data for MDT
+school_time_race_mdt <-
+  all_school_mdt %>%
+  filter(
+    # Only include trips that are more than 0 minutes and less than 2.5 hours
+    travtime_pg < 150 & travtime_pg > 0,
+    # Exclude households with missing race and ethnicity information
+    race_eth != "missing") %>%
+  group_by(race_eth) %>%
+  summarize(travtime = weighted.mean(travtime_pg, w = wtperfin)) %>%
+  mutate(survey = "My Daily Travel (2018)")
+
+# Chart of travel time to school by household income
+school_time_race_plot <-
+  school_time_race_mdt %>%
+  ggplot(aes(x = reorder(race_eth,desc(travtime)), y = travtime)) +
+  geom_col(position = position_dodge2()) +
+  theme_cmap(gridlines = "h",
+             legend.position = "None")
+
+finalize_plot(school_time_race_plot,
+              "Travel time to school by race and ethnicity (minutes).",
+              "Note: Includes trips for travelers between 5 and 18 years old
+              (inclusive). Trips with no travel time or lasting 150 minutes or
+              more are excluded as outliers.
+              <br><br>
+              Source: CMAP analysis of MDT.")
+
+
+## What about trip distances by income for school trips
+
+# Repeat filtering from above (travel time) for trip distances
+school_distance_race_mdt <-
+  all_school_mdt %>%
+  filter(distance_pg > 0, # use distance_pg as it is the consolidated distance from the placegroup
+         race_eth != "missing") %>%
+  group_by(race_eth) %>%
+  summarize(tripdist = weighted.mean(distance_pg, w = wtperfin)) %>%
+  mutate(survey = "My Daily Travel (2018)")
+
+# Chart of trip distances by household income
+school_distance_race_plot <-
+  school_distance_race_mdt %>%
+  ggplot(aes(x = reorder(race_eth,desc(tripdist)), y = tripdist)) +
+  geom_col(position = position_dodge2()) +
+  theme_cmap(gridlines = "h",
+             legend.position = "None")
+
+finalize_plot(school_distance_race_plot,
+              "Trip distance to school by race and ethnicity (miles).",
+              "Note: Includes trips for travelers between 5 and 18 years old
+              (inclusive) that are greater than 0 miles.
+              <br><br>
+              Source: CMAP analysis of MDT and TT.")
+
+##### Run regressions on income and race and ethnicity
+
+all_school_mdt_lm <-
+  all_school_mdt %>%
+  filter(travtime_pg < 150) %>%
+  mutate(
+    white = case_when(
+      race_eth == "white" ~ 1,
+      TRUE ~ 0),
+    black = case_when(
+      race_eth == "black" ~ 1,
+      TRUE ~0),
+    high_inc = case_when(
+      income_c == "high" | income_c == "middle-high" ~ 1,
+      TRUE ~ 0),
+    car_trip = case_when(
+      mode_c_school == "driver" | mode_c == "passenger" ~ 1,
+      TRUE ~ 0),
+    school_bus = case_when(
+      mode_c_school == "school bus" ~ 1,
+      TRUE ~ 0),
+    transit = case_when(
+      mode_c_school == "transit" ~ 1,
+      TRUE ~ 0),
+    walk = case_when(
+      mode_c_school == "walk" ~ 1,
+      TRUE ~ 0),
+    bike = case_when(
+      mode_c_school == "bike" ~ 1,
+      TRUE ~ 0),
+    cook = case_when(
+      home_county == 31 ~ 1,
+      TRUE ~ 0))
+
+school_trips_regression <-
+  lm(travtime_pg ~ white + high_inc + distance_pg + cook +
+       car_trip + school_bus + transit + walk + bike,
+     all_school_mdt_lm,
+     weights = wtperfin)
+
+summary(school_trips_regression)
+
+
+all_school_mdt_lm %>%
+  ggplot(aes(x = travtime_pg, y = race_eth)) +
+  geom_boxplot()
