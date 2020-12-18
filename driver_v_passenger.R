@@ -29,12 +29,33 @@ hh <- read_csv("household.csv") %>%
 region <- read_csv("location.csv") %>%
   select(sampno, locno, out_region)
 
+# home location flag
+home_wip <- region %>%
+  filter(home == 1) %>% # identify home locations
+  select(sampno,
+         home_county = county_fips) %>%
+  distinct() # keep distinct home locations based on sample
+
+# Some households are coded as having home locations in multiple counties. Identify them.
+two_homes <- (home_wip %>%
+                group_by(sampno) %>%
+                summarize(n = n()) %>%
+                filter(n > 1))$sampno
+
+# Replace multi-county samples with a county_fips of 999
+home <- home_wip %>%
+  mutate(home_county = case_when(
+    sampno %in% two_homes ~ 999,
+    TRUE ~ home_county)) %>%
+  distinct()
+
 # merge datasets
 mdt <- trips %>%
   inner_join(ppl, by = c("sampno", "perno")) %>%
   inner_join(hh, by = "sampno") %>%
   inner_join(region, by = c("sampno", "locno")) %>%
-  filter(out_region==0 & distance<=100)
+  inner_join(home, by = c("sampno")) %>%
+  filter(out_region==0 & distance<100)
 
 # take care of collapsed trips with placeGroup
 mdt <- mdt %>%
