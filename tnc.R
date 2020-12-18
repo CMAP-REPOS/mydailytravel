@@ -12,11 +12,11 @@ library(cmapplot)
 #################################################
 
 # Load My Daily Travel
-setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
+setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
 
 # trips
 trips <- read_csv("place.csv") %>%
-  select(sampno, locno, perno, placeno, placeGroup, mode, distance, arrtime, deptime, travtime, tpurp)
+  select(sampno, locno, perno, placeno, placeGroup, mode, distance, arrtime, deptime, travtime, tpurp, hdist)
 
 # person info
 ppl <- read_csv("person.csv") %>%
@@ -30,11 +30,32 @@ hh <- read_csv("household.csv") %>%
 region <- read_csv("location.csv") %>%
   select(sampno, locno, out_region, county_fips, home)
 
+# home location flag
+home_wip <- region %>%
+  filter(home == 1) %>% # identify home locations
+  select(sampno,
+         home_county = county_fips) %>%
+  distinct() # keep distinct home locations based on sample
+
+# Some households are coded as having home locations in multiple counties. Identify them.
+two_homes <- (home_wip %>%
+                group_by(sampno) %>%
+                summarize(n = n()) %>%
+                filter(n > 1))$sampno
+
+# Replace multi-county samples with a county_fips of 999
+home <- home_wip %>%
+  mutate(home_county = case_when(
+    sampno %in% two_homes ~ 999,
+    TRUE ~ home_county)) %>%
+  distinct()
+
 # merge datasets
 mdt <- trips %>%
   inner_join(ppl, by = c("sampno", "perno")) %>%
   inner_join(hh, by = "sampno") %>%
   inner_join(region, by = c("sampno", "locno")) %>%
+  inner_join(home, by = c("sampno")) %>%
   filter(out_region==0 & distance<100)
 
 # add combined duration and distance for placeGroup trips
@@ -73,6 +94,32 @@ mdt <- mdt %>%
   mutate(tpurp_c = fct_collapse(tpurp,
                                 !!!recode_tpurp_buckets_mdt))
 
+# Recode incomes and group into buckets for comparison
+mdt <- mdt %>%
+  mutate(income = factor(hhinc),
+         income = recode_factor(income,!!!recode_income_detailed_mdt)) %>%
+  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_mdt))
+
+
+# Recode into race and ethnicity groups
+mdt <- mdt %>%
+  mutate(race_eth = recode(race,
+                           "1" = "white",
+                           "2" = "black",
+                           "3" = "asian",
+                           "4" = "other",
+                           "5" = "other",
+                           "6" = "other",
+                           "97" = "other",
+                           "-8" = "missing",
+                           "-7" = "missing")) %>%
+  mutate(race_eth = case_when(
+    hisp == 1 ~ "hispanic",
+    hisp == -7 | hisp == -8 ~ "missing",
+    TRUE ~ race_eth))
+
+
+setwd("~/GitHub/mydailytravel")
 
 #################################################
 #                                               #
@@ -82,14 +129,14 @@ mdt <- mdt %>%
 
 active_travel <- mdt %>%
   group_by(sampno,perno) %>%
-  summarize(takes_transit = sum(mode_c == "transit"),
-            takes_bike = sum(mode_c == "bike"),
-            takes_walk = sum(mode_c == "walk"),
-            takes_tnc = sum((mode == "rideshare") | mode == "shared rideshare")) %>%
+  summarize(takes_transit = sum(mode_c == "transit",na.rm = TRUE),
+            takes_bike = sum(mode_c == "bike",na.rm = TRUE),
+            takes_walk = sum(mode_c == "walk",na.rm = TRUE),
+            takes_tnc = sum((mode == "rideshare") | (mode == "shared rideshare"),na.rm = TRUE)) %>%
   mutate(takes_active = min(sum(takes_transit,takes_bike,takes_walk),1))
 
 
-tnc <- read_csv("person.csv") %>%
+tnc <- read_csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data/person.csv") %>%
   select(sampno,
          perno,
          age,
@@ -104,21 +151,22 @@ tnc <- read_csv("person.csv") %>%
          tnc_purp,
          disab,
          pertrips,
-         wtperfin) %>%
-  left_join(.,region %>% filter(home == 1) %>% select(sampno,county_fips) %>% distinct(),by = "sampno") %>%
-  left_join(.,hh %>% select(sampno,hhinc,hhveh), by = "sampno") %>%
+         wtperfin)
+
+tnc <- tnc %>%
+  inner_join(.,mdt %>% select(sampno,perno,income_c,hhveh,race_eth,home_county) %>% distinct(), by = c("sampno","perno")) %>%
   inner_join(.,active_travel, by = c("sampno","perno")) %>%
   mutate(n = 1,
-         county = as.character(county_fips),
+         county = as.character(home_county),
          white = case_when(
-           race == 1 ~ 1,
+           race_eth == "white" ~ 1,
            TRUE ~ 0
          ),
          high_income = case_when(
-           hhinc >= 8 ~ 1,
+           income_c %in% c("high","middle-high") ~ 1,
            TRUE ~ 0
          )) %>%
-  select(-county_fips)
+  select(-home_county)
 
 tnc <- tnc %>%
   tidyr::pivot_wider(
@@ -133,7 +181,7 @@ tnc <- tnc %>%
 
 foo <- tnc %>%
   filter(!(tnc_use %in% c(-9,-8,-1))) %>%
-  filter(!(hhinc %in% c(-9,-8,-7))) %>%
+  filter(income_c != "missing") %>%
   filter(!(hhveh %in% c(-9,-8,-7)),
          pertrips != -1,
          !(race %in% c(-8,-7))) %>%
