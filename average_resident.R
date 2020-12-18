@@ -12,7 +12,7 @@ library(forcats)
 #################################################
 
 # Load My Daily Travel
-setwd("C:/Users/Daniel/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
+setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
 
 # trips
 trips <- read_csv("place.csv") %>%
@@ -86,7 +86,7 @@ tt_hh <- read_csv("hh_public.csv") %>%
 
 # people
 tt_ppl <- read_csv("per_public.csv") %>%
-  select(SAMPN, PERNO, MPO, SURVEY, AGE, AGEB, HISP, RACE, WGTP, PTRIPS1,PTRIPS2)
+  select(SAMPN, PERNO, MPO_per = MPO, SURVEY, AGE, AGEB, HISP, RACE, WGTP, PTRIPS1,PTRIPS2)
 
 # trips
 #   day beginning/place #1 already null in mode var
@@ -223,37 +223,25 @@ avgtravel_mdt <- mdt %>%
     pertrips > 0) %>%
   mutate(hdist_pg_weight = hdist_pg * wtperfin)
 
-# home location flag
-home_mdt <- region %>%
-  filter(home == 1) %>%
-  select(sampno,county_fips) %>%
-  distinct()
-
 # Calculate total number of daily travelers who take at least one trip
 daily_travelers_mdt <-
   avgtravel_mdt %>%
-  left_join(.,
-               home_mdt,
-               by = "sampno") %>%
-  select(sampno,perno,wtperfin,county_fips) %>%
+  select(sampno,perno,wtperfin,home_county) %>%
   distinct() %>%
-  group_by(county_fips) %>%
+  group_by(home_county) %>%
   summarize(total_travelers = sum(wtperfin))
 
 daily_travelers_mdt <-
   daily_travelers_mdt %>%
   rbind(.,
-        tibble(county_fips = 999,
+        tibble(home_county = 1000,
                total_travelers = sum(daily_travelers_mdt$total_travelers)))
 
 # Calculate summary statistics by county
 avgtravel_mdt %>%
-  left_join(.,
-            home_mdt,
-            by = "sampno") %>%
   rbind(.,
-        avgtravel_mdt %>% mutate(county_fips = 999)) %>%
-  group_by(county_fips) %>%
+        avgtravel_mdt %>% mutate(home_county = 1000)) %>%
+  group_by(home_county) %>%
   summarize(
     total_distance = sum(hdist_pg_weight),
     total_trips = sum(wtperfin),
@@ -261,10 +249,10 @@ avgtravel_mdt %>%
   ) %>%
   left_join(.,
             daily_travelers_mdt,
-            by = "county_fips") %>%
+            by = "home_county") %>%
   mutate(distance_per_capita = total_distance / total_travelers,
          trips_per_capita = total_trips / total_travelers) %>%
-  filter(county_fips %in% c(cmap_counties,999)) %>%
+  filter(home_county %in% c(cmap_counties,1000)) %>%
   View()
 
 
@@ -333,13 +321,13 @@ daily_travelers_tt <-
 daily_travelers_tt <-
   daily_travelers_tt %>%
   rbind(.,
-        tibble(home_county = 999,
+        tibble(home_county = 1000,
                total_travelers = sum(daily_travelers_tt$total_travelers)))
 
 # Calculate summary statistics by county
 avgtravel_tt %>%
   rbind(.,
-        avgtravel_tt %>% mutate(home_county = 999)) %>%
+        avgtravel_tt %>% mutate(home_county = 1000)) %>%
   group_by(home_county) %>%
   summarize(
     total_distance = sum(dist_weight),
@@ -351,7 +339,7 @@ avgtravel_tt %>%
             by = "home_county") %>%
   mutate(distance_per_capita = total_distance / total_travelers,
          trips_per_capita = total_trips / total_travelers) %>%
-  filter(home_county %in% c(cmap_counties,999)) %>%
+  filter(home_county %in% c(cmap_counties,1000)) %>%
   View()
 
 
