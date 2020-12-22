@@ -154,7 +154,12 @@ tnc <- read_csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Pl
          wtperfin)
 
 tnc <- tnc %>%
-  inner_join(.,mdt %>% select(sampno,perno,income_c,hhveh,race_eth,home_county) %>% distinct(), by = c("sampno","perno")) %>%
+  inner_join(.,
+             mdt %>%
+               select(sampno,perno,income_c,hhveh,
+                      race_eth,home_county) %>%
+               distinct(),
+             by = c("sampno","perno")) %>%
   inner_join(.,active_travel, by = c("sampno","perno")) %>%
   mutate(n = 1,
          county = as.character(home_county),
@@ -165,8 +170,12 @@ tnc <- tnc %>%
          high_income = case_when(
            income_c %in% c("high","middle-high") ~ 1,
            TRUE ~ 0
-         )) %>%
-  select(-home_county)
+         ))
+
+# Age bins
+breaks <- c(-1, 10, 25, 30, 40, 50, 60, 70, 80, 90)
+age_labels <- c("5 to 9", "10 to 17", "18 to 29", "30 to 39", "40 to 49",
+                "50 to 59", "60 to 69", "70 to 79", "80 to 89")
 
 tnc <- tnc %>%
   tidyr::pivot_wider(
@@ -175,16 +184,17 @@ tnc <- tnc %>%
     id_cols = c(sampno:takes_active,white:high_income),
     values_from = n,
     names_prefix = 'county_',
-    values_fill = list(n = 0))
+    values_fill = list(n = 0)) %>%
+  mutate(age_bin = cut(age, breaks = breaks,
+                       labels = age_labels))
 
 
-
-foo <- tnc %>%
-  filter(!(tnc_use %in% c(-9,-8,-1))) %>%
+tnc_use_lm <- tnc %>%
+  filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
   filter(income_c != "missing") %>%
   filter(!(hhveh %in% c(-9,-8,-7)),
          pertrips != -1,
-         !(race %in% c(-8,-7))) %>%
+         race_eth != "missing") %>%
   #filter(county_fips == 31) %>%
   #group_by(county_fips) %>%
   lm(tnc_use ~
@@ -201,56 +211,57 @@ foo <- tnc %>%
       .,
       weights = wtperfin)
 
-summary(foo)
+summary(tnc_use_lm)
+
+
+
 
 ## There appears to be a positive correlation with TNC usage and transit use
 
 
-tnc_data %>%
-  filter(!(tnc_use %in% c(-9,-8,-1))) %>%
-  group_by(age_bucket) %>%
+
+### Age-based analysis
+
+
+
+## Look at usage by age
+tnc %>%
+  filter(!(tnc_use %in% c(-9,-8,-7,-1)),
+         !(is.na(age_bin))) %>%
+  group_by(age_bin) %>%
   summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
             n = n())
 
-tnc_data %>%
-  filter(tnc_cost >0) %>%
-  group_by(age_bucket) %>%
+# Cost by age
+tnc %>%
+  filter(tnc_cost >0,
+         !(is.na(age_bin))) %>%
+  group_by(age_bin) %>%
   summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
             n = n())
 
-# Breakdown by race
-tnc_data %>%
-  filter(!(race %in% c(-8,-7,-1))) %>%
+# Usage by race and ethnicity
+tnc %>%
+  filter(race_eth != "missing",
+         !(tnc_use %in% c(-9,-8,-7,-1))) %>%
+  group_by(race_eth) %>%
+  summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+            n = n())
+
+# Usage by home county
+tnc %>%
   filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
-  filter(county_fips != -9) %>%
-  mutate(race_ethn = case_when(
-    race == 1 & hisp != 1 ~ "White",
-    hisp == 1 ~ "Hispa",
-    race == 2 & hisp != 1 ~ "Black",
-    race == 3 & hisp != 1 ~ "Asian",
-    race == 4 & hisp != 1 ~ "Amer. Indian/AK Native",
-    race == 5 & hisp != 1 ~ "HI/Pac. Islander",
-    race == 6 & hisp != 1 ~ "Multiracial",
-    TRUE ~ "Other"
-  )) %>%
-  group_by(race,county_fips) %>%
+  filter(home_county %in% cmap_counties) %>%
+  group_by(home_county) %>%
   summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
             n = n()) %>%
-  View()
+  arrange(-tnc_use)
 
-# Breakdown by home location
-tnc_data %>%
-  filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
-  filter(county_fips != -9) %>%
-  group_by(county_fips) %>%
-  summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
-            n = n()) %>%
-  View()
-
-tnc_data %>%
+# Cost by home county
+tnc %>%
   filter(tnc_cost>0) %>%
-  filter(county_fips != -9) %>%
-  group_by(county_fips) %>%
+  filter(home_county %in% cmap_counties) %>%
+  group_by(home_county) %>%
   summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
             n = n()) %>%
-  View()
+  arrange(-tnc_cost)
