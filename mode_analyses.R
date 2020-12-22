@@ -65,9 +65,11 @@ mdt <- trips %>%
   filter(out_region==0 & distance<100)
 
 mdt <- mdt %>%
+  # distinct takes the first row for duplicates, so order by distance to get right mode
   arrange(desc(distance)) %>%
-  distinct(sampno, perno, placeGroup, .keep_all = TRUE)
-# distinct takes the first row for duplicates, so order by distance to get right mode
+  distinct(sampno, perno, placeGroup, .keep_all = TRUE) %>%
+  # add combined distance and time values calculated above
+  left_join(.,placeGroupStats, by = c("sampno","perno","placeGroup"))
 
 
 
@@ -202,12 +204,12 @@ setwd("~/GitHub/mydailytravel")
 
 ### Filter data
 all_dining_mdt <- mdt %>%
-  filter(age < 90 & age >= 5,
+  filter(age < 90 & age >= 5, distance_pg > 0,
          !(mode_c %in% c("missing","beginning")),
          tpurp_c == "dining")
 
 all_dining_tt <- tt %>%
-  filter(AGE < 90 & AGE >= 5,
+  filter(AGE < 90 & AGE >= 5, DIST > 0,
          mode_c != "missing",
          tpurp_c == "dining")
 
@@ -257,7 +259,7 @@ dining_plot <-
                                          "Ate / dined out")),
          survey = factor(survey, levels = c("tt","mdt"))) %>%
   mutate(survey = recode_factor(survey,
-                                mdt = "My Daily Travel (2018)",
+                                mdt = "My Daily Travel (2019)",
                                 tt = "Travel Tracker (2008)")) %>%
   ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = tpurp)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
@@ -267,7 +269,7 @@ dining_plot <-
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(dining_plot,
-              "Mode share of dining trips, 2018 vs. 2018.",
+              "Mode share of dining trips, 2008 vs. 2019.",
               "Source: CMAP analysis of MDT and TT data.")
 
 
@@ -337,7 +339,7 @@ health_plot <-
                                          "Visited a person staying at the hospital")),
          survey = factor(survey, levels = c("tt","mdt"))) %>%
   mutate(survey = recode_factor(survey,
-                                mdt = "My Daily Travel (2018)",
+                                mdt = "My Daily Travel (2019)",
                                 tt = "Travel Tracker (2008)")) %>%
   ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = tpurp)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
@@ -347,7 +349,7 @@ health_plot <-
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(health_plot,
-              "Mode share of health trips, 2018 vs. 2018.",
+              "Mode share of health trips, 2008 vs. 2019.",
               "Source: CMAP analysis of MDT and TT data.")
 
 
@@ -361,12 +363,12 @@ finalize_plot(health_plot,
 
 ### Filter data
 all_community_mdt <- mdt %>%
-  filter(age < 90 & age >= 5,
+  filter(age < 90 & age >= 5, distance_pg > 0,
          !(mode_c %in% c("missing","beginning")),
          tpurp_c == "community")
 
 all_community_tt <- tt %>%
-  filter(AGE < 90 & AGE >= 5,
+  filter(AGE < 90 & AGE >= 5, DIST > 0,
          mode_c != "missing",
          tpurp_c == "community")
 
@@ -454,7 +456,7 @@ community_plot <-
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(community_plot,
-              "Mode share of community trips, 2018 vs. 2018.",
+              "Mode share of community trips, 2008 vs. 2019.",
               "Source: CMAP analysis of MDT and TT data.",
               title_width = 1.8,
               width = 10)
@@ -468,12 +470,12 @@ finalize_plot(community_plot,
 
 ### Filter data
 all_passenger_mdt <- mdt %>%
-  filter(age < 90 & age >= 5,
+  filter(age < 90 & age >= 5, distance_pg > 0,
          mode_c == "passenger",
          tpurp_c != "Missing")
 
 all_passenger_tt <- tt %>%
-  filter(AGE < 90 & AGE >= 5,
+  filter(AGE < 90 & AGE >= 5, DIST > 0,
          mode_c == "passenger",
          tpurp_c != "Missing")
 
@@ -523,7 +525,7 @@ passenger_plot <-
          mode = factor(mode, levels = c("Passenger (all)","carpool","personal auto (passenger)"))) %>%
   mutate(survey = recode_factor(survey,
                                 "tt" = "Travel Tracker ('08)",
-                                "mdt" = "My Daily Travel ('18)")) %>%
+                                "mdt" = "My Daily Travel ('19)")) %>%
   ggplot(aes(y = reorder(tpurp_c,desc(-tpurp_c_pct)), x = tpurp_c_pct, fill = mode)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   facet_wrap(~survey,ncol = 1) +
@@ -532,7 +534,7 @@ passenger_plot <-
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(passenger_plot,
-              "Trip purposes of passenger trips, 2018 vs. 2008.",
+              "Trip purposes of passenger trips, 2008 vs. 2019.",
               "Note: Travel Tracker did not have a 'Carpool' category, and so
               'Passenger (all)' includes both types of trips.
               <br><br>
@@ -551,7 +553,7 @@ passenger_totals_plot <-
          mode = factor(mode, levels = c("Passenger (all)","carpool","personal auto (passenger)"))) %>%
   mutate(survey = recode_factor(survey,
                                 "tt" = "Travel Tracker ('08)",
-                                "mdt" = "My Daily Travel ('18)")) %>%
+                                "mdt" = "My Daily Travel ('19)")) %>%
   ggplot(aes(x = survey, y = total, fill = mode)) +
   geom_col() +
   theme_cmap() +
@@ -559,7 +561,7 @@ passenger_totals_plot <-
   scale_y_continuous(labels = scales::label_comma(scale = 1))
 
 finalize_plot(passenger_totals_plot,
-              "Change in daily automobile passenger trips, 2018 vs. 2008.",
+              "Change in daily automobile passenger trips, 2008 vs. 2019.",
               "Note: Travel Tracker did not have a 'Carpool' category, and so
               'Passenger (all)' includes both types of trips.
               <br><br>
@@ -575,12 +577,12 @@ finalize_plot(passenger_totals_plot,
 
 ### Filter data
 all_bike_mdt <- mdt %>%
-  filter(age < 90 & age >= 5,
+  filter(age < 90 & age >= 5, distance_pg > 0,
          mode_c == "bike",
          tpurp_c != "Missing")
 
 all_bike_tt <- tt %>%
-  filter(AGE < 90 & AGE >= 5,
+  filter(AGE < 90 & AGE >= 5, DIST > 0,
          mode_c == "bike",
          tpurp_c != "Missing")
 
@@ -630,7 +632,7 @@ bike_plot <-
          mode = factor(mode, levels = c("Bike (all)","bike share","personal bike"))) %>%
   mutate(survey = recode_factor(survey,
                                 "tt" = "Travel Tracker ('08)",
-                                "mdt" = "My Daily Travel ('18)")) %>%
+                                "mdt" = "My Daily Travel ('19)")) %>%
   ggplot(aes(y = reorder(tpurp_c,desc(-tpurp_c_pct)), x = tpurp_c_pct, fill = mode)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   facet_wrap(~survey,ncol = 1) +
@@ -639,7 +641,7 @@ bike_plot <-
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(bike_plot,
-              "Trip purposes of bike trips, 2018 vs. 2008.",
+              "Trip purposes of bike trips, 2008 vs. 2019.",
               "Note: Travel Tracker did not have a 'bike share' category, and so
               'Bike (all)' includes both types of trips.
               <br><br>
@@ -658,7 +660,7 @@ bike_totals_plot <-
          mode = factor(mode, levels = c("Bike (all)","bike share","personal bike"))) %>%
   mutate(survey = recode_factor(survey,
                                 "tt" = "Travel Tracker ('08)",
-                                "mdt" = "My Daily Travel ('18)")) %>%
+                                "mdt" = "My Daily Travel ('19)")) %>%
   ggplot(aes(x = survey, y = total, fill = mode)) +
   geom_col() +
   theme_cmap() +
@@ -666,7 +668,7 @@ bike_totals_plot <-
   scale_y_continuous(labels = scales::label_comma(scale = 1))
 
 finalize_plot(bike_totals_plot,
-              "Change in daily bike trips, 2018 vs. 2008.",
+              "Change in daily bike trips, 2008 vs. 2019.",
               "Note: Travel Tracker did not have a 'bike share' category, and so
               'Bike (all)' includes both types of trips.
               <br><br>
@@ -681,12 +683,12 @@ finalize_plot(bike_totals_plot,
 
 ### Filter data
 all_tnc_mdt <- mdt %>%
-  filter(age < 90 & age >= 5,
+  filter(age < 90 & age >= 5, distance_pg > 0,
          mode %in% c("rideshare","shared rideshare","taxi"),
          tpurp_c != "Missing")
 
 all_tnc_tt <- tt %>%
-  filter(AGE < 90 & AGE >= 5,
+  filter(AGE < 90 & AGE >= 5, DIST > 0,
          MODE == "taxi",
          tpurp_c != "Missing")
 
@@ -743,7 +745,7 @@ tnc_plot <-
   cmap_fill_discrete(palette = "legislation")
 
 finalize_plot(tnc_plot,
-              "Trip purposes of TNC and taxi trips, 2018.",
+              "Trip purposes of TNC and taxi trips, 2019.",
               "Source: CMAP analysis of MDT and TT data.",
               title_width = 1.8,
               width = 10)
@@ -758,7 +760,7 @@ tnc_totals_plot <-
          mode = factor(mode, levels = c("shared rideshare","rideshare","taxi"))) %>%
   mutate(survey = recode_factor(survey,
                                 "tt" = "Travel Tracker ('08)",
-                                "mdt" = "My Daily Travel ('18)")) %>%
+                                "mdt" = "My Daily Travel ('19)")) %>%
   ggplot(aes(x = survey, y = total, fill = mode)) +
   geom_col() +
   theme_cmap() +
@@ -766,7 +768,7 @@ tnc_totals_plot <-
   scale_y_continuous(labels = scales::label_comma(scale = 1))
 
 finalize_plot(tnc_totals_plot,
-              "Change in daily TNC and taxi trips, 2018 vs. 2008.",
+              "Change in daily TNC and taxi trips, 2008 vs. 2019.",
               "Source: CMAP analysis of MDT and TT data.")
 
 
@@ -775,7 +777,7 @@ finalize_plot(tnc_totals_plot,
 
 ### Filter data
 all_tnc_school_mdt <- mdt %>%
-  filter(age < 18 & age >= 5,
+  filter(age < 18 & age >= 5,  distance_pg > 0,
          mode %in% c("rideshare","shared rideshare","taxi"),
          tpurp_c == "school")
 
