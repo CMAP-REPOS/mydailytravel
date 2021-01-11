@@ -77,7 +77,7 @@ finalize_plot(chart1,
               travelers younger than 18 and older than 90.<br><br>
               Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
               filename = "dp_foo_1",
-              mode = "png"
+              mode = "plot"
               )
 
 rbind(d_vs_p_age_mdt, d_vs_p_age_tt) %>%
@@ -132,7 +132,7 @@ finalize_plot(chart_passengers_income,
               travelers younger than 5 and older than 90.<br><br>
               Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
               filename = "dp_foo_2",
-              mode = "png"
+              mode = "plot"
 )
 
 
@@ -169,5 +169,5 @@ finalize_plot(chart_passengers_race,
               travelers younger than 5 and older than 90.<br><br>
               Source: CMAP analysis of My Daily Travel surveys.",
               filename = "dp_foo_3",
-              mode = "png"
+              mode = "plot"
 )

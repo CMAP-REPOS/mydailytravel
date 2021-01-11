@@ -101,7 +101,7 @@ finalize_plot(school_pct_plot,
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
               filename = "school_foo_1",
-              mode = "png")
+              mode = "plot")
 
 # Chart of absolute numbers of school trips, MDT vs TT
 school_abs_plot <-

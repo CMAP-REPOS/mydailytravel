@@ -119,7 +119,7 @@ daily_travelers_tt_test <-
       )) %>%
   filter(age5 == 1,
          notravel == 0,
-         MPO == 1)
+         MPO_per == 1)
 
 daily_travelers_tt_test %>%
   summarize(sum = sum(WGTP))
@@ -129,7 +129,7 @@ daily_travelers_tt_test %>%
 daily_travelers_tt <-
   avgtravel_tt %>%
   select(SAMPN,PERNO,DAYNO,weight,home_county) %>%
-  distinct() %>% View()
+  distinct() %>%
   group_by(home_county) %>%
   summarize(total_travelers = sum(weight))
 
@@ -182,3 +182,4 @@ avgtravel_tt %>%
   select(SAMPN,PERNO,DAYNO,pertrips,weight) %>%
   distinct() %>%
   summarize(total_trips = weighted.mean(pertrips,weight))
+

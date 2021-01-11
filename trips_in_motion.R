@@ -68,7 +68,7 @@ possible_modes_detailed <- tibble(mode = unique(tim_mdt_wip$mode))
 possible_tpurp <- tibble(tpurp = unique(tim_mdt_wip$tpurp))
 possible_mode_tpurp <- tibble(mode_tpurp = unique(tim_mdt_wip$mode_tpurp))
 possible_mode_tpurp_c <- tibble(mode_tpurp_c = unique(tim_mdt_wip$mode_tpurp_c))
-possible_buckets <- tibble(trip_bucket = unique(tim_mdt_wip$trip_bucket))
+possible_buckets <- tibble(chain_bucket = unique(tim_mdt_wip$chain_bucket))
 
 # Calculate trips in motion by mode
 trip_times <-
@@ -224,11 +224,11 @@ trip_times_bucket_mdt <- trip_times %>%
   # Calculate the number of trips that meet the criteria (in the interval and correct bucket)
   mutate(bucket_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
     x %within% tim_mdt_wip$trip_interval &
-      y == tim_mdt_wip$trip_bucket)]),
+      y == tim_mdt_wip$chain_bucket)]),
     time_band,
-    trip_bucket
+    chain_bucket
   )) %>%
-  group_by(trip_bucket) %>%
+  group_by(chain_bucket) %>%
   # Calculate rolling average
   mutate(rolling_bucket_count = slide_dbl(bucket_count, mean, .before = 2, .after = 2)) %>%
   ungroup()
@@ -236,7 +236,7 @@ trip_times_bucket_mdt <- trip_times %>%
 
 chart7 <- trip_times_bucket_mdt %>%
   ggplot(aes(x = time_band,y = rolling_bucket_count)) +
-  geom_area(aes(fill = reorder(trip_bucket,desc(trip_bucket)))) +
+  geom_area(aes(fill = reorder(chain_bucket,desc(chain_bucket)))) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
