@@ -19,7 +19,8 @@ source("data_cleaning.R")
 #                                               #
 #################################################
 
-active_travel <- mdt %>%
+active_travel <-
+  mdt %>%
   group_by(sampno,perno) %>%
   summarize(takes_transit = sum(mode_c == "transit",na.rm = TRUE),
             takes_bike = sum(mode_c == "bike",na.rm = TRUE),
@@ -28,7 +29,7 @@ active_travel <- mdt %>%
   mutate(takes_active = min(sum(takes_transit,takes_bike,takes_walk),1))
 
 
-tnc <- read_csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data/person.csv") %>%
+tnc_base <- read_csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data/person.csv") %>%
   select(sampno,
          perno,
          age,
@@ -45,14 +46,35 @@ tnc <- read_csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Pl
          pertrips,
          wtperfin)
 
-tnc <- tnc %>%
-  inner_join(.,
-             mdt %>%
-               select(sampno,perno,income_c,hhveh,
-                      race_eth,home_county) %>%
-               distinct(),
-             by = c("sampno","perno")) %>%
-  inner_join(.,active_travel, by = c("sampno","perno")) %>%
+source("recoding.R")
+
+tnc <-
+  tnc_base %>%                          # 30,683 records
+  # Add home county
+  inner_join(home, by = "sampno") %>%   # 30,683 records
+  # Add household statistics
+  inner_join(hh, by = "sampno") %>%     # 30,683 records
+  # Recode race and ethnicity (uses same logic as recoding.R)
+  mutate(race_eth =
+           recode(race,
+                  "1" = "white","2" = "black",
+                  "3" = "asian","4" = "other",
+                  "5" = "other","6" = "other",
+                  "97" = "other","-8" = "missing",
+                  "-7" = "missing")) %>%
+  # Recode Hispanic status (uses same logic as recoding.R)
+  mutate(race_eth = case_when(
+    hisp == 1 ~ "hispanic",
+    TRUE ~ race_eth))  %>%
+  # Bucket household income (uses same logic as recoding.R)
+  mutate(income = factor(hhinc),
+         income = recode_factor(income,!!!recode_income_detailed_mdt)) %>%
+  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_mdt)) %>%
+  # Add information on active travel from above
+  left_join(active_travel, by = c("sampno","perno")) %>%
+  # Add 0s for people with no travelers (who otherwise are NAs)
+  mutate(across(starts_with("takes_"),~replace(.,is.na(.),0))) %>%
+  # Create dummy variables for analysis
   mutate(n = 1,
          county = as.character(home_county),
          white = case_when(
@@ -64,11 +86,20 @@ tnc <- tnc %>%
            TRUE ~ 0
          ))
 
+# Remove recode helpers
+rm(recode_income_buckets_mdt,recode_income_buckets_tt,
+   recode_mode_buckets_mdt,recode_mode_buckets_tt,
+   recode_tpurp_buckets_mdt,recode_tpurp_buckets_tt,
+   recode_income_detailed_mdt,recode_income_detailed_tt,
+   recode_mode_detailed_mdt,recode_mode_detailed_tt,
+   recode_tpurp_detailed_mdt,recode_tpurp_detailed_tt)
+
 # Age bins
-breaks <- c(-1, 10, 25, 30, 40, 50, 60, 70, 80, 90)
+breaks <- c(-1, 10, 18, 30, 40, 50, 60, 70, 80, 90)
 age_labels <- c("5 to 9", "10 to 17", "18 to 29", "30 to 39", "40 to 49",
                 "50 to 59", "60 to 69", "70 to 79", "80 to 89")
 
+# Reshape data
 tnc <- tnc %>%
   tidyr::pivot_wider(
     .,
@@ -80,7 +111,7 @@ tnc <- tnc %>%
   mutate(age_bin = cut(age, breaks = breaks,
                        labels = age_labels))
 
-
+# Run linear regression
 tnc_use_lm <- tnc %>%
   filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
   filter(income_c != "missing") %>%
