@@ -1,4 +1,3 @@
-
 library(ggplot2)
 library(tidyverse)
 library(cmapplot)
@@ -18,9 +17,10 @@ source("data_cleaning.R")
 #################################################
 
 # Create working dataset
-wfh_mdt <- mdt %>%
+wfh_mdt <-
+  mdt %>% # 125,103 records
   # keep only employed respondents
-  filter(emply_ask == 1) %>%
+  filter(emply_ask == 1) %>% # 83,035 records
   # Create a flag for people who work from home
   mutate(wfh = case_when(
     tcdays >= 1 ~ 1,
@@ -49,22 +49,22 @@ wfh_mdt <- mdt %>%
 
 
 # Breakdown of wfh behavior by household income
-wfh_mdt %>%
-  filter(income_c != "missing") %>%
+wfh_mdt %>% # 83,035 records
+  filter(income_c != "missing") %>% # 82,443 records
   group_by(income_c) %>%
   summarize(wfh_pct = weighted.mean(x = wfh,w = wtperfin),
             wfh_today_pct = weighted.mean(x = wfh_today, w = wtperfin))
 
 # Breakdown of wfh behavior by home county
-wfh_mdt %>%
-  filter(home_county %in% cmap_counties) %>%
+wfh_mdt %>% # 83,035 records
+  filter(home_county %in% cmap_counties) %>% # 81,017 records
   group_by(home_county) %>%
   summarize(wfh_pct = weighted.mean(x = wfh,w = wtperfin),
             wfh_today_pct = weighted.mean(x = wfh_today, w = wtperfin))
 
 # Breakdown of wfh behavior by race and ethnicity
-wfh_mdt %>%
-  filter(race_eth != "missing") %>%
+wfh_mdt %>% # 83,035 records
+  filter(race_eth != "missing") %>% # 82,760 records
   group_by(race_eth) %>%
   summarize(wfh_pct = weighted.mean(x = wfh,w = wtperfin),
             wfh_today_pct = weighted.mean(x = wfh_today, w = wtperfin))
@@ -72,8 +72,8 @@ wfh_mdt %>%
 
 # Summarize data at the traveler level
 wfh_person_level <-
-  wfh_mdt %>%
-  group_by(sampno,perno) %>%
+  wfh_mdt %>% # 83,035 records
+  group_by(sampno,perno) %>% # 17,528 groups
   summarize(pertrips = first(pertrips),
             wfh = first(wfh),
             wfh_today = first(wfh_today),
