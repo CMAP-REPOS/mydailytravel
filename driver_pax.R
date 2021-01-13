@@ -1,8 +1,5 @@
-
 library(cmapplot)
 library(tidyverse)
-
-
 
 #################################################
 #                                               #
@@ -18,48 +15,64 @@ source("data_cleaning.R")
 #                                               #
 #################################################
 # Age bins
-breaks <- c(-1, 10, 25, 30, 40, 50, 60, 70, 80, 90)
+breaks <- c(-1, 10, 18, 30, 40, 50, 60, 70, 80, 90)
 age_labels <- c("5 to 9", "10 to 17", "18 to 29", "30 to 39", "40 to 49",
                 "50 to 59", "60 to 69", "70 to 79", "80 to 89")
 
-mdt_d_and_p <- mdt %>%
+driver_pax_mdt <-
+  mdt %>%                        # 125,103 records
+  filter(age < 90,               # 125,006 records
+         age >= 5 |              # 125,002 records
+           aage %in% c(2,3,4,5,6,7) |
+           schol %in% c(4,5,6,7,8) |
+           sampno %in% c(70038312,
+                         70051607),
+         distance_pg > 0,        # 96,857 records
+         mode_c %in% c("driver", # 69,313 records
+                       "passenger")) %>%
   mutate(age_bin = cut(age, breaks = breaks,
-                       labels = age_labels)) %>%
-  filter(age < 90,age>=5,
-         mode_c %in% c("driver","passenger"),
-         distance_pg > 0)
+                     labels = age_labels))
 
-tt_d_and_p <- tt %>%
+driver_pax_tt <-
+  tt %>%                         # 140,751 records
+  filter(AGE < 90,               # 137,844 records
+         AGE >= 5 |              # 131,082 records
+           SCHOL %in% c(4,5,6,7,8),
+         DIST > 0,               # 98,800 records
+         mode_c %in% c("driver", # 80,473 records
+                       "passenger")) %>%
   mutate(age_bin = cut(AGE, breaks = breaks,
-                       labels = age_labels)) %>%
-  filter(AGE < 90,AGE>=5,PLANO!=1,
-         mode_c %in% c("driver","passenger"),
-         DIST > 0)
+                       labels = age_labels))
 
-d_and_p_total_mdt <- mdt_d_and_p %>%
+driver_pax_total_mdt <-
+  driver_pax_mdt %>%
   group_by(age_bin) %>%
   summarise(total = sum(wthhfin))
 
-d_vs_p_age_mdt <- mdt_d_and_p %>%
+driver_pax_age_mdt <-
+  driver_pax_mdt %>%
   group_by(age_bin, mode_c) %>%
   summarise(mode_count = sum(wthhfin)) %>%
-  left_join(d_and_p_total_mdt, by = "age_bin") %>%
+  left_join(driver_pax_total_mdt, by = "age_bin") %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "2019 - My Daily Travel")
 
-d_and_p_total_tt <- tt_d_and_p %>%
+driver_pax_total_tt <-
+  driver_pax_tt %>%
   group_by(age_bin) %>%
   summarise(total = sum(weight))
 
-d_vs_p_age_tt <- tt_d_and_p %>%
+driver_pax_age_tt <-
+  driver_pax_tt %>%
   group_by(age_bin, mode_c) %>%
   summarise(mode_count = sum(weight)) %>%
-  left_join(d_and_p_total_tt, by = "age_bin") %>%
+  left_join(driver_pax_total_tt, by = "age_bin") %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "2008 - Travel Tracker")
 
-chart1 <- rbind(d_vs_p_age_mdt %>% select(age_bin,mode_c,mode_share,survey),
-      d_vs_p_age_tt  %>% select(age_bin,mode_c,mode_share,survey)) %>%
+chart1 <-
+  rbind(driver_pax_age_mdt %>% select(age_bin,mode_c,mode_share,survey),
+      driver_pax_age_tt  %>% select(age_bin,mode_c,mode_share,survey)) %>%
   mutate(label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
   filter(mode_c == "passenger" & age_bin != "5 to 9" & age_bin != "10 to 17") %>%
   ggplot(aes(y = age_bin, x = mode_share, fill = survey)) +
@@ -80,7 +93,7 @@ finalize_plot(chart1,
               mode = "plot"
               )
 
-rbind(d_vs_p_age_mdt, d_vs_p_age_tt) %>%
+rbind(driver_pax_age_mdt, driver_pax_age_tt) %>%
   group_by(mode_c,survey) %>%
   summarize(mode_count = sum(mode_count)) %>%
   pivot_wider(id_cols = c("survey"),names_from = "mode_c",values_from = c("mode_count")) %>%
@@ -89,25 +102,27 @@ rbind(d_vs_p_age_mdt, d_vs_p_age_tt) %>%
 
 ### Same analysis, looking at income instead
 
-d_and_p_total_inc_mdt <- mdt_d_and_p %>%
+driver_pax_total_inc_mdt <-
+  driver_pax_mdt %>%
   group_by(income_c) %>%
   summarise(total = sum(wthhfin))
 
-d_vs_p_inc_mdt <- mdt_d_and_p %>%
+d_vs_p_inc_mdt <-
+  driver_pax_mdt %>%
   group_by(income_c, mode_c) %>%
   summarise(mode_count = sum(wthhfin)) %>%
-  left_join(d_and_p_total_inc_mdt, by = "income_c") %>%
+  left_join(driver_pax_total_inc_mdt, by = "income_c") %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "2019 - My Daily Travel")
 
-d_and_p_total_inc_tt <- tt_d_and_p %>%
+driver_pax_total_inc_tt <- driver_pax_tt %>%
   group_by(income_c) %>%
   summarise(total = sum(weight))
 
-d_vs_p_inc_tt <- tt_d_and_p %>%
+d_vs_p_inc_tt <- driver_pax_tt %>%
   group_by(income_c, mode_c) %>%
   summarise(mode_count = sum(weight)) %>%
-  left_join(d_and_p_total_inc_tt, by = "income_c") %>%
+  left_join(driver_pax_total_inc_tt, by = "income_c") %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "2008 - Travel Tracker")
 
@@ -140,14 +155,14 @@ finalize_plot(chart_passengers_income,
 ### since TT only asked about race and ethnicity for primary household
 ### responder.
 
-d_and_p_total_race_mdt <- mdt_d_and_p %>%
+driver_pax_total_race_mdt <- driver_pax_mdt %>%
   group_by(race_eth) %>%
   summarise(total = sum(wthhfin))
 
-d_vs_p_race_mdt <- mdt_d_and_p %>%
+d_vs_p_race_mdt <- driver_pax_mdt %>%
   group_by(race_eth, mode_c) %>%
   summarise(mode_count = sum(wthhfin)) %>%
-  left_join(d_and_p_total_race_mdt, by = "race_eth") %>%
+  left_join(driver_pax_total_race_mdt, by = "race_eth") %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "2019 - My Daily Travel")
 
