@@ -319,10 +319,11 @@ finalize_plot(community_plot,
 ### Filter data
 all_tnc_school_mdt <-
   mdt_base_1 %>%                         # 96,821 records
-  filter(age < 18,                       # 14,445 records
+  filter(age <= 18,                      # 15,495 records
+         schol %in% c(3,4),              # 13,879 records
          mode %in% c("rideshare",
                      "shared rideshare",
-                     "taxi"),            # 28 records
+                     "taxi"),            # 31 records
          tpurp_c == "school")            # 11 records
 
 all_tnc_school_mdt %>%
