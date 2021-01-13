@@ -90,7 +90,7 @@ tt_hh <- read_csv("hh_public.csv") %>%
 
 # people
 tt_ppl <- read_csv("per_public.csv") %>%
-  select(SAMPN, PERNO, MPO_per = MPO, SURVEY, PTRIPS1, PTRIPS2, AGE, AGEB, HISP, RACE, WGTP)
+  select(SAMPN, PERNO, MPO_per = MPO, SURVEY, PTRIPS1, PTRIPS2, AGE, AGEB, SCHOL, HISP, RACE, WGTP)
 
 # trips
 tt_place <- read_csv("place_public.csv") %>%
