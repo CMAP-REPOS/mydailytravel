@@ -70,7 +70,7 @@ driver_pax_age_tt <-
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "2008 - Travel Tracker")
 
-chart1 <-
+driver_pax_p1 <-
   rbind(driver_pax_age_mdt %>% select(age_bin,mode_c,mode_share,survey),
       driver_pax_age_tt  %>% select(age_bin,mode_c,mode_share,survey)) %>%
   mutate(label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
@@ -83,13 +83,13 @@ chart1 <-
   scale_x_continuous(labels = scales::label_percent(),limits = c(0,.30))
 
 
-finalize_plot(chart1,
+finalize_plot(driver_pax_p1,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver, over time.",
               caption = "Note: Excludes trips out of the CMAP region, as well as
               travelers younger than 18 and older than 90.<br><br>
               Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
-              filename = "dp_foo_1",
+              filename = "driver_pax_p1",
               mode = "plot"
               )
 
@@ -107,7 +107,7 @@ driver_pax_total_inc_mdt <-
   group_by(income_c) %>%
   summarise(total = sum(wthhfin))
 
-d_vs_p_inc_mdt <-
+driver_pax_inc_mdt <-
   driver_pax_mdt %>%
   group_by(income_c, mode_c) %>%
   summarise(mode_count = sum(wthhfin)) %>%
@@ -119,16 +119,18 @@ driver_pax_total_inc_tt <- driver_pax_tt %>%
   group_by(income_c) %>%
   summarise(total = sum(weight))
 
-d_vs_p_inc_tt <- driver_pax_tt %>%
+driver_pax_inc_tt <- driver_pax_tt %>%
   group_by(income_c, mode_c) %>%
   summarise(mode_count = sum(weight)) %>%
   left_join(driver_pax_total_inc_tt, by = "income_c") %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "2008 - Travel Tracker")
 
-chart_passengers_income <- rbind(d_vs_p_inc_mdt %>%
+
+# Chart of drivers and passengers by income
+driver_pax_p2 <- rbind(driver_pax_inc_mdt %>%
                                    select(income_c,mode_c,mode_share,survey),
-                                 d_vs_p_inc_tt  %>%
+                                 driver_pax_inc_tt  %>%
                                    select(income_c,mode_c,mode_share,survey)) %>%
   filter(mode_c == "passenger", income_c != "missing") %>%
   mutate(label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
@@ -140,13 +142,13 @@ chart_passengers_income <- rbind(d_vs_p_inc_mdt %>%
   scale_x_continuous(labels = scales::label_percent(),limits = c(0,.35))
 
 
-finalize_plot(chart_passengers_income,
+finalize_plot(driver_pax_p2,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver, over time.",
               caption = "Note: Excludes trips out of the CMAP region, as well as
               travelers younger than 5 and older than 90.<br><br>
               Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
-              filename = "dp_foo_2",
+              filename = "driver_pax_p2",
               mode = "plot"
 )
 
@@ -155,11 +157,13 @@ finalize_plot(chart_passengers_income,
 ### since TT only asked about race and ethnicity for primary household
 ### responder.
 
-driver_pax_total_race_mdt <- driver_pax_mdt %>%
+driver_pax_total_race_mdt <-
+  driver_pax_mdt %>%
   group_by(race_eth) %>%
   summarise(total = sum(wthhfin))
 
-d_vs_p_race_mdt <- driver_pax_mdt %>%
+driver_pax_race_mdt <-
+  driver_pax_mdt %>%
   group_by(race_eth, mode_c) %>%
   summarise(mode_count = sum(wthhfin)) %>%
   left_join(driver_pax_total_race_mdt, by = "race_eth") %>%
@@ -167,7 +171,8 @@ d_vs_p_race_mdt <- driver_pax_mdt %>%
   mutate(survey = "2019 - My Daily Travel")
 
 
-chart_passengers_race <- d_vs_p_race_mdt %>%
+driver_pax_p3 <-
+  driver_pax_race_mdt %>%
   select(race_eth,mode_c,mode_share,survey) %>%
   filter(mode_c == "passenger", race_eth != "missing") %>%
   ggplot(aes(y = reorder(race_eth,desc(mode_share)), x = mode_share, fill = survey)) +
@@ -177,12 +182,19 @@ chart_passengers_race <- d_vs_p_race_mdt %>%
   scale_x_continuous(labels = scales::label_percent())
 
 
-finalize_plot(chart_passengers_race,
+finalize_plot(driver_pax_p3,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver.",
               caption = "Note: Excludes trips out of the CMAP region, as well as
               travelers younger than 5 and older than 90.<br><br>
               Source: CMAP analysis of My Daily Travel surveys.",
-              filename = "dp_foo_3",
+              filename = "driver_pax_p3",
               mode = "plot"
 )
+
+rm(driver_pax_race_mdt,driver_pax_total_inc_mdt,driver_pax_total_inc_tt,
+   driver_pax_total_mdt,driver_pax_total_race_mdt,driver_pax_total_tt,
+   driver_pax_tt,driver_pax_age_mdt,driver_pax_age_tt,driver_pax_inc_mdt,
+   driver_pax_inc_tt,driver_pax_mdt,age_labels,breaks,driver_pax_p1,
+   driver_pax_p2,driver_pax_p3)
+
