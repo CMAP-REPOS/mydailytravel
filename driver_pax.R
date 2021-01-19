@@ -22,13 +22,9 @@ age_labels <- c("5 to 9", "10 to 17", "18 to 29", "30 to 39", "40 to 49",
 driver_pax_mdt <-
   mdt %>%                        # 125,103 records
   filter(age < 90,               # 125,006 records
-         age >= 5 |              # 125,002 records
-           aage %in% c(2,3,4,5,6,7) |
-           schol %in% c(4,5,6,7,8) |
-           sampno %in% c(70038312,
-                         70051607),
-         distance_pg > 0,        # 96,857 records
-         mode_c %in% c("driver", # 69,313 records
+         age >= 5,               # 124,758 records
+         distance_pg > 0,        # 96,674 records
+         mode_c %in% c("driver", # 69,165 records
                        "passenger")) %>%
   mutate(age_bin = cut(age, breaks = breaks,
                      labels = age_labels))
@@ -36,8 +32,7 @@ driver_pax_mdt <-
 driver_pax_tt <-
   tt %>%                         # 140,751 records
   filter(AGE < 90,               # 137,844 records
-         AGE >= 5 |              # 131,082 records
-           SCHOL %in% c(4,5,6,7,8),
+         AGE >= 5,               # 131,082 records
          DIST > 0,               # 98,800 records
          mode_c %in% c("driver", # 80,473 records
                        "passenger")) %>%
@@ -85,12 +80,15 @@ driver_pax_p1 <-
 
 finalize_plot(driver_pax_p1,
               title = "Share of weekday car trips in the CMAP region where the
-              traveler is a passenger and not a driver, over time.",
+              traveler is a passenger and not a driver, over time and by age.",
               caption = "Note: Excludes trips out of the CMAP region, as well as
-              travelers younger than 18 and older than 90.<br><br>
+              travelers younger than 18 and older than 89.<br><br>
               Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p1",
-              mode = "plot"
+              mode = "png",
+              width = 11.3,
+              height = 6.3,
+              overwrite = T
               )
 
 rbind(driver_pax_age_mdt, driver_pax_age_tt) %>%
@@ -144,12 +142,16 @@ driver_pax_p2 <- rbind(driver_pax_inc_mdt %>%
 
 finalize_plot(driver_pax_p2,
               title = "Share of weekday car trips in the CMAP region where the
-              traveler is a passenger and not a driver, over time.",
+              traveler is a passenger and not a driver, over time and by income.",
               caption = "Note: Excludes trips out of the CMAP region, as well as
-              travelers younger than 5 and older than 90.<br><br>
+              travelers younger than 5 and older than 89.<br><br>
               Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p2",
-              mode = "plot"
+              mode = "png",
+              width = 11.3,
+              height = 6.3,
+              overwrite = T
+
 )
 
 
@@ -175,21 +177,27 @@ driver_pax_p3 <-
   driver_pax_race_mdt %>%
   select(race_eth,mode_c,mode_share,survey) %>%
   filter(mode_c == "passenger", race_eth != "missing") %>%
-  ggplot(aes(y = reorder(race_eth,desc(mode_share)), x = mode_share, fill = survey)) +
+  ggplot(aes(y = reorder(race_eth,desc(mode_share)), x = mode_share, fill = race_eth)) +
   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
   theme_cmap(gridlines = "v", legend.position = "none") +
-  cmap_fill_discrete(palette = "legislation") +
+  cmap_fill_race() +
   scale_x_continuous(labels = scales::label_percent())
 
 
 finalize_plot(driver_pax_p3,
               title = "Share of weekday car trips in the CMAP region where the
-              traveler is a passenger and not a driver.",
+              traveler is a passenger and not a driver,  by race and ethnicity.",
               caption = "Note: Excludes trips out of the CMAP region, as well as
-              travelers younger than 5 and older than 90.<br><br>
+              travelers younger than 5 and older than 89. \"Hispanic\" includes
+              all travelers who identified as Hispanic. Other groups (e.g.,
+              \"White\") are non-Hispanic.
+              <br><br>
               Source: CMAP analysis of My Daily Travel surveys.",
               filename = "driver_pax_p3",
-              mode = "plot"
+              mode = "png",
+              height = 6.3,
+              width = 11.3,
+              overwrite = T
 )
 
 rm(driver_pax_race_mdt,driver_pax_total_inc_mdt,driver_pax_total_inc_tt,
