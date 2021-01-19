@@ -97,7 +97,7 @@ all_dining_mode_c <-
         detailed_dining_mode_c_mdt)
 
 
-dining_plot <-
+modes_of_tpurps_p1 <-
   all_dining_mode_c %>%
   mutate(tpurp = factor(tpurp,levels = c("Dining outside of home (all)",
                                          "Drive thru / take-out dining",
@@ -113,9 +113,13 @@ dining_plot <-
   scale_x_continuous(labels = scales::label_percent(),n.breaks = 6) +
   cmap_fill_discrete(palette = "friday")
 
-finalize_plot(dining_plot,
+finalize_plot(modes_of_tpurps_p1,
               "Mode share of dining trips, 2008 vs. 2019.",
-              "Source: CMAP analysis of MDT and TT data.")
+              "Source: CMAP analysis of MDT and TT data.",
+              width = 11.3,
+              height = 6.3,
+              filename = "modes_of_tpurps_p1",
+              mode = "png")
 
 
 
@@ -178,7 +182,7 @@ all_health_mode_c <-
         detailed_health_mode_c_mdt)
 
 
-health_plot <-
+modes_of_tpurps_p2 <-
   all_health_mode_c %>%
   mutate(tpurp = factor(tpurp,levels = c("Healthcare (all)",
                                          "Health care visit for self",
@@ -193,11 +197,16 @@ health_plot <-
   facet_wrap(~survey,ncol = 1) +
   theme_cmap(gridlines = "v",legend.max.columns = 3) +
   scale_x_continuous(labels = scales::label_percent(),n.breaks = 6) +
-  cmap_fill_discrete(palette = "friday")
+  cmap_fill_discrete(palette = "governance")
 
-finalize_plot(health_plot,
+finalize_plot(modes_of_tpurps_p2,
               "Mode share of health trips, 2008 vs. 2019.",
-              "Source: CMAP analysis of MDT and TT data.")
+              "Source: CMAP analysis of MDT and TT data.",
+              width = 11.3,
+              height = 6.3,
+              filename = "modes_of_tpurps_p2",
+              mode = "png",
+              overwrite = TRUE)
 
 
 
@@ -276,7 +285,7 @@ all_community_mode_c <-
         detailed_community_mode_c_tt)
 
 
-community_plot <-
+modes_of_tpurps_p3 <-
   all_community_mode_c %>%
   mutate(tpurp = factor(tpurp,levels = c("Community (all)",
                                          "Visit friends/relatives",
@@ -304,13 +313,17 @@ community_plot <-
   facet_wrap(survey~category) +
   theme_cmap(gridlines = "v",legend.max.columns = 3) +
   scale_x_continuous(labels = scales::label_percent()) +
-  cmap_fill_discrete(palette = "friday")
+  cmap_fill_discrete(palette = "environment")
 
-finalize_plot(community_plot,
+finalize_plot(modes_of_tpurps_p3,
               "Mode share of community trips, 2008 vs. 2019.",
               "Source: CMAP analysis of MDT and TT data.",
               title_width = 1.8,
-              width = 10)
+              width = 11.3,
+              height = 6.3,
+              overwrite = T,
+              filename = "modes_of_tpurps_p3",
+              mode = "png")
 
 
 
