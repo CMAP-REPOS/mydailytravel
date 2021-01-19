@@ -50,7 +50,7 @@ driver_pax_age_mdt <-
   summarise(mode_count = sum(wthhfin)) %>%
   left_join(driver_pax_total_mdt, by = "age_bin") %>%
   mutate(mode_share = (mode_count / total)) %>%
-  mutate(survey = "2019 - My Daily Travel")
+  mutate(survey = "mdt")
 
 driver_pax_total_tt <-
   driver_pax_tt %>%
@@ -63,12 +63,15 @@ driver_pax_age_tt <-
   summarise(mode_count = sum(weight)) %>%
   left_join(driver_pax_total_tt, by = "age_bin") %>%
   mutate(mode_share = (mode_count / total)) %>%
-  mutate(survey = "2008 - Travel Tracker")
+  mutate(survey = "tt")
 
 driver_pax_p1 <-
   rbind(driver_pax_age_mdt %>% select(age_bin,mode_c,mode_share,survey),
       driver_pax_age_tt  %>% select(age_bin,mode_c,mode_share,survey)) %>%
-  mutate(label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
+  mutate(survey = recode_factor(survey,
+                                mdt = "My Daily Travel (2019)",
+                                tt = "Travel Tracker (2008)"),
+           label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
   filter(mode_c == "passenger" & age_bin != "5 to 9" & age_bin != "10 to 17") %>%
   ggplot(aes(y = age_bin, x = mode_share, fill = survey)) +
   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
@@ -111,7 +114,7 @@ driver_pax_inc_mdt <-
   summarise(mode_count = sum(wthhfin)) %>%
   left_join(driver_pax_total_inc_mdt, by = "income_c") %>%
   mutate(mode_share = (mode_count / total)) %>%
-  mutate(survey = "2019 - My Daily Travel")
+  mutate(survey = "mdt")
 
 driver_pax_total_inc_tt <- driver_pax_tt %>%
   group_by(income_c) %>%
@@ -122,7 +125,7 @@ driver_pax_inc_tt <- driver_pax_tt %>%
   summarise(mode_count = sum(weight)) %>%
   left_join(driver_pax_total_inc_tt, by = "income_c") %>%
   mutate(mode_share = (mode_count / total)) %>%
-  mutate(survey = "2008 - Travel Tracker")
+  mutate(survey = "tt")
 
 
 # Chart of drivers and passengers by income
@@ -131,7 +134,10 @@ driver_pax_p2 <- rbind(driver_pax_inc_mdt %>%
                                  driver_pax_inc_tt  %>%
                                    select(income_c,mode_c,mode_share,survey)) %>%
   filter(mode_c == "passenger", income_c != "missing") %>%
-  mutate(label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
+  mutate(survey = recode_factor(survey,
+                                mdt = "My Daily Travel (2019)",
+                                tt = "Travel Tracker (2008)"),
+         label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
   ggplot(aes(y = income_c, x = mode_share, fill = survey)) +
   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
   theme_cmap(gridlines = "v") +
