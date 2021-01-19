@@ -67,7 +67,8 @@ placeGroupStats <- mdt %>%
   group_by(sampno,perno,placeGroup) %>%
   summarize(hdist_pg = sum(hdist, na.rm = TRUE),
             distance_pg = sum(distance, na.rm = TRUE),
-            travtime_pg = sum(travtime, na.rm = TRUE))
+            travtime_pg = sum(travtime, na.rm = TRUE),
+            arrtime_pg = max(arrtime))
 
 # take care of collapsed trips with placeGroup
 mdt <- mdt %>%
