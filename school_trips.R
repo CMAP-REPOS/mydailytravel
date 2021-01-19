@@ -3,9 +3,6 @@ library(ggplot2)
 library(tidyverse)
 library(cmapplot)
 
-################ ADD THE ADDITIONAL TRIPS FROM SARAH'S CODE
-
-
 #################################################
 #                                               #
 #                 Data Prep                     #
@@ -117,7 +114,10 @@ finalize_plot(school_trips_p1,
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
               filename = "school_trips_p1",
-              mode = "plot")
+              mode = "png",
+              width = 11.3,
+              height = 6.3,
+              overwrite = T)
 
 # Chart of absolute numbers of school trips, MDT vs TT
 school_trips_p2 <-
@@ -213,9 +213,12 @@ finalize_plot(school_trips_p3,
               5 years old.
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
-              height = 5,
+              height = 6.3,
+              width = 11.3,
               filename = "school_trips_p3",
-              mode = "plot")
+              mode = "png",
+              overwrite = T
+              )
 
 # Chart of mode share by income category
 school_trips_p4 <-
@@ -349,10 +352,12 @@ school_time_race_mdt <-
 # Chart of travel time to school by household income
 school_trips_p7 <-
   school_time_race_mdt %>%
+  mutate(label = round(travtime)) %>%
   ggplot(aes(x = reorder(race_eth,desc(travtime)), y = travtime, fill = race_eth)) +
   geom_col(position = position_dodge2()) +
   theme_cmap(gridlines = "h",
              legend.position = "None") +
+  geom_text(aes(label = label),vjust = 0) +
   cmap_fill_race()
 
 finalize_plot(school_trips_p7,
@@ -363,7 +368,10 @@ finalize_plot(school_trips_p7,
               <br><br>
               Source: CMAP analysis of MDT.",
               filename = "school_trips_p7",
-              mode = "plot")
+              mode = "png",
+              height = 6.3,
+              width = 11.3,
+              overwrite = T)
 
 
 ## What about trip distances by income for school trips
@@ -407,6 +415,12 @@ all_school_mdt_lm <-
     black = case_when(
       race_eth == "black" ~ 1,
       TRUE ~0),
+    asian = case_when(
+      race_eth == "asian" ~ 1,
+      TRUE ~ 0),
+    hispa = case_when(
+      race_eth == "hispanic" ~ 1,
+      TRUE ~ 0),
     high_inc = case_when(
       income_c == "high" | income_c == "middle-high" ~ 1,
       TRUE ~ 0),
@@ -430,7 +444,7 @@ all_school_mdt_lm <-
       TRUE ~ 0))
 
 school_trips_regression <-
-  lm(travtime_pg ~ white + high_inc + distance_pg + cook +
+  lm(travtime_pg ~ white + black + hispa + asian + high_inc + distance_pg + cook +
        car_trip + school_bus + transit + walk + bike,
      all_school_mdt_lm,
      weights = wtperfin)
