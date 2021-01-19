@@ -29,7 +29,7 @@ day_value <- 60*60*24
 tim_mdt_wip <-
   mdt %>%                      # 125,103 records
   # Convert to datetime object
-  mutate(arrtime = ymd_hms(arrtime)) %>%
+  mutate(arrtime_pg = ymd_hms(arrtime_pg)) %>%
   # Filter
   filter(
     # Remove trips > 15 hours
@@ -39,7 +39,7 @@ tim_mdt_wip <-
     ) %>%
   # Make every trip on the same day (for analysis and graphing)
   mutate(trip_end = force_tz(ymd_hms(paste0("2020-01-01 ",
-                                            substr(arrtime,12,19))),
+                                            substr(arrtime_pg,12,19))),
                              tzone = "America/Chicago")) %>%
   # Make trips that end before 3am into trips on the next day (given survey timing)
   mutate(trip_end = case_when(
