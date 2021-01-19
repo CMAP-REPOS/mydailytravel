@@ -95,7 +95,7 @@ rbind(driver_pax_age_mdt, driver_pax_age_tt) %>%
   group_by(mode_c,survey) %>%
   summarize(mode_count = sum(mode_count)) %>%
   pivot_wider(id_cols = c("survey"),names_from = "mode_c",values_from = c("mode_count")) %>%
-  mutate(pax_share = passenger/driver)
+  mutate(pax_share = passenger/(passenger + driver))
 
 
 ### Same analysis, looking at income instead
