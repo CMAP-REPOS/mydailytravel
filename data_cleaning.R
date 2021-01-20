@@ -81,6 +81,12 @@ mdt <- mdt %>%
 # Remove placegroup stats
 rm(placeGroupStats)
 
+
+# Create a dataset for all respondents (regardless of whether they traveled on survey day)
+mdt_all_respondents <- ppl %>% # 30,683 records
+  inner_join(hh, by = "sampno") %>% # 30,683 records
+  inner_join(home, by = c("sampno")) # 30,863 records
+
 # Load Travel Tracker
 # Downloaded from CMAP data portal; exported from Microsoft Access database to csv.
 setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2008 survey")
@@ -171,6 +177,13 @@ tt <- tt %>%
   mutate(pertrips = ifelse(DAYNO == 1,PTRIPS1,PTRIPS2))
 
 
+# Create a TT dataset of all respondents (regardless of trip behavior)
+tt_all_respondents <- tt_ppl %>% # 32,366 records
+  inner_join(tt_hh, by = c("SAMPN", "SURVEY")) %>% # 32,366 records
+  left_join(tt_home, by = "SAMPN") # 32,366 records (22 records lack a home county; they are kept for analyses that do not rely on home location)
+
+
+
 # recode mode factors and group into buckets
 mdt <- mdt %>%
   mutate(mode = factor(mode),
@@ -215,9 +228,33 @@ tt <- tt %>%
          income = recode_factor(income,!!!recode_income_detailed_tt)) %>%
   mutate(income_c = fct_collapse(income,!!!recode_income_buckets_tt))
 
+mdt_all_respondents <- mdt_all_respondents %>%
+  mutate(income = factor(hhinc),
+         income = recode_factor(income,!!!recode_income_detailed_mdt)) %>%
+  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_mdt))
+
+tt_all_respondents <- tt_all_respondents %>%
+  mutate(income = factor(INCOM),
+         income = recode_factor(income,!!!recode_income_detailed_tt)) %>%
+  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_tt))
 
 # Recode into race and ethnicity groups
 mdt <- mdt %>%
+  mutate(race_eth = recode(race,
+                           "1" = "white",
+                           "2" = "black",
+                           "3" = "asian",
+                           "4" = "other",
+                           "5" = "other",
+                           "6" = "other",
+                           "97" = "other",
+                           "-8" = "missing",
+                           "-7" = "missing")) %>%
+  mutate(race_eth = case_when(
+    hisp == 1 ~ "hispanic",
+    TRUE ~ race_eth))
+
+mdt_all_respondents <- mdt_all_respondents %>%
   mutate(race_eth = recode(race,
                            "1" = "white",
                            "2" = "black",
