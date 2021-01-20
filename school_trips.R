@@ -1,4 +1,3 @@
-
 library(ggplot2)
 library(tidyverse)
 library(cmapplot)
@@ -155,7 +154,8 @@ finalize_plot(school_trips_p2,
 all_school_inc_total_tt <-
   all_school_tt %>%
   group_by(income_c) %>%
-  summarize(total = sum(weight))
+  summarize(total = sum(weight),
+            n_tt = n())
 
 all_school_inc_mode_c_tt <-
   all_school_tt %>%
@@ -173,7 +173,8 @@ all_school_inc_mode_c_tt <-
 all_school_inc_total_mdt <-
   all_school_mdt %>%
   group_by(income_c) %>%
-  summarize(total = sum(wtperfin))
+  summarize(total = sum(wtperfin),
+            n_mdt = n())
 
 all_school_inc_mode_c_mdt <-
   all_school_mdt %>%
