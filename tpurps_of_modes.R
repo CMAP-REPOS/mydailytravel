@@ -1,4 +1,3 @@
-
 library(ggplot2)
 library(tidyverse)
 library(slider)
@@ -40,8 +39,8 @@ tt_base_2 <-
          DIST > 0,             # 98,800 records
          tpurp_c != "missing") # 98,800 records
 
-#### Purpose breakdown of carpooling vs. passenger
-
+#####################################################
+# Purpose breakdown of carpooling vs. passenger
 
 ## Create totals for trips by purpose category (within universe of passenger trips)
 
@@ -97,7 +96,7 @@ all_passenger_tpurp_c <-
         detailed_passenger_tpurp_c_mdt)
 
 
-passenger_plot <-
+tpurps_of_modes_p1 <-
   all_passenger_tpurp_c %>%
   filter(tpurp_c != "missing") %>%
   mutate(survey = factor(survey,levels = c("tt","mdt")),
@@ -112,18 +111,19 @@ passenger_plot <-
   scale_x_continuous(labels = scales::label_percent()) +
   cmap_fill_discrete(palette = "friday")
 
-finalize_plot(passenger_plot,
+finalize_plot(tpurps_of_modes_p1,
               "Trip purposes of passenger trips, 2008 vs. 2019.",
               "Note: Travel Tracker did not have a 'Carpool' category, and so
               'Passenger (all)' includes both types of trips.
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
               title_width = 1.8,
-              width = 10,
-              height = 8)
+              width = 11.3,
+              height = 6.3,
+              filename = "tpurps_of_modes_p1")
 
 
-passenger_totals_plot <-
+tpurps_of_modes_p2 <-
   all_passenger_tpurp_c %>%
   filter(!(survey == "mdt" & mode == "Passenger (all)")) %>%
   group_by(survey,mode) %>%
@@ -139,17 +139,22 @@ passenger_totals_plot <-
   cmap_fill_discrete(palette = "governance",reverse = TRUE) +
   scale_y_continuous(labels = scales::label_comma(scale = 1))
 
-finalize_plot(passenger_totals_plot,
+finalize_plot(tpurps_of_modes_p2,
               "Change in daily automobile passenger trips, 2008 vs. 2019.",
               "Note: Travel Tracker did not have a 'Carpool' category, and so
               'Passenger (all)' includes both types of trips.
               <br><br>
-              Source: CMAP analysis of MDT and TT data.")
+              Source: CMAP analysis of MDT and TT data.",
+              filename = "tpurps_of_modes_p2",
+              height = 6.3,
+              width = 11.3,
+              mode = "png")
 
 
 
 
-#### Purpose breakdown of bike trips (shared vs. personal)
+#########################################################
+# Purpose breakdown of bike trips (shared vs. personal)
 
 
 ## Create totals for trips by purpose category (within universe of bike trips)
@@ -190,7 +195,8 @@ total_bike_tpurp_c <-
 detailed_bike_totals_mdt <-
   all_bike_mdt %>%
   group_by(mode) %>%
-  summarize(trip_total = sum(wtperfin))
+  summarize(trip_total = sum(wtperfin),
+            n = n())
 
 detailed_bike_tpurp_c_mdt <-
   all_bike_mdt %>%
@@ -206,33 +212,35 @@ all_bike_tpurp_c <-
         detailed_bike_tpurp_c_mdt)
 
 
-bike_plot <-
+tpurps_of_modes_p3 <-
   all_bike_tpurp_c %>%
   filter(tpurp_c != "missing") %>%
-  mutate(survey = factor(survey,levels = c("tt","mdt")),
-         mode = factor(mode, levels = c("Bike (all)","bike share","personal bike"))) %>%
-  mutate(survey = recode_factor(survey,
-                                "tt" = "Travel Tracker ('08)",
-                                "mdt" = "My Daily Travel ('19)")) %>%
+  filter(survey == "mdt",
+         mode != "Bike (all)") %>%
+  # mutate(survey = factor(survey,levels = c("tt","mdt")),
+  #        mode = factor(mode, levels = c("Bike (all)","bike share","personal bike"))) %>%
+  # mutate(survey = recode_factor(survey,
+  #                               "tt" = "Travel Tracker ('08)",
+  #                               "mdt" = "My Daily Travel ('19)")) %>%
   ggplot(aes(y = reorder(tpurp_c,desc(-tpurp_c_pct)), x = tpurp_c_pct, fill = mode)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
-  facet_wrap(~survey,ncol = 1) +
+  # facet_wrap(~survey,ncol = 1) +
   theme_cmap(gridlines = "v",legend.max.columns = 3) +
   scale_x_continuous(labels = scales::label_percent()) +
   cmap_fill_discrete(palette = "friday")
 
-finalize_plot(bike_plot,
-              "Trip purposes of bike trips, 2008 vs. 2019.",
-              "Note: Travel Tracker did not have a 'bike share' category, and so
-              'Bike (all)' includes both types of trips.
-              <br><br>
-              Source: CMAP analysis of MDT and TT data.",
+finalize_plot(tpurps_of_modes_p3,
+              "Trip purposes of bike trips in 2019, personal vs. bike share",
+              "Source: CMAP analysis of MDT data.",
               title_width = 1.8,
-              width = 10,
-              height = 8)
+              width = 11.3,
+              height = 6.3,
+              filename = "tpurps_of_modes_p3",
+              mode = "png",
+              overwrite = T)
 
 
-bike_totals_plot <-
+tpurps_of_modes_p4 <-
   all_bike_tpurp_c %>%
   filter(!(survey == "mdt" & mode == "Bike (all)")) %>%
   group_by(survey,mode) %>%
@@ -248,12 +256,16 @@ bike_totals_plot <-
   cmap_fill_discrete(palette = "governance",reverse = TRUE) +
   scale_y_continuous(labels = scales::label_comma(scale = 1))
 
-finalize_plot(bike_totals_plot,
+finalize_plot(tpurps_of_modes_p4,
               "Change in daily bike trips, 2008 vs. 2019.",
               "Note: Travel Tracker did not have a 'bike share' category, and so
               'Bike (all)' includes both types of trips.
               <br><br>
-              Source: CMAP analysis of MDT and TT data.")
+              Source: CMAP analysis of MDT and TT data.",
+              filename = "tpurps_of_modes_p4",
+              height = 6.3,
+              width = 11.3,
+              mode = "png")
 
 
 ### Bike mode share of all travel
@@ -296,12 +308,13 @@ bike_purp <-
   select(-tpurp_c_total) # Remove total by purpose (now that bike share is calculated)
 
 # Graph mode share for the two surveys
-bike_mode_share <-
+tpurps_of_modes_p5 <-
   bike_purp %>%
   filter(tpurp_c != "other") %>%
   mutate(survey = recode_factor(survey,
-                                "tt" = "Travel Tracker (2008)",
-                                "mdt" = "My Daily Travel (2019)")) %>%
+                                "mdt" = "My Daily Travel (2019)",
+                                "tt" = "Travel Tracker (2008)"
+                                )) %>%
   ggplot(aes(x = reorder(tpurp_c,desc(tpurp_c)), y = tpurp_c_pct, fill = survey)) +
   geom_bar(stat = "identity",position = position_dodge2(width = .65, reverse = TRUE), width = .7) +
   scale_y_continuous(labels = scales::label_percent()) +
@@ -309,9 +322,14 @@ bike_mode_share <-
   theme_cmap(gridlines = "v") +
   cmap_fill_discrete(palette = "legislation")
 
-finalize_plot(bike_mode_share,
+finalize_plot(tpurps_of_modes_p5,
               title = "Bicycle mode share by category of trips, 2008 vs. 2019.",
-              caption = "Source: CMAP analysis of MDT and TT data. Note that categories are not precise comparisons.")
+              caption = "Source: CMAP analysis of MDT and TT data. Note that
+              categories are not precise comparisons.",
+              filename = "tpurps_of_modes_p5",
+              height = 6.3,
+              width = 11.3,
+              mode = "png")
 
 
 # Generate output table
