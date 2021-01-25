@@ -1,5 +1,5 @@
 library(cmapplot)
-# remotes::install_github("coolbutuseless/ggpattern")
+# devtools::install_github("coolbutuseless/ggpattern")
 library(ggpattern)
 library(tidyverse)
 
@@ -41,12 +41,14 @@ driver_pax_tt <-
   mutate(age_bin = cut(AGE, breaks = breaks,
                        labels = age_labels))
 
+# Create totals for driving and passenger trips
 driver_pax_total_mdt <-
   driver_pax_mdt %>%
   group_by(age_bin) %>%
   summarise(total = sum(wthhfin),
             n = n())
 
+# Create age bucket totals and mode shares for driving and passenger trips
 driver_pax_age_mdt <-
   driver_pax_mdt %>%
   group_by(age_bin, mode_c) %>%
@@ -55,6 +57,7 @@ driver_pax_age_mdt <-
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "mdt")
 
+# Repeat for Travel Tracker
 driver_pax_total_tt <-
   driver_pax_tt %>%
   group_by(age_bin) %>%
@@ -69,25 +72,35 @@ driver_pax_age_tt <-
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "tt")
 
+# Create age bin chart
 driver_pax_p1 <-
+  # Combine data
   rbind(driver_pax_age_mdt %>% select(age_bin,mode_c,mode_share,survey),
       driver_pax_age_tt  %>% select(age_bin,mode_c,mode_share,survey)) %>%
+  # Factor age bin into desired order
   mutate(age_bin = factor(age_bin,
                           levels = c("70 to 89","50 to 69","30 to 49","25 to 29",
                                      "18 to 24","10 to 17","5 to 9"
                                      ))) %>%
+  # Create "type" for increasing vs. decreasing
   mutate(type = case_when(
     age_bin %in% c("18 to 24","25 to 29") ~ "Increasing passenger share",
     TRUE ~ "Decreasing passenger share"
     )) %>%
+  # Factor "type"
   mutate(type = factor(type, levels = c("Increasing passenger share",
                                         "Decreasing passenger share"))) %>%
+  # Rename and factor survey
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
-                                tt = "Travel Tracker (2008)"),
-           label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
+                                tt = "Travel Tracker (2008)")) %>%
+  # Create column for on-graph labels
+  mutate(label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
+  # Remove <18 travelers (since their share is so much higher due to non-drivers)
   filter(mode_c == "passenger" & age_bin != "5 to 9" & age_bin != "10 to 17") %>%
+  # Create ggplot object
   ggplot(aes(y = age_bin, x = mode_share, fill = survey, pattern = type)) +
+  # Use "geom_col_pattern" to add texture to a subset of columns
   geom_col_pattern(color = "white",
                    pattern_fill = "black",
                    pattern_angle = 45,
@@ -96,16 +109,21 @@ driver_pax_p1 <-
                    pattern_key_scale_factor = 0.6,
                    position = position_dodge2(reverse = TRUE),
                    width = 0.8) +
+  # Re-assign patterns manually
   scale_pattern_manual(values = c("Increasing passenger share" = "stripe",
                                   "Decreasing passenger share" = "none")) +
+  # Add labels
   geom_text(aes(label = label),position = position_dodge2(0.9,reverse = T), hjust = 0) +
+  # Call CMAP style and palette
   theme_cmap(gridlines = "v", vline = 0) +
   cmap_fill_discrete(palette = "mobility") +
+  # Adjust x axis labels
   scale_x_continuous(labels = scales::label_percent(),limits = c(0,.30)) +
+  # Adjust legend for formatting
   guides(pattern = guide_legend(override.aes = list(fill = "white", color = "black")),
          fill = guide_legend(override.aes = list(pattern = "none")))
 
-
+# Export plot
 finalize_plot(driver_pax_p1,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver, over time and by age.",
@@ -119,7 +137,9 @@ finalize_plot(driver_pax_p1,
               overwrite = T
               )
 
-rbind(driver_pax_age_mdt, driver_pax_age_tt) %>%
+# Quick output table of totals
+rbind(driver_pax_age_mdt,
+      driver_pax_age_tt) %>%
   group_by(mode_c,survey) %>%
   summarize(mode_count = sum(mode_count)) %>%
   pivot_wider(id_cols = c("survey"),names_from = "mode_c",values_from = c("mode_count")) %>%
@@ -235,6 +255,7 @@ finalize_plot(driver_pax_p3,
               overwrite = T
 )
 
+# Remove objects from the environment
 rm(driver_pax_race_mdt,driver_pax_total_inc_mdt,driver_pax_total_inc_tt,
    driver_pax_total_mdt,driver_pax_total_race_mdt,driver_pax_total_tt,
    driver_pax_tt,driver_pax_age_mdt,driver_pax_age_tt,driver_pax_inc_mdt,
