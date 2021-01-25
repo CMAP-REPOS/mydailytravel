@@ -1,8 +1,6 @@
-
 library(ggplot2)
 library(tidyverse)
 library(cmapplot)
-
 
 
 #################################################
@@ -72,13 +70,29 @@ tnc <-
   mutate(income_c = fct_collapse(income,!!!recode_income_buckets_mdt)) %>%
   # Add information on active travel from above
   left_join(active_travel, by = c("sampno","perno")) %>%
-  # Add 0s for people with no travelers (who otherwise are NAs)
+  # Add 0s for people with no trips (who otherwise are NAs)
   mutate(across(starts_with("takes_"),~replace(.,is.na(.),0))) %>%
   # Create dummy variables for analysis
   mutate(n = 1,
          county = as.character(home_county),
          white = case_when(
            race_eth == "white" ~ 1,
+           TRUE ~ 0
+         ),
+         black = case_when(
+           race_eth == "black" ~ 1,
+           TRUE ~ 0
+         ),
+         asian = case_when(
+           race_eth == "asian" ~ 1,
+           TRUE ~ 0
+         ),
+         hispa = case_when(
+           race_eth == "hispanic" ~ 1,
+           TRUE ~ 0
+         ),
+         other = case_when(
+           race_eth == "other" ~ 1,
            TRUE ~ 0
          ),
          high_income = case_when(
@@ -112,7 +126,8 @@ tnc <- tnc %>%
                        labels = age_labels))
 
 # Run linear regression
-tnc_use_lm <- tnc %>%
+tnc_use_lm <-
+  tnc %>%
   filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
   filter(income_c != "missing") %>%
   filter(!(hhveh %in% c(-9,-8,-7)),
@@ -129,6 +144,10 @@ tnc_use_lm <- tnc %>%
        #county_97 + county_111 + county_197 +
        high_income +
        white +
+       black +
+       hispa +
+       asian +
+       # other +
        hhveh +
        pertrips,
       .,

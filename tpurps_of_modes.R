@@ -341,7 +341,7 @@ bike_purp %>%
 
 
 
-#### Purpose breakdown of rideshare vs. shared rideshare
+#### Purpose breakdown of rideshare vs. shared rideshare vs. taxi
 
 
 ## Create totals for trips by purpose category (within universe of rideshare trips)
@@ -403,7 +403,7 @@ all_tnc_tpurp_c <-
         detailed_tnc_tpurp_c_mdt)
 
 
-tnc_plot <-
+tpurps_of_modes_p6 <-
   all_tnc_tpurp_c %>%
   filter(tpurp_c != "missing",
          survey == "mdt") %>%
@@ -414,14 +414,17 @@ tnc_plot <-
   scale_x_continuous(labels = scales::label_percent()) +
   cmap_fill_discrete(palette = "legislation")
 
-finalize_plot(tnc_plot,
+finalize_plot(tpurps_of_modes_p6,
               "Trip purposes of TNC and taxi trips, 2019.",
               "Source: CMAP analysis of MDT and TT data.",
-              title_width = 1.8,
-              width = 10)
+              width = 11.3,
+              height = 6.3,
+              filename = "tpurps_of_modes_p6",
+              mode = "png",
+              overwrite = T)
 
 
-tnc_totals_plot <-
+tpurps_of_modes_p7 <-
   all_tnc_tpurp_c %>%
   filter(!(survey == "mdt" & mode == "tnc (all)")) %>%
   group_by(survey,mode) %>%
@@ -437,9 +440,14 @@ tnc_totals_plot <-
   cmap_fill_discrete(palette = "governance",reverse = TRUE) +
   scale_y_continuous(labels = scales::label_comma(scale = 1))
 
-finalize_plot(tnc_totals_plot,
+finalize_plot(tpurps_of_modes_p7,
               "Change in daily TNC and taxi trips, 2008 vs. 2019.",
-              "Source: CMAP analysis of MDT and TT data.")
+              "Source: CMAP analysis of MDT and TT data.",
+              filename = "tpurps_of_modes_p7",
+              mode = "png",
+              height = 6.3,
+              width = 11.3,
+              overwrite = T)
 
 
 
