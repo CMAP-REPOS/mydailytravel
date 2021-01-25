@@ -173,6 +173,24 @@ trip_times_mode_and_chain_mdt_25 <-
   mutate(rolling_count = slide_dbl(trip_count, mean, .before = 2, .after = 2)) %>%
   ungroup()
 
+# Chain status and mode category
+trip_times_mode_and_chain_mdt_55 <-
+  trip_times %>%
+  # Add all possible modes to each time
+  full_join(possible_mode_chains, by = character()) %>%
+  # Calculate the number of trips that meet the criteria (in the interval and correct mode)
+  mutate(trip_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
+    x %within% tim_mdt_wip$trip_interval &
+      y == tim_mdt_wip$mode_chain)]),
+    time_band,
+    mode_chain_bucket
+  )) %>%
+  separate(col = mode_chain_bucket, into = c("mode","chain_bucket"), sep = "_") %>%
+  group_by(mode,chain_bucket) %>%
+  # Calculate rolling average
+  mutate(rolling_count = slide_dbl(trip_count, mean, .before = 5, .after = 5)) %>%
+  ungroup()
+
 source("recoding.R")
 
 trip_times_mode_c_and_chain_mdt_25 <-
@@ -183,8 +201,18 @@ trip_times_mode_c_and_chain_mdt_25 <-
   summarize(rolling_count = sum(rolling_count)) %>%
   mutate(mode_c = factor(mode_c,
                          levels = c("driver","passenger","transit","walk",
-                         "bike","other","missing")))
+                         "bike","other","missing"))) %>%
+  mutate(chain_bucket = factor(chain_bucket,
+                               levels = c("Work trip","Return home (work)",
+                                          "Shopping trip","Return home (shopping)",
+                                          "Other trip")))
 
+trip_times_mode_and_chain_mdt_55 <-
+  trip_times_mode_and_chain_mdt_55 %>%
+  mutate(chain_bucket = factor(chain_bucket,
+                               levels = c("Work trip","Return home (work)",
+                                          "Shopping trip","Return home (shopping)",
+                                          "Other trip")))
 
 #################################################################
 #                                                               #
@@ -250,27 +278,28 @@ finalize_plot(trips_in_motion_p2,
               height = 6.3,
               width = 11.3)
 
-# Graph output of trips in motion by purpose for bike trips
+# Graph output of trips in motion by purpose for taxi vs. ride share trips
 trips_in_motion_p3 <-
   trip_times_mode_and_purp_c_mdt_55 %>%
-  filter(mode == "rideshare" | mode == "bike share") %>%
+  filter(mode == "rideshare" | mode == "shared rideshare" | mode == "taxi") %>%
   ggplot(aes(x = time_band,y = rolling_count)) +
   geom_area(aes(fill = tpurp_c)) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
-                   breaks = breaks[c(2,4,6,8)]) +
+                   breaks = breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
-  facet_grid(~mode) +
+  facet_wrap(~mode, nrow = 3) +
   cmap_fill_discrete(palette = "mobility") +
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"))
 
 finalize_plot(trips_in_motion_p3,
-              "TNC and bike share trips in motion by travel purpose.",
+              "Ride-share and shared ride-share trips in motion by travel
+              purpose.",
               "Note: Trips in motion are 55-minute rolling averages.
               <br><br>
               Source: CMAP analysis of My Daily Travel survey.",
               filename = "trips_in_motion_p3",
-              mode = "png",
+              # mode = "png",
               overwrite = TRUE,
               height = 6.3,
               width = 11.3)
@@ -349,7 +378,7 @@ finalize_plot(trips_in_motion_p6,
               <br><br>
               Source: CMAP analysis of My Daily Travel survey.",
               filename = "trips_in_motion_p6",
-              mode = "png",
+              # mode = "png",
               overwrite = TRUE,
               height = 6.3,
               width = 11.3)
@@ -387,6 +416,44 @@ finalize_plot(trips_in_motion_p7,
               height = 6.3,
               width = 11.3)
 
+
+##### Ride share and taxis, by chain
+
+# Graph trips in motion by mode category for work chains
+trips_in_motion_p8 <-
+  trip_times_mode_and_chain_mdt_55 %>%
+  filter(mode %in% c("taxi","rideshare","shared rideshare")) %>%
+  # mutate(category = fct_collapse(chain_bucket,
+  #                                Work = c("Work trip","Return home (work)"),
+  #                                Other = "Other trip",
+  #                                Shopping = c("Shopping trip","Return home (shopping)"))) %>%
+  # mutate(category = factor(category, levels = c("Work","Shopping","Other"))) %>%
+  group_by(time_band,mode,chain_bucket) %>%
+  summarize(rolling_count = sum(rolling_count)) %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = chain_bucket), position = position_stack(reverse = TRUE)) +
+  facet_wrap(~mode, ncol = 1) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
+                   breaks = breaks) +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
+  scale_fill_discrete(type = c("#009ccc","#72cae5","#cc8200","#e5b172","#3d6600")) +
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"),
+             legend.max.columns = 4)
+
+finalize_plot(trips_in_motion_p8,
+              "Trips in motion in TNCs and taxis in the CMAP region by trip
+              chain type on weekdays.",
+              "Note: Trips in motion are 55-minute rolling averages.
+              <br><br>
+              Source: CMAP analysis of My Daily Travel survey.",
+              filename = "trips_in_motion_p8",
+              mode = "png",
+              overwrite = TRUE,
+              height = 6.3,
+              width = 11.3)
+
+
 #### Investigation of "drive thru / takeout dining"
 
 tim_mdt_drivethru <-
@@ -412,7 +479,7 @@ trip_times_drivethru_and_mode_mdt <-
 
 
 
-trips_in_motion_p8 <-
+trips_in_motion_p9 <-
   trip_times_drivethru_and_mode_mdt %>%
   filter(mode_c != "missing") %>%
   ggplot(aes(x = time_band,y = rolling_count)) +
@@ -425,7 +492,7 @@ trips_in_motion_p8 <-
              panel.grid.major.x = element_line(color = "light gray"),
              legend.max.columns = 3)
 
-finalize_plot(trips_in_motion_p8,
+finalize_plot(trips_in_motion_p9,
               "Drive-thru / take-out trips in motion by time of day on weekdays.",
               "Note: Trips in motion are 55-minute rolling averages.
               <br><br>
