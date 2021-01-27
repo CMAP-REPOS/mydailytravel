@@ -27,7 +27,9 @@ driver_pax_mdt <-
          age >= 5,               # 124,758 records
          distance_pg > 0,        # 96,674 records
          mode_c %in% c("driver", # 69,165 records
-                       "passenger")) %>%
+                       "passenger"),
+         mode != "motorcycle"    # 69,123 records
+         ) %>%
   mutate(age_bin = cut(age, breaks = breaks,
                      labels = age_labels))
 
