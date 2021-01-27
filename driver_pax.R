@@ -262,10 +262,47 @@ finalize_plot(driver_pax_p3,
               overwrite = T
 )
 
+
+### Explore the "other" category
+
+### Same analysis, looking at race and ethnicity instead - only looking at MDT
+### since TT only asked about race and ethnicity for primary household
+### responder.
+
+driver_pax_total_other_mdt <-
+  driver_pax_mdt %>%
+  filter(race_eth == "other") %>%
+  group_by(race) %>%
+  summarise(total = sum(wthhfin),
+            n = n())
+
+driver_pax_other_mdt <-
+  driver_pax_mdt %>%
+  filter(race_eth == "other") %>%
+  group_by(race, mode_c) %>%
+  summarise(mode_count = sum(wthhfin)) %>%
+  left_join(driver_pax_total_other_mdt, by = "race") %>%
+  mutate(mode_share = (mode_count / total)) %>%
+  mutate(survey = "2019 - My Daily Travel")
+
+
+driver_pax_p4 <-
+  driver_pax_other_mdt %>%
+  select(race,mode_c,mode_share,survey) %>%
+  filter(mode_c == "passenger") %>%
+  mutate(foo = "foo") %>%
+  ggplot(aes(y = reorder(race,desc(mode_share)), x = mode_share, fill = foo)) +
+  geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
+  theme_cmap(gridlines = "v", legend.position = "none") +
+  cmap_fill_discrete(palette = "legislation") +
+  scale_x_continuous(labels = scales::label_percent())
+
+
 # Remove objects from the environment
 rm(driver_pax_race_mdt,driver_pax_total_inc_mdt,driver_pax_total_inc_tt,
    driver_pax_total_mdt,driver_pax_total_race_mdt,driver_pax_total_tt,
    driver_pax_tt,driver_pax_age_mdt,driver_pax_age_tt,driver_pax_inc_mdt,
    driver_pax_inc_tt,driver_pax_mdt,age_labels,breaks,driver_pax_p1,
-   driver_pax_p2,driver_pax_p3)
+   driver_pax_p2,driver_pax_p3,driver_pax_other_mdt,driver_pax_total_other_mdt,
+   driver_pax_p4)
 
