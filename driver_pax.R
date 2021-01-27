@@ -187,6 +187,11 @@ driver_pax_p2 <- rbind(driver_pax_inc_mdt %>%
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
                                 tt = "Travel Tracker (2008)"),
+         income_c = recode_factor(income_c,
+                                  "high" = "High",
+                                  "middle-high" = "Middle-high",
+                                  "middle-low" = "Middle-low",
+                                  "low" = "Low"),
          label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
   ggplot(aes(y = income_c, x = mode_share, fill = survey)) +
   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
