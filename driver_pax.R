@@ -298,11 +298,68 @@ driver_pax_p4 <-
   scale_x_continuous(labels = scales::label_percent())
 
 
+
+### Analysis looking at the intersection of race and income
+
+driver_pax_total_inc_race_mdt <-
+  driver_pax_mdt %>%
+  group_by(income_c,race_eth) %>%
+  summarise(total = sum(wthhfin),
+            n = n())
+
+driver_pax_inc_race_mdt <-
+  driver_pax_mdt %>%
+  group_by(income_c,race_eth,mode_c) %>%
+  summarise(mode_count = sum(wthhfin)) %>%
+  left_join(driver_pax_total_inc_race_mdt, by = c("income_c","race_eth")) %>%
+  mutate(mode_share = (mode_count / total)) %>%
+  mutate(survey = "mdt")
+
+
+# Chart of drivers and passengers by income and race/ethnicity
+driver_pax_p5 <-
+  driver_pax_inc_race_mdt %>%
+  filter(mode_c == "passenger", income_c != "missing", race_eth != "missing") %>%
+  mutate(income_c = recode_factor(income_c,
+                                  "low" = "Low",
+                                  "middle-low" = "Middle-low",
+                                  "middle-high" = "Middle-high",
+                                  "high" = "High"),
+         race_eth = factor(race_eth, levels = c("white","asian","black","hispanic","other")),
+         label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
+  ggplot(aes(y = income_c, x = mode_share, fill = race_eth)) +
+  geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
+  theme_cmap(gridlines = "v",
+             axis.text.y = element_blank()) +
+  geom_text(aes(label = label),position = position_dodge2(0.9,reverse = T), hjust = 0) +
+  cmap_fill_race() +
+  facet_wrap(~income_c,scales = "free_y") +
+  scale_x_continuous(labels = scales::label_percent(),limits = c(0,.65))
+
+
+finalize_plot(driver_pax_p5,
+              title = "Share of weekday car trips in the CMAP region where the
+              traveler is a passenger and not a driver, over time, by race and income.",
+              caption = "Note: Excludes trips out of the CMAP region, as well as
+              travelers younger than 5 and older than 89.\"Hispanic\" includes
+              all travelers who identified as Hispanic. Other groups (e.g.,
+              \"White\") are non-Hispanic.
+              <br><br>
+              Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
+              filename = "driver_pax_p5",
+              mode = "png",
+              width = 11.3,
+              height = 6.3,
+              overwrite = T
+
+)
+
 # Remove objects from the environment
 rm(driver_pax_race_mdt,driver_pax_total_inc_mdt,driver_pax_total_inc_tt,
    driver_pax_total_mdt,driver_pax_total_race_mdt,driver_pax_total_tt,
    driver_pax_tt,driver_pax_age_mdt,driver_pax_age_tt,driver_pax_inc_mdt,
    driver_pax_inc_tt,driver_pax_mdt,age_labels,breaks,driver_pax_p1,
    driver_pax_p2,driver_pax_p3,driver_pax_other_mdt,driver_pax_total_other_mdt,
-   driver_pax_p4)
+   driver_pax_p4,driver_pax_total_inc_race_mdt,driver_pax_inc_race_mdt,
+   driver_pax_p5)
 
