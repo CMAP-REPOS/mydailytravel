@@ -1,6 +1,7 @@
 library(ggplot2)
 library(tidyverse)
 library(cmapplot)
+library(sf)
 
 #################################################
 #                                               #
@@ -9,6 +10,9 @@ library(cmapplot)
 #################################################
 
 source("data_cleaning.R")
+
+# Load location file
+location <- read.csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data/location.csv")
 
 #################################################
 #                                               #
@@ -50,6 +54,21 @@ all_school_mdt <-
     )) %>%
   # Reconvert to factor
   mutate(mode_c_school = factor(mode_c_school))
+
+
+# Identify the locations of schools
+school_locations_mdt <-
+  all_school_mdt %>%
+  left_join(location %>% select(sampno,locno,loctype,tract_fips),
+            by = c("sampno","locno")) %>%
+  count(tract_fips) %>%
+  rename (school_trips = n)
+
+all_school_mdt <-
+  all_school_mdt %>%
+  left_join(location %>% select(sampno,locno,loctype,tract_fips),
+            by = c("sampno","locno")) %>%
+  left_join(school_locations_mdt, by = "tract_fips")
 
 # Repeat same filtering and mutation for TT
 all_school_tt <-
@@ -346,7 +365,9 @@ school_time_race_mdt <-
     travtime_pg < 150 & travtime_pg > 0,
     # Exclude households with missing race and ethnicity information
     race_eth != "missing") %>%
-  group_by(race_eth) %>%
+  # Add breakdown between K-8 and 9-12
+  mutate(k12 = ifelse(schol == 3,"Elementary and middle school","High school")) %>%
+  group_by(race_eth,k12) %>%
   summarize(travtime = weighted.mean(travtime_pg, w = wtperfin)) %>%
   mutate(survey = "My Daily Travel (2019)")
 
@@ -359,6 +380,7 @@ school_trips_p7 <-
   theme_cmap(gridlines = "h",
              legend.position = "None") +
   geom_text(aes(label = label),vjust = 0) +
+  facet_wrap(~k12) +
   cmap_fill_race()
 
 finalize_plot(school_trips_p7,
@@ -442,11 +464,15 @@ all_school_mdt_lm <-
       TRUE ~ 0),
     cook = case_when(
       home_county == 31 ~ 1,
-      TRUE ~ 0))
+      TRUE ~ 0),
+    k8 = case_when(
+      schol == 3 ~ 1,
+      TRUE ~ 0)
+    )
 
 school_trips_regression <-
   lm(travtime_pg ~ white + black + hispa + asian + high_inc + distance_pg + cook +
-       car_trip + school_bus + transit + walk + bike,
+       car_trip + school_bus + transit + walk + bike + k8,
      all_school_mdt_lm,
      weights = wtperfin)
 
@@ -456,3 +482,31 @@ summary(school_trips_regression)
 all_school_mdt_lm %>%
   ggplot(aes(x = travtime_pg, y = race_eth)) +
   geom_boxplot()
+
+
+tract_sf <- sf::read_sf("V:/Demographic_and_Forecast/Census/2010/Geography/CMAP_Region_Projected/Tracts_CMAP_TIGER2010.shp")
+
+tract_schools <-
+  tract_sf %>%
+  left_join(school_locations, by = c("TRACTCE10" = "tract_fips_t")) %>%
+  select(TRACTCE10,n,geometry)
+
+school_trips_map1 <-
+  tract_schools %>%
+  ggplot(aes(fill = n)) +
+  geom_sf() +
+  theme_cmap(axis.text = element_blank(),
+             legend.position = "right",
+             legend.direction = "vertical",
+             legend.key.height = grid::unit(20,"bigpts")) +
+  # scale_fill_binned(breaks = c(5,10,25,50,100)) +
+  cmap_fill_continuous(palette = "seq_blues", breaks = c(0,50,100,150))
+
+finalize_plot(school_trips_map1,
+              title = "Number of school trips per tract.",
+              caption = "Source: CMAP analysis of MDT data.",
+              legend_shift = FALSE,
+              layout_style = "v",
+              width = 4,
+              filename = "school_trips_map1",
+              mode = "png")
