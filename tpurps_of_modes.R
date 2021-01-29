@@ -29,7 +29,10 @@ mdt_base_2 <-
            sampno %in% c(70038312,
                          70051607),
          distance_pg > 0,        # 96,857 records
-         tpurp_c != "missing")   # 96,788 records
+         tpurp_c != "missing"   # 96,788 records
+         ) %>%
+  mutate(under18 = ifelse(age >= 18, "18 and over", "Under 18"))
+
 
 tt_base_2 <-
   tt %>%                       # 140,751 records
@@ -37,7 +40,9 @@ tt_base_2 <-
          AGE >= 5 |            # 131,082 records
            SCHOL %in% c(4,5,6,7,8),
          DIST > 0,             # 98,800 records
-         tpurp_c != "missing") # 98,800 records
+         tpurp_c != "missing"  # 98,800 records
+         ) %>%
+  mutate(under18 = ifelse(AGE >= 18, "18 and over", "Under 18"))
 
 #####################################################
 # Purpose breakdown of carpooling vs. passenger
@@ -76,7 +81,7 @@ total_passenger_tpurp_c <-
   mutate(mode = "Passenger (all)")
 
 
-### Calculate proportions for subcategories for community in MDT
+### Calculate proportions for subcategories for driver/passenger in MDT
 detailed_passenger_totals_mdt <-
   all_passenger_mdt %>%
   group_by(mode) %>%
@@ -148,9 +153,57 @@ finalize_plot(tpurps_of_modes_p2,
               filename = "tpurps_of_modes_p2",
               height = 6.3,
               width = 11.3,
-              mode = "png")
+              mode = "png"
+              )
+
+### Repeat calculations but with flags for under 18
+
+### Calculate proportions for subcategories for driver/passenger in MDT
+detailed_passenger_totals_under18_mdt <-
+  all_passenger_mdt %>%
+  group_by(mode,under18) %>%
+  summarize(trip_total = sum(wtperfin)) %>%
+  mutate(survey = "mdt")
+
+passenger_totals_under18_tt <-
+  all_passenger_tt %>%
+  mutate(MODE = "Passenger (all)") %>%
+  rename(mode = MODE) %>%
+  group_by(mode,under18) %>%
+  summarize(trip_total = sum(weight)) %>%
+  mutate(survey = "tt")
 
 
+all_passenger_under18 <-
+  rbind(passenger_totals_under18_tt,
+        detailed_passenger_totals_under18_mdt)
+
+
+tpurps_of_modes_p2a <-
+  all_passenger_under18 %>%
+  mutate(survey = factor(survey,levels = c("tt","mdt")),
+         mode = factor(mode, levels = c("Passenger (all)","carpool","personal auto (passenger)"))) %>%
+  mutate(survey = recode_factor(survey,
+                                "tt" = "Travel Tracker ('08)",
+                                "mdt" = "My Daily Travel ('19)")) %>%
+  ggplot(aes(x = survey, y = trip_total, fill = mode)) +
+  geom_col() +
+  theme_cmap() +
+  facet_wrap(~under18, ncol = 1) +
+  cmap_fill_discrete(palette = "governance",reverse = TRUE) +
+  scale_y_continuous(labels = scales::label_comma(scale = 1))
+
+finalize_plot(tpurps_of_modes_p2a,
+              "Change in daily automobile passenger trips, 2008 vs. 2019, by age.",
+              "Note: Travel Tracker did not have a 'Carpool' category, and so
+              'Passenger (all)' includes both types of trips.
+              <br><br>
+              Source: CMAP analysis of MDT and TT data.",
+              filename = "tpurps_of_modes_p2a",
+              height = 6.3,
+              width = 11.3,
+              mode = "png"
+)
 
 
 #########################################################
@@ -191,7 +244,7 @@ total_bike_tpurp_c <-
   mutate(mode = "Bike (all)")
 
 
-### Calculate proportions for subcategories for community in MDT
+### Calculate proportions for subcategories for biking in MDT
 detailed_bike_totals_mdt <-
   all_bike_mdt %>%
   group_by(mode) %>%

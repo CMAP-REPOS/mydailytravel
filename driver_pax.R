@@ -24,11 +24,13 @@ age_labels <- c("5 to 9", "10 to 17", "18 to 24", "25 to 29",
 driver_pax_mdt <-
   mdt %>%                        # 125,103 records
   filter(age < 90,               # 125,006 records
-         age >= 5,               # 124,758 records
-         distance_pg > 0,        # 96,674 records
-         mode_c %in% c("driver", # 69,165 records
+         age >= 18 |             # 105,285 records
+         aage %in% c(5,6,7) |
+           schol %in% c(8),
+         distance_pg > 0,        # 82,386 records
+         mode_c %in% c("driver", # 60,105 records
                        "passenger"),
-         mode != "motorcycle"    # 69,123 records
+         mode != "motorcycle"    # 60,063 records
          ) %>%
   mutate(age_bin = cut(age, breaks = breaks,
                      labels = age_labels))
@@ -36,9 +38,10 @@ driver_pax_mdt <-
 driver_pax_tt <-
   tt %>%                         # 140,751 records
   filter(AGE < 90,               # 137,844 records
-         AGE >= 5,               # 131,082 records
-         DIST > 0,               # 98,800 records
-         mode_c %in% c("driver", # 80,473 records
+         AGE >= 18 |             # 112,975 records
+           SCHOL %in% c(8),
+         DIST > 0,               # 85,465 records
+         mode_c %in% c("driver", # 71,547 records
                        "passenger")) %>%
   mutate(age_bin = cut(AGE, breaks = breaks,
                        labels = age_labels))
@@ -120,7 +123,7 @@ driver_pax_p1 <-
   theme_cmap(gridlines = "v", vline = 0) +
   cmap_fill_discrete(palette = "mobility") +
   # Adjust x axis labels
-  scale_x_continuous(labels = scales::label_percent(),limits = c(0,.30)) +
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),limits = c(0,.25)) +
   # Adjust legend for formatting
   guides(pattern = guide_legend(override.aes = list(fill = "white", color = "black")),
          fill = guide_legend(override.aes = list(pattern = "none")))
@@ -198,14 +201,14 @@ driver_pax_p2 <- rbind(driver_pax_inc_mdt %>%
   theme_cmap(gridlines = "v") +
   geom_text(aes(label = label),position = position_dodge2(0.9,reverse = T), hjust = 0) +
   cmap_fill_discrete(palette = "mobility") +
-  scale_x_continuous(labels = scales::label_percent(),limits = c(0,.35))
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),limits = c(0,.25))
 
 
 finalize_plot(driver_pax_p2,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver, over time and by income.",
               caption = "Note: Excludes trips out of the CMAP region, as well as
-              travelers younger than 5 and older than 89.<br><br>
+              travelers younger than 18 and older than 89.<br><br>
               Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p2",
               mode = "png",
@@ -243,14 +246,14 @@ driver_pax_p3 <-
   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
   theme_cmap(gridlines = "v", legend.position = "none") +
   cmap_fill_race() +
-  scale_x_continuous(labels = scales::label_percent())
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1))
 
 
 finalize_plot(driver_pax_p3,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver,  by race and ethnicity.",
               caption = "Note: Excludes trips out of the CMAP region, as well as
-              travelers younger than 5 and older than 89. \"Hispanic\" includes
+              travelers younger than 18 and older than 89. \"Hispanic\" includes
               all travelers who identified as Hispanic. Other groups (e.g.,
               \"White\") are non-Hispanic.
               <br><br>
@@ -341,7 +344,7 @@ finalize_plot(driver_pax_p5,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver, over time, by race and income.",
               caption = "Note: Excludes trips out of the CMAP region, as well as
-              travelers younger than 5 and older than 89.\"Hispanic\" includes
+              travelers younger than 18 and older than 89.\"Hispanic\" includes
               all travelers who identified as Hispanic. Other groups (e.g.,
               \"White\") are non-Hispanic.
               <br><br>
@@ -353,6 +356,14 @@ finalize_plot(driver_pax_p5,
               overwrite = T
 
 )
+
+
+
+
+test <-
+  driver_pax_mdt %>%
+  filter(race_eth == "other",
+         income_c == "high")
 
 # Remove objects from the environment
 rm(driver_pax_race_mdt,driver_pax_total_inc_mdt,driver_pax_total_inc_tt,
