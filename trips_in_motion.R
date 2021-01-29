@@ -50,8 +50,15 @@ tim_mdt_wip <-
   mutate(trip_start = trip_end - 60*travtime) %>%
   # Create trip interval using the Lubridate package
   mutate(trip_interval = interval(trip_start,trip_end,tz = "America/Chicago")) %>%
-  # Create combined sample and person number
-  mutate(samp_per_no = paste0(sampno,perno)) %>%
+  # Mutate to character to allow case_when modification
+  mutate(mode_c_school = as.character(mode_c)) %>%
+  # Make school bus into its own category
+  mutate(mode_c_school = case_when(
+    mode == "school bus" ~ "school bus",
+    TRUE ~ mode_c_school
+  )) %>%
+  # Reconvert to factor
+  mutate(mode_c_school = factor(mode_c_school)) %>%
   # Create combined mode and purpose
   mutate(mode_tpurp = paste(mode,tpurp,sep = "_")) %>%
   # Create combined mode and purpose category
@@ -64,6 +71,7 @@ tim_mdt_wip <-
 # Extract possible modes
 possible_modes <- tibble(mode_c = unique(tim_mdt_wip$mode_c))
 possible_modes_detailed <- tibble(mode = unique(tim_mdt_wip$mode))
+possible_modes_school <- tibble(mode_c_school = unique(tim_mdt_wip$mode_c_school))
 possible_tpurp <- tibble(tpurp = unique(tim_mdt_wip$tpurp))
 possible_mode_tpurp <- tibble(mode_tpurp = unique(tim_mdt_wip$mode_tpurp))
 possible_mode_tpurp_c <- tibble(mode_tpurp_c = unique(tim_mdt_wip$mode_tpurp_c))
@@ -97,6 +105,24 @@ trip_times_mode_c_mdt <-
                          levels = c("driver","passenger","transit","walk",
                                     "bike","other","missing")))
 
+trip_times_mode_c_school_mdt <-
+  trip_times %>%
+  # Add all possible modes to each time
+  full_join(.,possible_modes_school, by = character()) %>%
+  # Calculate the number of trips that meet the criteria (in the interval and correct mode category)
+  mutate(mode_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
+    x %within% tim_mdt_wip$trip_interval &
+      y == tim_mdt_wip$mode_c_school)]),
+    time_band,
+    mode_c_school
+  )) %>%
+  group_by(mode_c_school) %>%
+  # Calculate rolling average
+  mutate(rolling_mode_count = slide_dbl(mode_count, mean, .before = 2, .after = 2)) %>%
+  ungroup() %>%
+  mutate(mode_c_school = factor(mode_c_school,
+                         levels = c("driver","passenger","transit","walk",
+                                    "bike","school bus","other","missing")))
 
 ### Mode and purpose
 trip_times_mode_and_purp_c_mdt_55 <-
@@ -252,7 +278,30 @@ finalize_plot(trips_in_motion_p1,
               height = 6.3,
               width = 11.3)
 
+# Graph output of trips in motion by mode, with school buses
+trips_in_motion_p1a <-
+  trip_times_mode_c_school_mdt %>%
+  filter(mode_c_school != "missing") %>%
+  ggplot(aes(x = time_band,y = rolling_mode_count)) +
+  geom_area(aes(fill = mode_c_school), position = position_stack(reverse = TRUE)) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
+                   breaks = breaks) +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
+  cmap_fill_discrete(palette = "mobility") +
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"))
 
+finalize_plot(trips_in_motion_p1a,
+              "Trips in motion in the CMAP region by mode on weekdays.",
+              "Note: Trips in motion are 25-minute rolling averages.
+              <br><br>
+              Source: CMAP analysis of My Daily Travel survey.",
+              filename = "trips_in_motion_p1a",
+              mode = "png",
+              overwrite = TRUE,
+              height = 6.3,
+              width = 11.3,
+              layout_style = "h")
 
 # Graph output of trips in motion by purpose for bike trips
 trips_in_motion_p2 <-
