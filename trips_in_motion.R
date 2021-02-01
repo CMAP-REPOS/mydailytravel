@@ -146,8 +146,6 @@ tim_calculator <- function(possibilities,
 
 trip_times_mode_c_mdt <-
   tim_calculator(possibilities = possible_modes,
-                 base_weights = tim_mdt_wip$wtperfin,
-                 criteria1 = tim_mdt_wip$trip_interval,
                  criteria2 = tim_mdt_wip$mode_c) %>%
   mutate(identifier = factor(identifier,
                              levels = c("driver","passenger","transit","walk",
@@ -156,8 +154,6 @@ trip_times_mode_c_mdt <-
 
 trip_times_mode_c_school_mdt <-
   tim_calculator(possibilities = possible_modes_school,
-                 base_weights = tim_mdt_wip$wtperfin,
-                 criteria1 = tim_mdt_wip$trip_interval,
                  criteria2 = tim_mdt_wip$mode_c_school) %>%
   mutate(identifier = factor(identifier,
                              levels = c("driver","passenger","transit","walk",
@@ -165,23 +161,17 @@ trip_times_mode_c_school_mdt <-
 
 trip_times_mode_and_purp_c_mdt_55 <-
   tim_calculator(possibilities = possible_mode_tpurp_c,
-                 base_weights = tim_mdt_wip$wtperfin,
-                 criteria1 = tim_mdt_wip$trip_interval,
                  criteria2 = tim_mdt_wip$mode_tpurp_c,
                  rolling_n = 55,
                  crosstab = T,crosstab1 = "mode",crosstab2 = "tpurp_c")
 
 trip_times_mode_and_purp_c_mdt_25 <-
   tim_calculator(possibilities = possible_mode_tpurp_c,
-                 base_weights = tim_mdt_wip$wtperfin,
-                 criteria1 = tim_mdt_wip$trip_interval,
                  criteria2 = tim_mdt_wip$mode_tpurp_c,
                  crosstab = T,crosstab1 = "mode",crosstab2 = "tpurp_c")
 
 trip_times_chains_mdt <-
   tim_calcuclator(possibilities = possible_chains,
-                  base_weights = tim_mdt_wip$wtperfin,
-                  criteria1 = tim_mdt_wip$trip_interval,
                   criteria2 = tim_mdt_wip$chain_bucket) %>%
   mutate(identifier = factor(identifier,
                              levels = c("Work trip","Return home (work)",
@@ -190,15 +180,11 @@ trip_times_chains_mdt <-
 
 trip_times_mode_c_and_chain_mdt_25 <-
   tim_calculator(possibilities = possible_mode_c_chains,
-                 base_weights = tim_mdt_wip$wtperfin,
-                 criteria1 = tim_mdt_wip$trip_interval,
                  criteria2 = tim_mdt_wip$mode_chain,
                  crosstab = T,crosstab1 = "mode_c",crosstab2 = "chain")
 
 trip_times_mode_and_chain_mdt_55 <-
   tim_calculator(possibilities = possible_mode_chains,
-                 base_weights = tim_mdt_wip$wtperfin,
-                 criteria1 = tim_mdt_wip$trip_interval,
                  criteria2 = tim_mdt_wip$mode_chain,
                  rolling_n = 55,
                  crosstab = T,crosstab1 = "mode",crosstab2 = "chain")
