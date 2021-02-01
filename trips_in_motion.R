@@ -60,185 +60,148 @@ tim_mdt_wip <-
   # Reconvert to factor
   mutate(mode_c_school = factor(mode_c_school)) %>%
   # Create combined mode and purpose
-  mutate(mode_tpurp = paste(mode,tpurp,sep = "_")) %>%
+  mutate(mode_tpurp = paste(mode,tpurp,sep = "-")) %>%
   # Create combined mode and purpose category
-  mutate(mode_tpurp_c = paste(mode,tpurp_c,sep = "_")) %>%
+  mutate(mode_tpurp_c = paste(mode,tpurp_c,sep = "-")) %>%
   # Create combined mode and chain category
-  mutate(mode_chain = paste(mode,chain_bucket,sep = "_"))
+  mutate(mode_chain = paste(mode,chain_bucket,sep = "-")) %>%
+  # Create combined mode category and chain category
+  mutate(mode_c_chain = paste(mode_c,chain_bucket,sep = "-"))
 
 
 
-# Extract possible modes
-possible_modes <- tibble(mode_c = unique(tim_mdt_wip$mode_c))
-possible_modes_detailed <- tibble(mode = unique(tim_mdt_wip$mode))
-possible_modes_school <- tibble(mode_c_school = unique(tim_mdt_wip$mode_c_school))
-possible_tpurp <- tibble(tpurp = unique(tim_mdt_wip$tpurp))
-possible_mode_tpurp <- tibble(mode_tpurp = unique(tim_mdt_wip$mode_tpurp))
-possible_mode_tpurp_c <- tibble(mode_tpurp_c = unique(tim_mdt_wip$mode_tpurp_c))
-possible_chains <- tibble(chain_bucket = unique(tim_mdt_wip$chain_bucket))
-possible_mode_chains <- tibble(mode_chain_bucket = unique(tim_mdt_wip$mode_chain))
+# Extract possible modes and/or purposes
+possible_modes <- tibble(identifier = unique(tim_mdt_wip$mode_c))
+possible_modes_detailed <- tibble(identifier = unique(tim_mdt_wip$mode))
+possible_modes_school <- tibble(identifier = unique(tim_mdt_wip$mode_c_school))
+possible_tpurp <- tibble(identifier = unique(tim_mdt_wip$tpurp))
+possible_mode_tpurp <- tibble(identifier = unique(tim_mdt_wip$mode_tpurp))
+possible_mode_tpurp_c <- tibble(identifier = unique(tim_mdt_wip$mode_tpurp_c))
+possible_chains <- tibble(identifier = unique(tim_mdt_wip$chain_bucket))
+possible_mode_chains <- tibble(identifier = unique(tim_mdt_wip$mode_chain))
+possible_mode_c_chains <- tibble(identifier = unique(tim_mdt_wip$mode_c_chain))
 
-# Calculate trips in motion by mode
-trip_times <-
-  # Establish sequence of times over the day (in one minute increments)
-  tibble(time_band = seq.POSIXt(
-    from = as.POSIXct("2020-01-01 03:00:00", tz = "America/Chicago"),
-    to = as.POSIXct("2020-01-02 03:00:00", tz = "America/Chicago"),
-    by = "5 min"))
+# Helper function to calculate trip times within the intervals that meet given criteria
+tim_calculator <- function(possibilities,
+                           base_weights = tim_mdt_wip$wtperfin,
+                           criteria1 = tim_mdt_wip$trip_interval,
+                           criteria2,
+                           rolling_interval = 5,
+                           rolling_n = 25,
+                           crosstab = F,
+                           crosstab1 = NULL,
+                           crosstab2 = NULL) {
+
+  # Create tibble of all possible trip intervals
+  trip_times <-
+    # Establish sequence of times over the day (in one minute increments)
+    tibble(time_band = seq.POSIXt(
+      from = as.POSIXct("2020-01-01 03:00:00", tz = "America/Chicago"),
+      to = as.POSIXct("2020-01-02 03:00:00", tz = "America/Chicago"),
+      # Interval using input above, defaults to 5
+      by = paste0(rolling_interval," min")))
+
+  # Calculate number of intervals on either side of the interval needed for rolling average
+  rolling_n_calc <- ((rolling_n / rolling_interval) - 1) / 2
+
+  # Calculate trips in motion within the intervals meeting criteria
+  raw_count <-
+    # Start with all trip intervals
+    trip_times %>%
+    # Add all possible modes and/or purposes and/or chains
+    full_join(possibilities, by = character()) %>%
+    # Sum the weights that meet both criteria
+    mutate(count = mapply(function(x,y) sum(base_weights[which(
+      x %within% criteria1 &
+        y == criteria2)]),
+      time_band,
+      identifier
+    ))
+
+  # If crosstab, need to split identifier and group by both columns. Otherwise, group by identifier.
+  if (!crosstab) {
+    grouped_count <-
+      raw_count %>%
+      group_by(identifier)
+  } else {
+    grouped_count <-
+      raw_count %>%
+      separate(identifier,into = c(crosstab1,crosstab2) , sep = "-") %>%
+      group_by(.data[[crosstab1]],.data[[crosstab2]])
+  }
+
+  # Calculate rolling averages
+  output <-
+    grouped_count %>%
+    # Calculate rolling average
+    mutate(rolling_count = slide_dbl(count, mean,
+                                     .before = rolling_n_calc,
+                                     .after = rolling_n_calc)) %>%
+    ungroup()
+
+  return(output)
+
+}
+
 
 trip_times_mode_c_mdt <-
-  trip_times %>%
-  # Add all possible modes to each time
-  full_join(.,possible_modes, by = character()) %>%
-  # Calculate the number of trips that meet the criteria (in the interval and correct mode category)
-  mutate(mode_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
-    x %within% tim_mdt_wip$trip_interval &
-      y == tim_mdt_wip$mode_c)]),
-    time_band,
-    mode_c
-  )) %>%
-  group_by(mode_c) %>%
-  # Calculate rolling average
-  mutate(rolling_mode_count = slide_dbl(mode_count, mean, .before = 2, .after = 2)) %>%
-  ungroup() %>%
-  mutate(mode_c = factor(mode_c,
-                         levels = c("driver","passenger","transit","walk",
-                                    "bike","other","missing")))
+  tim_calculator(possibilities = possible_modes,
+                 base_weights = tim_mdt_wip$wtperfin,
+                 criteria1 = tim_mdt_wip$trip_interval,
+                 criteria2 = tim_mdt_wip$mode_c) %>%
+  mutate(identifier = factor(identifier,
+                             levels = c("driver","passenger","transit","walk",
+                                        "bike","other","missing")))
+
 
 trip_times_mode_c_school_mdt <-
-  trip_times %>%
-  # Add all possible modes to each time
-  full_join(.,possible_modes_school, by = character()) %>%
-  # Calculate the number of trips that meet the criteria (in the interval and correct mode category)
-  mutate(mode_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
-    x %within% tim_mdt_wip$trip_interval &
-      y == tim_mdt_wip$mode_c_school)]),
-    time_band,
-    mode_c_school
-  )) %>%
-  group_by(mode_c_school) %>%
-  # Calculate rolling average
-  mutate(rolling_mode_count = slide_dbl(mode_count, mean, .before = 2, .after = 2)) %>%
-  ungroup() %>%
-  mutate(mode_c_school = factor(mode_c_school,
-                         levels = c("driver","passenger","transit","walk",
-                                    "bike","school bus","other","missing")))
+  tim_calculator(possibilities = possible_modes_school,
+                 base_weights = tim_mdt_wip$wtperfin,
+                 criteria1 = tim_mdt_wip$trip_interval,
+                 criteria2 = tim_mdt_wip$mode_c_school) %>%
+  mutate(identifier = factor(identifier,
+                             levels = c("driver","passenger","transit","walk",
+                                        "school bus","bike","other","missing")))
 
-### Mode and purpose
 trip_times_mode_and_purp_c_mdt_55 <-
-  trip_times %>%
-  # Add all possible modes to each time
-  full_join(.,possible_mode_tpurp_c, by = character()) %>%
-  # Calculate the number of trips that meet the criteria (in the interval and correct mode)
-  mutate(trip_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
-    x %within% tim_mdt_wip$trip_interval &
-      y == tim_mdt_wip$mode_tpurp_c)]),
-    time_band,
-    mode_tpurp_c
-  )) %>%
-  separate(col = mode_tpurp_c, into = c("mode","tpurp_c"), sep = "_") %>%
-  group_by(mode,tpurp_c) %>%
-  # Calculate rolling average
-  mutate(rolling_count = slide_dbl(trip_count, mean, .before = 5, .after = 5)) %>%
-  ungroup()
-
+  tim_calculator(possibilities = possible_mode_tpurp_c,
+                 base_weights = tim_mdt_wip$wtperfin,
+                 criteria1 = tim_mdt_wip$trip_interval,
+                 criteria2 = tim_mdt_wip$mode_tpurp_c,
+                 rolling_n = 55,
+                 crosstab = T,crosstab1 = "mode",crosstab2 = "tpurp_c")
 
 trip_times_mode_and_purp_c_mdt_25 <-
-  trip_times %>%
-  # Add all possible modes to each time
-  full_join(.,possible_mode_tpurp_c, by = character()) %>%
-  # Calculate the number of trips that meet the criteria (in the interval and correct mode)
-  mutate(trip_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
-    x %within% tim_mdt_wip$trip_interval &
-      y == tim_mdt_wip$mode_tpurp_c)]),
-    time_band,
-    mode_tpurp_c
-  )) %>%
-  separate(col = mode_tpurp_c, into = c("mode","tpurp_c"), sep = "_") %>%
-  group_by(mode,tpurp_c) %>%
-  # Calculate rolling average
-  mutate(rolling_count = slide_dbl(trip_count, mean, .before = 2, .after = 2)) %>%
-  ungroup()
+  tim_calculator(possibilities = possible_mode_tpurp_c,
+                 base_weights = tim_mdt_wip$wtperfin,
+                 criteria1 = tim_mdt_wip$trip_interval,
+                 criteria2 = tim_mdt_wip$mode_tpurp_c,
+                 crosstab = T,crosstab1 = "mode",crosstab2 = "tpurp_c")
 
-
-#### Group by trip chain buckets
 trip_times_chains_mdt <-
-  trip_times %>%
-  full_join(possible_chains, by = character()) %>%
-  # Calculate the number of trips that meet the criteria (in the interval and correct bucket)
-  mutate(bucket_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
-    x %within% tim_mdt_wip$trip_interval &
-      y == tim_mdt_wip$chain_bucket)]),
-    time_band,
-    chain_bucket
-  )) %>%
-  group_by(chain_bucket) %>%
-  # Calculate rolling average
-  mutate(rolling_bucket_count = slide_dbl(bucket_count, mean, .before = 2, .after = 2)) %>%
-  ungroup() %>%
-  mutate(chain_bucket = factor(chain_bucket,
-                         levels = c("Work trip","Return home (work)",
-                                    "Shopping trip","Return home (shopping)",
-                                    "Other trip")))
-
-# Chain status and mode category
-trip_times_mode_and_chain_mdt_25 <-
-  trip_times %>%
-  # Add all possible modes to each time
-  full_join(possible_mode_chains, by = character()) %>%
-  # Calculate the number of trips that meet the criteria (in the interval and correct mode)
-  mutate(trip_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
-    x %within% tim_mdt_wip$trip_interval &
-      y == tim_mdt_wip$mode_chain)]),
-    time_band,
-    mode_chain_bucket
-  )) %>%
-  separate(col = mode_chain_bucket, into = c("mode","chain_bucket"), sep = "_") %>%
-  group_by(mode,chain_bucket) %>%
-  # Calculate rolling average
-  mutate(rolling_count = slide_dbl(trip_count, mean, .before = 2, .after = 2)) %>%
-  ungroup()
-
-# Chain status and mode category
-trip_times_mode_and_chain_mdt_55 <-
-  trip_times %>%
-  # Add all possible modes to each time
-  full_join(possible_mode_chains, by = character()) %>%
-  # Calculate the number of trips that meet the criteria (in the interval and correct mode)
-  mutate(trip_count = mapply(function(x,y) sum(tim_mdt_wip$wtperfin[which(
-    x %within% tim_mdt_wip$trip_interval &
-      y == tim_mdt_wip$mode_chain)]),
-    time_band,
-    mode_chain_bucket
-  )) %>%
-  separate(col = mode_chain_bucket, into = c("mode","chain_bucket"), sep = "_") %>%
-  group_by(mode,chain_bucket) %>%
-  # Calculate rolling average
-  mutate(rolling_count = slide_dbl(trip_count, mean, .before = 5, .after = 5)) %>%
-  ungroup()
-
-source("recoding.R")
+  tim_calcuclator(possibilities = possible_chains,
+                  base_weights = tim_mdt_wip$wtperfin,
+                  criteria1 = tim_mdt_wip$trip_interval,
+                  criteria2 = tim_mdt_wip$chain_bucket) %>%
+  mutate(identifier = factor(identifier,
+                             levels = c("Work trip","Return home (work)",
+                                        "Shopping trip","Return home (shopping)",
+                                        "Other trip")))
 
 trip_times_mode_c_and_chain_mdt_25 <-
-  trip_times_mode_and_chain_mdt_25 %>%
-  mutate(mode_c = fct_collapse(mode,
-                               !!!recode_mode_buckets_mdt)) %>%
-  group_by(mode_c,time_band,chain_bucket) %>%
-  summarize(rolling_count = sum(rolling_count)) %>%
-  mutate(mode_c = factor(mode_c,
-                         levels = c("driver","passenger","transit","walk",
-                         "bike","other","missing"))) %>%
-  mutate(chain_bucket = factor(chain_bucket,
-                               levels = c("Work trip","Return home (work)",
-                                          "Shopping trip","Return home (shopping)",
-                                          "Other trip")))
+  tim_calculator(possibilities = possible_mode_c_chains,
+                 base_weights = tim_mdt_wip$wtperfin,
+                 criteria1 = tim_mdt_wip$trip_interval,
+                 criteria2 = tim_mdt_wip$mode_chain,
+                 crosstab = T,crosstab1 = "mode_c",crosstab2 = "chain")
 
 trip_times_mode_and_chain_mdt_55 <-
-  trip_times_mode_and_chain_mdt_55 %>%
-  mutate(chain_bucket = factor(chain_bucket,
-                               levels = c("Work trip","Return home (work)",
-                                          "Shopping trip","Return home (shopping)",
-                                          "Other trip")))
+  tim_calculator(possibilities = possible_mode_chains,
+                 base_weights = tim_mdt_wip$wtperfin,
+                 criteria1 = tim_mdt_wip$trip_interval,
+                 criteria2 = tim_mdt_wip$mode_chain,
+                 rolling_n = 55,
+                 crosstab = T,crosstab1 = "mode",crosstab2 = "chain")
 
 #################################################################
 #                                                               #
@@ -257,9 +220,9 @@ breaks_less <- seq.POSIXt(from = as.POSIXct("2020-01-01 03:00:00"),
 # Graph output of trips in motion by mode
 trips_in_motion_p1 <-
   trip_times_mode_c_mdt %>%
-  filter(mode_c != "missing") %>%
-  ggplot(aes(x = time_band,y = rolling_mode_count)) +
-  geom_area(aes(fill = mode_c), position = position_stack(reverse = TRUE)) +
+  filter(identifier != "missing") %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = identifier), position = position_stack(reverse = TRUE)) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
@@ -281,9 +244,9 @@ finalize_plot(trips_in_motion_p1,
 # Graph output of trips in motion by mode, with school buses
 trips_in_motion_p1a <-
   trip_times_mode_c_school_mdt %>%
-  filter(mode_c_school != "missing") %>%
-  ggplot(aes(x = time_band,y = rolling_mode_count)) +
-  geom_area(aes(fill = mode_c_school), position = position_stack(reverse = TRUE)) +
+  filter(identifier != "missing") %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = identifier), position = position_stack(reverse = TRUE)) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
@@ -411,8 +374,8 @@ finalize_plot(trips_in_motion_p5,
 # Graph trips in motion by trip chains
 trips_in_motion_p6 <-
   trip_times_chains_mdt %>%
-  ggplot(aes(x = time_band,y = rolling_bucket_count)) +
-  geom_area(aes(fill = chain_bucket), position = position_stack(reverse = T)) +
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = identifier), position = position_stack(reverse = T)) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
@@ -436,7 +399,7 @@ finalize_plot(trips_in_motion_p6,
 trips_in_motion_p7 <-
   trip_times_mode_c_and_chain_mdt_25 %>%
   filter(mode_c != "missing") %>%
-  mutate(category = fct_collapse(chain_bucket,
+  mutate(category = fct_collapse(chain,
     Work = c("Work trip","Return home (work)"),
     Other = "Other trip",
     Shopping = c("Shopping trip","Return home (shopping)"))) %>%
@@ -511,28 +474,16 @@ tim_mdt_drivethru <-
   filter(tpurp == "Drive thru / take-out dining")
 
 trip_times_drivethru_and_mode_mdt <-
-  trip_times %>%
-  # Add all possible modes to each time
-  full_join(.,possible_modes, by = character()) %>%
-  # Calculate the number of trips that meet the criteria (in the interval and correct mode)
-  mutate(trip_count = mapply(function(x,y) sum(tim_mdt_drivethru$wtperfin[which(
-    x %within% tim_mdt_drivethru$trip_interval &
-      y == tim_mdt_drivethru$mode_c)]),
-    time_band,
-    mode_c
-  )) %>%
-  group_by(mode_c) %>%
-  # Calculate rolling average
-  mutate(rolling_count = slide_dbl(trip_count, mean, .before = 5, .after = 5)) %>%
-  ungroup()
-
-
+  tim_calculator(possibilities = possible_modes,
+                 base_weights = tim_mdt_drivethru$wtperfin,
+                 criteria1 = tim_mdt_drivethru$trip_interval,
+                 criteria2 = tim_mdt_drivethru$mode_c)
 
 trips_in_motion_p9 <-
   trip_times_drivethru_and_mode_mdt %>%
-  filter(mode_c != "missing") %>%
+  filter(identifier != "missing") %>%
   ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = reorder(mode_c,desc(mode_c)))) +
+  geom_area(aes(fill = reorder(identifier,desc(identifier)))) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
