@@ -30,7 +30,14 @@ mdt_base_1 <-
                          70051607),
          distance_pg > 0,        # 96,857 records
          mode_c != "missing",    # 96,821 records
-         mode_c != "beginning")  # 96,821 records
+         mode_c != "beginning"   # 96,821 records
+  ) %>%
+  # Put school bus back into "other" category
+  mutate(mode_c = as.character(mode_c)) %>%
+  mutate(mode_c = case_when(
+    mode_c == "schoolbus" ~ "other",
+    TRUE ~ mode_c)) %>%
+  mutate(mode_c = factor(mode_c,levels = mode_c_levels))
 
 tt_base_1 <-
   tt %>%                      # 140,751 records
@@ -39,6 +46,12 @@ tt_base_1 <-
            SCHOL %in% c(4,5,6,7,8),
          DIST > 0,            # 98,800 records
          mode_c != "missing") # 98,800 records
+# Put school bus back into "other" category
+mutate(mode_c = as.character(mode_c)) %>%
+  mutate(mode_c = case_when(
+    mode_c == "schoolbus" ~ "other",
+    TRUE ~ mode_c)) %>%
+  mutate(mode_c = factor(mode_c,levels = mode_c_levels))
 
 #### Mode breakdown of different dining trips
 
@@ -122,7 +135,29 @@ finalize_plot(modes_of_tpurps_p1,
               mode = "png")
 
 
+modes_of_tpurps_p1a <-
+  all_dining_mode_c %>%
+  mutate(label = paste0(format(round(mode_c_pct * 100,1),nsmall = 1),"%")) %>%
+  filter(survey == "mdt", tpurp != "Dining outside of home (all)") %>%
+  mutate(tpurp = factor(tpurp,levels = c("Drive thru / take-out dining",
+                                         "Ate / dined out")),
+         survey = factor(survey, levels = c("tt","mdt"))) %>%
+  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = tpurp)) +
+  geom_col(position = position_dodge2(width = .8,reverse = TRUE)) +
+  theme_cmap(gridlines = "v",vline = 0) +
+  scale_x_continuous(labels = scales::label_percent(accuracy=1),n.breaks = 6,limits = c(0,.75)) +
+  geom_text(aes(label = label),position = position_dodge2(width = .8,reverse = T),
+            hjust = 0) +
+  cmap_fill_discrete(palette = "friday")
 
+finalize_plot(modes_of_tpurps_p1a,
+              "Mode share of dining trips, 2019.",
+              "Source: CMAP analysis of MDT data.",
+              width = 11.3,
+              height = 6.3,
+              filename = "modes_of_tpurps_p1a",
+              mode = "png",
+              overwrite = T)
 
 
 #### Mode breakdown of different healthcare trips
