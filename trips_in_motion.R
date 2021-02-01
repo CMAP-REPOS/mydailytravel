@@ -50,15 +50,6 @@ tim_mdt_wip <-
   mutate(trip_start = trip_end - 60*travtime) %>%
   # Create trip interval using the Lubridate package
   mutate(trip_interval = interval(trip_start,trip_end,tz = "America/Chicago")) %>%
-  # Mutate to character to allow case_when modification
-  mutate(mode_c_school = as.character(mode_c)) %>%
-  # Make school bus into its own category
-  mutate(mode_c_school = case_when(
-    mode == "school bus" ~ "school bus",
-    TRUE ~ mode_c_school
-  )) %>%
-  # Reconvert to factor
-  mutate(mode_c_school = factor(mode_c_school)) %>%
   # Create combined mode and purpose
   mutate(mode_tpurp = paste(mode,tpurp,sep = "-")) %>%
   # Create combined mode and purpose category
@@ -147,24 +138,24 @@ trip_times_mode_c_mdt <-
   tim_calculator(possibilities = possible_modes,
                  criteria2 = tim_mdt_wip$mode_c)
 
+trip_times_mode_and_purp_c_mdt_25 <-
+  tim_calculator(possibilities = possible_mode_tpurp_c,
+                 criteria2 = tim_mdt_wip$mode_tpurp_c,
+                 crosstab = T,crosstab1 = "mode",crosstab2 = "tpurp_c")
+
 trip_times_mode_and_purp_c_mdt_55 <-
   tim_calculator(possibilities = possible_mode_tpurp_c,
                  criteria2 = tim_mdt_wip$mode_tpurp_c,
                  rolling_n = 55,
                  crosstab = T,crosstab1 = "mode",crosstab2 = "tpurp_c")
 
-trip_times_mode_and_purp_c_mdt_25 <-
-  tim_calculator(possibilities = possible_mode_tpurp_c,
-                 criteria2 = tim_mdt_wip$mode_tpurp_c,
-                 crosstab = T,crosstab1 = "mode",crosstab2 = "tpurp_c")
-
 trip_times_chains_mdt <-
-  tim_calcuclator(possibilities = possible_chains,
+  tim_calculator(possibilities = possible_chains,
                   criteria2 = tim_mdt_wip$chain_bucket)
 
 trip_times_mode_c_and_chain_mdt_25 <-
   tim_calculator(possibilities = possible_mode_c_chains,
-                 criteria2 = tim_mdt_wip$mode_chain,
+                 criteria2 = tim_mdt_wip$mode_c_chain,
                  crosstab = T,crosstab1 = "mode_c",crosstab2 = "chain")
 
 trip_times_mode_and_chain_mdt_55 <-
@@ -187,6 +178,12 @@ breaks_less <- seq.POSIXt(from = as.POSIXct("2020-01-01 03:00:00"),
                      to = as.POSIXct("2020-01-02 03:00:00"),
                      by = "6 hours")
 
+#################################################################
+#                                                               #
+#                        Overall                                #
+#                                                               #
+#################################################################
+
 # Graph output of trips in motion by mode
 trips_in_motion_p1 <-
   trip_times_mode_c_mdt %>%
@@ -196,7 +193,7 @@ trips_in_motion_p1 <-
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
-  cmap_fill_discrete(palette = "mobility") +
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#a7efe8","#6d8692","#0084ac","#efa7a7","#67ac00")) +
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"))
 
@@ -209,32 +206,73 @@ finalize_plot(trips_in_motion_p1,
               mode = "png",
               overwrite = TRUE,
               height = 6.3,
-              width = 11.3)
+              width = 11.3,
+              layout_style = "h")
 
-# Graph output of trips in motion by mode, with school buses
-trips_in_motion_p1a <-
-  trip_times_mode_c_school_mdt %>%
-  filter(identifier != "missing") %>%
+# Graph trips in motion by trip chains
+trips_in_motion_p6 <-
+  trip_times_chains_mdt %>%
   ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = identifier), position = position_stack(reverse = TRUE)) +
+  geom_area(aes(fill = identifier), position = position_stack(reverse = T)) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#a7efe8","#6d8692","#0084ac","#efa7a7","#67ac00")) +
+  scale_fill_discrete(type = c("#009ccc","#72cae5","#cc8200","#e5b172","#3d6600")) +
   theme_cmap(gridlines = "hv",
-             panel.grid.major.x = element_line(color = "light gray"))
+             panel.grid.major.x = element_line(color = "light gray"),
+             legend.max.columns = 3)
 
-finalize_plot(trips_in_motion_p1a,
-              "Trips in motion in the CMAP region by mode on weekdays.",
+finalize_plot(trips_in_motion_p6,
+              "Trips in motion in the CMAP region by trip chain type on weekdays.",
               "Note: Trips in motion are 25-minute rolling averages.
               <br><br>
               Source: CMAP analysis of My Daily Travel survey.",
-              filename = "trips_in_motion_p1a",
+              filename = "trips_in_motion_p6",
               mode = "png",
               overwrite = TRUE,
               height = 6.3,
-              width = 11.3,
-              layout_style = "h")
+              width = 11.3)
+
+# Graph trips in motion by mode category, faceting for different chain types
+trips_in_motion_p7 <-
+  trip_times_mode_c_and_chain_mdt_25 %>%
+  mutate(mode_c = factor(mode_c, levels = mode_c_levels)) %>%
+  filter(mode_c != "missing") %>%
+  mutate(category = fct_collapse(chain,
+                                 Work = c("Work trip","Return home (work)"),
+                                 Other = "Other trip",
+                                 Shopping = c("Shopping trip","Return home (shopping)"))) %>%
+  mutate(category = factor(category, levels = c("Work","Shopping","Other"))) %>%
+  group_by(time_band,mode_c,category) %>%
+  summarize(rolling_count = sum(rolling_count)) %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = mode_c), position = position_stack(reverse = TRUE)) +
+  facet_wrap(~category, ncol = 1) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
+                   breaks = breaks) +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#a7efe8","#6d8692",
+                               "#0084ac","#efa7a7","#67ac00")) +
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"),
+             legend.max.columns = 10)
+
+finalize_plot(trips_in_motion_p7,
+              "Trips in motion in the CMAP region by trip chain type on weekdays.",
+              "Note: Trips in motion are 25-minute rolling averages.
+              <br><br>
+              Source: CMAP analysis of My Daily Travel survey.",
+              filename = "trips_in_motion_p7",
+              mode = "png",
+              overwrite = TRUE,
+              height = 6.3,
+              width = 11.3)
+
+#################################################################
+#                                                               #
+#                        Bikes                                  #
+#                                                               #
+#################################################################
 
 # Graph output of trips in motion by purpose for bike trips
 trips_in_motion_p2 <-
@@ -259,6 +297,103 @@ finalize_plot(trips_in_motion_p2,
               overwrite = TRUE,
               height = 6.3,
               width = 11.3)
+
+# Graph output of trips in motion by purpose for bike trips (personal bike only)
+trips_in_motion_p4 <-
+  trip_times_mode_and_chain_mdt_55 %>%
+  mutate(chain = factor(chain, levels = c("Work trip","Return home (work)",
+                                          "Shopping trip","Return home (shopping)",
+                                          "Other trip"))) %>%
+  filter(mode == "personal bike") %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = chain), position = position_stack(reverse = T)) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
+                   breaks = breaks) +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
+  scale_fill_discrete(type = c("#009ccc","#72cae5","#cc8200","#e5b172","#3d6600")) +
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"))
+
+finalize_plot(trips_in_motion_p4,
+              "Bicycling trips in motion by travel purpose.",
+              "Note: Excludes bike share due to limited sample size. Trips in motion
+              are 55-minute rolling averages.
+              <br><br>
+              Source: CMAP analysis of My Daily Travel survey.",
+              filename = "trips_in_motion_p4",
+              mode = "png",
+              overwrite = TRUE,
+              height = 6.3,
+              width = 11.3)
+
+
+# Split into two groups for comparison
+tim_mdt_bike <-
+  tim_mdt_wip %>%
+  # Filter to just the purpose in question
+  filter(mode %in% c("personal bike")) %>%
+  group_by(sampno,perno,placeno,placeGroup) %>%
+  mutate(n = 1,
+         random = sample(1:2,size = 1))
+
+tim_mdt_bike_set1 <-
+  tim_mdt_bike %>%
+  filter(random == 1)
+
+tim_mdt_bike_set2 <-
+  tim_mdt_bike %>%
+  filter(random == 2)
+
+trip_times_bike_chain_mdt_split <-
+  tim_calculator(possibilities = possible_mode_chains,
+                 base_weights = tim_mdt_bike_set1$wtperfin,
+                 criteria1 = tim_mdt_bike_set1$trip_interval,
+                 criteria2 = tim_mdt_bike_set1$mode_chain,
+                 rolling_n = 55,
+                 crosstab = T,crosstab1 = "mode",crosstab2 = "chain") %>%
+  mutate(set = 1) %>%
+  rbind(tim_calculator(possibilities = possible_mode_chains,
+                       base_weights = tim_mdt_bike_set2$wtperfin,
+                       criteria1 = tim_mdt_bike_set2$trip_interval,
+                       criteria2 = tim_mdt_bike_set2$mode_chain,
+                       rolling_n = 55,
+                       crosstab = T,crosstab1 = "mode",crosstab2 = "chain") %>%
+          mutate(set = 2))
+
+
+trips_in_motion_p4_split <-
+  trip_times_bike_chain_mdt_split %>%
+  mutate(chain = factor(chain, levels = c("Work trip","Return home (work)",
+                                          "Shopping trip","Return home (shopping)",
+                                          "Other trip"))) %>%
+  filter(mode == "personal bike") %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = chain), position = position_stack(reverse = T)) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
+                   breaks = breaks) +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
+  facet_wrap(~set) +
+  scale_fill_discrete(type = c("#009ccc","#72cae5","#cc8200","#e5b172","#3d6600")) +
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"))
+
+finalize_plot(trips_in_motion_p4_split,
+              "Bicycling trips in motion by travel purpose.",
+              "Note: Excludes bike share due to limited sample size. Trips in motion
+              are 55-minute rolling averages.
+              <br><br>
+              Source: CMAP analysis of My Daily Travel survey.",
+              filename = "trips_in_motion_p4_split",
+              mode = "png",
+              overwrite = TRUE,
+              height = 6.3,
+              width = 11.3)
+
+#################################################################
+#                                                               #
+#                        TNC/taxi                               #
+#                                                               #
+#################################################################
 
 # Graph output of trips in motion by purpose for taxi vs. ride share trips
 trips_in_motion_p3 <-
@@ -290,135 +425,17 @@ finalize_plot(trips_in_motion_p3,
               width = 11.3)
 
 
-# Graph output of trips in motion by purpose for bike trips (personal bike only)
-trips_in_motion_p4 <-
-  trip_times_mode_and_purp_c_mdt_55 %>%
-  filter(mode == "personal bike") %>%
-  ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = tpurp_c), position = position_stack(reverse = T)) +
-  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
-                   breaks = breaks) +
-  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
-  scale_fill_discrete(type = c("#00becc","#cc5f00","#3f0e00","#cca600","#003f8c",
-                               "#67ac00","#006b8c","#efa7a7","#8c4100","#00303f",
-                               "#a7efe8")) +
-  theme_cmap(gridlines = "hv",
-             panel.grid.major.x = element_line(color = "light gray"))
-
-finalize_plot(trips_in_motion_p4,
-              "Bicycling trips in motion by travel purpose.",
-              "Note: Excludes bike share due to limited sample size. Trips in motion
-              are 55-minute rolling averages.
-              <br><br>
-              Source: CMAP analysis of My Daily Travel survey.",
-              filename = "trips_in_motion_p4",
-              mode = "png",
-              overwrite = TRUE,
-              height = 6.3,
-              width = 11.3)
-
-
-# Graph output of trips in motion by purpose for transit trips
-trips_in_motion_p5 <-
-  trip_times_mode_and_purp_c_mdt_25 %>%
-  filter(mode %in% c("rail and bus", "bus", "train", "local transit", "transit")) %>%
-  group_by(time_band,tpurp_c) %>%
-  summarize(rolling_count = sum(rolling_count)) %>%
-  ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = tpurp_c)) +
-  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
-                   breaks = breaks) +
-  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
-  cmap_fill_discrete(palette = "mobility") +
-  theme_cmap(gridlines = "hv",
-             panel.grid.major.x = element_line(color = "light gray"))
-
-finalize_plot(trips_in_motion_p5,
-              "Transit trips in motion by travel purpose.",
-              "Note: Trips in motion are 25-minute rolling averages.
-              <br><br>
-              Source: CMAP analysis of My Daily Travel survey.",
-              filename = "trips_in_motion_p5",
-              mode = "png",
-              overwrite = TRUE,
-              height = 6.3,
-              width = 11.3)
-
-
-
-# Graph trips in motion by trip chains
-trips_in_motion_p6 <-
-  trip_times_chains_mdt %>%
-  ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = identifier), position = position_stack(reverse = T)) +
-  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
-                   breaks = breaks) +
-  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
-  scale_fill_discrete(type = c("#009ccc","#72cae5","#cc8200","#e5b172","#3d6600")) +
-  theme_cmap(gridlines = "hv",
-             panel.grid.major.x = element_line(color = "light gray"),
-             legend.max.columns = 3)
-
-finalize_plot(trips_in_motion_p6,
-              "Trips in motion in the CMAP region by trip chain type on weekdays.",
-              "Note: Trips in motion are 25-minute rolling averages.
-              <br><br>
-              Source: CMAP analysis of My Daily Travel survey.",
-              filename = "trips_in_motion_p6",
-              # mode = "png",
-              overwrite = TRUE,
-              height = 6.3,
-              width = 11.3)
-
-# Graph trips in motion by mode category for work chains
-trips_in_motion_p7 <-
-  trip_times_mode_c_and_chain_mdt_25 %>%
-  filter(mode_c != "missing") %>%
-  mutate(category = fct_collapse(chain,
-    Work = c("Work trip","Return home (work)"),
-    Other = "Other trip",
-    Shopping = c("Shopping trip","Return home (shopping)"))) %>%
-  mutate(category = factor(category, levels = c("Work","Shopping","Other"))) %>%
-  group_by(time_band,mode_c,category) %>%
-  summarize(rolling_count = sum(rolling_count)) %>%
-  ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = mode_c), position = position_stack(reverse = TRUE)) +
-  facet_wrap(~category, ncol = 1) +
-  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
-                   breaks = breaks) +
-  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
-  cmap_fill_discrete(palette = "mobility") +
-  theme_cmap(gridlines = "hv",
-             panel.grid.major.x = element_line(color = "light gray"),
-             legend.max.columns = 10)
-
-finalize_plot(trips_in_motion_p7,
-              "Trips in motion in the CMAP region by trip chain type on weekdays.",
-              "Note: Trips in motion are 25-minute rolling averages.
-              <br><br>
-              Source: CMAP analysis of My Daily Travel survey.",
-              filename = "trips_in_motion_p7",
-              mode = "png",
-              overwrite = TRUE,
-              height = 6.3,
-              width = 11.3)
-
-
 ##### Ride share and taxis, by chain
 
 # Graph trips in motion by mode category for work chains
 trips_in_motion_p8 <-
   trip_times_mode_and_chain_mdt_55 %>%
+  mutate(chain = factor(chain, levels = c("Work trip","Return home (work)",
+                                          "Shopping trip","Return home (shopping)",
+                                          "Other trip"))) %>%
   filter(mode %in% c("taxi","rideshare","shared rideshare")) %>%
-  # mutate(category = fct_collapse(chain_bucket,
-  #                                Work = c("Work trip","Return home (work)"),
-  #                                Other = "Other trip",
-  #                                Shopping = c("Shopping trip","Return home (shopping)"))) %>%
-  # mutate(category = factor(category, levels = c("Work","Shopping","Other"))) %>%
-  group_by(time_band,mode,chain_bucket) %>%
-  summarize(rolling_count = sum(rolling_count)) %>%
   ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = chain_bucket), position = position_stack(reverse = TRUE)) +
+  geom_area(aes(fill = chain), position = position_stack(reverse = T)) +
   facet_wrap(~mode, ncol = 1) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks) +
@@ -440,8 +457,108 @@ finalize_plot(trips_in_motion_p8,
               height = 6.3,
               width = 11.3)
 
+# Unweighted
+tim_mdt_tnc_taxi <-
+  tim_mdt_wip %>%
+  # Filter to just the purpose in question
+  filter(mode %in% c("taxi","rideshare","shared rideshare")) %>%
+  group_by(sampno,perno,placeno,placeGroup) %>%
+  mutate(n = 1,
+         random = sample(1:2,size = 1))
 
-#### Investigation of "drive thru / takeout dining"
+tim_mdt_tnc_taxi_set1 <-
+  tim_mdt_tnc_taxi %>%
+  filter(random == 1)
+
+tim_mdt_tnc_taxi_set2 <-
+  tim_mdt_tnc_taxi %>%
+  filter(random == 2)
+
+trip_times_tnc_taxi_and_chain_mdt_unweighted <-
+  tim_calculator(possibilities = possible_mode_chains,
+                 base_weights = tim_mdt_tnc_taxi_set1$wtperfin,
+                 criteria1 = tim_mdt_tnc_taxi_set1$trip_interval,
+                 criteria2 = tim_mdt_tnc_taxi_set1$mode_chain,
+                 rolling_n = 55,
+                 crosstab = T,crosstab1 = "mode",crosstab2 = "chain") %>%
+  mutate(set = 1) %>%
+  rbind(tim_calculator(possibilities = possible_mode_chains,
+                       base_weights = tim_mdt_tnc_taxi_set2$wtperfin,
+                       criteria1 = tim_mdt_tnc_taxi_set2$trip_interval,
+                       criteria2 = tim_mdt_tnc_taxi_set2$mode_chain,
+                       rolling_n = 55,
+                       crosstab = T,crosstab1 = "mode",crosstab2 = "chain") %>%
+          mutate(set = 2))
+
+# Graph trips in motion by mode category for work chains
+trips_in_motion_p8_unweighted <-
+  trip_times_tnc_taxi_and_chain_mdt_unweighted %>%
+  mutate(chain = factor(chain, levels = c("Work trip","Return home (work)",
+                                          "Shopping trip","Return home (shopping)",
+                                          "Other trip"))) %>%
+  filter(mode %in% c("taxi","rideshare","shared rideshare")) %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = chain), position = position_stack(reverse = T)) +
+  facet_wrap(set~mode) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
+                   breaks = breaks[c(2,4,6,8,10)]) +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
+  scale_fill_discrete(type = c("#009ccc","#72cae5","#cc8200","#e5b172","#3d6600")) +
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"),
+             legend.max.columns = 4)
+
+finalize_plot(trips_in_motion_p8_unweighted,
+              title_width = 0,
+              filename = "trips_in_motion_p8_unweighted",
+              mode = "png",
+              overwrite = TRUE,
+              height = 6.3,
+              width = 8.3)
+
+#################################################################
+#                                                               #
+#                        Transit                                #
+#                                                               #
+#################################################################
+
+
+# Graph output of trips in motion by purpose for transit trips
+trips_in_motion_p5 <-
+  trip_times_mode_and_purp_c_mdt_25 %>%
+  mutate(tpurp_c = factor(tpurp_c,levels = tpurp_c_levels)) %>%
+  filter(mode %in% c("rail and bus", "bus", "train", "local transit", "transit"),
+         tpurp_c != "missing") %>%
+  group_by(time_band,tpurp_c) %>%
+  summarize(rolling_count = sum(rolling_count)) %>%
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = tpurp_c),position = position_stack(reverse = T)) +
+  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
+                   breaks = breaks) +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
+  scale_fill_discrete(type = c("#00becc","#cc5f00","#3f0e00","#cca600","#003f8c",
+                               "#67ac00","#006b8c","#efa7a7","#8c4100","#00303f",
+                               "#a7efe8")) +
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"))
+
+finalize_plot(trips_in_motion_p5,
+              "Transit trips in motion by travel purpose.",
+              "Note: Trips in motion are 25-minute rolling averages.
+              <br><br>
+              Source: CMAP analysis of My Daily Travel survey.",
+              filename = "trips_in_motion_p5",
+              mode = "png",
+              overwrite = TRUE,
+              height = 6.3,
+              width = 11.3)
+
+
+#################################################################
+#                                                               #
+#                        Drive thru                             #
+#                                                               #
+#################################################################
 
 tim_mdt_drivethru <-
   tim_mdt_wip %>%
@@ -452,24 +569,40 @@ trip_times_drivethru_and_mode_mdt <-
   tim_calculator(possibilities = possible_modes,
                  base_weights = tim_mdt_drivethru$wtperfin,
                  criteria1 = tim_mdt_drivethru$trip_interval,
-                 criteria2 = tim_mdt_drivethru$mode_c)
+                 criteria2 = tim_mdt_drivethru$mode_c,
+                 rolling_n = 55)
 
 trips_in_motion_p9 <-
   trip_times_drivethru_and_mode_mdt %>%
-  filter(identifier != "missing") %>%
+  # Collapse school buses into other and sum
+  mutate(mode_c = as.character(identifier)) %>%
+  mutate(mode_c = case_when(
+    identifier == "schoolbus" ~ "other",
+    TRUE ~ mode_c)) %>%
+  mutate(mode_c = factor(mode_c,levels = mode_c_levels)) %>%
+  group_by(mode_c,time_band) %>%
+  summarize(rolling_count = sum(rolling_count)) %>%
+  # Remove missing modes
+  filter(mode_c != "missing") %>%
+  # Create ggplot object
   ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = reorder(identifier,desc(identifier)))) +
+  geom_area(aes(fill = mode_c),position = position_stack(reverse = T)) +
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                    breaks = breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
-  cmap_fill_discrete(palette = "friday") +
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#a7efe8","#6d8692",
+                               "#0084ac","#efa7a7","#67ac00")) +
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
-             legend.max.columns = 3)
+             legend.max.columns = 5)
 
 finalize_plot(trips_in_motion_p9,
               "Drive-thru / take-out trips in motion by time of day on weekdays.",
               "Note: Trips in motion are 55-minute rolling averages.
               <br><br>
-              Source: CMAP analysis of My Daily Travel survey.")
-
+              Source: CMAP analysis of My Daily Travel survey.",
+              height = 6.3,
+              width = 11.3,
+              mode = "png",
+              filename = "trips_in_motion_p9",
+              overwrite = T)
