@@ -190,14 +190,16 @@ mdt <- mdt %>%
          mode = recode_factor(mode,
                               !!!recode_mode_detailed_mdt))%>%
   mutate(mode_c = fct_collapse(mode,
-                               !!!recode_mode_buckets_mdt))
+                               !!!recode_mode_buckets_mdt)) %>%
+  mutate(mode_c = factor(mode_c,levels = mode_c_levels))
 
 tt <- tt %>%
   mutate(MODE = factor(MODE),
          MODE = recode_factor(MODE,
                               !!!recode_mode_detailed_tt)) %>%
   mutate(mode_c = fct_collapse(MODE,
-                               !!!recode_mode_buckets_tt))
+                               !!!recode_mode_buckets_tt)) %>%
+  mutate(mode_c = factor(mode_c,levels = mode_c_levels))
 
 
 
@@ -207,14 +209,16 @@ mdt <- mdt %>%
   mutate(tpurp = recode_factor(tpurp,
                                !!!recode_tpurp_detailed_mdt)) %>%
   mutate(tpurp_c = fct_collapse(tpurp,
-                                !!!recode_tpurp_buckets_mdt))
+                                !!!recode_tpurp_buckets_mdt)) %>%
+  mutate(tpurp_c = factor(tpurp_c,levels = tpurp_c_levels))
 
 tt <- tt %>%
   mutate(tpurp = factor(TPURP)) %>%
   mutate(tpurp = recode_factor(tpurp,
                                !!!recode_tpurp_detailed_tt)) %>%
   mutate(tpurp_c = fct_collapse(tpurp,
-                                !!!recode_tpurp_buckets_tt))
+                                !!!recode_tpurp_buckets_tt))%>%
+  mutate(tpurp_c = factor(tpurp_c,levels = tpurp_c_levels))
 
 
 # Recode incomes and group into buckets for comparison

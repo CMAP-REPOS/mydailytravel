@@ -61,7 +61,8 @@ recode_mode_buckets_mdt <-
     transit = c("rail and bus", "bus", "train", "local transit", "transit"),
     driver = c("motorcycle", "personal auto (driver)"),
     passenger = c("personal auto (passenger)", "carpool"),
-    other = c("school bus", "paratransit", "private shuttle",
+    schoolbus = "school bus",
+    other = c("paratransit", "private shuttle",
               "taxi", "private limo", "private car", "rideshare",
               "shared rideshare", "airplane", "other"),
     missing = c("missing"),
@@ -75,7 +76,8 @@ recode_mode_buckets_tt <-
                 "local transit", "transit (many)"),
     driver = "personal auto (driver)",
     passenger = "personal auto (passenger)",
-    other = c("private shuttle", "paratransit", "school bus",
+    schoolbus = "school bus",
+    other = c("private shuttle", "paratransit",
               "taxi", "other"),
     missing = "missing")
 
@@ -225,6 +227,11 @@ recode_tpurp_buckets_tt <-
     other = c("Other",
               "Loop trip"))
 
+mode_c_levels <- c("driver","passenger","transit","walk",
+                     "schoolbus","bike","other","missing")
+tpurp_c_levels <- c("work","home","school","shopping/errands",
+                   "community","dining","health","recreation/fitness",
+                   "transport","transfer","other","missing")
 ###### INCOME
 
 recode_income_detailed_tt <-
