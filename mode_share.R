@@ -28,7 +28,15 @@ mdt_base_3 <-
            schol %in% c(5,6,7,8),
          distance_pg > 0,        # 96,857 records
          mode_c != "missing",    # 96,821 records
-         mode_c != "beginning")  # 96,821 records
+         mode_c != "beginning"   # 96,821 records
+  ) %>%
+  # Put school bus back into "other" category
+  mutate(mode_c = as.character(mode_c)) %>%
+  mutate(mode_c = case_when(
+    mode_c == "schoolbus" ~ "other",
+    TRUE ~ mode_c)) %>%
+  mutate(mode_c = factor(mode_c,levels = mode_c_levels))
+
 
 tt_base_3 <-
   tt %>%                      # 140,751 records
@@ -36,8 +44,14 @@ tt_base_3 <-
          AGE >= 16 |           # 131,082 records
            SCHOL %in% c(5,6,7,8),
          DIST > 0,            # 98,800 records
-         mode_c != "missing") # 98,800 records
-
+         mode_c != "missing"  # 98,800 records
+  ) %>%
+  # Put school bus back into "other" category
+  mutate(mode_c = as.character(mode_c)) %>%
+  mutate(mode_c = case_when(
+    mode_c == "schoolbus" ~ "other",
+    TRUE ~ mode_c)) %>%
+  mutate(mode_c = factor(mode_c,levels = mode_c_levels))
 
 mdt_mode_all <-
   mdt_base_3 %>%
@@ -129,7 +143,7 @@ mode_share_p2 <-
 finalize_plot(mode_share_p2,
               title = "Share of travel distance for trips in the CMAP region, 2008 vs. 2019.",
               caption = "Note: Includes all trips in the CMAP region made by
-              travelers from ages 16 to 89 (inclusive). Distances are \" as the crow files\".
+              travelers from ages 16 to 89 (inclusive). Distances are \"as the crow files.\"
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel and Travel Tracker data.",
@@ -138,3 +152,4 @@ finalize_plot(mode_share_p2,
               filename = "mode_share_p2",
               mode = "png",
               overwrite = T)
+

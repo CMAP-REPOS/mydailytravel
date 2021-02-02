@@ -167,10 +167,10 @@ tt <- tt %>%
 
 
 #   Remove trips ending outside the region, over 100 miles, and/or on weekends
-tt <- tt %>% # 218,945 records
-  filter(MPO==1) %>% # 159,856 records
+tt <- tt %>%           # 218,945 records
+  filter(MPO==1) %>%   # 159,856 records
   filter(DIST<100) %>% # 159,856 records
-  filter(weekend==0) # 140,751 records
+  filter(weekend==0)   # 140,751 records
 
 # Select the correct number of trips per day (based on day number)
 tt <- tt %>%
