@@ -12,7 +12,8 @@ library(sf)
 source("data_cleaning.R")
 
 # Load location file
-location <- read.csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data/location.csv")
+location_mdt <- read.csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data/location.csv")
+location_tt <- read.csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2008 survey/loc_public.csv")
 
 #################################################
 #                                               #
@@ -53,22 +54,14 @@ all_school_mdt <-
     TRUE ~ mode_c_school
     )) %>%
   # Reconvert to factor
-  mutate(mode_c_school = factor(mode_c_school))
+  mutate(mode_c_school = factor(mode_c_school)) %>%
+  # Add location information for trip destinations
+  left_join(location_mdt %>% select(sampno,locno,loctype,tract_fips,school_county_fips = county_fips),
+          by = c("sampno","locno")) %>%
+  # Remove  trips to non-school locations
+  filter(loctype == 3)          # 3,998 records
 
 
-# Identify the locations of schools
-school_locations_mdt <-
-  all_school_mdt %>%
-  left_join(location %>% select(sampno,locno,loctype,tract_fips),
-            by = c("sampno","locno")) %>%
-  count(tract_fips) %>%
-  rename (school_trips = n)
-
-all_school_mdt <-
-  all_school_mdt %>%
-  left_join(location %>% select(sampno,locno,loctype,tract_fips),
-            by = c("sampno","locno")) %>%
-  left_join(school_locations_mdt, by = "tract_fips")
 
 # Repeat same filtering and mutation for TT
 all_school_tt <-
@@ -86,7 +79,13 @@ all_school_tt <-
     MODE == "school bus" ~ "school bus",
     TRUE ~ mode_c_school
   )) %>%
-  mutate(mode_c_school = factor(mode_c_school))
+  mutate(mode_c_school = factor(mode_c_school)) %>%
+  # Add location information for trip destinations
+  left_join(location_tt %>% select(locno = LOCNO,school_county_fips = FIPS,tract_fips = TRACT), by = "locno") %>%
+  # Remove home locations (there are none)
+  filter(substr(locno,1,1) != "9") %>%                # 3,335 records
+  # Keep only school trips to schools in the seven counties
+  filter(school_county_fips %in% cmap_state_counties) # 3,291 records
 
 
 ### Calculate proportions for TT
@@ -115,11 +114,15 @@ school_trips_p1 <-
   total_school_mode_c %>%
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
-                                tt = "Travel Tracker (2008)"),
-         label = paste0(format(round(mode_c_pct*100,1),nsmall = 1),"%")) %>%
+                                tt = "Travel Tracker (2008)")) %>%
   ggplot(aes(y = reorder(mode_c_school,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
-  geom_text(aes(label = label),position = position_dodge2(0.9,reverse = T), hjust = 0) +
+  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
+                 group = survey),
+            position = position_dodge2(0.9,reverse = T),
+            hjust = 0,
+            label.size = 0,
+            fill = "white") +
   theme_cmap(gridlines = "v") +
   scale_x_continuous(labels = scales::label_percent(),n.breaks = 6, limits = c(0,.45)) +
   cmap_fill_discrete(palette = "friday")
@@ -132,7 +135,64 @@ finalize_plot(school_trips_p1,
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
               filename = "school_trips_p1",
-              mode = "png",
+              # mode = "png",
+              width = 11.3,
+              height = 6.3,
+              overwrite = T)
+
+### Calculate proportions for TT
+all_school_county_mode_c_tt <-
+  all_school_tt %>%
+  filter(home_county %in% cmap_counties) %>%
+  group_by(mode_c_school,home_county) %>%
+  summarize(mode_c_total = sum(weight)) %>%
+  group_by(home_county) %>%
+  mutate(mode_c_pct = mode_c_total / sum(mode_c_total),
+         survey = "tt")
+
+### Calculate proportions for MDT
+all_school_county_mode_c_mdt <-
+  all_school_mdt %>%
+  filter(home_county %in% cmap_counties) %>%
+  group_by(mode_c_school,home_county) %>%
+  summarize(mode_c_total = sum(wtperfin)) %>%
+  group_by(home_county) %>%
+  mutate(mode_c_pct = mode_c_total / sum(mode_c_total),
+         survey = "mdt")
+
+### Join MDT and TT
+total_school_county_mode_c <-
+  rbind(all_school_county_mode_c_tt,
+        all_school_county_mode_c_mdt)
+
+# Chart of mode share for K-12 trips, MDT vs TT by county
+school_trips_p1a <-
+  total_school_county_mode_c %>%
+  mutate(survey = recode_factor(survey,
+                                mdt = "My Daily Travel (2019)",
+                                tt = "Travel Tracker (2008)")) %>%
+  ggplot(aes(y = reorder(mode_c_school,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
+  geom_col(position = position_dodge2(reverse = TRUE)) +
+  # geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
+  #                group = survey),
+  #            position = position_dodge2(0.9,reverse = T),
+  #            hjust = 0,
+  #            label.size = 0,
+  #            fill = "white") +
+  theme_cmap(gridlines = "v") +
+  facet_wrap(~home_county) +
+  scale_x_continuous(labels = scales::label_percent()) +
+  cmap_fill_discrete(palette = "friday")
+
+finalize_plot(school_trips_p1a,
+              "Mode share of K-12 school trips, 2008 vs. 2019.",
+              "Note: Includes trips for travelers enrolled in K-12 and at least
+              5 years old. Travel Tracker had two school-related trip categories
+              (both included) while My Daily Travel had only one.
+              <br><br>
+              Source: CMAP analysis of MDT and TT data.",
+              filename = "school_trips_p1a",
+              # mode = "png",
               width = 11.3,
               height = 6.3,
               overwrite = T)
@@ -142,11 +202,13 @@ school_trips_p2 <-
   total_school_mode_c %>%
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
-                                tt = "Travel Tracker (2008)"),
-         label = round(mode_c_total / 100)) %>%
+                                tt = "Travel Tracker (2008)")) %>%
   ggplot(aes(y = reorder(mode_c_school,desc(-mode_c_total)), x = mode_c_total, fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
-  geom_text(aes(label = label),position = position_dodge2(0.9,reverse = T), hjust = 0) +
+  geom_label(aes(label = scales::label_comma(accuracy = 1)(mode_c_total),
+                 group = survey),
+             position = position_dodge2(0.9,reverse = T),
+             hjust = 0, label.size = 0, fill = "white") +
   theme_cmap(gridlines = "v") +
   scale_x_continuous(labels = scales::label_comma(scale = .001),n.breaks = 6, limits=c(0,600000)) +
   cmap_fill_discrete(palette = "friday")
@@ -172,12 +234,14 @@ finalize_plot(school_trips_p2,
 # Total trips by income bucket
 all_school_inc_total_tt <-
   all_school_tt %>%
+  # filter(home_county == 31) %>%
   group_by(income_c) %>%
   summarize(total = sum(weight),
             n_tt = n())
 
 all_school_inc_mode_c_tt <-
   all_school_tt %>%
+  # filter(home_county == 31) %>%
   group_by(mode_c_school,income_c) %>%
   summarize(mode_c_total = sum(weight)) %>%
   # join with total trips by income bucket to allow for percentages
@@ -191,12 +255,14 @@ all_school_inc_mode_c_tt <-
 ### Calculate proportions for MDT (repeat from TT)
 all_school_inc_total_mdt <-
   all_school_mdt %>%
+  # filter(home_county == 31) %>%
   group_by(income_c) %>%
   summarize(total = sum(wtperfin),
             n_mdt = n())
 
 all_school_inc_mode_c_mdt <-
   all_school_mdt %>%
+  # filter(home_county == 31) %>%
   group_by(mode_c_school,income_c) %>%
   summarize(mode_c_total = sum(wtperfin)) %>%
   left_join(.,
@@ -215,16 +281,20 @@ school_trips_p3 <-
   total_school_inc_mode_c %>%
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
-                                tt = "Travel Tracker (2008)"),
-         label = paste0(format(round(mode_c_pct*100,1),nsmall = 1),"%")) %>%
+                                tt = "Travel Tracker (2008)")) %>%
   filter(income_c != "missing",
          mode_c_school == "walk"
          ) %>%
   ggplot(aes(y = income_c, x = mode_c_pct, fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
-  geom_text(aes(label = label),position = position_dodge2(0.9,reverse = T), hjust = 0) +
+  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
+                group = survey),
+            position = position_dodge2(0.9,reverse = T),
+            hjust = 0, label.size = 0, fill = "white") +
   theme_cmap(gridlines = "v") +
-  scale_x_continuous(labels = scales::label_percent(),n.breaks = 6, limits = c(0,.45)) +
+  scale_x_continuous(labels = scales::label_percent(),n.breaks = 6,
+                     limits = c(0,.45)
+                     ) +
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(school_trips_p3,
@@ -236,7 +306,7 @@ finalize_plot(school_trips_p3,
               height = 6.3,
               width = 11.3,
               filename = "school_trips_p3",
-              mode = "png",
+              # mode = "png",
               overwrite = T
               )
 
@@ -245,12 +315,15 @@ school_trips_p4 <-
   total_school_inc_mode_c %>%
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
-                                tt = "Travel Tracker (2008)"),
-         label = paste0(format(round(mode_c_pct*100,1),nsmall = 1),"%")) %>%
+                                tt = "Travel Tracker (2008)")) %>%
   filter(income_c != "missing") %>%
   ggplot(aes(y = reorder(mode_c_school,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
-  geom_text(aes(label = label),position = position_dodge2(0.9,reverse = T), hjust = 0) +
+  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
+                 group = survey),
+             position = position_dodge2(0.9,reverse = T),
+             hjust = 0, label.size = 0, fill = "white",
+             label.padding = unit(.1,"lines")) +
   theme_cmap(gridlines = "v") +
   facet_wrap(~income_c) +
   scale_x_continuous(labels = scales::label_percent(),n.breaks = 4, limits = c(0,.6)) +
@@ -376,10 +449,11 @@ school_trips_p7 <-
   school_time_race_mdt %>%
   mutate(label = round(travtime)) %>%
   ggplot(aes(x = reorder(race_eth,desc(travtime)), y = travtime, fill = race_eth)) +
-  geom_col(position = position_dodge2()) +
+  geom_col() +
   theme_cmap(gridlines = "h",
              legend.position = "None") +
-  geom_text(aes(label = label),vjust = 0) +
+  geom_label(aes(label = scales::label_number(accuracy = 0.1)(travtime)),
+             vjust = 0, label.size = 0, fill = "white") +
   facet_wrap(~k12) +
   cmap_fill_race()
 
@@ -391,7 +465,7 @@ finalize_plot(school_trips_p7,
               <br><br>
               Source: CMAP analysis of MDT.",
               filename = "school_trips_p7",
-              mode = "png",
+              # mode = "png",
               height = 6.3,
               width = 11.3,
               overwrite = T)
@@ -484,29 +558,268 @@ all_school_mdt_lm %>%
   geom_boxplot()
 
 
-tract_sf <- sf::read_sf("V:/Demographic_and_Forecast/Census/2010/Geography/CMAP_Region_Projected/Tracts_CMAP_TIGER2010.shp")
 
-tract_schools <-
+#######################################
+# Look at geographic distribution of schools
+
+## MDT
+
+### Tracts
+tract_sf <- sf::read_sf("V:/Demographic_and_Forecast/Census/2010/Geography/CMAP_Region_Projected/Tracts_CMAP_TIGER2010.shp")
+county_sf <- sf::read_sf("V:/Administrative_and_Political_Boundaries/Counties/Cnty7_NIPC_05.shp")
+
+
+# Identify the locations of schools
+school_locations_mdt <-
+  all_school_mdt %>%
+  filter(school_county_fips %in% cmap_counties) %>%
+  group_by(school_county_fips,tract_fips) %>%
+  summarize(uw_school_trips = n(),
+            w_school_trips = sum(wtperfin))
+
+
+tract_schools_mdt <-
   tract_sf %>%
-  left_join(school_locations, by = c("TRACTCE10" = "tract_fips_t")) %>%
-  select(TRACTCE10,n,geometry)
+  mutate(TRACTCE10 = as.integer(TRACTCE10),
+         COUNTYFP10 = as.integer(COUNTYFP10)) %>%
+  left_join(school_locations_mdt, by = c("TRACTCE10" = "tract_fips", "COUNTYFP10" = "school_county_fips")) %>%
+  select(TRACTCE10,COUNTYFP10,w_school_trips,uw_school_trips,geometry)
+
+number_of_tracts_with_schools_mdt <-
+  school_locations_mdt %>%
+  filter(uw_school_trips > 0) %>%
+  group_by(school_county_fips) %>%
+  summarize(n = n()) %>%
+  arrange(-n)
 
 school_trips_map1 <-
-  tract_schools %>%
-  ggplot(aes(fill = n)) +
+  tract_schools_mdt %>%
+  ggplot(aes(fill = w_school_trips)) +
   geom_sf() +
   theme_cmap(axis.text = element_blank(),
              legend.position = "right",
              legend.direction = "vertical",
              legend.key.height = grid::unit(20,"bigpts")) +
   # scale_fill_binned(breaks = c(5,10,25,50,100)) +
-  cmap_fill_continuous(palette = "seq_blues", breaks = c(0,50,100,150))
+  scale_fill_binned(type = "viridis")
 
 finalize_plot(school_trips_map1,
               title = "Number of school trips per tract.",
               caption = "Source: CMAP analysis of MDT data.",
               legend_shift = FALSE,
-              layout_style = "v",
-              width = 4,
+              height = 9,
               filename = "school_trips_map1",
-              mode = "png")
+              # mode = "png"
+)
+
+### Counties
+
+school_county_locations_mdt <-
+  all_school_mdt %>%
+  group_by(school_county_fips) %>%
+  summarize(uw_school_trips = n(),
+            w_school_trips = sum(wtperfin)) %>%
+  ungroup() %>%
+  group_by() %>%
+  mutate(total_w = sum(w_school_trips),
+         total_uw = sum(uw_school_trips)) %>%
+  mutate(w_school_trips_pct = w_school_trips / total_w,
+         uw_school_trips_pct = uw_school_trips / total_uw) %>%
+  pivot_longer(cols = ends_with("school_trips_pct"))
+
+county_schools_mdt <-
+  county_sf %>%
+  mutate(FIPSCNTY = as.integer(FIPSCNTY)) %>%
+  left_join(school_county_locations_mdt, by = c("FIPSCNTY" = "school_county_fips"))
+
+
+school_trips_map2 <-
+  county_schools_mdt %>%
+  mutate(name = recode(name,
+                       "uw_school_trips_pct" = "Unweighted trips",
+                       "w_school_trips_pct" = "Weighted trips")) %>%
+  ggplot(aes(fill = value)) +
+  geom_sf() +
+  theme_cmap(axis.text = element_blank(),
+             legend.position = "right",
+             legend.direction = "vertical",
+             legend.key.height = grid::unit(30,"bigpts")) +
+  facet_wrap(~name) +
+  # scale_fill_binned(breaks = c(5,10,25,50,100)) +
+  scale_fill_binned(type = "viridis",
+                    label = scales::label_percent(accuracy = 1),
+                    n.breaks = 10)
+
+finalize_plot(school_trips_map2,
+              title = "Number of school trips per county.",
+              caption = "Source: CMAP analysis of MDT data.",
+              legend_shift = FALSE,
+              filename = "school_trips_map2",
+              mode = "png"
+)
+
+
+## TT
+
+### Tracts
+tract_sf_tt <- sf::read_sf("V:/Demographic_and_Forecast/Census/2000/Geography/TractILne11co_Census_2000.shp") %>%
+  filter(FIPSSTCO %in% cmap_state_counties)
+
+
+# Identify the locations of schools
+school_locations_tt <-
+  all_school_tt %>%
+  group_by(school_county_fips,tract_fips) %>%
+  summarize(uw_school_trips = n(),
+            w_school_trips = sum(weight))
+
+
+tract_schools_tt <-
+  tract_sf_tt %>%
+  mutate(FIPSSTCO = as.integer(FIPSSTCO),
+         TRACTID = as.numeric(TRACTID)) %>%
+  left_join(school_locations_tt, by = c("FIPSSTCO" = "school_county_fips", "TRACTID" = "tract_fips")) %>%
+  select(FIPSSTCO,TRACTID,w_school_trips,uw_school_trips,geometry)
+
+number_of_tracts_with_schools_tt <-
+  school_locations_tt %>%
+  filter(uw_school_trips > 0) %>%
+  mutate(school_county_fips = as.integer(sub("17","",school_county_fips))) %>%
+  group_by(school_county_fips) %>%
+  summarize(n = n()) %>%
+  arrange(-n)
+
+
+school_trips_map3 <-
+  tract_schools_tt %>%
+  ggplot(aes(fill = uw_school_trips)) +
+  geom_sf() +
+  theme_cmap(axis.text = element_blank(),
+             legend.position = "right",
+             legend.direction = "vertical",
+             legend.key.height = grid::unit(20,"bigpts")) +
+  # scale_fill_binned(breaks = c(5,10,25,50,100)) +
+  scale_fill_binned(type = "viridis")
+
+finalize_plot(school_trips_map3,
+              title = "Number of school trips per tract.",
+              caption = "Source: CMAP analysis of MDT data.",
+              legend_shift = FALSE,
+              height = 9,
+              filename = "school_trips_map3",
+              # mode = "png"
+)
+
+### Counties
+
+school_county_locations_tt <-
+  all_school_tt %>%
+  mutate(school_county_fips = as.integer(sub("17","",school_county_fips))) %>%
+  group_by(school_county_fips) %>%
+  summarize(uw_school_trips = n(),
+            w_school_trips = sum(weight)) %>%
+  ungroup() %>%
+  group_by() %>%
+  mutate(total_w = sum(w_school_trips),
+         total_uw = sum(uw_school_trips)) %>%
+  mutate(w_school_trips_pct = w_school_trips / total_w,
+         uw_school_trips_pct = uw_school_trips / total_uw) %>%
+  pivot_longer(cols = ends_with("school_trips_pct"))
+
+county_schools_tt <-
+  county_sf %>%
+  mutate(FIPSCNTY = as.integer(FIPSCNTY)) %>%
+  left_join(school_county_locations_tt, by = c("FIPSCNTY" = "school_county_fips"))
+
+
+school_trips_map4 <-
+  county_schools_tt %>%
+  mutate(name = recode(name,
+                       "uw_school_trips_pct" = "Unweighted trips",
+                       "w_school_trips_pct" = "Weighted trips")) %>%
+  ggplot(aes(fill = value)) +
+  geom_sf() +
+  theme_cmap(axis.text = element_blank(),
+             legend.position = "right",
+             legend.direction = "vertical",
+             legend.key.height = grid::unit(30,"bigpts")) +
+  facet_wrap(~name) +
+  # scale_fill_binned(breaks = c(5,10,25,50,100)) +
+  scale_fill_binned(type = "viridis",
+                    label = scales::label_percent(accuracy = 1),
+                    n.breaks = 10)
+
+finalize_plot(school_trips_map4,
+              title = "Number of school trips per county.",
+              caption = "Source: CMAP analysis of TT data.",
+              legend_shift = FALSE,
+              filename = "school_trips_map4",
+              # mode = "png"
+)
+
+
+
+#### Chart of total represented tracts with school trips, MDT vs TT
+county_schools_comparison <-
+  school_county_locations_mdt %>%
+  filter(school_county_fips %in% cmap_counties) %>%
+  mutate(school_county_fips = as.integer(sub("17","",school_county_fips))) %>%
+  mutate(survey = "mdt") %>%
+  rbind(school_county_locations_tt %>% mutate(survey = "tt")) %>%
+  select(-name,-value,-total_w,-total_uw) %>%
+  distinct() %>%
+  pivot_longer(cols = ends_with("school_trips")) %>%
+  rbind(
+    rbind(number_of_tracts_with_schools_mdt %>%
+            mutate(survey = "mdt"),
+          number_of_tracts_with_schools_tt %>%
+            mutate(survey = "tt")) %>%
+      mutate(name = "Tracts with schools") %>%
+      rename(value = n)) %>%
+  mutate(school_county_fips = recode(school_county_fips,
+                       "31" = "Cook",
+                       "43" = "DuPage",
+                       "89" = "Kane",
+                       "93" = "Kendall",
+                       "97" = "Lake",
+                       "111" = "McHenry",
+                       "197" = "Will"))
+
+
+school_trips_p9 <-
+  county_schools_comparison %>%
+  mutate(xmax =
+           case_when(
+             name == "uw_school_trips" ~ 2500,
+             name == "w_school_trips" ~ 1000000,
+             TRUE ~ 600),
+         name = recode(name,
+                       "uw_school_trips" = "School trips (unweighted)",
+                       "w_school_trips" = "School trips (weighted)"),
+         survey = recode_factor(survey,
+                                "mdt" = "My Daily Travel ('19)",
+                                "tt" = "Travel Tracker ('08)")) %>%
+  ggplot(aes(y = school_county_fips, x = value, fill = survey)) +
+  geom_col(position = position_dodge2()) +
+  theme_cmap(gridlines = "v",
+             axis.text.x = element_text(angle = 90)) +
+  geom_label(aes(label = scales::label_comma(accuracy = 1)(value),
+                 group = survey),
+             position = position_dodge2(width = 0.9),
+             label.size = 0,
+             hjust = 0,
+             label.padding = unit(.05,"lines"),
+             fill = "white") +
+  scale_x_continuous(label = scales::label_comma()) +
+  geom_blank(aes(x = xmax)) +
+  facet_wrap(~name,ncol = 3,scales = "free_x")
+
+finalize_plot(school_trips_p9,
+              title = "Overview of school trip data distribution.",
+              caption = "Source: CMAP analysis of MDT and TT data.",
+              width = 11.3,
+              title_width = 1.5,
+              height = 6.3,
+              mode = "png",
+              filename = "school_trips_p9",
+              overwrite = T)

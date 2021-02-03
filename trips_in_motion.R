@@ -206,8 +206,7 @@ finalize_plot(trips_in_motion_p1,
               mode = "png",
               overwrite = TRUE,
               height = 6.3,
-              width = 11.3,
-              layout_style = "h")
+              width = 11.3)
 
 # Graph trips in motion by trip chains
 trips_in_motion_p6 <-
