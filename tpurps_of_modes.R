@@ -1,6 +1,5 @@
 library(ggplot2)
 library(tidyverse)
-library(slider)
 library(cmapplot)
 
 
@@ -394,7 +393,8 @@ bike_purp %>%
 
 
 
-#### Purpose breakdown of rideshare vs. shared rideshare vs. taxi
+################################################################
+# Purpose breakdown of rideshare vs. shared rideshare vs. taxi
 
 
 ## Create totals for trips by purpose category (within universe of rideshare trips)
@@ -444,6 +444,10 @@ detailed_tnc_totals_mdt <-
 
 detailed_tnc_tpurp_c_mdt <-
   all_tnc_mdt %>%
+  mutate(tpurp_c = fct_collapse(tpurp_c,
+                                "all other" = c("health","recreation/fitness",
+                                                "school","transport","transfer",
+                                                "other"))) %>%
   group_by(tpurp_c,mode) %>%
   summarize(tpurp_c_total = sum(wtperfin)) %>%
   left_join(.,detailed_tnc_totals_mdt,by = "mode") %>%
@@ -459,38 +463,76 @@ all_tnc_tpurp_c <-
 tpurps_of_modes_p6 <-
   all_tnc_tpurp_c %>%
   filter(tpurp_c != "missing",
-         survey == "mdt") %>%
-  mutate(mode = factor(mode, levels = c("tnc (all)","taxi","shared rideshare","rideshare"))) %>%
-  ggplot(aes(y = reorder(tpurp_c,desc(-tpurp_c_pct)), x = tpurp_c_pct, fill = mode)) +
+         survey == "mdt",
+         mode != "tnc (all)") %>%
+  mutate(mode = factor(mode, levels = c("taxi","rideshare","shared rideshare")),
+         tpurp_c = factor(tpurp_c,c("all other","dining","community",
+                                    "shopping/errands","work","home"))) %>%
+  ggplot(aes(y = tpurp_c, x = tpurp_c_pct, fill = mode)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
-  theme_cmap(gridlines = "v",legend.max.columns = 3) +
-  scale_x_continuous(labels = scales::label_percent()) +
-  cmap_fill_discrete(palette = "legislation")
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(tpurp_c_pct),
+                 group = mode),
+             position = position_dodge2(reverse = T,
+                                        width = 0.9),
+             hjust = 0,
+             label.size = 0,
+             fill = "white") +
+  theme_cmap(gridlines = "v",
+             vline = 0) +
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+                     limits = c(0, .45)) +
+  scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c"))
 
 finalize_plot(tpurps_of_modes_p6,
               "Trip purposes of TNC and taxi trips, 2019.",
-              "Source: CMAP analysis of MDT and TT data.",
+              "Note: \"All other\" includes categories with less than 5% of the
+              overall mode share for taxis and TNCs. This includes healthcare,
+              school, transport, transfers, and other.
+              <br><br>
+              Source: CMAP analysis of MDT and TT data.",
               width = 11.3,
               height = 6.3,
               filename = "tpurps_of_modes_p6",
               mode = "png",
               overwrite = T)
 
+tpurps_of_modes_p7_total_labels <-
+  tibble(survey = c("My Daily Travel ('19)")) %>%
+  cbind(all_tnc_tpurp_c %>%
+          filter(mode == "tnc (all)") %>%
+          summarize(n = sum(tpurp_c_total))
+        )
 
 tpurps_of_modes_p7 <-
   all_tnc_tpurp_c %>%
-  filter(!(survey == "mdt" & mode == "tnc (all)")) %>%
+  filter(mode != "tnc (all)") %>%
   group_by(survey,mode) %>%
   summarize(total = sum(tpurp_c_total)) %>%
   mutate(survey = factor(survey,levels = c("tt","mdt")),
-         mode = factor(mode, levels = c("shared rideshare","rideshare","taxi"))) %>%
+         mode = factor(mode, levels = c("taxi","rideshare","shared rideshare"))) %>%
   mutate(survey = recode_factor(survey,
                                 "tt" = "Travel Tracker ('08)",
                                 "mdt" = "My Daily Travel ('19)")) %>%
-  ggplot(aes(x = survey, y = total, fill = mode)) +
-  geom_col() +
-  theme_cmap() +
-  cmap_fill_discrete(palette = "governance",reverse = TRUE) +
+  ggplot(aes(x = survey, y = total)) +
+  geom_col(aes(fill = mode), position = position_stack(reverse = T)) +
+  theme_cmap(hline = 0) +
+  scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c")) +
+  geom_label(aes(label = scales::label_comma(accuracy = 1)(total),
+                 group = mode,
+                 fill = mode),
+             position = position_stack(reverse = T),
+             hjust = 0.5,
+             vjust = 1,
+             label.size = 0,
+             color = "white",
+             show.legend = FALSE) +
+  geom_label(data = tpurps_of_modes_p7_total_labels,
+             aes(label = scales::label_comma(accuracy = 1)(n),
+                 x = survey,
+                 y = n),
+             vjust = 0,
+             label.size = 0,
+             label.padding = unit(.5,"lines")) +
   scale_y_continuous(labels = scales::label_comma(scale = 1))
 
 finalize_plot(tpurps_of_modes_p7,
