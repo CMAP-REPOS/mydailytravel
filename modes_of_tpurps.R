@@ -45,9 +45,10 @@ tt_base_1 <-
          AGE >= 5 |           # 131,082 records
            SCHOL %in% c(4,5,6,7,8),
          DIST > 0,            # 98,800 records
-         mode_c != "missing") # 98,800 records
-# Put school bus back into "other" category
-mutate(mode_c = as.character(mode_c)) %>%
+         mode_c != "missing" # 98,800 records
+  ) %>%
+  # Put school bus back into "other" category
+  mutate(mode_c = as.character(mode_c)) %>%
   mutate(mode_c = case_when(
     mode_c == "schoolbus" ~ "other",
     TRUE ~ mode_c)) %>%
@@ -137,17 +138,22 @@ finalize_plot(modes_of_tpurps_p1,
 
 modes_of_tpurps_p1a <-
   all_dining_mode_c %>%
-  mutate(label = paste0(format(round(mode_c_pct * 100,1),nsmall = 1),"%")) %>%
   filter(survey == "mdt", tpurp != "Dining outside of home (all)") %>%
   mutate(tpurp = factor(tpurp,levels = c("Drive thru / take-out dining",
                                          "Ate / dined out")),
          survey = factor(survey, levels = c("tt","mdt"))) %>%
-  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = tpurp)) +
-  geom_col(position = position_dodge2(width = .8,reverse = TRUE)) +
+  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)),
+             x = mode_c_pct)) +
+  geom_col(aes(fill = tpurp),
+           position = position_dodge2(width = .8,reverse = TRUE)) +
   theme_cmap(gridlines = "v",vline = 0) +
   scale_x_continuous(labels = scales::label_percent(accuracy=1),n.breaks = 6,limits = c(0,.75)) +
-  geom_text(aes(label = label),position = position_dodge2(width = .8,reverse = T),
-            hjust = 0) +
+  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
+                 group = tpurp),
+             position = position_dodge2(width = .8,reverse = T),
+             hjust = 0,
+             label.size = 0,
+             fill = "white") +
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(modes_of_tpurps_p1a,
@@ -244,6 +250,35 @@ finalize_plot(modes_of_tpurps_p2,
               overwrite = TRUE)
 
 
+
+
+modes_of_tpurps_p2a <-
+  all_health_mode_c %>%
+  filter(tpurp != "Healthcare (all)") %>%
+  mutate(tpurp = factor(tpurp,levels = c("Visited a person staying at the hospital",
+                                         "Health care visit for someone else",
+                                         "Health care visit for self"))) %>%
+  filter(survey == "mdt") %>%
+  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct)) +
+  geom_col(aes(fill = tpurp),
+           position = position_dodge2(reverse = TRUE)) +
+  theme_cmap(gridlines = "v",legend.max.columns = 1) +
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(mode_c_pct)),
+             position = position_dodge2(reverse = TRUE,width = 0.9),
+             hjust = 0,
+             label.size = 0) +
+  scale_x_continuous(labels = scales::label_percent(),n.breaks = 6,
+                     limits = c(0,.85)) +
+  cmap_fill_discrete(palette = "governance")
+
+finalize_plot(modes_of_tpurps_p2a,
+              "Mode share of health trips, 2019.",
+              "Source: CMAP analysis of MDT data.",
+              width = 11.3,
+              height = 6.3,
+              filename = "modes_of_tpurps_p2a",
+              mode = "png",
+              overwrite = TRUE)
 
 
 
@@ -361,8 +396,56 @@ finalize_plot(modes_of_tpurps_p3,
               mode = "png")
 
 
+modes_of_tpurps_p3a <-
+  all_community_mode_c %>%
+  filter(tpurp %in% c("Socialized with relatives",
+                      "Socialized with friends",
+                      "Attended a community event",
+                      "Attended a religious event")) %>%
+  mutate(tpurp = factor(tpurp,levels = c("Socialized with relatives",
+                                         "Socialized with friends",
+                                         "Attended a religious event",
+                                         "Attended a community event"
+                                         )),
+         category = recode_factor(tpurp,
+                                  "Socialized with friends" = "Friends/Family",
+                                  "Socialized with relatives" = "Friends/Family",
+                                  "Attended a community event" = "Civic/Religious",
+                                  "Attended a religious event" = "Civic/Religious"
 
-##### Examination of TNC school trips - not enough records for rigorous analysis
+         )) %>%
+  filter(survey == "mdt") %>%
+  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct)) +
+  geom_col(aes(fill = tpurp),
+           position = position_dodge2(reverse = TRUE)) +
+  facet_wrap(~category) +
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(mode_c_pct)),
+             position = position_dodge2(reverse = T, width = .9),
+             hjust = 0,
+             label.size = 0) +
+  theme_cmap(gridlines = "v",legend.max.columns = 3) +
+  scale_x_continuous(labels = scales::label_percent(),
+                     limits = c(0,.65)) +
+  cmap_fill_discrete(palette = "mobility")
+
+finalize_plot(modes_of_tpurps_p3a,
+              "Mode share of community trips, 2019.",
+              "Source: CMAP analysis of MDT data.",
+              # title_width = 1.8,
+              width = 11.3,
+              height = 6.3,
+              overwrite = T,
+              mode = "png",
+              filename = "modes_of_tpurps_p3a")
+
+# Look at average distances for MDT community trips
+all_community_mdt %>%
+  group_by(tpurp) %>%
+  summarize(distance = weighted.mean(distance_pg,wtperfin))
+
+
+####################################
+# Examination of TNC school trips - not enough records for rigorous analysis
 
 ### Filter data
 all_tnc_school_mdt <-
