@@ -11,7 +11,7 @@ trips <- read_csv("place.csv") %>%
 
 # person info
 ppl <- read_csv("person.csv") %>%
-  select(sampno, perno, age, aage, schol, hisp, race, pertrips, wtperfin, tcoff, tcdays, emply_ask)
+  select(sampno, perno, age, aage, schol, hisp, race, pertrips, wtperfin, tcoff, tcdays, emply_ask, jobs, wplace)
 
 # household info
 hh <- read_csv("household.csv") %>%
