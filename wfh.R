@@ -70,6 +70,8 @@ wfh_mdt_all %>% # 17,656 records
 # Create working dataset for charts (relies on individuals with trips)
 wfh_mdt <-
   mdt %>% # 125,103 records
+  # Remove beginnings
+  filter(mode_c != "beginning") %>% # 97,104 records
   # Add a flag for whether the respondent worked from home or in general today
   left_join(.,
             mdt %>%
@@ -269,19 +271,21 @@ finalize_plot(wfh_p2,
               title_width = 2)
 
 # Specific analysis of work trips for individuals who report telecommuting (survey)
+#### BE CAREFUL ON TRIPS - CURRENTLY THIS IS WRONG
 wfh_worktrips_person_county_level <-
   wfh_mdt %>%
+  # Look only at the universe of individuals who had a work trip outside of the home today
   filter(wfo_today == 1) %>%
-  mutate(tc =
-           case_when(
-             tcdays >= 1 ~ 1,
-             TRUE ~ 0)) %>%
-  filter(tpurp %in% c("Worked at fixed work location",
-                      "Worked at non-fixed work location",
-                      "Work related (off-site meeting)")) %>%
+  # Flag for individuals that work at a home workplace or have at least one telecommute day per week
+  mutate(wfh_andor_tc = case_when(
+    wplace == 2 ~ 1,
+    tcdays > 0 ~ 1,
+    TRUE ~ 0)) %>%
+  # Examine only trips that were part of a work trip chain
+  filter(chain_bucket %in% c("Work trip","Return home (work)")) %>%
   group_by(sampno,perno) %>%
   summarize(pertrips = n(),
-            tc = first(tc),
+            wfh_andor_tc = first(wfh_andor_tc),
             wfh_today = first(wfh_today),
             wfo_today = first(wfo_today),
             distance_pg = sum(distance_pg, na.rm = TRUE),
@@ -292,16 +296,12 @@ wfh_worktrips_person_county_level <-
 
 wfh_worktrips_general <-
   wfh_worktrips_person_county_level %>%
-  mutate(cook = case_when(
-    home_county == "31" ~ 1,
-    TRUE ~ 0
-  )) %>%
-  group_by(tc,cook) %>%
+  group_by(wfh_andor_tc) %>%
   summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
             pertrips = weighted.mean(pertrips, w = wtperfin),
             travtime_pg = weighted.mean(travtime_pg, w = wtperfin)) %>%
   pivot_longer(cols = distance_pg:travtime_pg) %>%
-  rename(flag = tc)
+  rename(flag = wfh_andor_tc)
 
 
 # Chart of work trips for individuals who report working from home sometimes but
@@ -311,29 +311,40 @@ wfh_p3 <-
   wfh_worktrips_general %>%
   filter(name != "travtime_pg") %>%
   mutate(flag = recode(flag,
-                       "0" = "Do not telecommute and worked from outside the home today",
-                       "1" = "Telecommute at least one day a week and worked from outside the home today"),
+                       "0" = "Do not telecommute or work from home and worked from outside the home today",
+                       "1" = "Work from home and/or telecommute at least one day a week and worked from outside the home today"),
          name = recode_factor(name,
                               "distance_pg" = "Distance (mi.)",
                               "pertrips" = "Trips"),
-         cook = recode_factor(cook,
-                              "0" = "Rest of the region",
-                              "1" = "Cook County")) %>%
-  ggplot(aes(x = value, y = cook, fill = flag)) +
-  geom_col(position = position_dodge2(reverse = T)) +
+         xmax = case_when(
+           name == "Distance (mi.)" ~ 45,
+           name == "Trips" ~ 4.9
+         )) %>%
+  ggplot(aes(x = value, y = stringr::str_wrap(flag,20))) +
+  geom_col(aes(fill = name)) +
   facet_wrap(~name,scales = "free_x") +
-  theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),legend.max.columns = 1) +
+  theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
+             legend.position = "none") +
+  geom_label(aes(label = scales::label_number(accuracy = 0.1)(value)),
+             hjust = 0,
+             label.size = 0) +
+  geom_blank(aes(x = xmax)) +
   cmap_fill_discrete(palette = "legislation")
 
 finalize_plot(wfh_p3,
-              "Travel characteristics for work trips of individuals who
-              telecommute vs. those who do not, on days when they are <i>not</i>
-              telecommuting.",
+              "Travel characteristics for trips in work trip chains of
+              individuals who telecommute and/or work from home vs. those who do
+              not, on days when they are working outside the home.",
               "Note: These estimates are based on on answers given in
               both the survey and travel diary components of MDT.
               <br><br>
               Source: CMAP analysis of MDT data.",
-              title_width = 2.5)
+              filename = "wfh_p3",
+              mode = "png",
+              overwrite = T,
+              height = 6.3,
+              width = 11.3
+              )
 
 ### Create chart with travel characteristics for those who report working from
 ### home on days when they do and do not work from home
