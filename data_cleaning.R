@@ -284,12 +284,10 @@ mdt <- mdt %>%
     shop_to_home == 1 ~ "Return home (shopping)",
     TRUE ~ "Other trip"
     )) %>%
-  mutate(chain_bucket = factor(chain_bucket,
-                               levels = c("Work trip",
-                                          "Return home (work)",
-                                          "Shopping trip",
-                                          "Return home (shopping)",
-                                          "Other trip")))
+  mutate(chain = factor(chain,
+                        levels = c("Work trip","Return home (work)",
+                                   "Shopping trip","Return home (shopping)",
+                                   "Other trip")))
 
 # remove recoding helpers
 rm(recode_income_buckets_mdt,recode_income_buckets_tt,

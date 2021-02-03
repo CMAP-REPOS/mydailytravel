@@ -55,21 +55,21 @@ tim_mdt_wip <-
   # Create combined mode and purpose category
   mutate(mode_tpurp_c = paste(mode,tpurp_c,sep = "-")) %>%
   # Create combined mode and chain category
-  mutate(mode_chain = paste(mode,chain_bucket,sep = "-")) %>%
+  mutate(mode_chain = paste(mode,chain,sep = "-")) %>%
   # Create combined mode category and chain category
-  mutate(mode_c_chain = paste(mode_c,chain_bucket,sep = "-"))
+  mutate(mode_c_chain = paste(mode_c,chain,sep = "-"))
 
 
 
 # Extract possible modes and/or purposes
-possible_modes <- tibble(identifier = unique(tim_mdt_wip$mode_c))
-possible_modes_detailed <- tibble(identifier = unique(tim_mdt_wip$mode))
+possible_mode_c<- tibble(identifier = unique(tim_mdt_wip$mode_c))
+possible_mode <- tibble(identifier = unique(tim_mdt_wip$mode))
 possible_tpurp <- tibble(identifier = unique(tim_mdt_wip$tpurp))
 possible_mode_tpurp <- tibble(identifier = unique(tim_mdt_wip$mode_tpurp))
 possible_mode_tpurp_c <- tibble(identifier = unique(tim_mdt_wip$mode_tpurp_c))
-possible_chains <- tibble(identifier = unique(tim_mdt_wip$chain_bucket))
-possible_mode_chains <- tibble(identifier = unique(tim_mdt_wip$mode_chain))
-possible_mode_c_chains <- tibble(identifier = unique(tim_mdt_wip$mode_c_chain))
+possible_chain <- tibble(identifier = unique(tim_mdt_wip$chain))
+possible_mode_chain <- tibble(identifier = unique(tim_mdt_wip$mode_chain))
+possible_mode_c_chain <- tibble(identifier = unique(tim_mdt_wip$mode_c_chain))
 
 # Helper function to calculate trip times within the intervals that meet given criteria
 tim_calculator <- function(possibilities,
@@ -135,7 +135,7 @@ tim_calculator <- function(possibilities,
 
 
 trip_times_mode_c_mdt <-
-  tim_calculator(possibilities = possible_modes,
+  tim_calculator(possibilities = possible_mode_c,
                  criteria2 = tim_mdt_wip$mode_c)
 
 trip_times_mode_and_purp_c_mdt_25 <-
@@ -150,16 +150,16 @@ trip_times_mode_and_purp_c_mdt_55 <-
                  crosstab = T,crosstab1 = "mode",crosstab2 = "tpurp_c")
 
 trip_times_chains_mdt <-
-  tim_calculator(possibilities = possible_chains,
-                  criteria2 = tim_mdt_wip$chain_bucket)
+  tim_calculator(possibilities = possible_chain,
+                  criteria2 = tim_mdt_wip$chain)
 
 trip_times_mode_c_and_chain_mdt_25 <-
-  tim_calculator(possibilities = possible_mode_c_chains,
+  tim_calculator(possibilities = possible_mode_c_chain,
                  criteria2 = tim_mdt_wip$mode_c_chain,
                  crosstab = T,crosstab1 = "mode_c",crosstab2 = "chain")
 
 trip_times_mode_and_chain_mdt_55 <-
-  tim_calculator(possibilities = possible_mode_chains,
+  tim_calculator(possibilities = possible_mode_chain,
                  criteria2 = tim_mdt_wip$mode_chain,
                  rolling_n = 55,
                  crosstab = T,crosstab1 = "mode",crosstab2 = "chain")
@@ -344,14 +344,14 @@ tim_mdt_bike_set2 <-
   filter(random == 2)
 
 trip_times_bike_chain_mdt_split <-
-  tim_calculator(possibilities = possible_mode_chains,
+  tim_calculator(possibilities = possible_mode_chain,
                  base_weights = tim_mdt_bike_set1$wtperfin,
                  criteria1 = tim_mdt_bike_set1$trip_interval,
                  criteria2 = tim_mdt_bike_set1$mode_chain,
                  rolling_n = 55,
                  crosstab = T,crosstab1 = "mode",crosstab2 = "chain") %>%
   mutate(set = 1) %>%
-  rbind(tim_calculator(possibilities = possible_mode_chains,
+  rbind(tim_calculator(possibilities = possible_mode_chain,
                        base_weights = tim_mdt_bike_set2$wtperfin,
                        criteria1 = tim_mdt_bike_set2$trip_interval,
                        criteria2 = tim_mdt_bike_set2$mode_chain,
@@ -474,14 +474,14 @@ tim_mdt_tnc_taxi_set2 <-
   filter(random == 2)
 
 trip_times_tnc_taxi_and_chain_mdt_unweighted <-
-  tim_calculator(possibilities = possible_mode_chains,
+  tim_calculator(possibilities = possible_mode_chain,
                  base_weights = tim_mdt_tnc_taxi_set1$wtperfin,
                  criteria1 = tim_mdt_tnc_taxi_set1$trip_interval,
                  criteria2 = tim_mdt_tnc_taxi_set1$mode_chain,
                  rolling_n = 55,
                  crosstab = T,crosstab1 = "mode",crosstab2 = "chain") %>%
   mutate(set = 1) %>%
-  rbind(tim_calculator(possibilities = possible_mode_chains,
+  rbind(tim_calculator(possibilities = possible_mode_chain,
                        base_weights = tim_mdt_tnc_taxi_set2$wtperfin,
                        criteria1 = tim_mdt_tnc_taxi_set2$trip_interval,
                        criteria2 = tim_mdt_tnc_taxi_set2$mode_chain,
@@ -565,7 +565,7 @@ tim_mdt_drivethru <-
   filter(tpurp == "Drive thru / take-out dining")
 
 trip_times_drivethru_and_mode_mdt <-
-  tim_calculator(possibilities = possible_modes,
+  tim_calculator(possibilities = possible_mode_c,
                  base_weights = tim_mdt_drivethru$wtperfin,
                  criteria1 = tim_mdt_drivethru$trip_interval,
                  criteria2 = tim_mdt_drivethru$mode_c,

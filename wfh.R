@@ -282,7 +282,7 @@ wfh_worktrips_person_county_level <-
     tcdays > 0 ~ 1,
     TRUE ~ 0)) %>%
   # Examine only trips that were part of a work trip chain
-  filter(chain_bucket %in% c("Work trip","Return home (work)")) %>%
+  filter(chain %in% c("Work trip","Return home (work)")) %>%
   group_by(sampno,perno) %>%
   summarize(pertrips = n(),
             wfh_andor_tc = first(wfh_andor_tc),
