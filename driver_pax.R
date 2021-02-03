@@ -97,28 +97,32 @@ driver_pax_p1 <-
                                         "Decreasing passenger share"))) %>%
   # Rename and factor survey
   mutate(survey = recode_factor(survey,
-                                mdt = "My Daily Travel (2019)",
-                                tt = "Travel Tracker (2008)")) %>%
-  # Create column for on-graph labels
-  mutate(label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
+                                mdt = "My Daily Travel ('19)",
+                                tt = "Travel Tracker ('08)")) %>%
   # Remove <18 travelers (since their share is so much higher due to non-drivers)
   filter(mode_c == "passenger" & age_bin != "5 to 9" & age_bin != "10 to 17") %>%
   # Create ggplot object
-  ggplot(aes(y = age_bin, x = mode_share, fill = survey, pattern = type)) +
+  ggplot(aes(y = age_bin, x = mode_share, pattern = type)) +
   # Use "geom_col_pattern" to add texture to a subset of columns
-  geom_col_pattern(color = "white",
+  geom_col_pattern(aes(fill = survey),
+                   color = "white",
                    pattern_fill = "black",
                    pattern_angle = 45,
                    pattern_density = 0.05,
                    pattern_spacing = 0.0125,
                    pattern_key_scale_factor = 0.6,
-                   position = position_dodge2(reverse = TRUE),
+                   position = position_dodge2(width = 0.8, reverse = T),
                    width = 0.8) +
   # Re-assign patterns manually
   scale_pattern_manual(values = c("Increasing passenger share" = "stripe",
                                   "Decreasing passenger share" = "none")) +
   # Add labels
-  geom_text(aes(label = label),position = position_dodge2(0.9,reverse = T), hjust = 0) +
+  geom_label(aes(label = scales::label_percent(accuracy = .1)(mode_share),
+                 group = survey),
+             position = position_dodge2(width = 0.9,reverse = T),
+             hjust = 0,
+             label.size = 0,
+             fill = "white") +
   # Call CMAP style and palette
   theme_cmap(gridlines = "v", vline = 0) +
   cmap_fill_discrete(palette = "mobility") +
@@ -194,12 +198,16 @@ driver_pax_p2 <- rbind(driver_pax_inc_mdt %>%
                                   "high" = "High",
                                   "middle-high" = "Middle-high",
                                   "middle-low" = "Middle-low",
-                                  "low" = "Low"),
-         label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
+                                  "low" = "Low")) %>%
   ggplot(aes(y = income_c, x = mode_share, fill = survey)) +
   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
   theme_cmap(gridlines = "v") +
-  geom_text(aes(label = label),position = position_dodge2(0.9,reverse = T), hjust = 0) +
+  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_share),
+                 group = survey),
+             position = position_dodge2(0.9,reverse = T),
+             hjust = 0,
+             fill = "white",
+             label.size = 0) +
   cmap_fill_discrete(palette = "mobility") +
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),limits = c(0,.25))
 
@@ -242,11 +250,15 @@ driver_pax_p3 <-
   driver_pax_race_mdt %>%
   select(race_eth,mode_c,mode_share,survey) %>%
   filter(mode_c == "passenger", race_eth != "missing") %>%
-  ggplot(aes(y = reorder(race_eth,desc(mode_share)), x = mode_share, fill = race_eth)) +
-  geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
+  ggplot(aes(y = reorder(race_eth,desc(mode_share)), x = mode_share)) +
+  geom_col(aes(fill = race_eth)) +
   theme_cmap(gridlines = "v", legend.position = "none") +
+  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_share)),
+             label.size = 0,
+             hjust = 0) +
   cmap_fill_race() +
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1))
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+                     limits = c(0,.21))
 
 
 finalize_plot(driver_pax_p3,
