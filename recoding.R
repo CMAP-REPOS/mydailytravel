@@ -48,11 +48,12 @@ recode_mode_detailed_tt <-
     "10" = "paratransit",
     "11" = "school bus",
     "12" = "taxi",
-    "14" = "local transit",
+    # "14" = "local transit",
     "15" = "transit (many)",
-    "97" = "other",
-    "98" = "missing",
-    "99" = "missing")
+    "97" = "other"
+    # "98" = "missing",
+    # "99" = "missing"
+    )
 
 recode_mode_buckets_mdt <-
   list(
@@ -73,13 +74,15 @@ recode_mode_buckets_tt <-
     walk = "walk",
     bike = "bike",
     transit = c("CTA bus", "CTA train", "Pace", "Metra",
-                "local transit", "transit (many)"),
+                # "local transit",
+                "transit (many)"),
     driver = "personal auto (driver)",
     passenger = "personal auto (passenger)",
     schoolbus = "school bus",
     other = c("private shuttle", "paratransit",
-              "taxi", "other"),
-    missing = "missing")
+              "taxi", "other")
+    # , missing = "missing"
+    )
 
 
 ##### TRIP PURPOSES
@@ -142,8 +145,9 @@ recode_tpurp_detailed_tt <-
     "19" = "Civic/religious activities",
     "20" = "Recreation/entertainment",
     "21" = "Visit friends/relatives",
-    "24" = "Loop trip",
-    "97" = "Other")
+    "24" = "Loop trip"
+    # ,"97" = "Other"
+    )
 
 recode_tpurp_buckets_mdt <-
   list(
@@ -224,7 +228,8 @@ recode_tpurp_buckets_tt <-
 
     transfer = "Change type of transportation/transfer",
 
-    other = c("Other",
+    other = c(
+      # "Other",
               "Loop trip"))
 
 mode_c_levels <- c("driver","passenger","transit","walk",
