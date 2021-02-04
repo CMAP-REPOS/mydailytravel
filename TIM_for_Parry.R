@@ -121,6 +121,21 @@ mdt <- mdt %>%
                                 !!!recode_tpurp_buckets_mdt)) %>%
   mutate(tpurp_c = factor(tpurp_c,levels = tpurp_c_levels))
 
+# Recode trip chains in MDT data
+mdt <- mdt %>%
+  mutate(chain = case_when(
+    home_to_work == 1 ~ "Work trip",
+    work_to_work == 1 ~ "Work trip",
+    work_to_home == 1 ~ "Return home (work)",
+    home_to_shop == 1 ~ "Shopping trip",
+    shop_to_shop == 1 ~ "Shopping trip",
+    shop_to_home == 1 ~ "Return home (shopping)",
+    TRUE ~ "Other trip"
+  )) %>%
+  mutate(chain = factor(chain,
+                        levels = c("Work trip","Return home (work)",
+                                   "Shopping trip","Return home (shopping)",
+                                   "Other trip")))
 # remove recoding helpers
 rm(recode_income_buckets_mdt,recode_income_buckets_tt,
    recode_mode_buckets_mdt,recode_mode_buckets_tt,
