@@ -1,3 +1,39 @@
+# This file loads and cleans the data used in analyses of My Daily Travel and
+# Travel Tracker. The file outputs a number of tables; the most important are:
+#
+# - mdt: this table represents the trips taken in the MDT survey, with added
+#   characteristics about the person, household, and location of the trip. Trips
+#   that are within the same "place group" are collapsed into one trip with the
+#   cumulative travel time, distance, and start/end times. Trips that leave the
+#   CMAP region or are greater than 100 miles are excluded. Mode, purpose,
+#   income, and race and ethnicity are added and recoded, using lists and
+#   vectors from recoding.R where relevant.
+#
+# - tt: this table represents the trips taken in the TT survey, with added
+#   characteristics about the person, household, and location of the trip. Trips
+#   on the weekend are excluded and weights are adjusted to account for surveys
+#   that had two weekday trip diaries. Trips out of the CMAP region and trips
+#   greater than 100 miles are also excluded.
+#
+# - mdt_all_respondents and tt_all_respondents: these tables includes person and
+#   household information for all respondents in the survey, whether or not they
+#   traveled, with income recoded using the definitions from recoding.R.
+
+
+
+#################################################
+#                                               #
+#                 Load libraries                #
+#                                               #
+#################################################
+
+library(tidyverse)
+
+#################################################
+#                                               #
+#                 Load and clean MDT            #
+#                                               #
+#################################################
 
 # Load recoding information
 setwd("~/GitHub/mydailytravel")
@@ -89,7 +125,12 @@ mdt_all_respondents <- ppl %>% # 30,683 records
   inner_join(hh, by = "sampno") %>% # 30,683 records
   inner_join(home, by = c("sampno")) # 30,863 records
 
-# Load Travel Tracker
+#################################################
+#                                               #
+#                 Load and clean TT             #
+#                                               #
+#################################################
+
 # Downloaded from CMAP data portal; exported from Microsoft Access database to csv.
 setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2008 survey")
 
@@ -184,6 +225,12 @@ tt_all_respondents <- tt_ppl %>% # 32,366 records
   inner_join(tt_hh, by = c("SAMPN", "SURVEY")) %>% # 32,366 records
   left_join(tt_home, by = "SAMPN") # 32,366 records (22 records lack a home county; they are kept for analyses that do not rely on home location)
 
+
+#################################################
+#                                               #
+#                 Recoding                      #
+#                                               #
+#################################################
 
 
 # recode mode factors and group into buckets
@@ -290,6 +337,12 @@ mdt <- mdt %>%
                         levels = c("Work trip","Return home (work)",
                                    "Shopping trip","Return home (shopping)",
                                    "Other trip")))
+
+#################################################
+#                                               #
+#                 Cleanup                       #
+#                                               #
+#################################################
 
 # remove recoding helpers
 rm(recode_income_buckets_mdt,recode_income_buckets_tt,

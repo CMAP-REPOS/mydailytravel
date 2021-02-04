@@ -27,13 +27,14 @@ driver_pax_mdt <-
          age >= 18 |             # 105,285 records
          aage %in% c(5,6,7) |
            schol %in% c(8),
-         distance_pg > 0,        # 82,386 records
-         mode_c %in% c("driver", # 60,105 records
+         distance_pg > 0,        # 84,245 records
+         mode_c %in% c("driver", # 60,134 records
                        "passenger"),
-         mode != "motorcycle"    # 60,063 records
+         mode != "motorcycle"    # 60,092 records
          ) %>%
   mutate(age_bin = cut(age, breaks = breaks,
                      labels = age_labels))
+
 
 driver_pax_tt <-
   tt %>%                         # 140,751 records
@@ -45,6 +46,10 @@ driver_pax_tt <-
                        "passenger")) %>%
   mutate(age_bin = cut(AGE, breaks = breaks,
                        labels = age_labels))
+# Note: we do not include anyone without a specific age from TT because they
+# can't be put into the bins we want, and since the AGEB variable only has <16
+# or 16+, we don't know if they are 18+.
+
 
 # Create totals for driving and passenger trips
 driver_pax_total_mdt <-
@@ -340,13 +345,17 @@ driver_pax_p5 <-
                                   "middle-low" = "Middle-low",
                                   "middle-high" = "Middle-high",
                                   "high" = "High"),
-         race_eth = factor(race_eth, levels = c("white","asian","black","hispanic","other")),
-         label = paste0(format(round(mode_share*100,1),nsmall = 1),"%")) %>%
+         race_eth = factor(race_eth, levels = c("white","asian","black","hispanic","other"))) %>%
   ggplot(aes(y = income_c, x = mode_share, fill = race_eth)) +
   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
   theme_cmap(gridlines = "v",
              axis.text.y = element_blank()) +
-  geom_text(aes(label = label),position = position_dodge2(0.9,reverse = T), hjust = 0) +
+  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_share),
+                 group = race_eth),
+             position = position_dodge2(0.9,reverse = T),
+             hjust = 0,
+             label.size = 0,
+             fill = "white") +
   cmap_fill_race() +
   facet_wrap(~income_c,scales = "free_y") +
   scale_x_continuous(labels = scales::label_percent(),limits = c(0,.65))

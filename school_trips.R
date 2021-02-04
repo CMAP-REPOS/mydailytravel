@@ -41,10 +41,10 @@ all_school_mdt <-
       # or those identified as attending school manually
       sampno %in% c(70038312,
                     70051607),
-    distance_pg > 0,             # 14,032 records
-    mode_c != "missing",         # 14,032 records
-    mode_c != "beginning",       # 14,032 records
-    tpurp_c == "school"          # 4,421 records
+    mode_c != "beginning",       # 14,042 records
+    distance_pg > 0,             # 14,036 records
+    mode_c != "missing",         # 14,036 records
+    tpurp_c == "school"          # 4,424 records
     ) %>%
   # Mutate to character to allow case_when modification
   mutate(mode_c_school = as.character(mode_c)) %>%
@@ -58,8 +58,8 @@ all_school_mdt <-
   # Add location information for trip destinations
   left_join(location_mdt %>% select(sampno,locno,loctype,tract_fips,school_county_fips = county_fips),
           by = c("sampno","locno")) %>%
-  # Remove  trips to non-school locations
-  filter(loctype == 3)          # 3,998 records
+  # Keep only trips to identified school locations
+  filter(loctype == 3)          # 4,001 records
 
 
 
@@ -70,7 +70,7 @@ all_school_tt <-
     # Keep records of travelers enrolled in K-12
     SCHOL %in% c(3,4),        # 18,645 records
     # Keep only those 5 or older
-    AGE >= 5,                 # 4,421 records
+    AGE >= 5 | AGEB == 2,     # 4,421 records
     DIST > 0,                 # 4,421 records
     tpurp_c == "school"       # 3,335 records
     ) %>%
@@ -135,7 +135,7 @@ finalize_plot(school_trips_p1,
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
               filename = "school_trips_p1",
-              # mode = "png",
+              mode = "png",
               width = 11.3,
               height = 6.3,
               overwrite = T)
@@ -306,7 +306,7 @@ finalize_plot(school_trips_p3,
               height = 6.3,
               width = 11.3,
               filename = "school_trips_p3",
-              # mode = "png",
+              mode = "png",
               overwrite = T
               )
 
@@ -448,7 +448,8 @@ school_time_race_mdt <-
 school_trips_p7 <-
   school_time_race_mdt %>%
   mutate(label = round(travtime)) %>%
-  ggplot(aes(x = reorder(race_eth,desc(travtime)), y = travtime, fill = race_eth)) +
+  mutate(race_eth = factor(race_eth, levels = c("black","hispanic","other","white","asian"))) %>%
+  ggplot(aes(x = race_eth, y = travtime, fill = race_eth)) +
   geom_col() +
   theme_cmap(gridlines = "h",
              legend.position = "None") +
@@ -465,7 +466,7 @@ finalize_plot(school_trips_p7,
               <br><br>
               Source: CMAP analysis of MDT.",
               filename = "school_trips_p7",
-              # mode = "png",
+              mode = "png",
               height = 6.3,
               width = 11.3,
               overwrite = T)
@@ -655,7 +656,7 @@ finalize_plot(school_trips_map2,
               caption = "Source: CMAP analysis of MDT data.",
               legend_shift = FALSE,
               filename = "school_trips_map2",
-              mode = "png"
+              # mode = "png"
 )
 
 

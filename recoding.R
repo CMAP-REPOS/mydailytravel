@@ -1,9 +1,18 @@
-# This file provides the recoding correspondences for trip purposes and modes
-# for both MDT and TT. It should be run at the beginning of any session.
+# This file provides the recoding scheme for modes, trip purpose, income levels,
+# trip chains, and race and ethnicity for both My Daily Travel and Travel
+# Tracker. It is run as part of the call to data_cleaning.R. Any modifications
+# made to this scheme will propagate to all analyses that rely on
+# data_cleaning.R.
 
 
-#### MODES
 
+#################################################
+#                                               #
+#                 Modes                         #
+#                                               #
+#################################################
+
+# These vectors include the re-coding of mode codes into text descriptions.
 recode_mode_detailed_mdt <-
   c(
     "101" = "walk",
@@ -48,13 +57,16 @@ recode_mode_detailed_tt <-
     "10" = "paratransit",
     "11" = "school bus",
     "12" = "taxi",
-    # "14" = "local transit",
     "15" = "transit (many)",
     "97" = "other"
+    # Note the following codes are excluded because they did not appear in the
+    # data file (for CMAP trips)
+    # ,"14" = "local transit",
     # "98" = "missing",
     # "99" = "missing"
     )
 
+# These lists allow the text-based modes to be recoded into larger categories
 recode_mode_buckets_mdt <-
   list(
     walk = c("walk"),
@@ -74,6 +86,7 @@ recode_mode_buckets_tt <-
     walk = "walk",
     bike = "bike",
     transit = c("CTA bus", "CTA train", "Pace", "Metra",
+                # Local transit is excluded because it did not appear in CMAP trips
                 # "local transit",
                 "transit (many)"),
     driver = "personal auto (driver)",
@@ -81,11 +94,18 @@ recode_mode_buckets_tt <-
     schoolbus = "school bus",
     other = c("private shuttle", "paratransit",
               "taxi", "other")
+    # Similarly, "missing" does not appear in CMAP trips.
     # , missing = "missing"
     )
 
 
-##### TRIP PURPOSES
+#################################################
+#                                               #
+#                 Purposes                      #
+#                                               #
+#################################################
+
+# These vectors include the re-coding of purpose codes into text descriptions.
 
 recode_tpurp_detailed_mdt <-
   c(
@@ -149,6 +169,7 @@ recode_tpurp_detailed_tt <-
     # ,"97" = "Other"
     )
 
+# These lists allow text-based purposes to be recoded into larger categories
 recode_tpurp_buckets_mdt <-
   list(
     home = "Typical home activities",
@@ -237,7 +258,14 @@ mode_c_levels <- c("driver","passenger","transit","walk",
 tpurp_c_levels <- c("work","home","school","shopping/errands",
                    "community","dining","health","recreation/fitness",
                    "transport","transfer","other","missing")
-###### INCOME
+
+#################################################
+#                                               #
+#                 Income                        #
+#                                               #
+#################################################
+
+# These vectors include the re-coding of income codes into text descriptions.
 
 recode_income_detailed_tt <-
   c("1" = "less than $20,000",
@@ -264,6 +292,7 @@ recode_income_detailed_mdt <-
     "-8" = "don't know",
     "-7" = "prefer not to answer")
 
+# These lists allow income codes to be recategorized into larger groups
 recode_income_buckets_tt <-
   list(low = c("less than $20,000", "$20,000 to $34,999"),
        `middle-low` = c("$35,000 to $49,999", "$50,000 to $59,999"),
@@ -278,7 +307,14 @@ recode_income_buckets_mdt <-
        high = c("$100,000 to $149,999", "$150,000 or more"),
        missing = c("not ascertained", "don't know", "prefer not to answer"))
 
-##### GEOGRAPHIES
+
+#################################################
+#                                               #
+#                 Geographies                   #
+#                                               #
+#################################################
+
+# These vectors are used to filter counties in the CMAP area
 
 cmap_counties <- c(31,43,89,93,97,111,197)
 cmap_state_counties <- c("17031","17043","17089","17093","17097","17111","17197")

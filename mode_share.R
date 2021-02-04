@@ -21,13 +21,12 @@ source("data_cleaning.R")
 
 mdt_base_3 <-
   mdt %>%                        # 125,103 records
-  filter(age < 90,               # 125,006 records
-         age >= 16 |             # 125,002 records
+  filter(age >= 16 |             #
            aage %in% c(4,5,6,7) |
            schol %in% c(5,6,7,8),
-         distance_pg > 0,        # 96,857 records
-         mode_c != "missing",    # 96,821 records
-         mode_c != "beginning"   # 96,821 records
+         mode_c != "beginning",  #
+         distance_pg > 0,        #
+         mode_c != "missing"     # 84,600 records
   ) %>%
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
@@ -39,11 +38,11 @@ mdt_base_3 <-
 
 tt_base_3 <-
   tt %>%                      # 140,751 records
-  filter(AGE < 90,            # 137,844 records
-         AGE >= 16 |           # 131,082 records
-           SCHOL %in% c(5,6,7,8),
-         DIST > 0,            # 98,800 records
-         mode_c != "missing"  # 98,800 records
+  filter(AGE >= 16 |          #
+           SCHOL %in% c(5,6,7,8) |
+           AGEB == 2,
+         DIST > 0,            #
+         mode_c != "missing"  # 89,784
   ) %>%
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
@@ -230,7 +229,7 @@ mode_share_p4 <-
 finalize_plot(mode_share_p4,
               title = "Mode share for trips in the CMAP region by home county.",
               caption = "Note: Includes all trips in the CMAP region made by
-              travelers from ages 16 to 89 (inclusive).
+              travelers from ages 16 and older.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel and Travel Tracker data.",
@@ -239,3 +238,4 @@ finalize_plot(mode_share_p4,
               filename = "mode_share_p4",
               mode = "png",
               overwrite = T)
+
