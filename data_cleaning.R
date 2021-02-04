@@ -1,5 +1,6 @@
 
 # Load recoding information
+setwd("~/GitHub/mydailytravel")
 source("recoding.R")
 
 # Load My Daily Travel
@@ -47,6 +48,18 @@ home <- home_wip %>%
 # Remove WIP tables
 rm(home_wip, two_homes)
 
+# add combined duration and distance for placeGroup trips
+placeGroupStats <- trips %>%
+  mutate(hdist = ifelse(hdist >= 0,hdist,0),
+         distance = ifelse(distance >= 0,distance,0),
+         travtime = ifelse(travtime >= 0,travtime,0)) %>%
+  group_by(sampno,perno,placeGroup) %>%
+  summarize(hdist_pg = sum(hdist, na.rm = TRUE),
+            distance_pg = sum(distance, na.rm = TRUE),
+            travtime_pg = sum(travtime, na.rm = TRUE),
+            arrtime_pg = max(arrtime),
+            deptime_pg = min(deptime))
+
 # merge datasets and filter for destination and distance
 mdt <- trips %>% # 128,229 records
   inner_join(ppl, by = c("sampno", "perno")) %>% # 128,229 records
@@ -58,17 +71,6 @@ mdt <- trips %>% # 128,229 records
   filter(out_region==0) %>% # 126,075 records
   # Remove trips >= 100 miles
   filter(distance<100) # 125,955 records
-
-# add combined duration and distance for placeGroup trips
-placeGroupStats <- mdt %>%
-  filter(hdist >= 0,
-         distance >= 0,
-         travtime >= 0) %>%
-  group_by(sampno,perno,placeGroup) %>%
-  summarize(hdist_pg = sum(hdist, na.rm = TRUE),
-            distance_pg = sum(distance, na.rm = TRUE),
-            travtime_pg = sum(travtime, na.rm = TRUE),
-            arrtime_pg = max(arrtime))
 
 # take care of collapsed trips with placeGroup
 mdt <- mdt %>%
@@ -118,29 +120,29 @@ tt_home <- read_csv("loc_public.csv") %>%
              by = c("LOCNO" = "locno"))
 
 # Check - is each sample associated with exactly one home
-test1 <- tt_home %>% distinct(SAMPN,LOCNO,home_county,.keep_all = TRUE)
-
-number <- test1 %>%
-  group_by(SAMPN) %>%
-  summarize(n = n())
-
-test1 %>%
-  left_join(.,
-            number,
-            by = "SAMPN") %>%
-  filter(n > 1)
-
-test2 <- tt_home %>% distinct(SAMPN,.keep_all = TRUE)
-
-test1 %>%
-  left_join(.,
-            number,
-            by = "SAMPN") %>%
-  filter(is.na(n))
-# Answer: Yes - except for 14 records with no sample number
-
-# remove tests
-rm(test1,test2,number)
+# test1 <- tt_home %>% distinct(SAMPN,LOCNO,home_county,.keep_all = TRUE)
+#
+# number <- test1 %>%
+#   group_by(SAMPN) %>%
+#   summarize(n = n())
+#
+# test1 %>%
+#   left_join(.,
+#             number,
+#             by = "SAMPN") %>%
+#   filter(n > 1)
+#
+# test2 <- tt_home %>% distinct(SAMPN,.keep_all = TRUE)
+#
+# test1 %>%
+#   left_join(.,
+#             number,
+#             by = "SAMPN") %>%
+#   filter(is.na(n))
+# # Answer: Yes - except for 14 records with no sample number
+#
+# # remove tests
+# rm(test1,test2,number)
 
 # Create flag for home county location
 tt_home <- tt_home %>% # 105,554 records
@@ -275,7 +277,7 @@ mdt_all_respondents <- mdt_all_respondents %>%
 
 # Recode trip chains in MDT data
 mdt <- mdt %>%
-  mutate(chain_bucket = case_when(
+  mutate(chain = case_when(
     home_to_work == 1 ~ "Work trip",
     work_to_work == 1 ~ "Work trip",
     work_to_home == 1 ~ "Return home (work)",
