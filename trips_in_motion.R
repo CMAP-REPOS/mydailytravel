@@ -1,3 +1,7 @@
+# This script allows for the creation of "trips in motion" analyses of the MDT
+# trip diary survey data. It includes a helper function that is also applied to
+# Divvy data to generate analogous charts.
+
 #################################################
 #                                               #
 #                 Library loading               #
@@ -159,7 +163,7 @@ tim_calculator <- function(base_weights = tim_mdt_wip$wtperfin,
 
   # Create tibble of all possible trip intervals
   trip_times <-
-    # Establish sequence of times over the day (in one minute increments)
+    # Establish sequence of times over the day (in five minute increments)
     tibble(time_band = seq.POSIXt(
       from = as.POSIXct("2020-01-01 03:00:00", tz = "America/Chicago"),
       to = as.POSIXct("2020-01-02 03:00:00", tz = "America/Chicago"),
