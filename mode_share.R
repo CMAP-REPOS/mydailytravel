@@ -11,23 +11,21 @@ library(cmapplot)
 
 source("data_cleaning.R")
 
-#################################################
-#                                               #
-#                  Analysis                     #
-#                                               #
-#################################################
-
 # Create base dataset for mode analyses
 
 mdt_base_3 <-
-  mdt %>%                        # 125,103 records
-  filter(age >= 16 |             #
+  mdt %>%                              # 125103 records
+  # Keep only travelers >= 16 years old, either through age, age bucket, or
+  # school enrollment
+  filter(age >= 16 |                   # 108293
            aage %in% c(4,5,6,7) |
-           schol %in% c(5,6,7,8),
-         mode_c != "beginning",  #
-         distance_pg > 0,        #
-         mode_c != "missing"     # 84,600 records
-  ) %>%
+           schol %in% c(5,6,7,8)) %>%
+  # Exclude "beginning" trips
+  filter(mode_c != "beginning") %>%    # 84960
+  # Exclude trips with zero distance
+  filter(distance_pg > 0) %>%          # 84637
+  # Exclude trips with a "missing" mode
+  filter(mode_c != "missing") %>%      # 84600
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
   mutate(mode_c = case_when(
@@ -37,13 +35,16 @@ mdt_base_3 <-
 
 
 tt_base_3 <-
-  tt %>%                      # 140,751 records
-  filter(AGE >= 16 |          #
+  tt %>%                               # 140751 records
+  # Keep only travelers >= 16 years old, either through age, age bucket, or
+  # school enrollment
+  filter(AGE >= 16 |                   # 118886
            SCHOL %in% c(5,6,7,8) |
-           AGEB == 2,
-         DIST > 0,            #
-         mode_c != "missing"  # 89,784
-  ) %>%
+           AGEB == 2) %>%
+  # Keep only trips with nonzero distance
+  filter(DIST > 0) %>%                 # 89784
+  # Exclude missing modes
+  filter(mode_c != "missing") %>%      # 89784
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
   mutate(mode_c = case_when(
@@ -51,6 +52,13 @@ tt_base_3 <-
     TRUE ~ mode_c)) %>%
   mutate(mode_c = factor(mode_c,levels = mode_c_levels))
 
+#################################################
+#                                               #
+#                  Analysis                     #
+#                                               #
+#################################################
+
+# Create baseline totals for percentage calculations
 mdt_mode_all <-
   mdt_base_3 %>%
   mutate(total = sum(wthhfin)) %>%
@@ -75,6 +83,7 @@ mode_all <- tt_mode_all %>%
 
 ##########################################
 # Comparison charts (NOTE : TRANSIT IS INVALID COMPARISON)
+##########################################
 
 mode_share_p1 <-
   mode_all %>%
@@ -155,7 +164,7 @@ finalize_plot(mode_share_p2,
 
 ######################################
 # MDT-only charts
-
+######################################
 
 mode_share_p3 <-
   mdt_mode_all %>%
