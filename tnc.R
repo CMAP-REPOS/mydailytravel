@@ -1,7 +1,15 @@
-library(ggplot2)
-library(tidyverse)
-library(cmapplot)
+# This script analyzes TNC usage in MDT, using a combination of travel diary and
+# survey entries
 
+#################################################
+#                                               #
+#                 Load libraries                #
+#                                               #
+#################################################
+
+library(tidyverse)
+library(ggplot2)
+library(cmapplot)
 
 #################################################
 #                                               #
@@ -11,22 +19,7 @@ library(cmapplot)
 
 source("data_cleaning.R")
 
-#################################################
-#                                               #
-#                  Analysis                     #
-#                                               #
-#################################################
-
-active_travel <-
-  mdt %>%
-  group_by(sampno,perno) %>%
-  summarize(takes_transit = sum(mode_c == "transit",na.rm = TRUE),
-            takes_bike = sum(mode_c == "bike",na.rm = TRUE),
-            takes_walk = sum(mode_c == "walk",na.rm = TRUE),
-            takes_tnc = sum((mode == "rideshare") | (mode == "shared rideshare"),na.rm = TRUE)) %>%
-  mutate(takes_active = min(sum(takes_transit,takes_bike,takes_walk),1))
-
-
+# Create base data set with TNC variables (not included in the base data pull)
 tnc_base <- read_csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data/person.csv") %>%
   select(sampno,
          perno,
@@ -44,8 +37,24 @@ tnc_base <- read_csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency f
          pertrips,
          wtperfin)
 
+# Calculate the number of trips taken by travelers on active modes like transit,
+# biking, and walking, as well as TNC trips
+active_travel <-
+  mdt %>%
+  group_by(sampno,perno) %>%
+  summarize(takes_transit = sum(mode_c == "transit",na.rm = TRUE),
+            takes_bike = sum(mode_c == "bike",na.rm = TRUE),
+            takes_walk = sum(mode_c == "walk",na.rm = TRUE),
+            takes_tnc = sum((mode == "rideshare") | (mode == "shared rideshare"),na.rm = TRUE)) %>%
+  mutate(takes_active = min(sum(takes_transit,takes_bike,takes_walk),1))
+
+
+
+# Call "recoding.R" to get helper vectors and lists for recoding
 source("recoding.R")
 
+# Create working dataset based on variables pulled above and person/hh
+# characteristics from other tables
 tnc <-
   tnc_base %>%                          # 30,683 records
   # Add home county
@@ -109,14 +118,13 @@ rm(recode_income_buckets_mdt,recode_income_buckets_tt,
    recode_tpurp_detailed_mdt,recode_tpurp_detailed_tt)
 
 # Age bins
-breaks <- c(-1, 10, 18, 30, 40, 50, 60, 70, 80, 90)
+breaks <- c(-1, 10, 17, 29, 39, 49, 59, 69, 79, 89)
 age_labels <- c("5 to 9", "10 to 17", "18 to 29", "30 to 39", "40 to 49",
                 "50 to 59", "60 to 69", "70 to 79", "80 to 89")
 
 # Reshape data
 tnc <- tnc %>%
-  tidyr::pivot_wider(
-    .,
+  pivot_wider(
     names_from = county,
     id_cols = c(sampno:takes_active,white:high_income),
     values_from = n,
@@ -124,6 +132,12 @@ tnc <- tnc %>%
     values_fill = list(n = 0)) %>%
   mutate(age_bin = cut(age, breaks = breaks,
                        labels = age_labels))
+
+#################################################
+#                                               #
+#                  Analysis                     #
+#                                               #
+#################################################
 
 # Run linear regression
 tnc_use_lm <-
