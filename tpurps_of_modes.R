@@ -36,8 +36,7 @@ mdt_base_2 <-
   # Exclude trips with no travel distance
   filter(distance_pg > 0) %>%        # 96956
   # Exclude trips with no trip purpose
-  filter(tpurp_c != "missing"        # 96886
-         ) %>%
+  filter(tpurp_c != "missing") %>%   # 96886
   # Add flag for under 18 vs. 18 and over
   mutate(under18 = ifelse(age >= 18 | aage %in% c(5,6,7),
                           "18 and over", "Under 18"))

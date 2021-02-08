@@ -1,3 +1,11 @@
+# This script produces analyses on school trips in the CMAP region.
+
+#################################################
+#                                               #
+#                 Load libraries                #
+#                                               #
+#################################################
+
 library(ggplot2)
 library(tidyverse)
 library(cmapplot)
@@ -15,6 +23,60 @@ source("data_cleaning.R")
 location_mdt <- read.csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data/location.csv")
 location_tt <- read.csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2008 survey/loc_public.csv")
 
+
+### Filter data
+all_school_mdt <-
+  mdt %>%                            # 125103 records
+  filter(
+    # Keep records of travelers enrolled in K-12
+    schol %in% c(3,4),               # 19018 records
+    # Keep only:                     # 19018 records
+    # Those 5 or older
+    age >= 5 |
+      # or those in an age category from 5 to 44
+      aage %in% c(2,3,4,5) |
+      # or those enrolled in 9th-12th grade
+      schol %in% c(4) |
+      # or those identified as attending school manually
+      sampno %in% c(70038312,
+                    70051607)) %>%
+  # Exclude "beginning" trips
+  filter(mode_c != "beginning") %>%  # 14042 records
+  # Keep only trips with nonzero distance
+  filter(distance_pg > 0) %>%        # 14036 records
+  # Exclude missing mode trips
+  filter(mode_c != "missing") %>%    # 14036 records
+  # Keep only trips to school
+  filter(tpurp_c == "school") %>%    # 4424 records
+  # Add location information for trip destinations
+  left_join(location_mdt %>% select(sampno,locno,loctype,tract_fips,
+                                    school_county_fips = county_fips),
+            by = c("sampno","locno")) %>%
+  # Keep only trips to identified school locations
+  filter(loctype == 3)              # 4001 records
+
+
+
+# Repeat same filtering and mutation for TT
+all_school_tt <-
+  tt %>%                            # 140751 records
+  filter(
+    # Keep records of travelers enrolled in K-12
+    SCHOL %in% c(3,4),              # 18645 records
+    # Keep only those 5 or older
+    AGE >= 5 | AGEB == 2) %>%       # 4421 records
+  # Keep only trips with nonzero distance (note this is a different difference
+  # calculation than the MDT one - TT used great circle)
+  filter(DIST > 0) %>%              # 4421 records
+  # Keep only trips to school
+  filter(tpurp_c == "school") %>%   # 3335 records
+  # Add location information for trip destinations
+  left_join(location_tt %>% select(locno = LOCNO,school_county_fips = FIPS,tract_fips = TRACT), by = "locno") %>%
+  # Remove home locations (there are none)
+  filter(substr(locno,1,1) != "9") %>%                # 3335 records
+  # Keep only school trips to schools in the seven counties
+  filter(school_county_fips %in% cmap_state_counties) # 3291 records
+
 #################################################
 #                                               #
 #                 Analysis                      #
@@ -25,73 +87,10 @@ location_tt <- read.csv("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agenc
 
 ## Create totals for trips by mode category (within universe of school trips)
 
-### Filter data
-all_school_mdt <-
-  mdt %>%                        # 125,103 records
-  filter(
-    # Keep records of travelers enrolled in K-12
-    schol %in% c(3,4),           # 19,018 records
-    # Keep only:                   19,018 records
-    # Those 5 or older
-    age >= 5 |
-      # or those in an age category from 5 to 44
-      aage %in% c(2,3,4,5) |
-      # or those enrolled in 9th-12th grade
-      schol %in% c(4) |
-      # or those identified as attending school manually
-      sampno %in% c(70038312,
-                    70051607),
-    mode_c != "beginning",       # 14,042 records
-    distance_pg > 0,             # 14,036 records
-    mode_c != "missing",         # 14,036 records
-    tpurp_c == "school"          # 4,424 records
-    ) %>%
-  # Mutate to character to allow case_when modification
-  mutate(mode_c_school = as.character(mode_c)) %>%
-  # Separate out school buses from "other"
-  mutate(mode_c_school = case_when(
-    mode == "school bus" ~ "school bus",
-    TRUE ~ mode_c_school
-    )) %>%
-  # Reconvert to factor
-  mutate(mode_c_school = factor(mode_c_school)) %>%
-  # Add location information for trip destinations
-  left_join(location_mdt %>% select(sampno,locno,loctype,tract_fips,school_county_fips = county_fips),
-          by = c("sampno","locno")) %>%
-  # Keep only trips to identified school locations
-  filter(loctype == 3)          # 4,001 records
-
-
-
-# Repeat same filtering and mutation for TT
-all_school_tt <-
-  tt %>%                      # 140,751 records
-  filter(
-    # Keep records of travelers enrolled in K-12
-    SCHOL %in% c(3,4),        # 18,645 records
-    # Keep only those 5 or older
-    AGE >= 5 | AGEB == 2,     # 4,421 records
-    DIST > 0,                 # 4,421 records
-    tpurp_c == "school"       # 3,335 records
-    ) %>%
-  mutate(mode_c_school = as.character(mode_c)) %>%
-  mutate(mode_c_school = case_when(
-    MODE == "school bus" ~ "school bus",
-    TRUE ~ mode_c_school
-  )) %>%
-  mutate(mode_c_school = factor(mode_c_school)) %>%
-  # Add location information for trip destinations
-  left_join(location_tt %>% select(locno = LOCNO,school_county_fips = FIPS,tract_fips = TRACT), by = "locno") %>%
-  # Remove home locations (there are none)
-  filter(substr(locno,1,1) != "9") %>%                # 3,335 records
-  # Keep only school trips to schools in the seven counties
-  filter(school_county_fips %in% cmap_state_counties) # 3,291 records
-
-
 ### Calculate proportions for TT
 all_school_mode_c_tt <-
   all_school_tt %>%
-  group_by(mode_c_school) %>%
+  group_by(mode_c) %>%
   summarize(mode_c_total = sum(weight)) %>%
   mutate(mode_c_pct = mode_c_total / sum(.$mode_c_total),
          survey = "tt")
@@ -99,7 +98,7 @@ all_school_mode_c_tt <-
 ### Calculate proportions for MDT
 all_school_mode_c_mdt <-
   all_school_mdt %>%
-  group_by(mode_c_school) %>%
+  group_by(mode_c) %>%
   summarize(mode_c_total = sum(wtperfin)) %>%
   mutate(mode_c_pct = mode_c_total / sum(.$mode_c_total),
          survey = "mdt")
@@ -115,9 +114,9 @@ school_trips_p1 <-
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
                                 tt = "Travel Tracker (2008)")) %>%
-  ggplot(aes(y = reorder(mode_c_school,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
+  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(mode_c_pct),
                  group = survey),
             position = position_dodge2(0.9,reverse = T),
             hjust = 0,
@@ -144,7 +143,7 @@ finalize_plot(school_trips_p1,
 all_school_county_mode_c_tt <-
   all_school_tt %>%
   filter(home_county %in% cmap_counties) %>%
-  group_by(mode_c_school,home_county) %>%
+  group_by(mode_c,home_county) %>%
   summarize(mode_c_total = sum(weight)) %>%
   group_by(home_county) %>%
   mutate(mode_c_pct = mode_c_total / sum(mode_c_total),
@@ -154,7 +153,7 @@ all_school_county_mode_c_tt <-
 all_school_county_mode_c_mdt <-
   all_school_mdt %>%
   filter(home_county %in% cmap_counties) %>%
-  group_by(mode_c_school,home_county) %>%
+  group_by(mode_c,home_county) %>%
   summarize(mode_c_total = sum(wtperfin)) %>%
   group_by(home_county) %>%
   mutate(mode_c_pct = mode_c_total / sum(mode_c_total),
@@ -171,7 +170,7 @@ school_trips_p1a <-
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
                                 tt = "Travel Tracker (2008)")) %>%
-  ggplot(aes(y = reorder(mode_c_school,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
+  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   # geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
   #                group = survey),
@@ -203,7 +202,7 @@ school_trips_p2 <-
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
                                 tt = "Travel Tracker (2008)")) %>%
-  ggplot(aes(y = reorder(mode_c_school,desc(-mode_c_total)), x = mode_c_total, fill = survey)) +
+  ggplot(aes(y = reorder(mode_c,desc(-mode_c_total)), x = mode_c_total, fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   geom_label(aes(label = scales::label_comma(accuracy = 1)(mode_c_total),
                  group = survey),
@@ -242,7 +241,7 @@ all_school_inc_total_tt <-
 all_school_inc_mode_c_tt <-
   all_school_tt %>%
   # filter(home_county == 31) %>%
-  group_by(mode_c_school,income_c) %>%
+  group_by(mode_c,income_c) %>%
   summarize(mode_c_total = sum(weight)) %>%
   # join with total trips by income bucket to allow for percentages
   left_join(.,
@@ -263,7 +262,7 @@ all_school_inc_total_mdt <-
 all_school_inc_mode_c_mdt <-
   all_school_mdt %>%
   # filter(home_county == 31) %>%
-  group_by(mode_c_school,income_c) %>%
+  group_by(mode_c,income_c) %>%
   summarize(mode_c_total = sum(wtperfin)) %>%
   left_join(.,
             all_school_inc_total_mdt,
@@ -283,11 +282,11 @@ school_trips_p3 <-
                                 mdt = "My Daily Travel (2019)",
                                 tt = "Travel Tracker (2008)")) %>%
   filter(income_c != "missing",
-         mode_c_school == "walk"
+         mode_c == "walk"
          ) %>%
   ggplot(aes(y = income_c, x = mode_c_pct, fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(mode_c_pct),
                 group = survey),
             position = position_dodge2(0.9,reverse = T),
             hjust = 0, label.size = 0, fill = "white") +
@@ -317,7 +316,7 @@ school_trips_p4 <-
                                 mdt = "My Daily Travel (2019)",
                                 tt = "Travel Tracker (2008)")) %>%
   filter(income_c != "missing") %>%
-  ggplot(aes(y = reorder(mode_c_school,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
+  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
                  group = survey),
@@ -453,7 +452,7 @@ school_trips_p7 <-
   geom_col() +
   theme_cmap(gridlines = "h",
              legend.position = "None") +
-  geom_label(aes(label = scales::label_number(accuracy = 0.1)(travtime)),
+  geom_label(aes(label = scales::label_number(accuracy = 1)(travtime)),
              vjust = 0, label.size = 0, fill = "white") +
   facet_wrap(~k12) +
   cmap_fill_race()
@@ -523,19 +522,19 @@ all_school_mdt_lm <-
       income_c == "high" | income_c == "middle-high" ~ 1,
       TRUE ~ 0),
     car_trip = case_when(
-      mode_c_school == "driver" | mode_c == "passenger" ~ 1,
+      mode_c == "driver" | mode_c == "passenger" ~ 1,
       TRUE ~ 0),
     school_bus = case_when(
-      mode_c_school == "school bus" ~ 1,
+      mode_c == "schoolbus" ~ 1,
       TRUE ~ 0),
     transit = case_when(
-      mode_c_school == "transit" ~ 1,
+      mode_c == "transit" ~ 1,
       TRUE ~ 0),
     walk = case_when(
-      mode_c_school == "walk" ~ 1,
+      mode_c == "walk" ~ 1,
       TRUE ~ 0),
     bike = case_when(
-      mode_c_school == "bike" ~ 1,
+      mode_c == "bike" ~ 1,
       TRUE ~ 0),
     cook = case_when(
       home_county == 31 ~ 1,
@@ -562,6 +561,7 @@ all_school_mdt_lm %>%
 
 #######################################
 # Look at geographic distribution of schools
+#######################################
 
 ## MDT
 

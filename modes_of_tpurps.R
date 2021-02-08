@@ -1,8 +1,17 @@
+# This script produces charts and graphs to better understand the modes used to
+# travel for specific purposes (e.g., how do people get to healthcare).
+
+#################################################
+#                                               #
+#                 Libraries                     #
+#                                               #
+#################################################
+
 library(ggplot2)
 library(tidyverse)
 library(slider)
 library(cmapplot)
-
+library(matrixStats)
 
 #################################################
 #                                               #
@@ -12,25 +21,24 @@ library(cmapplot)
 
 source("data_cleaning.R")
 
-#################################################
-#                                               #
-#                  Analysis                     #
-#                                               #
-#################################################
-
 # Create base dataset for mode analyses
 
 mdt_base_1 <-
-  mdt %>%                        # 125,103 records
-  filter(age >= 5 |              #
+  mdt %>%                             # 125103 records
+  # Keep only records for travelers >= 5 or who we can identify as being >= 5
+  # based on age buckets, school enrollment, or manual location identification
+  # of school trips
+  filter(age >= 5 |                   # 125099
            aage %in% c(2,3,4,5,6,7) |
            schol %in% c(4,5,6,7,8) |
            sampno %in% c(70038312,
-                         70051607),
-         mode_c != "beginning",  #
-         distance_pg > 0,        #
-         mode_c != "missing"     # 96,919 records
-  ) %>%
+                         70051607)) %>%
+  # Exclude beginning trips
+  filter(mode_c != "beginning") %>%  # 97014
+  # Exclude trips with no travel distance
+  filter(distance_pg > 0) %>%        # 96956
+  # Exclude trips with no mode
+  filter(mode_c != "missing") %>%    # 96919
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
   mutate(mode_c = case_when(
@@ -39,13 +47,17 @@ mdt_base_1 <-
   mutate(mode_c = factor(mode_c,levels = mode_c_levels))
 
 tt_base_1 <-
-  tt %>%                      # 140,751 records
-  filter(AGE >= 5 |           #
+  tt %>%                             # 140751 records
+  # Keep only records for travelers >= 5 or who we can identify as being >= 5
+  # based on age buckets or school enrollment
+  filter(AGE >= 5 |                  # 133989
            SCHOL %in% c(4,5,6,7,8) |
-           AGEB == 2,
-         DIST > 0,            #
-         mode_c != "missing"  # 100,880 records
-  ) %>%
+           AGEB == 2) %>%
+  # Exclude trips with no travel distance. Note this is a different difference
+  # calculation than that used in MDT (great circle vs. actual travel distance).
+  filter(DIST > 0) %>%              # 100880
+  # Remove missing modes
+  filter(mode_c != "missing") %>%   # 100880
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
   mutate(mode_c = case_when(
@@ -53,19 +65,27 @@ tt_base_1 <-
     TRUE ~ mode_c)) %>%
   mutate(mode_c = factor(mode_c,levels = mode_c_levels))
 
-#### Mode breakdown of different dining trips
 
+#################################################
+#                                               #
+#                  Analysis                     #
+#                                               #
+#################################################
+
+#################################################
+# Mode breakdown of different dining trips
+#################################################
 
 ## Create totals for trips by mode category (within universe of dining trips)
 
 ### Filter data
 all_dining_mdt <-
-  mdt_base_1 %>%              # 96,821 records
-  filter(tpurp_c == "dining") # 6,523 records
+  mdt_base_1 %>%              # 96919 records
+  filter(tpurp_c == "dining") # 6544 records
 
 all_dining_tt <-
-  tt_base_1 %>%               # 98,800 records
-  filter(tpurp_c == "dining") # 5,769 records
+  tt_base_1 %>%               # 100880 records
+  filter(tpurp_c == "dining") # 5898 records
 
 ### Calculate proportions for TT
 all_dining_mode_c_tt <-
@@ -147,7 +167,7 @@ modes_of_tpurps_p1a <-
            position = position_dodge2(width = .8,reverse = TRUE)) +
   theme_cmap(gridlines = "v",vline = 0) +
   scale_x_continuous(labels = scales::label_percent(accuracy=1),n.breaks = 6,limits = c(0,.75)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(mode_c_pct),
                  group = tpurp),
              position = position_dodge2(width = .8,reverse = T),
              hjust = 0,
@@ -165,19 +185,21 @@ finalize_plot(modes_of_tpurps_p1a,
               overwrite = T)
 
 
-#### Mode breakdown of different healthcare trips
+#################################################
+# Mode breakdown of different healthcare trips
+#################################################
 
 
 ## Create totals for trips by mode category (within universe of health trips)
 
 ### Filter data
 all_health_mdt <-
-  mdt_base_1 %>%              # 96,821 records
-  filter(tpurp_c == "health") # 2,033 records
+  mdt_base_1 %>%              # 96919 records
+  filter(tpurp_c == "health") # 2048 records
 
 all_health_tt <-
-  tt_base_1 %>%               # 98,800 records
-  filter(tpurp_c == "health") # 2,145 records
+  tt_base_1 %>%               # 100880 records
+  filter(tpurp_c == "health") # 2206 records
 
 ### Calculate proportions for TT
 all_health_mode_c_tt <-
@@ -261,7 +283,7 @@ modes_of_tpurps_p2a <-
   ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct)) +
   geom_col(aes(fill = tpurp),
            position = position_dodge2(reverse = TRUE)) +
-  theme_cmap(gridlines = "v",legend.max.columns = 1) +
+  theme_cmap(gridlines = "v",legend.max.columns = 1, vline = 0) +
   geom_label(aes(label = scales::label_percent(accuracy = 1)(mode_c_pct)),
              position = position_dodge2(reverse = TRUE,width = 0.9),
              hjust = 0,
@@ -281,19 +303,20 @@ finalize_plot(modes_of_tpurps_p2a,
 
 
 
-#### Mode breakdown of different community trips
-
+#################################################
+# Mode breakdown of different community trips
+#################################################
 
 ## Create totals for trips by mode category (within universe of community trips)
 
 ### Filter data
 all_community_mdt <-
-  mdt_base_1 %>%                 # 96,821 records
-  filter(tpurp_c == "community") # 3,924 records
+  mdt_base_1 %>%                 # 96919 records
+  filter(tpurp_c == "community") # 3932 records
 
 all_community_tt <-
-  tt_base_1 %>%                  # 98,800 records
-  filter(tpurp_c == "community") # 4,687 records
+  tt_base_1 %>%                  # 100880 records
+  filter(tpurp_c == "community") # 4810 records
 
 ### Calculate proportions for TT
 all_community_mode_c_tt <-
@@ -422,7 +445,7 @@ modes_of_tpurps_p3a <-
              position = position_dodge2(reverse = T, width = .9),
              hjust = 0,
              label.size = 0) +
-  theme_cmap(gridlines = "v",legend.max.columns = 3) +
+  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0) +
   scale_x_continuous(labels = scales::label_percent(),
                      limits = c(0,.65)) +
   cmap_fill_discrete(palette = "mobility")
@@ -440,11 +463,13 @@ finalize_plot(modes_of_tpurps_p3a,
 # Look at average distances for MDT community trips
 all_community_mdt %>%
   group_by(tpurp) %>%
-  summarize(distance = weighted.mean(distance_pg,wtperfin))
+  summarize(distance = weightedMedian(distance_pg,wtperfin))
 
 
-####################################
-# Examination of TNC school trips - not enough records for rigorous analysis
+#################################################
+# Examination of TNC school trips - not enough
+# records for rigorous analysis
+#################################################
 
 ### Filter data
 all_tnc_school_mdt <-
