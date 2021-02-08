@@ -71,7 +71,10 @@ all_school_tt <-
   # Keep only trips to school
   filter(tpurp_c == "school") %>%   # 3335 records
   # Add location information for trip destinations
-  left_join(location_tt %>% select(locno = LOCNO,school_county_fips = FIPS,tract_fips = TRACT), by = "locno") %>%
+  left_join(location_tt %>% select(locno = LOCNO,
+                                   school_county_fips = FIPS,
+                                   tract_fips = TRACT),
+            by = "locno") %>%
   # Remove home locations (there are none)
   filter(substr(locno,1,1) != "9") %>%                # 3335 records
   # Keep only school trips to schools in the seven counties
@@ -202,14 +205,18 @@ school_trips_p2 <-
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
                                 tt = "Travel Tracker (2008)")) %>%
-  ggplot(aes(y = reorder(mode_c,desc(-mode_c_total)), x = mode_c_total, fill = survey)) +
+  ggplot(aes(y = reorder(mode_c,desc(-mode_c_total)),
+             x = mode_c_total,
+             fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   geom_label(aes(label = scales::label_comma(accuracy = 1)(mode_c_total),
                  group = survey),
              position = position_dodge2(0.9,reverse = T),
              hjust = 0, label.size = 0, fill = "white") +
   theme_cmap(gridlines = "v") +
-  scale_x_continuous(labels = scales::label_comma(scale = .001),n.breaks = 6, limits=c(0,600000)) +
+  scale_x_continuous(labels = scales::label_comma(scale = .001),
+                     n.breaks = 6,
+                     limits=c(0,600000)) +
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(school_trips_p2,
@@ -297,7 +304,8 @@ school_trips_p3 <-
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(school_trips_p3,
-              "Walk mode-share of K-12 school trips by household income category, 2008 vs. 2019.",
+              "Walk mode-share of K-12 school trips by household income
+              category, 2008 vs. 2019.",
               "Note: Includes trips for travelers enrolled in K-12 and at least
               5 years old.
               <br><br>
@@ -316,7 +324,9 @@ school_trips_p4 <-
                                 mdt = "My Daily Travel (2019)",
                                 tt = "Travel Tracker (2008)")) %>%
   filter(income_c != "missing") %>%
-  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
+  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)),
+             x = mode_c_pct,
+             fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
                  group = survey),
@@ -325,11 +335,14 @@ school_trips_p4 <-
              label.padding = unit(.1,"lines")) +
   theme_cmap(gridlines = "v") +
   facet_wrap(~income_c) +
-  scale_x_continuous(labels = scales::label_percent(),n.breaks = 4, limits = c(0,.6)) +
+  scale_x_continuous(labels = scales::label_percent(),
+                     n.breaks = 4,
+                     limits = c(0,.6)) +
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(school_trips_p4,
-              "Mode-share of K-12 school trips by household income category, 2008 vs. 2019.",
+              "Mode-share of K-12 school trips by household income category,
+              2008 vs. 2019.",
               "Note: Includes trips for travelers enrolled in K-12 and at least
               5 years old.
               <br><br>
@@ -438,7 +451,9 @@ school_time_race_mdt <-
     # Exclude households with missing race and ethnicity information
     race_eth != "missing") %>%
   # Add breakdown between K-8 and 9-12
-  mutate(k12 = ifelse(schol == 3,"Elementary and middle school","High school")) %>%
+  mutate(k12 = ifelse(schol == 3,
+                      "Elementary and middle school",
+                      "High school")) %>%
   group_by(race_eth,k12) %>%
   summarize(travtime = weighted.mean(travtime_pg, w = wtperfin)) %>%
   mutate(survey = "My Daily Travel (2019)")
@@ -447,7 +462,8 @@ school_time_race_mdt <-
 school_trips_p7 <-
   school_time_race_mdt %>%
   mutate(label = round(travtime)) %>%
-  mutate(race_eth = factor(race_eth, levels = c("black","hispanic","other","white","asian"))) %>%
+  mutate(race_eth = factor(race_eth, levels = c("black","hispanic","other",
+                                                "white","asian"))) %>%
   ggplot(aes(x = race_eth, y = travtime, fill = race_eth)) +
   geom_col() +
   theme_cmap(gridlines = "h",
@@ -545,8 +561,9 @@ all_school_mdt_lm <-
     )
 
 school_trips_regression <-
-  lm(travtime_pg ~ white + black + hispa + asian + high_inc + distance_pg + cook +
-       car_trip + school_bus + transit + walk + bike + k8,
+  lm(travtime_pg ~ white + black + hispa + asian + high_inc +
+       distance_pg + cook + car_trip + school_bus + transit +
+       walk + bike + k8,
      all_school_mdt_lm,
      weights = wtperfin)
 
@@ -583,7 +600,8 @@ tract_schools_mdt <-
   tract_sf %>%
   mutate(TRACTCE10 = as.integer(TRACTCE10),
          COUNTYFP10 = as.integer(COUNTYFP10)) %>%
-  left_join(school_locations_mdt, by = c("TRACTCE10" = "tract_fips", "COUNTYFP10" = "school_county_fips")) %>%
+  left_join(school_locations_mdt, by = c("TRACTCE10" = "tract_fips",
+                                         "COUNTYFP10" = "school_county_fips")) %>%
   select(TRACTCE10,COUNTYFP10,w_school_trips,uw_school_trips,geometry)
 
 number_of_tracts_with_schools_mdt <-
@@ -631,7 +649,8 @@ school_county_locations_mdt <-
 county_schools_mdt <-
   county_sf %>%
   mutate(FIPSCNTY = as.integer(FIPSCNTY)) %>%
-  left_join(school_county_locations_mdt, by = c("FIPSCNTY" = "school_county_fips"))
+  left_join(school_county_locations_mdt,
+            by = c("FIPSCNTY" = "school_county_fips"))
 
 
 school_trips_map2 <-
@@ -679,7 +698,8 @@ tract_schools_tt <-
   tract_sf_tt %>%
   mutate(FIPSSTCO = as.integer(FIPSSTCO),
          TRACTID = as.numeric(TRACTID)) %>%
-  left_join(school_locations_tt, by = c("FIPSSTCO" = "school_county_fips", "TRACTID" = "tract_fips")) %>%
+  left_join(school_locations_tt, by = c("FIPSSTCO" = "school_county_fips",
+                                        "TRACTID" = "tract_fips")) %>%
   select(FIPSSTCO,TRACTID,w_school_trips,uw_school_trips,geometry)
 
 number_of_tracts_with_schools_tt <-
@@ -730,7 +750,8 @@ school_county_locations_tt <-
 county_schools_tt <-
   county_sf %>%
   mutate(FIPSCNTY = as.integer(FIPSCNTY)) %>%
-  left_join(school_county_locations_tt, by = c("FIPSCNTY" = "school_county_fips"))
+  left_join(school_county_locations_tt,
+            by = c("FIPSCNTY" = "school_county_fips"))
 
 
 school_trips_map4 <-
