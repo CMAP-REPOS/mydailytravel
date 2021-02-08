@@ -449,15 +449,15 @@ bike_purp %>%
 
 ### Filter data
 all_tnc_mdt <-
-  mdt_base_2 %>%                # 96,788 records
-  filter(mode %in%              # 1,007 records
+  mdt_base_2 %>%                # 96788 records
+  filter(mode %in%              # 1010
            c("rideshare",
              "shared rideshare",
              "taxi"))
 
 all_tnc_tt <-
-  tt_base_2 %>%                 # 98,800 records
-  filter(MODE == "taxi")        # 336 records - potentially not enough for analysis
+  tt_base_2 %>%                 # 100880 records
+  filter(MODE == "taxi")        # 342 records - potentially not enough for analysis
 
 ### Calculate proportions for TT
 all_tnc_tpurp_c_tt <-
