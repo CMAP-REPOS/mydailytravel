@@ -1,7 +1,15 @@
+# This script produces analyses and charts on the trip purposes of trips made by
+# specific modes, e.g., ridesharing.
+
+#################################################
+#                                               #
+#                 Load libraries                #
+#                                               #
+#################################################
+
 library(ggplot2)
 library(tidyverse)
 library(cmapplot)
-
 
 #################################################
 #                                               #
@@ -11,41 +19,54 @@ library(cmapplot)
 
 source("data_cleaning.R")
 
+# Create base dataset for mode analyses
+
+mdt_base_2 <-
+  mdt %>%                             # 125103 records
+  # Keep only records for travelers >= 5 or who we can identify as being >= 5
+  # based on age buckets, school enrollment, or manual location identification
+  # of school trips
+  filter(age >= 5 |                   # 125099
+           aage %in% c(2,3,4,5,6,7) |
+           schol %in% c(4,5,6,7,8) |
+           sampno %in% c(70038312,
+                         70051607)) %>%
+  # Exclude beginning trips
+  filter(mode_c != "beginning") %>%  # 97014
+  # Exclude trips with no travel distance
+  filter(distance_pg > 0) %>%        # 96956
+  # Exclude trips with no trip purpose
+  filter(tpurp_c != "missing"        # 96886
+         ) %>%
+  # Add flag for under 18 vs. 18 and over
+  mutate(under18 = ifelse(age >= 18 | aage %in% c(5,6,7),
+                          "18 and over", "Under 18"))
+
+
+tt_base_2 <-
+  tt %>%                             # 140751 records
+  # Keep only records for travelers >= 5 or who we can identify as being >= 5
+  # based on age buckets or school enrollment
+  filter(AGE >= 5 |                  # 133989
+           SCHOL %in% c(4,5,6,7,8) |
+           AGEB == 2) %>%
+  # Exclude trips with no travel distance. Note this is a different difference
+  # calculation than that used in MDT (great circle vs. actual travel distance).
+  filter(DIST > 0) %>%              # 100880
+  filter(tpurp_c != "missing") %>%  # 100880
+  # Add flag for under 18 vs. 18 and over. None of the school enrollment or age
+  # buckets are precise enough to code either way.
+  mutate(under18 = ifelse(AGE >= 18, "18 and over", "Under 18"))
+
 #################################################
 #                                               #
 #                  Analysis                     #
 #                                               #
 #################################################
 
-# Create base dataset for mode analyses
-
-mdt_base_2 <-
-  mdt %>%                        # 125,103 records
-  filter(age >= 5 |              #
-           aage %in% c(2,3,4,5,6,7) |
-           schol %in% c(4,5,6,7,8) |
-           sampno %in% c(70038312,
-                         70051607),
-         mode_c != "beginning",  #
-         distance_pg > 0,        #
-         tpurp_c != "missing"    # 96,886 records
-         ) %>%
-  mutate(under18 = ifelse(age >= 18 | aage %in% c(5,6,7),
-                          "18 and over", "Under 18"))
-
-
-tt_base_2 <-
-  tt %>%                       # 140,751 records
-  filter(AGE >= 5 |            #
-           SCHOL %in% c(4,5,6,7,8) |
-           AGEB == 2,
-         DIST > 0,             #
-         tpurp_c != "missing"  # 100,880 records
-         ) %>%
-  mutate(under18 = ifelse(AGE >= 18, "18 and over", "Under 18"))
-
-#####################################################
+################################################################
 # Purpose breakdown of carpooling vs. passenger
+################################################################
 
 ## Create totals for trips by purpose category (within universe of passenger trips)
 
@@ -153,7 +174,8 @@ finalize_plot(tpurps_of_modes_p2,
               filename = "tpurps_of_modes_p2",
               height = 6.3,
               width = 11.3,
-              mode = "png"
+              mode = "png",
+              overwrite = T
               )
 
 ### Repeat calculations but with flags for under 18
@@ -178,20 +200,29 @@ all_passenger_under18 <-
   rbind(passenger_totals_under18_tt,
         detailed_passenger_totals_under18_mdt)
 
-
+# Plot of total passenger trips, TT vs MDT
 tpurps_of_modes_p2a <-
   all_passenger_under18 %>%
+  group_by(under18,survey) %>%
+  mutate(total = sum(trip_total)) %>%
+  ungroup() %>%
   mutate(survey = factor(survey,levels = c("tt","mdt")),
-         mode = factor(mode, levels = c("Passenger (all)","carpool","personal auto (passenger)"))) %>%
+         mode = factor(mode, levels = c("Passenger (all)","personal auto (passenger)","carpool"))) %>%
   mutate(survey = recode_factor(survey,
                                 "tt" = "Travel Tracker ('08)",
                                 "mdt" = "My Daily Travel ('19)")) %>%
   ggplot(aes(x = survey, y = trip_total, fill = mode)) +
-  geom_col() +
+  geom_col(position = position_stack(reverse = T)) +
   theme_cmap() +
   facet_wrap(~under18, ncol = 1) +
-  cmap_fill_discrete(palette = "governance",reverse = TRUE) +
-  scale_y_continuous(labels = scales::label_comma(scale = 1))
+  geom_label(aes(label = scales::label_comma(accuracy = 1)(total),
+                 y = total),
+             fill = "white",
+             vjust = 0,
+             label.size = 0) +
+  cmap_fill_discrete(palette = "friday",reverse = F) +
+  scale_y_continuous(labels = scales::label_comma(scale = 1),
+                     limits = c(0,3200000))
 
 finalize_plot(tpurps_of_modes_p2a,
               "Change in daily automobile passenger trips, 2008 vs. 2019, by age.",
@@ -202,13 +233,14 @@ finalize_plot(tpurps_of_modes_p2a,
               filename = "tpurps_of_modes_p2a",
               height = 6.3,
               width = 11.3,
-              mode = "png"
-)
+              mode = "png",
+              overwrite = T
+              )
 
 
-#########################################################
+################################################################
 # Purpose breakdown of bike trips (shared vs. personal)
-
+################################################################
 
 ## Create totals for trips by purpose category (within universe of bike trips)
 
@@ -249,7 +281,8 @@ detailed_bike_totals_mdt <-
   all_bike_mdt %>%
   group_by(mode) %>%
   summarize(trip_total = sum(wtperfin),
-            n = n())
+            # n = n()
+            )
 
 detailed_bike_tpurp_c_mdt <-
   all_bike_mdt %>%
@@ -278,8 +311,14 @@ tpurps_of_modes_p3 <-
   ggplot(aes(y = reorder(tpurp_c,desc(-tpurp_c_pct)), x = tpurp_c_pct, fill = mode)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   # facet_wrap(~survey,ncol = 1) +
-  theme_cmap(gridlines = "v",legend.max.columns = 3) +
-  scale_x_continuous(labels = scales::label_percent()) +
+  theme_cmap(gridlines = "v",vline = 0) +
+  scale_x_continuous(labels = scales::label_percent(), limits = c(0,.38)) +
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(tpurp_c_pct),
+                 group = mode),
+             fill = "white",
+             position = position_dodge2(reverse = T, width = 0.9),
+             hjust = 0,
+             label.size = 0) +
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(tpurps_of_modes_p3,
@@ -292,7 +331,12 @@ finalize_plot(tpurps_of_modes_p3,
               mode = "png",
               overwrite = T)
 
-
+###############################
+# NOTE - BIKE ANALYSIS BELOW THIS LINE SHOULD BE TREATED WITH CAUTION
+###############################
+# The data collection for bike trips in TT was phased, and high bike ridership
+# parts of the region were sampled in the winter.
+# Chart of bike trips, MDT vs TT
 tpurps_of_modes_p4 <-
   all_bike_tpurp_c %>%
   filter(!(survey == "mdt" & mode == "Bike (all)")) %>%
@@ -318,7 +362,8 @@ finalize_plot(tpurps_of_modes_p4,
               filename = "tpurps_of_modes_p4",
               height = 6.3,
               width = 11.3,
-              mode = "png")
+              mode = "png",
+              overwrite = T)
 
 
 ### Bike mode share of all travel
@@ -382,7 +427,8 @@ finalize_plot(tpurps_of_modes_p5,
               filename = "tpurps_of_modes_p5",
               height = 6.3,
               width = 11.3,
-              mode = "png")
+              mode = "png",
+              overwrite = T)
 
 
 # Generate output table
@@ -396,6 +442,7 @@ bike_purp %>%
 
 ################################################################
 # Purpose breakdown of rideshare vs. shared rideshare vs. taxi
+################################################################
 
 
 ## Create totals for trips by purpose category (within universe of rideshare trips)
