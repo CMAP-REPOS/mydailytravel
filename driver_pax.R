@@ -1,7 +1,18 @@
+# This script produces analyses and charts on the share of car trips taken as
+# passengers by travelers in the CMAP region.
+
+
+#################################################
+#                                               #
+#                 Load libraries                #
+#                                               #
+#################################################
+
+library(tidyverse)
 library(cmapplot)
+# # Run this script once per machine to add the ggpattern package
 # devtools::install_github("coolbutuseless/ggpattern")
 library(ggpattern)
-library(tidyverse)
 
 #################################################
 #                                               #
@@ -11,45 +22,54 @@ library(tidyverse)
 
 source("data_cleaning.R")
 
-#################################################
-#                                               #
-#            Analysis of driver vs. passenger   #
-#                                               #
-#################################################
 # Age bins
-breaks <- c(-1, 10, 18, 25, 30, 50, 70, 90)
+breaks <- c(-1, 9, 17, 24, 29, 49, 69, 89)
 age_labels <- c("5 to 9", "10 to 17", "18 to 24", "25 to 29",
                 "30 to 49", "50 to 69","70 to 89")
 
 driver_pax_mdt <-
   mdt %>%                        # 125,103 records
+  # Keep only travelers from age 18 to 89
   filter(age < 90,               # 125,006 records
-         age >= 18 |             # 105,285 records
-         aage %in% c(5,6,7) |
-           schol %in% c(8),
-         distance_pg > 0,        # 84,245 records
-         mode_c %in% c("driver", # 60,134 records
+         age >= 18 |             # 105,270 records
+           # Keep those who are 18 or older, OR
+         aage %in% c(5,6,7)) %>%
+           # age buckets that are > 18
+  # Keep only trips with > 0 distance
+  filter(distance_pg > 0) %>%    # 82,413 records
+  # Keep only driver or passenger trips, but exclude motorcycles
+  filter(mode_c %in% c("driver", # 60,123 records
                        "passenger"),
-         mode != "motorcycle"    # 60,092 records
+         mode != "motorcycle"    # 60,081 records
          ) %>%
+  # Add age bins
   mutate(age_bin = cut(age, breaks = breaks,
                      labels = age_labels))
 
 
 driver_pax_tt <-
   tt %>%                         # 140,751 records
+  # Keep only travelers from age 18 to 89
   filter(AGE < 90,               # 137,844 records
-         AGE >= 18 |             # 112,975 records
-           SCHOL %in% c(8),
-         DIST > 0,               # 85,465 records
-         mode_c %in% c("driver", # 71,547 records
+         AGE >= 18) %>%          # 112,975 records
+  # Keep only trips with > 0 distance
+  filter(DIST > 0) %>%           # 85,465 records
+  # Keep only driver and passenger trips
+  filter(mode_c %in% c("driver", # 71,547 records
                        "passenger")) %>%
+  # Add age bins
   mutate(age_bin = cut(AGE, breaks = breaks,
                        labels = age_labels))
 # Note: we do not include anyone without a specific age from TT because they
 # can't be put into the bins we want, and since the AGEB variable only has <16
 # or 16+, we don't know if they are 18+.
 
+
+#################################################
+#                                               #
+#                   Analysis                    #
+#                                               #
+#################################################
 
 # Create totals for driving and passenger trips
 driver_pax_total_mdt <-
@@ -206,7 +226,7 @@ driver_pax_p2 <- rbind(driver_pax_inc_mdt %>%
                                   "low" = "Low")) %>%
   ggplot(aes(y = income_c, x = mode_share, fill = survey)) +
   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
-  theme_cmap(gridlines = "v") +
+  theme_cmap(gridlines = "v", vline = 0) +
   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_share),
                  group = survey),
              position = position_dodge2(0.9,reverse = T),
@@ -257,7 +277,7 @@ driver_pax_p3 <-
   filter(mode_c == "passenger", race_eth != "missing") %>%
   ggplot(aes(y = reorder(race_eth,desc(mode_share)), x = mode_share)) +
   geom_col(aes(fill = race_eth)) +
-  theme_cmap(gridlines = "v", legend.position = "none") +
+  theme_cmap(gridlines = "v", legend.position = "none", vline = 0) +
   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_share)),
              label.size = 0,
              hjust = 0) +
@@ -375,16 +395,8 @@ finalize_plot(driver_pax_p5,
               width = 11.3,
               height = 6.3,
               overwrite = T
-
 )
 
-
-
-
-test <-
-  driver_pax_mdt %>%
-  filter(race_eth == "other",
-         income_c == "high")
 
 # Remove objects from the environment
 rm(driver_pax_race_mdt,driver_pax_total_inc_mdt,driver_pax_total_inc_tt,
