@@ -1,11 +1,21 @@
+# This script downloads and analyzes Q3 2019 Divvy ridership data to produce a
+# trips-in-motion chart for Divvy trips over the course of an average weekday.
+#
+# NOTE: This script relies on the tim_calculator function developed in
+# trips_in_motion.R. That function must be run before executing the script
+# below.
+
+#################################################
+#                                               #
+#                 Libraries                     #
+#                                               #
+#################################################
+
+library(tidyverse)
 library(ggplot2)
 library(lubridate)
-library(tidyverse)
 library(slider)
 library(cmapplot)
-
-
-
 
 #################################################
 #                                               #
@@ -33,18 +43,35 @@ day_value <- 60*60*24
 breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 03:00:00"),
                      to = as.POSIXct("2020-01-02 03:00:00"),
                      by = "3 hours")
+july4 <- interval(ymd_hms("2019-07-04 03:00:00",
+                          tz = "America/Chicago"),
+                  ymd_hms("2019-07-05 03:00:00",
+                          tz = "America/Chicago"))
+laborday <- interval(ymd_hms("2019-09-02 03:00:00",
+                             tz = "America/Chicago"),
+                     ymd_hms("2019-09-03 03:00:00",
+                             tz = "America/Chicago"))
+# Identify number of weekdays in the sample
+number_of_weekdays <-
+  sum(!weekdays(seq(ymd("2019-07-01"),
+                    ymd("2019-09-30"),
+                    by = "days")) %in% c("Saturday", "Sunday")) -
+  1 - # July 4
+  1   # Labor Day
 
-
+# Clean and filter data for application of the TIM calculator function
 divvy_wip <-
   divvy %>%
   # Convert to datetime object
-  mutate(start_time = ymd_hms(start_time),
-         end_time = ymd_hms(end_time)) %>%
+  mutate(start_time = ymd_hms(start_time, tz = "America/Chicago"),
+         end_time = ymd_hms(end_time, tz = "America/Chicago")) %>%
   mutate(trip_time = end_time - start_time) %>%
   # Exclude trips that are on weekends (with days running from 3am to 3am)
   mutate(wday = wday(start_time - 3 * 60 * 60)) %>%
   # Keep out trips that are either Saturday or Sunday
   filter(!(wday %in% c(1,7))) %>%
+  # Remove July 4 and Labor Day
+  filter(!(start_time %within% july4 | start_time %within% laborday)) %>%
   # Exclude trips > 3 hours
   filter(trip_time <= 60 * 60 * 3) %>%
   # Make every trip on the same day (for analysis and graphing)
@@ -59,53 +86,24 @@ divvy_wip <-
   # Add trip end based on trip duration
   mutate(trip_end = trip_start + trip_time) %>%
   # Create trip interval using the Lubridate package
-  mutate(trip_interval = interval(trip_start,trip_end,tz = "America/Chicago"))
+  mutate(trip_interval = interval(trip_start,trip_end,tz = "America/Chicago")) %>%
+  # Add weight of 1 divided by the number of weekdays for summing the average TIMs
+  mutate(weight = 1/number_of_weekdays)
 
-
-# Identify number of weekdays in the sample
-number_of_weekdays <-
-  sum(!weekdays(seq(ymd("2019-07-01"),
-                    ymd("2019-09-30"),
-                    by = "days")) %in% c("Saturday", "Sunday")) -
-  1 - # July 4
-  1   # Labor Day
-
-
-# Calculate trips in motion by mode
-trip_times_divvy <-
-  # Establish sequence of times over the day (in one minute increments)
-  tibble(time_band = seq.POSIXt(
-    from = as.POSIXct("2020-01-01 03:00:00", tz = "America/Chicago"),
-    to = as.POSIXct("2020-01-02 03:00:00", tz = "America/Chicago"),
-    by = "5 min"))
-
-# Calculate rolling averages by time band
+# Use function defined in trips_in_motion.R
 trip_times_divvy_counts <-
-  trip_times_divvy %>%
-  # Join trip times to the two different types of users
-  full_join(tibble(usertype = c("Subscriber","Customer")),by = character()) %>%
-  # Calculate the number of trips that meet the criteria
-  mutate(trip_count = mapply(function(x, y)
-    nrow(divvy_wip[which(
-      # Is it in the time interval?
-      x %within% divvy_wip$trip_interval &
-        # Is it the correct user type?
-        y == divvy_wip$usertype),]),
-    time_band,
-    usertype
-  )) %>%
-  # Calculate rolling average
-  mutate(rolling_count = slide_dbl(trip_count, mean, .before = 2, .after = 2)) %>%
-  # Divide rolling average by number of weekdays in the sample
-  mutate(rolling_count_avg = rolling_count / number_of_weekdays)
+  tim_calculator(
+    base_weights = divvy_wip$weight,
+    trip_interval = divvy_wip$trip_interval,
+    criteria = divvy_wip$usertype)
 
 # Create chart
 divvy_p1 <-
   trip_times_divvy_counts %>%
   # Relevel user type
-  mutate(usertype = factor(usertype, levels = c("Subscriber","Customer"))) %>%
+  mutate(identifier = factor(identifier, levels = c("Subscriber","Customer"))) %>%
   # Create ggplot object
-  ggplot(aes(x = time_band,y = rolling_count_avg, fill = usertype)) +
+  ggplot(aes(x = time_band,y = rolling_count, fill = identifier)) +
   # Reverse stacking position
   geom_area(position = position_stack(reverse = TRUE)) +
   # Reformat labels
