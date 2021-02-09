@@ -57,7 +57,7 @@ hh <- read_csv("household.csv") %>%
 
 # location file w/region flag
 region <- read_csv("location.csv") %>%
-  select(sampno, locno, out_region, county_fips, home)
+  select(sampno, locno, loctype, out_region, county_fips, tract_fips, home)
 
 # Trip chains
 chains <- read_csv("chains.csv")
@@ -111,9 +111,9 @@ mdt <- trips %>% # 128,229 records
 mdt <- mdt %>%
   # distinct takes the first row for duplicates, so order by distance to get right mode
   arrange(desc(distance)) %>%
-  distinct(sampno, perno, placeGroup, .keep_all = TRUE) %>% # 125,103 records
+  distinct(sampno, perno, placeGroup, .keep_all = TRUE) %>% # 127333 records
   # add combined distance and time values calculated above (note some trips are missing one or more records)
-  left_join(placeGroupStats, by = c("sampno","perno","placeGroup")) %>% # 125,103 records
+  left_join(placeGroupStats, by = c("sampno","perno","placeGroup")) %>% # 127333 records
   arrange(desc(sampno),perno,placeGroup) %>%
   # Add lagged trip start time
   mutate(start_times_pg = lag(deptime_pg,1)) %>%
@@ -128,9 +128,9 @@ mdt <- mdt %>%
 
 mdt <- mdt %>%
   # Remove trips that leave the CMAP region
-  filter(out_region==0) %>% # 126,075 records
+  filter(out_region==0) %>% # 125211 records
   # Remove trips >= 100 miles
-  filter(distance<100) # 125,955 records
+  filter(distance<100) # 125,091 records
 
 # Remove placegroup stats
 rm(placeGroupStats)
@@ -162,8 +162,12 @@ tt_ppl <- read_csv("per_public.csv") %>%
 tt_place <- read_csv("place_public.csv") %>%
   select(MPO, SAMPN, PERNO, DAYNO, PLANO, locno, TPURP, MODE, DIST, TRPDUR)
 
+# Location file
+tt_location <- read.csv("loc_public.csv") %>%
+  select(LOCNO, FIPS, TRACT)
+
 # home location
-tt_home <- read_csv("loc_public.csv") %>%
+tt_home <- tt_location %>%
   select(LOCNO, FIPS) %>%
   mutate(home = case_when(
     substr(LOCNO,1,1) == "9" ~ 1,
@@ -211,6 +215,7 @@ tt_home <- tt_home %>% # 105,554 records
 tt <- tt_place %>% # 218,945 records
   inner_join(tt_ppl, by = c("SAMPN", "PERNO")) %>% # 218,945 records
   inner_join(tt_hh, by = c("SAMPN", "SURVEY")) %>% # 218,945 records
+  inner_join(tt_location, by = c("locno" = "LOCNO")) %>% # 218,945 records
   left_join(tt_home, by = "SAMPN") # 218,945 records (58 records lack a home county; they are kept for analyses that do not rely on home location)
 
 # Flag weekend trips and adjust weights accordingly
@@ -225,11 +230,13 @@ tt <- tt %>%
          weight = if_else(weekdays2==1, WGTP/2, WGTP))
 
 
-#   Remove trips ending outside the region, over 100 miles, and/or on weekends
+# Remove trips not part of the CMAP survey, that end outside the nine county
+# region, are over 100 miles, and/or on weekends
 tt <- tt %>%           # 218,945 records
   filter(MPO==1) %>%   # 159,856 records
-  filter(DIST<100) %>% # 159,856 records
-  filter(weekend==0)   # 140,751 records
+  filter(FIPS %in% cmap_state_nine_counties) %>% # 155,977 records
+  filter(DIST<100) %>% # 155,977 records
+  filter(weekend==0)   # 137,941 records
 
 # Select the correct number of trips per day (based on day number)
 tt <- tt %>%
