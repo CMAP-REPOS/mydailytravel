@@ -28,19 +28,19 @@ age_labels <- c("5 to 9", "10 to 17", "18 to 24", "25 to 29",
                 "30 to 49", "50 to 69","70 to 89")
 
 driver_pax_mdt <-
-  mdt %>%                        # 125,103 records
+  mdt %>%                        # 125091 records
   # Keep only travelers from age 18 to 89
-  filter(age < 90,               # 125,006 records
-         age >= 18 |             # 105,270 records
+  filter(age < 90,               #
+         age >= 18 |             #
            # Keep those who are 18 or older, OR
          aage %in% c(5,6,7)) %>%
            # age buckets that are > 18
   # Keep only trips with > 0 distance
-  filter(distance_pg > 0) %>%    # 82,413 records
+  filter(distance_pg > 0) %>%    #
   # Keep only driver or passenger trips, but exclude motorcycles
-  filter(mode_c %in% c("driver", # 60,123 records
+  filter(mode_c %in% c("driver", #
                        "passenger"),
-         mode != "motorcycle"    # 60,081 records
+         mode != "motorcycle"    # 60077 records
          ) %>%
   # Add age bins
   mutate(age_bin = cut(age, breaks = breaks,
@@ -48,21 +48,21 @@ driver_pax_mdt <-
 
 
 driver_pax_tt <-
-  tt %>%                         # 140,751 records
+  tt %>%                         # 137491 records
   # Keep only travelers from age 18 to 89
-  filter(AGE < 90,               # 137,844 records
-         AGE >= 18) %>%          # 112,975 records
+  filter(AGE < 90,               #
+         AGE >= 18) %>%          #
   # Keep only trips with > 0 distance
-  filter(DIST > 0) %>%           # 85,465 records
+  filter(DIST > 0) %>%           #
   # Keep only driver and passenger trips
-  filter(mode_c %in% c("driver", # 71,547 records
+  filter(mode_c %in% c("driver", # 71322 records
                        "passenger")) %>%
   # Add age bins
   mutate(age_bin = cut(AGE, breaks = breaks,
                        labels = age_labels))
 # Note: we do not include anyone without a specific age from TT because they
 # can't be put into the bins we want, and since the AGEB variable only has <16
-# or 16+, we don't know if they are 18+.
+# or 16+, we don't know if they are 18+
 
 
 #################################################
@@ -70,6 +70,11 @@ driver_pax_tt <-
 #                   Analysis                    #
 #                                               #
 #################################################
+
+################################################################################
+#
+# PASSENGER BEHAVIOR BY AGE
+################################################################################
 
 # Create totals for driving and passenger trips
 driver_pax_total_mdt <-
@@ -101,6 +106,10 @@ driver_pax_age_tt <-
   left_join(driver_pax_total_tt, by = "age_bin") %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "tt")
+
+################################################################################
+# Chart of passenger share by age
+################################################################################
 
 # Create age bin chart
 driver_pax_p1 <-
@@ -171,6 +180,10 @@ finalize_plot(driver_pax_p1,
               overwrite = T
               )
 
+################################################################################
+# Summary statistics - overall percentage of passenger, TT vs MDT
+################################################################################
+
 # Quick output table of totals
 rbind(driver_pax_age_mdt,
       driver_pax_age_tt) %>%
@@ -179,8 +192,10 @@ rbind(driver_pax_age_mdt,
   pivot_wider(id_cols = c("survey"),names_from = "mode_c",values_from = c("mode_count")) %>%
   mutate(pax_share = passenger/(passenger + driver))
 
-
-### Same analysis, looking at income instead
+################################################################################
+#
+# PASSENGER BEHAVIOR BY INCOME
+################################################################################
 
 driver_pax_total_inc_mdt <-
   driver_pax_mdt %>%
@@ -210,7 +225,10 @@ driver_pax_inc_tt <- driver_pax_tt %>%
   mutate(survey = "tt")
 
 
-# Chart of drivers and passengers by income
+################################################################################
+# Chart of passenger share by income
+################################################################################
+
 driver_pax_p2 <- rbind(driver_pax_inc_mdt %>%
                                    select(income_c,mode_c,mode_share,survey),
                                  driver_pax_inc_tt  %>%
@@ -236,7 +254,6 @@ driver_pax_p2 <- rbind(driver_pax_inc_mdt %>%
   cmap_fill_discrete(palette = "mobility") +
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),limits = c(0,.25))
 
-
 finalize_plot(driver_pax_p2,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver, over time and by income.",
@@ -251,6 +268,10 @@ finalize_plot(driver_pax_p2,
 
 )
 
+################################################################################
+#
+# PASSENGER BEHAVIOR BY RACE
+################################################################################
 
 ### Same analysis, looking at race and ethnicity instead - only looking at MDT
 ### since TT only asked about race and ethnicity for primary household
@@ -270,6 +291,10 @@ driver_pax_race_mdt <-
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "2019 - My Daily Travel")
 
+
+################################################################################
+# Chart of passenger share by race
+################################################################################
 
 driver_pax_p3 <-
   driver_pax_race_mdt %>%
@@ -302,44 +327,10 @@ finalize_plot(driver_pax_p3,
               overwrite = T
 )
 
-
-### Explore the "other" category
-
-### Same analysis, looking at race and ethnicity instead - only looking at MDT
-### since TT only asked about race and ethnicity for primary household
-### responder.
-
-driver_pax_total_other_mdt <-
-  driver_pax_mdt %>%
-  filter(race_eth == "other") %>%
-  group_by(race) %>%
-  summarise(total = sum(wthhfin),
-            n = n())
-
-driver_pax_other_mdt <-
-  driver_pax_mdt %>%
-  filter(race_eth == "other") %>%
-  group_by(race, mode_c) %>%
-  summarise(mode_count = sum(wthhfin)) %>%
-  left_join(driver_pax_total_other_mdt, by = "race") %>%
-  mutate(mode_share = (mode_count / total)) %>%
-  mutate(survey = "2019 - My Daily Travel")
-
-
-driver_pax_p4 <-
-  driver_pax_other_mdt %>%
-  select(race,mode_c,mode_share,survey) %>%
-  filter(mode_c == "passenger") %>%
-  mutate(foo = "foo") %>%
-  ggplot(aes(y = reorder(race,desc(mode_share)), x = mode_share, fill = foo)) +
-  geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
-  theme_cmap(gridlines = "v", legend.position = "none") +
-  cmap_fill_discrete(palette = "legislation") +
-  scale_x_continuous(labels = scales::label_percent())
-
-
-
-### Analysis looking at the intersection of race and income
+################################################################################
+#
+# PASSENGER BEHAVIOR BY RACE AND INCOME
+################################################################################
 
 driver_pax_total_inc_race_mdt <-
   driver_pax_mdt %>%
@@ -355,6 +346,9 @@ driver_pax_inc_race_mdt <-
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "mdt")
 
+################################################################################
+# Chart of passenger share by age and income
+################################################################################
 
 # Chart of drivers and passengers by income and race/ethnicity
 driver_pax_p5 <-
@@ -396,8 +390,41 @@ finalize_plot(driver_pax_p5,
               height = 6.3,
               overwrite = T
 )
+################################################################################
+# ARCHIVE - Explaration of "Other" category
+################################################################################
+
+driver_pax_total_other_mdt <-
+  driver_pax_mdt %>%
+  filter(race_eth == "other") %>%
+  group_by(race) %>%
+  summarise(total = sum(wthhfin),
+            n = n())
+
+driver_pax_other_mdt <-
+  driver_pax_mdt %>%
+  filter(race_eth == "other") %>%
+  group_by(race, mode_c) %>%
+  summarise(mode_count = sum(wthhfin)) %>%
+  left_join(driver_pax_total_other_mdt, by = "race") %>%
+  mutate(mode_share = (mode_count / total)) %>%
+  mutate(survey = "2019 - My Daily Travel")
 
 
+driver_pax_p4 <-
+  driver_pax_other_mdt %>%
+  select(race,mode_c,mode_share,survey) %>%
+  filter(mode_c == "passenger") %>%
+  mutate(foo = "foo") %>%
+  ggplot(aes(y = reorder(race,desc(mode_share)), x = mode_share, fill = foo)) +
+  geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
+  theme_cmap(gridlines = "v", legend.position = "none") +
+  cmap_fill_discrete(palette = "legislation") +
+  scale_x_continuous(labels = scales::label_percent())
+
+################################################################################
+# Cleanup
+################################################################################
 # Remove objects from the environment
 rm(driver_pax_race_mdt,driver_pax_total_inc_mdt,driver_pax_total_inc_tt,
    driver_pax_total_mdt,driver_pax_total_race_mdt,driver_pax_total_tt,

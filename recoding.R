@@ -318,3 +318,4 @@ recode_income_buckets_mdt <-
 
 cmap_counties <- c(31,43,89,93,97,111,197)
 cmap_state_counties <- c("17031","17043","17089","17093","17097","17111","17197")
+cmap_state_nine_counties <- c(cmap_state_counties,"17037","17063")

@@ -72,9 +72,10 @@ tt_base_1 <-
 #                                               #
 #################################################
 
-#################################################
-# Mode breakdown of different dining trips
-#################################################
+################################################################################
+#
+# DINING
+################################################################################
 
 ## Create totals for trips by mode category (within universe of dining trips)
 
@@ -129,33 +130,11 @@ all_dining_mode_c <-
   rbind(total_dining_mode_c,
         detailed_dining_mode_c_mdt)
 
+################################################################################
+# Chart of dining sub-purposes by mode
+################################################################################
 
 modes_of_tpurps_p1 <-
-  all_dining_mode_c %>%
-  mutate(tpurp = factor(tpurp,levels = c("Dining outside of home (all)",
-                                         "Drive thru / take-out dining",
-                                         "Ate / dined out")),
-         survey = factor(survey, levels = c("tt","mdt"))) %>%
-  mutate(survey = recode_factor(survey,
-                                mdt = "My Daily Travel (2019)",
-                                tt = "Travel Tracker (2008)")) %>%
-  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = tpurp)) +
-  geom_col(position = position_dodge2(reverse = TRUE)) +
-  facet_wrap(~survey,ncol = 1) +
-  theme_cmap(gridlines = "v") +
-  scale_x_continuous(labels = scales::label_percent(),n.breaks = 6) +
-  cmap_fill_discrete(palette = "friday")
-
-finalize_plot(modes_of_tpurps_p1,
-              "Mode share of dining trips, 2008 vs. 2019.",
-              "Source: CMAP analysis of MDT and TT data.",
-              width = 11.3,
-              height = 6.3,
-              filename = "modes_of_tpurps_p1",
-              mode = "png")
-
-
-modes_of_tpurps_p1a <-
   all_dining_mode_c %>%
   filter(survey == "mdt", tpurp != "Dining outside of home (all)") %>%
   mutate(tpurp = factor(tpurp,levels = c("Drive thru / take-out dining",
@@ -175,19 +154,48 @@ modes_of_tpurps_p1a <-
              fill = "white") +
   cmap_fill_discrete(palette = "friday")
 
-finalize_plot(modes_of_tpurps_p1a,
+finalize_plot(modes_of_tpurps_p1,
               "Mode share of dining trips, 2019.",
               "Source: CMAP analysis of MDT data.",
               width = 11.3,
               height = 6.3,
-              filename = "modes_of_tpurps_p1a",
+              filename = "modes_of_tpurps_p1",
               mode = "png",
               overwrite = T)
 
 
-#################################################
-# Mode breakdown of different healthcare trips
-#################################################
+################################################################################
+# Archive - TT vs. MDT comparison of dining sub-purposes by mode
+################################################################################
+
+# modes_of_tpurps_p1a <-
+#   all_dining_mode_c %>%
+#   mutate(tpurp = factor(tpurp,levels = c("Dining outside of home (all)",
+#                                          "Drive thru / take-out dining",
+#                                          "Ate / dined out")),
+#          survey = factor(survey, levels = c("tt","mdt"))) %>%
+#   mutate(survey = recode_factor(survey,
+#                                 mdt = "My Daily Travel (2019)",
+#                                 tt = "Travel Tracker (2008)")) %>%
+#   ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = tpurp)) +
+#   geom_col(position = position_dodge2(reverse = TRUE)) +
+#   facet_wrap(~survey,ncol = 1) +
+#   theme_cmap(gridlines = "v") +
+#   scale_x_continuous(labels = scales::label_percent(),n.breaks = 6) +
+#   cmap_fill_discrete(palette = "friday")
+#
+# finalize_plot(modes_of_tpurps_p1a,
+#               "Mode share of dining trips, 2008 vs. 2019.",
+#               "Source: CMAP analysis of MDT and TT data.",
+#               width = 11.3,
+#               height = 6.3,
+#               filename = "modes_of_tpurps_p1a",
+#               mode = "png")
+
+################################################################################
+#
+# HEALTHCARE
+################################################################################
 
 
 ## Create totals for trips by mode category (within universe of health trips)
@@ -244,36 +252,12 @@ all_health_mode_c <-
         detailed_health_mode_c_mdt)
 
 
+
+################################################################################
+# Chart of healthcare sub-purposes by mode
+################################################################################
+
 modes_of_tpurps_p2 <-
-  all_health_mode_c %>%
-  mutate(tpurp = factor(tpurp,levels = c("Healthcare (all)",
-                                         "Health care visit for self",
-                                         "Health care visit for someone else",
-                                         "Visited a person staying at the hospital")),
-         survey = factor(survey, levels = c("tt","mdt"))) %>%
-  mutate(survey = recode_factor(survey,
-                                mdt = "My Daily Travel (2019)",
-                                tt = "Travel Tracker (2008)")) %>%
-  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = tpurp)) +
-  geom_col(position = position_dodge2(reverse = TRUE)) +
-  facet_wrap(~survey,ncol = 1) +
-  theme_cmap(gridlines = "v",legend.max.columns = 3) +
-  scale_x_continuous(labels = scales::label_percent(),n.breaks = 6) +
-  cmap_fill_discrete(palette = "governance")
-
-finalize_plot(modes_of_tpurps_p2,
-              "Mode share of health trips, 2008 vs. 2019.",
-              "Source: CMAP analysis of MDT and TT data.",
-              width = 11.3,
-              height = 6.3,
-              filename = "modes_of_tpurps_p2",
-              mode = "png",
-              overwrite = TRUE)
-
-
-
-
-modes_of_tpurps_p2a <-
   all_health_mode_c %>%
   filter(tpurp != "Healthcare (all)") %>%
   mutate(tpurp = factor(tpurp,levels = c("Visited a person staying at the hospital",
@@ -292,20 +276,51 @@ modes_of_tpurps_p2a <-
                      limits = c(0,.85)) +
   cmap_fill_discrete(palette = "governance")
 
-finalize_plot(modes_of_tpurps_p2a,
+finalize_plot(modes_of_tpurps_p2,
               "Mode share of health trips, 2019.",
               "Source: CMAP analysis of MDT data.",
               width = 11.3,
               height = 6.3,
-              filename = "modes_of_tpurps_p2a",
+              filename = "modes_of_tpurps_p2",
               mode = "png",
               overwrite = TRUE)
 
 
+################################################################################
+# Archive - TT vs. MDT comparison of healthcare sub-purposes by mode
+################################################################################
+#
+# modes_of_tpurps_p2a <-
+#   all_health_mode_c %>%
+#   mutate(tpurp = factor(tpurp,levels = c("Healthcare (all)",
+#                                          "Health care visit for self",
+#                                          "Health care visit for someone else",
+#                                          "Visited a person staying at the hospital")),
+#          survey = factor(survey, levels = c("tt","mdt"))) %>%
+#   mutate(survey = recode_factor(survey,
+#                                 mdt = "My Daily Travel (2019)",
+#                                 tt = "Travel Tracker (2008)")) %>%
+#   ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = tpurp)) +
+#   geom_col(position = position_dodge2(reverse = TRUE)) +
+#   facet_wrap(~survey,ncol = 1) +
+#   theme_cmap(gridlines = "v",legend.max.columns = 3) +
+#   scale_x_continuous(labels = scales::label_percent(),n.breaks = 6) +
+#   cmap_fill_discrete(palette = "governance")
+#
+# finalize_plot(modes_of_tpurps_p2a,
+#               "Mode share of health trips, 2008 vs. 2019.",
+#               "Source: CMAP analysis of MDT and TT data.",
+#               width = 11.3,
+#               height = 6.3,
+#               filename = "modes_of_tpurps_p2a",
+#               mode = "png",
+#               overwrite = TRUE)
 
-#################################################
-# Mode breakdown of different community trips
-#################################################
+################################################################################
+#
+# COMMUNITY
+################################################################################
+
 
 ## Create totals for trips by mode category (within universe of community trips)
 
@@ -376,49 +391,11 @@ all_community_mode_c <-
         detailed_community_mode_c_mdt,
         detailed_community_mode_c_tt)
 
+################################################################################
+# Chart of community sub-purposes by mode
+################################################################################
 
 modes_of_tpurps_p3 <-
-  all_community_mode_c %>%
-  mutate(tpurp = factor(tpurp,levels = c("Community (all)",
-                                         "Visit friends/relatives",
-                                         "Socialized with friends",
-                                         "Socialized with relatives",
-                                         "Civic/religious activities",
-                                         "Attended a community event",
-                                         "Attended a religious event")),
-         survey = factor(survey, levels = c("tt","mdt")),
-         category = recode_factor(tpurp,
-                                  "Community (all)" = "Overall",
-                                  "Visit friends/relatives" = "Friends/Family",
-                                  "Socialized with friends" = "Friends/Family",
-                                  "Socialized with relatives" = "Friends/Family",
-                                  "Civic/religious activities" = "Civic/Religious",
-                                  "Attended a community event" = "Civic/Religious",
-                                  "Attended a religious event" = "Civic/Religious"
-
-         )) %>%
-  mutate(survey = recode_factor(survey,
-                                mdt = "My Daily Travel",
-                                tt = "Travel Tracker")) %>%
-  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = tpurp)) +
-  geom_col(position = position_dodge2(reverse = TRUE)) +
-  facet_wrap(survey~category) +
-  theme_cmap(gridlines = "v",legend.max.columns = 3) +
-  scale_x_continuous(labels = scales::label_percent()) +
-  cmap_fill_discrete(palette = "environment")
-
-finalize_plot(modes_of_tpurps_p3,
-              "Mode share of community trips, 2008 vs. 2019.",
-              "Source: CMAP analysis of MDT and TT data.",
-              title_width = 1.8,
-              width = 11.3,
-              height = 6.3,
-              overwrite = T,
-              filename = "modes_of_tpurps_p3",
-              mode = "png")
-
-
-modes_of_tpurps_p3a <-
   all_community_mode_c %>%
   filter(tpurp %in% c("Socialized with relatives",
                       "Socialized with friends",
@@ -450,37 +427,81 @@ modes_of_tpurps_p3a <-
                      limits = c(0,.65)) +
   cmap_fill_discrete(palette = "mobility")
 
-finalize_plot(modes_of_tpurps_p3a,
+finalize_plot(modes_of_tpurps_p3,
               "Mode share of community trips, 2019.",
               "Source: CMAP analysis of MDT data.",
-              # title_width = 1.8,
               width = 11.3,
               height = 6.3,
               overwrite = T,
               mode = "png",
-              filename = "modes_of_tpurps_p3a")
+              filename = "modes_of_tpurps_p3")
 
-# Look at average distances for MDT community trips
+################################################################################
+# Average distances for community trips
+################################################################################
+
 all_community_mdt %>%
   group_by(tpurp) %>%
   summarize(distance = weightedMedian(distance_pg,wtperfin))
 
+################################################################################
+# Archive - TT vs. MDT comparison of community sub-purposes by mode
+################################################################################
+#
+# modes_of_tpurps_p3a <-
+#   all_community_mode_c %>%
+#   mutate(tpurp = factor(tpurp,levels = c("Community (all)",
+#                                          "Visit friends/relatives",
+#                                          "Socialized with friends",
+#                                          "Socialized with relatives",
+#                                          "Civic/religious activities",
+#                                          "Attended a community event",
+#                                          "Attended a religious event")),
+#          survey = factor(survey, levels = c("tt","mdt")),
+#          category = recode_factor(tpurp,
+#                                   "Community (all)" = "Overall",
+#                                   "Visit friends/relatives" = "Friends/Family",
+#                                   "Socialized with friends" = "Friends/Family",
+#                                   "Socialized with relatives" = "Friends/Family",
+#                                   "Civic/religious activities" = "Civic/Religious",
+#                                   "Attended a community event" = "Civic/Religious",
+#                                   "Attended a religious event" = "Civic/Religious"
+#
+#          )) %>%
+#   mutate(survey = recode_factor(survey,
+#                                 mdt = "My Daily Travel",
+#                                 tt = "Travel Tracker")) %>%
+#   ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = tpurp)) +
+#   geom_col(position = position_dodge2(reverse = TRUE)) +
+#   facet_wrap(survey~category) +
+#   theme_cmap(gridlines = "v",legend.max.columns = 3) +
+#   scale_x_continuous(labels = scales::label_percent()) +
+#   cmap_fill_discrete(palette = "environment")
+#
+# finalize_plot(modes_of_tpurps_p3a,
+#               "Mode share of community trips, 2008 vs. 2019.",
+#               "Source: CMAP analysis of MDT and TT data.",
+#               title_width = 1.8,
+#               width = 11.3,
+#               height = 6.3,
+#               overwrite = T,
+#               filename = "modes_of_tpurps_p3a",
+#               mode = "png")
 
-#################################################
-# Examination of TNC school trips - not enough
-# records for rigorous analysis
-#################################################
-
-### Filter data
-all_tnc_school_mdt <-
-  mdt_base_1 %>%                         # 96,821 records
-  filter(age <= 18,                      # 15,495 records
-         schol %in% c(3,4),              # 13,879 records
-         mode %in% c("rideshare",
-                     "shared rideshare",
-                     "taxi"),            # 31 records
-         tpurp_c == "school")            # 11 records
-
-all_tnc_school_mdt %>%
-  group_by(income_c, mode) %>%
-  summarize(trips = sum(wtperfin))
+################################################################################
+# Examination of TNC school trips - not enough records for rigorous analysis
+################################################################################
+#
+# ### Filter data
+# all_tnc_school_mdt <-
+#   mdt_base_1 %>%                         # 96,821 records
+#   filter(age <= 18,                      # 15,495 records
+#          schol %in% c(3,4),              # 13,879 records
+#          mode %in% c("rideshare",
+#                      "shared rideshare",
+#                      "taxi"),            # 31 records
+#          tpurp_c == "school")            # 11 records
+#
+# all_tnc_school_mdt %>%
+#   group_by(income_c, mode) %>%
+#   summarize(trips = sum(wtperfin))

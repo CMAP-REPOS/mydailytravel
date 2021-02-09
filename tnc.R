@@ -139,6 +139,10 @@ tnc <- tnc %>%
 #                                               #
 #################################################
 
+################################################################################
+# Regression
+################################################################################
+
 # Run linear regression
 tnc_use_lm <-
   tnc %>%
@@ -169,16 +173,12 @@ tnc_use_lm <-
 
 summary(tnc_use_lm)
 
-
-
-
 ## There appears to be a positive correlation with TNC usage and transit use
 
 
-
-### Age-based analysis
-
-
+################################################################################
+# Statistics about usage and cost by age, race/ethnicity, and home county
+################################################################################
 
 ## Look at usage by age
 tnc %>%
