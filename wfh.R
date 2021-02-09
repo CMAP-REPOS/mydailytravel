@@ -123,11 +123,11 @@ wfh_mdt_all %>% # 17,656 records
 
 
 # Specific analysis of work trips for individuals who report telecommuting (survey)
-#### BE CAREFUL ON TRIPS - CURRENTLY THIS IS WRONG
+#### BE CAREFUL ON TRIPS
 wfh_worktrips_person_level <-
   wfh_mdt %>%
-  # Look only at the universe of individuals who had a work trip outside of the home today
-  filter(wfo_today == 1) %>%
+  # Look only at the universe of individuals who had a work trip outside of the home today and did not also work from home
+  filter(wfo_today == 1 & wfh_today == 0) %>%
   # Flag for individuals that work at a home workplace or have at least one telecommute day per week
   mutate(wfh_andor_tc = case_when(
     wplace == 2 ~ 1,
@@ -182,12 +182,12 @@ wfh_p3 <-
              hjust = 0,
              label.size = 0) +
   geom_blank(aes(x = xmax)) +
-  cmap_fill_discrete(palette = "legislation")
+  cmap_fill_discrete(palette = "mobility")
 
 finalize_plot(wfh_p3,
               "Travel characteristics for trips in work trip chains of
               individuals who telecommute and/or work from home vs. those who do
-              not, on days when they are working outside the home.",
+              not, on days when they are only working outside the home.",
               "Note: These estimates are based on on answers given in
               both the survey and travel diary components of MDT.
               <br><br>
@@ -206,9 +206,10 @@ wfh_with_today_status <-
   wfh_person_level_plus_no_trips %>%
   mutate(
     category = case_when(
-      wfh_today == 1 ~ 1,
-      wfo_today == 1 ~ 2,
-      TRUE ~ 3),
+      wfh_today == 1 & wfo_today == 1 ~ 1,
+      wfh_today == 1 ~ 2,
+      wfo_today == 1 ~ 3,
+      TRUE ~ 4),
     wfh_andor_tc = case_when(
       wfh == 1 ~ 1,
       tc == 1 ~ 1,
@@ -225,27 +226,33 @@ wfh_with_today_status <-
 wfh_p4 <-
   wfh_with_today_status %>%
   filter(name != "travtime_pg") %>%
-  mutate(flag = recode(wfh_andor_tc,
-                       "0" = "Do not regularly telecommute or work from home",
-                       "1" = "Telecommute at least one day a week and/or work from home"),
+  mutate(flag = recode_factor(wfh_andor_tc,
+                       "1" = "Telecommute at least one day a week and/or work from home",
+                       "0" = "Do not regularly telecommute or work from home"),
          xmax = case_when(
            name == "distance_pg" ~ 45,
-           name == "pertrips" ~ 4.6),
+           name == "pertrips" ~ 5.95
+           ),
          name = recode_factor(name,
                               "distance_pg" = "Distance (mi.)",
-                              "pertrips" = "Trips"),
-         category = factor(category, levels = c(1,2,3))) %>%
+                              "pertrips" = "Trips")) %>%
   mutate(category = recode_factor(category,
-                              "2" = "Worked outside the home today",
-                              "1" = "Worked from home today",
-                              "3" = "Did not work today")) %>%
-  ggplot(aes(x = value, y = stringr::str_wrap(flag,width = 20), fill = category)) +
+                              "2" = "Only worked at \nhome today",
+                              "4" = "Did not work today",
+                              "1" = "Worked both from \nhome and outside \nthe home today",
+                              "3" = "Only worked outside \nthe home today")) %>%
+  mutate(category = factor(category, levels = c("Only worked at \nhome today",
+                                                "Did not work today",
+                                                "Worked both from \nhome and outside \nthe home today",
+                                                "Only worked outside \nthe home today"))) %>%
+  filter(name == "Distance (mi.)") %>%
+  ggplot(aes(x = value, y = category, fill = flag)) +
   geom_col(position = position_dodge2(reverse = T)) +
-  facet_wrap(~name,scales = "free_x") +
-  theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),legend.max.columns = 1,
-             vline = 0) +
+  # facet_wrap(~name,scales = "free_x") +
+  theme_cmap(gridlines = "v",legend.max.columns = 1,
+             vline = 0, xlab = "Distance (mi.)") +
   geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
-                 group = category),
+                 group = flag),
              position = position_dodge2(reverse = T, width = 0.9),
              label.size = 0,
              hjust = 0,
@@ -258,12 +265,7 @@ finalize_plot(wfh_p4,
               home vs. those who do not, on days when they are and are not
               working from home.",
               "Note: These estimates are based on on answers given in
-              both the survey and travel diary components of MDT. \"Worked from
-              home today\" includes all respondents who recorded that they
-              worked from home today, including those who may have also had
-              additional work trips outside the home. As a result, \"Worked
-              outside the home today\" only represents individuals who did not
-              work from home today.
+              both the survey and travel diary components of MDT.
               <br><br>
               Source: CMAP analysis of MDT data.",
               title_width = 2.5,
