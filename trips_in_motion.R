@@ -34,42 +34,36 @@ source("data_cleaning.R")
 threshold <- as.numeric(ymd_hms("2020-01-01 03:00:00", tz = "America/Chicago"))
 day_value <- 60*60*24
 
-
-# Convert arrival and departure times to date-time objects
-tim_mdt_datetimes <-
-  mdt %>%
-  # Convert arrival time to datetime object
-  mutate(arrtime_pg = ymd_hms(arrtime_pg),
-         deptime_pg = ymd_hms(deptime_pg)) %>%
-  # Arrange by sampno, perno, and placegroup to enable extraction of departure
-  # time
-  arrange(desc(sampno),perno,placeGroup)
-
-# Extract start times and shift them down by one (since a trip begins at the
-# departure time of the previous record and ends at the arrival time of the
-# current record)
-start_times_pg <-
-  tibble(start_times_pg = c(ymd_hms(NA))) %>%
-  rbind(tim_mdt_datetimes %>%
-          select(start_times_pg = deptime_pg) %>%
-          head(n = nrow(tim_mdt_datetimes) - 1))
-
 # Filter and process data into working file for calculations
 tim_mdt_wip <-
-  # Start with the date-time version of the overall mdt data table
-  tim_mdt_datetimes %>%        # 125,103 records
-  # Add the start times for each trip, identified above
-  cbind(start_times_pg) %>%
-
+  mdt %>%        # 125091 records
+  # Manually calculate trip beginning times for remaining NA trips with nonzero
+  # travel time (33 trips)
+  mutate(start_time_calc = arrtime_pg - 60 * travtime_pg) %>%
+  mutate(start_times_pg = case_when(
+    is.na(start_times_pg) ~ start_time_calc,
+    TRUE ~ start_times_pg)) %>%
+  select(-start_time_calc) %>%
+  # Remove trip with departure time in 1900
+  filter(start_times_pg > ymd_hms("2017-01-01 00:00:00") # 96936 records
+         ) %>%
+  # Remove all trips where the arrival time comes before the start time (there
+  # are 10 records where this is a problem)
+  filter(start_times_pg <= arrtime_pg) %>% # 125081 records
+  # Add calculated travel time for validation
+  mutate(travtime_calc = (arrtime_pg - start_times_pg)/60) %>%
   # Filter out unwanted trips (>= 15 hours, "beginning" mode, and 0 distance)
   filter(
     # Remove trips > 15 hours
-    travtime_pg < 15 * 60,     # 125,096 records
+    travtime_calc < 15 * 60,     # 125073 records
     # Remove "beginning" trips
-    mode != "beginning",       # 97,007 records
+    mode != "beginning",       # 96984 records
     # Remove trips with 0 place group distance
-    distance_pg > 0            # 96,949 records
-    ) %>%
+    distance_pg > 0            # 96926 records
+  ) %>%
+  # Filter out trips with NA start times and 0 travel time
+  filter(!(is.na(start_times_pg) & travtime == 0) # 96926 records
+  ) %>%
 
   # Make every trip on the same day (for analysis and graphing). I used January
   # 1, 2020 (arbitrarily). The code below extracts the time element of the
@@ -90,11 +84,11 @@ tim_mdt_wip <-
   # into trips on the next day.
   mutate(
     trip_end = case_when(
-      trip_end <= threshold ~ trip_end + day_value,
+      trip_end < threshold ~ trip_end + day_value,
       TRUE ~ trip_end
     ),
     trip_start = case_when(
-      trip_start <= threshold ~ trip_start + day_value,
+      trip_start < threshold ~ trip_start + day_value,
       TRUE ~ trip_start
   )) %>%
   # Create trip interval - this can be used to identify whether a trip is within
@@ -166,9 +160,10 @@ tim_calculator <- function(base_weights = tim_mdt_wip$wtperfin,
     # Establish sequence of times over the day (in five minute increments)
     tibble(time_band = seq.POSIXt(
       from = as.POSIXct("2020-01-01 03:00:00", tz = "America/Chicago"),
-      to = as.POSIXct("2020-01-02 03:00:00", tz = "America/Chicago"),
+      to = as.POSIXct("2020-01-02 02:55:00", tz = "America/Chicago"),
       # Interval using input above, defaults to 5
-      by = paste0(rolling_interval," min")))
+      by = paste0(rolling_interval," min"))) %>%
+    mutate(time_band_interval = interval(time_band, time_band + 5 * 60 - 1, tz = "America/Chicago"))
 
   # Calculate number of intervals on either side of the interval needed for
   # rolling average
@@ -182,9 +177,9 @@ tim_calculator <- function(base_weights = tim_mdt_wip$wtperfin,
     full_join(possibilities, by = character()) %>%
     # Sum the weights that meet both criteria
     mutate(count = mapply(function(x,y) sum(base_weights[which(
-      x %within% trip_interval &
+      int_overlaps(x,trip_interval) &
         y == criteria)]),
-      time_band,
+      time_band_interval,
       identifier
     ))
 
@@ -292,7 +287,7 @@ finalize_plot(trips_in_motion_p1,
               <br><br>
               Source: CMAP analysis of My Daily Travel survey.",
               filename = "trips_in_motion_p1",
-              # mode = "png",
+              mode = "png",
               overwrite = TRUE,
               height = 6.3,
               width = 11.3)

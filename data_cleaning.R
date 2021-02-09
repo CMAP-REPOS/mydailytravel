@@ -28,6 +28,7 @@
 #################################################
 
 library(tidyverse)
+library(lubridate)
 
 #################################################
 #                                               #
@@ -88,7 +89,9 @@ rm(home_wip, two_homes)
 placeGroupStats <- trips %>%
   mutate(hdist = ifelse(hdist >= 0,hdist,0),
          distance = ifelse(distance >= 0,distance,0),
-         travtime = ifelse(travtime >= 0,travtime,0)) %>%
+         travtime = ifelse(travtime >= 0,travtime,0),
+         arrtime = ymd_hms(arrtime, tz = "America/Chicago"),
+         deptime = ymd_hms(deptime, tz = "America/Chicago")) %>%
   group_by(sampno,perno,placeGroup) %>%
   summarize(hdist_pg = sum(hdist, na.rm = TRUE),
             distance_pg = sum(distance, na.rm = TRUE),
@@ -96,17 +99,13 @@ placeGroupStats <- trips %>%
             arrtime_pg = max(arrtime),
             deptime_pg = min(deptime))
 
-# merge datasets and filter for destination and distance
+# merge datasets
 mdt <- trips %>% # 128,229 records
   inner_join(ppl, by = c("sampno", "perno")) %>% # 128,229 records
   inner_join(hh, by = "sampno") %>% # 128,229 records
   inner_join(region, by = c("sampno", "locno")) %>% # 128,229 records
   inner_join(home, by = c("sampno")) %>% # 128,229 records
-  inner_join(chains, by = c("sampno", "perno", "placeno")) %>% # 128,229 records
-  # Remove trips that leave the CMAP region
-  filter(out_region==0) %>% # 126,075 records
-  # Remove trips >= 100 miles
-  filter(distance<100) # 125,955 records
+  inner_join(chains, by = c("sampno", "perno", "placeno")) # 128,229 records
 
 # take care of collapsed trips with placeGroup
 mdt <- mdt %>%
@@ -114,7 +113,24 @@ mdt <- mdt %>%
   arrange(desc(distance)) %>%
   distinct(sampno, perno, placeGroup, .keep_all = TRUE) %>% # 125,103 records
   # add combined distance and time values calculated above (note some trips are missing one or more records)
-  left_join(.,placeGroupStats, by = c("sampno","perno","placeGroup")) # 125,103 records
+  left_join(placeGroupStats, by = c("sampno","perno","placeGroup")) %>% # 125,103 records
+  arrange(desc(sampno),perno,placeGroup) %>%
+  # Add lagged trip start time
+  mutate(start_times_pg = lag(deptime_pg,1)) %>%
+  mutate(sampno_lag = lag(sampno,1),
+         perno_lag = lag(perno,1)) %>%
+  mutate(check = perno == perno_lag & sampno == sampno_lag) %>%
+  mutate(start_times_pg = case_when(
+    check ~ start_times_pg,
+    !check ~ ymd_hms(NA),
+    TRUE ~ ymd_hms(NA))) %>%
+  select(-sampno_lag,-perno_lag,-check)
+
+mdt <- mdt %>%
+  # Remove trips that leave the CMAP region
+  filter(out_region==0) %>% # 126,075 records
+  # Remove trips >= 100 miles
+  filter(distance<100) # 125,955 records
 
 # Remove placegroup stats
 rm(placeGroupStats)

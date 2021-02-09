@@ -80,7 +80,7 @@ divvy_wip <-
                              tzone = "America/Chicago")) %>%
   # Make trips that start before 3am into trips on the next day (given survey timing)
   mutate(trip_start = case_when(
-    trip_start <= threshold ~ trip_start + day_value,
+    trip_start < threshold ~ trip_start + day_value,
     TRUE ~ trip_start)
   ) %>%
   # Add trip end based on trip duration
