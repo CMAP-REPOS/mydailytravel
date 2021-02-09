@@ -1,9 +1,5 @@
 # This script downloads and analyzes Q3 2019 Divvy ridership data to produce a
 # trips-in-motion chart for Divvy trips over the course of an average weekday.
-#
-# NOTE: This script relies on the tim_calculator function developed in
-# trips_in_motion.R. That function must be run before executing the script
-# below.
 
 #################################################
 #                                               #
@@ -16,6 +12,8 @@ library(ggplot2)
 library(lubridate)
 library(slider)
 library(cmapplot)
+
+source("tim_calculator.R")
 
 #################################################
 #                                               #
@@ -40,9 +38,6 @@ rm(divvy_zip)
 # Create helper values
 threshold <- as.numeric(ymd_hms("2020-01-01 03:00:00", tz = "America/Chicago"))
 day_value <- 60*60*24
-breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 03:00:00"),
-                     to = as.POSIXct("2020-01-02 03:00:00"),
-                     by = "3 hours")
 july4 <- interval(ymd_hms("2019-07-04 03:00:00",
                           tz = "America/Chicago"),
                   ymd_hms("2019-07-05 03:00:00",
@@ -97,6 +92,10 @@ trip_times_divvy_counts <-
     trip_interval = divvy_wip$trip_interval,
     criteria = divvy_wip$usertype)
 
+# Define breaks
+breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 03:00:00"),
+                     to = as.POSIXct("2020-01-02 03:00:00"),
+                     by = "3 hours")
 # Create chart
 divvy_p1 <-
   trip_times_divvy_counts %>%
