@@ -39,7 +39,8 @@ mdt_base_2 <-
   filter(tpurp_c != "missing") %>%   # 96874
   # Add flag for under 18 vs. 18 and over
   mutate(under18 = ifelse(age >= 18 | aage %in% c(5,6,7),
-                          "18 and over", "Under 18"))
+                          "18 and over", "Under 18")) %>%
+  ungroup()
 
 
 tt_base_2 <-
@@ -55,7 +56,8 @@ tt_base_2 <-
   filter(tpurp_c != "missing") %>%  # 100619 records
   # Add flag for under 18 vs. 18 and over. None of the school enrollment or age
   # buckets are precise enough to code either way.
-  mutate(under18 = ifelse(AGE >= 18, "18 and over", "Under 18"))
+  mutate(under18 = ifelse(AGE >= 18, "18 and over", "Under 18")) %>%
+  ungroup()
 
 #################################################
 #                                               #
@@ -147,39 +149,47 @@ finalize_plot(tpurps_of_modes_p1,
 # ### Calculate proportions for TT
 # all_passenger_tpurp_c_tt <-
 #   all_passenger_tt %>%
+#   # Calculate totals
+#   mutate(total = sum(weight)) %>%
+#   # Calculate percentages
 #   group_by(tpurp_c) %>%
-#   summarize(tpurp_c_total = sum(weight)) %>%
-#   mutate(tpurp_c_pct = tpurp_c_total / sum(.$tpurp_c_total),
+#   summarize(tpurp_c_total = sum(weight),
+#             total = median(total)) %>%
+#   mutate(tpurp_c_pct = tpurp_c_total / total,
 #          survey = "tt")
 #
 # ### Calculate proportions for MDT
 # all_passenger_tpurp_c_mdt <-
 #   all_passenger_mdt %>%
+#   # Calculate totals
+#   mutate(total = sum(wtperfin)) %>%
+#   # Calculate percentages
 #   group_by(tpurp_c) %>%
-#   summarize(tpurp_c_total = sum(wtperfin)) %>%
-#   mutate(tpurp_c_pct = tpurp_c_total / sum(.$tpurp_c_total),
+#   summarize(tpurp_c_total = sum(wtperfin),
+#             total = median(total)) %>%
+#   mutate(tpurp_c_pct = tpurp_c_total / total,
 #          survey = "mdt")
 #
 # ### Join MDT and TT
 # total_passenger_tpurp_c <-
 #   rbind(all_passenger_tpurp_c_tt,
 #         all_passenger_tpurp_c_mdt) %>%
-#   mutate(mode = "Passenger (all)")
+#   mutate(mode = "Passenger (all)") %>%
+#   select(-total)
 #
 #
 # ### Calculate proportions for subcategories for driver/passenger in MDT
-# detailed_passenger_totals_mdt <-
-#   all_passenger_mdt %>%
-#   group_by(mode) %>%
-#   summarize(trip_total = sum(wtperfin))
-#
 # detailed_passenger_tpurp_c_mdt <-
 #   all_passenger_mdt %>%
+#   # Calculate totals
+#   group_by(mode) %>%
+#   mutate(total = sum(wtperfin)) %>%
+#   # Calculate percentages
 #   group_by(tpurp_c,mode) %>%
-#   summarize(tpurp_c_total = sum(wtperfin)) %>%
-#   left_join(.,detailed_passenger_totals_mdt,by = "mode") %>%
-#   mutate(tpurp_c_pct = tpurp_c_total / trip_total) %>%
-#   select(-trip_total) %>%
+#   summarize(tpurp_c_total = sum(wtperfin),
+#             total = median(total)) %>%
+#   mutate(tpurp_c_pct = tpurp_c_total / total) %>%
+#   select(-total) %>%
 #   mutate(survey = "mdt")
 #
 # all_passenger_tpurp_c <-
@@ -263,41 +273,47 @@ all_bike_tt <-
 ### Calculate proportions for TT
 all_bike_tpurp_c_tt <-
   all_bike_tt %>%
+  # Calculate totals
+  mutate(total = sum(weight)) %>%
+  # Calculate percentages
   group_by(tpurp_c) %>%
-  summarize(tpurp_c_total = sum(weight)) %>%
-  mutate(tpurp_c_pct = tpurp_c_total / sum(.$tpurp_c_total),
+  summarize(tpurp_c_total = sum(weight),
+            total = median(total)) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / total,
          survey = "tt")
 
 ### Calculate proportions for MDT
 all_bike_tpurp_c_mdt <-
   all_bike_mdt %>%
+  # Calculate totals
+  mutate(total = sum(wtperfin)) %>%
+  # Calculate percentages
   group_by(tpurp_c) %>%
-  summarize(tpurp_c_total = sum(wtperfin)) %>%
-  mutate(tpurp_c_pct = tpurp_c_total / sum(.$tpurp_c_total),
+  summarize(tpurp_c_total = sum(wtperfin),
+            total = median(total)) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / total,
          survey = "mdt")
 
 ### Join MDT and TT
 total_bike_tpurp_c <-
   rbind(all_bike_tpurp_c_tt,
         all_bike_tpurp_c_mdt) %>%
-  mutate(mode = "Bike (all)")
+  mutate(mode = "Bike (all)") %>%
+  select(-total)
 
 
 ### Calculate proportions for subcategories for biking in MDT
-detailed_bike_totals_mdt <-
-  all_bike_mdt %>%
-  group_by(mode) %>%
-  summarize(trip_total = sum(wtperfin),
-            # n = n()
-            )
-
 detailed_bike_tpurp_c_mdt <-
   all_bike_mdt %>%
+  # Calculate totals
+  group_by(mode) %>%
+  mutate(total = sum(wtperfin)) %>%
+  # Calculate percentages
   group_by(tpurp_c,mode) %>%
-  summarize(tpurp_c_total = sum(wtperfin)) %>%
-  left_join(.,detailed_bike_totals_mdt,by = "mode") %>%
-  mutate(tpurp_c_pct = tpurp_c_total / trip_total) %>%
-  select(-trip_total) %>%
+  summarize(tpurp_c_total = sum(wtperfin),
+            total = median(total)) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / total) %>%
+  select(-total) %>%
   mutate(survey = "mdt")
 
 all_bike_tpurp_c <-
@@ -470,18 +486,27 @@ all_tnc_tt <-
 ### Calculate proportions for TT
 all_tnc_tpurp_c_tt <-
   all_tnc_tt %>%
+  # Calculate totals
+  mutate(total = sum(weight)) %>%
+  # Calculate percentages
   group_by(tpurp_c) %>%
-  summarize(tpurp_c_total = sum(weight)) %>%
-  mutate(tpurp_c_pct = tpurp_c_total / sum(.$tpurp_c_total),
+  summarize(tpurp_c_total = sum(weight),
+            total = median(total)) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / total,
          survey = "tt")
 
 ### Calculate proportions for MDT
 all_tnc_tpurp_c_mdt <-
   all_tnc_mdt %>%
+  # Calculate totals
+  mutate(total = sum(wtperfin)) %>%
+  # Calculate percentages
   group_by(tpurp_c) %>%
-  summarize(tpurp_c_total = sum(wtperfin)) %>%
-  mutate(tpurp_c_pct = tpurp_c_total / sum(.$tpurp_c_total),
+  summarize(tpurp_c_total = sum(wtperfin),
+            total = median(total)) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / total,
          survey = "mdt")
+
 
 ### Join MDT and TT
 total_tnc_tpurp_c <-
@@ -489,26 +514,26 @@ total_tnc_tpurp_c <-
         all_tnc_tpurp_c_mdt) %>%
   mutate(mode = case_when(
     survey == "mdt" ~ "tnc (all)",
-    TRUE ~ "taxi"))
+    TRUE ~ "taxi")) %>%
+  select(-total)
 
 
 ### Calculate proportions for subcategories for community in MDT
-detailed_tnc_totals_mdt <-
-  all_tnc_mdt %>%
-  group_by(mode) %>%
-  summarize(trip_total = sum(wtperfin))
-
 detailed_tnc_tpurp_c_mdt <-
   all_tnc_mdt %>%
   mutate(tpurp_c = fct_collapse(tpurp_c,
                                 "all other" = c("health","recreation/fitness",
                                                 "school","transport","transfer",
                                                 "other"))) %>%
+  # Calculate totals
+  group_by(mode) %>%
+  mutate(total = sum(wtperfin)) %>%
+  # Calculate percentages
   group_by(tpurp_c,mode) %>%
-  summarize(tpurp_c_total = sum(wtperfin)) %>%
-  left_join(.,detailed_tnc_totals_mdt,by = "mode") %>%
-  mutate(tpurp_c_pct = tpurp_c_total / trip_total) %>%
-  select(-trip_total) %>%
+  summarize(tpurp_c_total = sum(wtperfin),
+            total = median(total)) %>%
+  mutate(tpurp_c_pct = tpurp_c_total / total) %>%
+  select(-total) %>%
   mutate(survey = "mdt")
 
 all_tnc_tpurp_c <-
