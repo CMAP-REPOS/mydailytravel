@@ -44,7 +44,8 @@ driver_pax_mdt <-
          ) %>%
   # Add age bins
   mutate(age_bin = cut(age, breaks = breaks,
-                     labels = age_labels))
+                     labels = age_labels)) %>%
+  ungroup()
 
 
 driver_pax_tt <-
@@ -59,10 +60,11 @@ driver_pax_tt <-
                        "passenger")) %>%
   # Add age bins
   mutate(age_bin = cut(AGE, breaks = breaks,
-                       labels = age_labels))
-# Note: we do not include anyone without a specific age from TT because they
-# can't be put into the bins we want, and since the AGEB variable only has <16
-# or 16+, we don't know if they are 18+
+                       labels = age_labels)) %>%
+  # Note: we do not include anyone without a specific age from TT because they
+  # can't be put into the bins we want, and since the AGEB variable only has <16
+  # or 16+, we don't know if they are 18+
+  ungroup()
 
 
 #################################################
@@ -76,34 +78,28 @@ driver_pax_tt <-
 # PASSENGER BEHAVIOR BY AGE
 ################################################################################
 
-# Create totals for driving and passenger trips
-driver_pax_total_mdt <-
-  driver_pax_mdt %>%
-  group_by(age_bin) %>%
-  summarise(total = sum(wthhfin),
-            n = n())
-
 # Create age bucket totals and mode shares for driving and passenger trips
 driver_pax_age_mdt <-
   driver_pax_mdt %>%
+  # Calculate totals
+  group_by(age_bin) %>%
+  mutate(total = sum(wtperfin)) %>%
+  # Calculate percentages
   group_by(age_bin, mode_c) %>%
-  summarise(mode_count = sum(wthhfin)) %>%
-  left_join(driver_pax_total_mdt, by = "age_bin") %>%
+  summarise(mode_count = sum(wtperfin),
+            total = median(total)) %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "mdt")
 
-# Repeat for Travel Tracker
-driver_pax_total_tt <-
-  driver_pax_tt %>%
-  group_by(age_bin) %>%
-  summarise(total = sum(weight),
-            n = n())
-
 driver_pax_age_tt <-
   driver_pax_tt %>%
+  # Calculate totals
+  group_by(age_bin) %>%
+  mutate(total = sum(weight)) %>%
+  # Calculate percentages
   group_by(age_bin, mode_c) %>%
-  summarise(mode_count = sum(weight)) %>%
-  left_join(driver_pax_total_tt, by = "age_bin") %>%
+  summarise(mode_count = sum(weight),
+            total = median(total)) %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "tt")
 
@@ -197,30 +193,27 @@ rbind(driver_pax_age_mdt,
 # PASSENGER BEHAVIOR BY INCOME
 ################################################################################
 
-driver_pax_total_inc_mdt <-
-  driver_pax_mdt %>%
-  group_by(income_c) %>%
-  summarise(total = sum(wthhfin),
-            n = n())
-
 driver_pax_inc_mdt <-
   driver_pax_mdt %>%
+  # Create totals
+  group_by(income_c) %>%
+  mutate(total = sum(wtperfin)) %>%
+  # Create percentages
   group_by(income_c, mode_c) %>%
-  summarise(mode_count = sum(wthhfin)) %>%
-  left_join(driver_pax_total_inc_mdt, by = "income_c") %>%
+  summarise(mode_count = sum(wtperfin),
+            total = median(total)) %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "mdt")
 
-driver_pax_total_inc_tt <-
+driver_pax_inc_tt <-
   driver_pax_tt %>%
+  # Create totals
   group_by(income_c) %>%
-  summarise(total = sum(weight),
-            n = n())
-
-driver_pax_inc_tt <- driver_pax_tt %>%
+  mutate(total = sum(weight)) %>%
+  # Create percentages
   group_by(income_c, mode_c) %>%
-  summarise(mode_count = sum(weight)) %>%
-  left_join(driver_pax_total_inc_tt, by = "income_c") %>%
+  summarise(mode_count = sum(weight),
+            total = median(total)) %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "tt")
 
@@ -277,17 +270,15 @@ finalize_plot(driver_pax_p2,
 ### since TT only asked about race and ethnicity for primary household
 ### responder.
 
-driver_pax_total_race_mdt <-
-  driver_pax_mdt %>%
-  group_by(race_eth) %>%
-  summarise(total = sum(wthhfin),
-            n = n())
-
 driver_pax_race_mdt <-
   driver_pax_mdt %>%
+  # Create totals
+  group_by(race_eth) %>%
+  mutate(total = sum(wtperfin)) %>%
+  # Create percentages
   group_by(race_eth, mode_c) %>%
-  summarise(mode_count = sum(wthhfin)) %>%
-  left_join(driver_pax_total_race_mdt, by = "race_eth") %>%
+  summarise(mode_count = sum(wtperfin),
+            total = median(total)) %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "2019 - My Daily Travel")
 
@@ -310,7 +301,6 @@ driver_pax_p3 <-
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),
                      limits = c(0,.21))
 
-
 finalize_plot(driver_pax_p3,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver,  by race and ethnicity.",
@@ -332,17 +322,16 @@ finalize_plot(driver_pax_p3,
 # PASSENGER BEHAVIOR BY RACE AND INCOME
 ################################################################################
 
-driver_pax_total_inc_race_mdt <-
-  driver_pax_mdt %>%
-  group_by(income_c,race_eth) %>%
-  summarise(total = sum(wthhfin),
-            n = n())
-
 driver_pax_inc_race_mdt <-
   driver_pax_mdt %>%
+  # Calculate totals for race and income
+  group_by(income_c,race_eth) %>%
+  mutate(total = sum(wtperfin)) %>%
+  ungroup() %>%
+  # Calculate percentages by race, income, and mode
   group_by(income_c,race_eth,mode_c) %>%
-  summarise(mode_count = sum(wthhfin)) %>%
-  left_join(driver_pax_total_inc_race_mdt, by = c("income_c","race_eth")) %>%
+  summarise(mode_count = sum(wtperfin),
+            total = median(total)) %>%
   mutate(mode_share = (mode_count / total)) %>%
   mutate(survey = "mdt")
 
@@ -351,7 +340,7 @@ driver_pax_inc_race_mdt <-
 ################################################################################
 
 # Chart of drivers and passengers by income and race/ethnicity
-driver_pax_p5 <-
+driver_pax_p4 <-
   driver_pax_inc_race_mdt %>%
   filter(mode_c == "passenger", income_c != "missing", race_eth != "missing") %>%
   mutate(income_c = recode_factor(income_c,
@@ -375,7 +364,7 @@ driver_pax_p5 <-
   scale_x_continuous(labels = scales::label_percent(),limits = c(0,.65))
 
 
-finalize_plot(driver_pax_p5,
+finalize_plot(driver_pax_p4,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver, over time, by race and income.",
               caption = "Note: Excludes trips out of the CMAP region, as well as
@@ -384,7 +373,7 @@ finalize_plot(driver_pax_p5,
               \"White\") are non-Hispanic.
               <br><br>
               Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
-              filename = "driver_pax_p5",
+              filename = "driver_pax_p4",
               mode = "png",
               width = 11.3,
               height = 6.3,
@@ -393,34 +382,29 @@ finalize_plot(driver_pax_p5,
 ################################################################################
 # ARCHIVE - Explaration of "Other" category
 ################################################################################
-
-driver_pax_total_other_mdt <-
-  driver_pax_mdt %>%
-  filter(race_eth == "other") %>%
-  group_by(race) %>%
-  summarise(total = sum(wthhfin),
-            n = n())
-
-driver_pax_other_mdt <-
-  driver_pax_mdt %>%
-  filter(race_eth == "other") %>%
-  group_by(race, mode_c) %>%
-  summarise(mode_count = sum(wthhfin)) %>%
-  left_join(driver_pax_total_other_mdt, by = "race") %>%
-  mutate(mode_share = (mode_count / total)) %>%
-  mutate(survey = "2019 - My Daily Travel")
-
-
-driver_pax_p4 <-
-  driver_pax_other_mdt %>%
-  select(race,mode_c,mode_share,survey) %>%
-  filter(mode_c == "passenger") %>%
-  mutate(foo = "foo") %>%
-  ggplot(aes(y = reorder(race,desc(mode_share)), x = mode_share, fill = foo)) +
-  geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
-  theme_cmap(gridlines = "v", legend.position = "none") +
-  cmap_fill_discrete(palette = "legislation") +
-  scale_x_continuous(labels = scales::label_percent())
+#
+# driver_pax_other_mdt <-
+#   driver_pax_mdt %>%
+#   filter(race_eth == "other") %>%
+#   ungroup() %>%
+#   mutate(total = sum(wtperfin)) %>%
+#   group_by(race, mode_c) %>%
+#   summarise(mode_count = sum(wtperfin),
+#             total = median(total)) %>%
+#   mutate(mode_share = (mode_count / total)) %>%
+#   mutate(survey = "2019 - My Daily Travel")
+#
+#
+# driver_pax_p4 <-
+#   driver_pax_other_mdt %>%
+#   select(race,mode_c,mode_share,survey) %>%
+#   filter(mode_c == "passenger") %>%
+#   mutate(foo = "foo") %>%
+#   ggplot(aes(y = reorder(race,desc(mode_share)), x = mode_share, fill = foo)) +
+#   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
+#   theme_cmap(gridlines = "v", legend.position = "none") +
+#   cmap_fill_discrete(palette = "legislation") +
+#   scale_x_continuous(labels = scales::label_percent())
 
 ################################################################################
 # Cleanup
