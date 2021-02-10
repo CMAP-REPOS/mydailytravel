@@ -49,7 +49,7 @@ trips <- read_csv("place.csv") %>%
 
 # person info
 ppl <- read_csv("person.csv") %>%
-  select(sampno, perno, age, aage, schol, hisp, race, pertrips, wtperfin, tcoff, tcdays, emply_ask, jobs, wplace)
+  select(sampno, perno, age, aage, schol, smode, hisp, race, pertrips, wtperfin, tcoff, tcdays, emply_ask, jobs, wplace)
 
 # household info
 hh <- read_csv("household.csv") %>%
@@ -124,6 +124,7 @@ mdt <- mdt %>%
     check ~ start_times_pg,
     !check ~ ymd_hms(NA),
     TRUE ~ ymd_hms(NA))) %>%
+  mutate(travtime_pg_calc = (arrtime_pg - start_times_pg)/60) %>%
   select(-sampno_lag,-perno_lag,-check)
 
 mdt <- mdt %>%
@@ -156,7 +157,7 @@ tt_hh <- read_csv("hh_public.csv") %>%
 
 # people
 tt_ppl <- read_csv("per_public.csv") %>%
-  select(SAMPN, PERNO, MPO_per = MPO, SURVEY, PTRIPS1, PTRIPS2, AGE, AGEB, SCHOL, HISP, RACE, WGTP)
+  select(SAMPN, PERNO, MPO_per = MPO, SURVEY, PTRIPS1, PTRIPS2, AGE, AGEB, SCHOL, SMODE, HISP, RACE, WGTP)
 
 # trips
 tt_place <- read_csv("place_public.csv") %>%

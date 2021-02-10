@@ -43,6 +43,8 @@ all_school_mdt <-
   filter(mode_c != "missing") %>%    #
   # Keep only trips to school
   filter(tpurp_c == "school") %>%    #
+  # Exclude Kendall County (for validation purposes only)
+  # filter(county_fips != 93) %>%
   # Keep only trips to identified school locations
   filter(loctype == 3)               # 4001 records
 
@@ -66,6 +68,8 @@ all_school_tt <-
                                    school_county_fips = FIPS,
                                    tract_fips = TRACT),
             by = "locno") %>%
+  # Exclude Kendall County (for validation purposes only)
+  # filter(school_county_fips != 17093) %>%
   # Remove home locations (there are none)
   filter(substr(locno,1,1) != "9")  # 3329 records
 
@@ -74,6 +78,190 @@ all_school_tt <-
 #                 Analysis                      #
 #                                               #
 #################################################
+
+
+################################################################################
+#
+# Survey responses - Mode share for school
+################################################################################
+
+all_respondents_school_mdt <-
+  mdt_all_respondents %>%
+  filter(smode >0,
+         schol %in% c(3,4)) %>%
+  filter(age >= 5 |
+           # or those in an age category from 5 to 44
+           aage %in% c(2,3,4,5) |
+           # or those enrolled in 9th-12th grade
+           schol %in% c(4) |
+           # or those identified as attending school manually
+           sampno %in% c(70038312,
+                         70051607)) %>%
+  mutate(smode = recode(smode,
+                        "1" = "Walk",
+                        "2" = "Bike",
+                        "3" = "Driver",
+                        "4" = "Driver",
+                        "5" = "Passenger",
+                        "6" = "Passenger",
+                        "7" = "School bus",
+                        "8" = "Transit",
+                        "9" = "Transit",
+                        "10" = "Transit",
+                        "11" = "Other",
+                        "12" = "Other",
+                        "13" = "Other",
+                        "14" = "Other",
+                        "15" = "Other",
+                        "16" = "Other",
+                        "17" = "Other",
+                        "18" = "Other",
+                        "97" = "Other")) %>%
+  mutate(survey = "My Daily Travel ('19)")
+
+all_respondents_school_tt <-
+  tt_all_respondents %>%
+  filter(!is.na(SMODE),
+         !(SMODE %in% c(98,99)),
+         SCHOL %in% c(3,4),
+         # Keep only those 5 or older
+         AGE >= 5 | AGEB == 2) %>%
+  filter(!is.na(WGTP)) %>%
+  mutate(smode = recode(SMODE,
+                        "1" = "Walk",
+                        "2" = "Bike",
+                        "3" = "Driver",
+                        "4" = "Passenger",
+                        "5" = "Transit",
+                        "6" = "Transit",
+                        "7" = "Transit",
+                        "8" = "Transit",
+                        "9" = "Other",
+                        "10" = "Other",
+                        "11" = "School bus",
+                        "12" = "Other",
+                        "14" = "Transit",
+                        "97" = "Other")) %>%
+  mutate(survey = "Travel Tracker ('09)")
+
+################################################################################
+# Chart of mode share, survey responses
+################################################################################
+
+survey_school_mode_mdt <-
+  all_respondents_school_mdt %>%
+  mutate(total = sum(wtperfin)) %>%
+  ungroup() %>%
+  group_by(smode) %>%
+  summarize(total = median(total),
+            sum = sum(wtperfin),
+            pct = sum(wtperfin)/total,
+            survey = first(survey))
+
+
+survey_school_mode_tt <-
+  all_respondents_school_tt %>%
+  mutate(total = sum(WGTP)) %>%
+  ungroup() %>%
+  group_by(smode) %>%
+  summarize(total = median(total),
+            sum = sum(WGTP),
+            pct = sum(WGTP)/total,
+            survey = first(survey))
+
+survey_school_mode <-
+  survey_school_mode_mdt %>%
+  rbind(survey_school_mode_tt)
+
+school_trips_p0 <-
+  survey_school_mode %>%
+  ggplot(aes(x = pct, y = reorder(smode,desc(-pct)))) +
+  geom_col(aes(fill = survey),position = position_dodge2(reverse = T)) +
+  theme_cmap(vline = 0, gridlines = "v") +
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+                     limits = c(0,.36)) +
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
+                 group = survey),
+             position = position_dodge2(reverse = T, width = 0.9),
+             label.size = 0,
+             fill = "white",
+             hjust = 0) +
+  cmap_fill_discrete(palette = "friday")
+
+finalize_plot(school_trips_p0,
+              title = "Typical mode used to get to school, comparing 2008 to 2019 (survey).",
+              caption = "Note: Mode share represents survey responses to the
+              question, \"How do you usually get to school?\" Figures are not
+              based on observed or recorded travel behavior.
+              <br><br>
+              Source: CMAP analysis of MDT and TT data.",
+              filename = "school_trips_p0",
+              mode = "png",
+              overwrite = T,
+              height = 4,
+              width = 6)
+
+
+################################################################################
+# Chart of walk shaer by income, survey responses
+################################################################################
+
+survey_school_mode_inc_mdt <-
+  all_respondents_school_mdt %>%
+  filter(income_c != "missing") %>%
+  group_by(income_c) %>%
+  mutate(total = sum(wtperfin)) %>%
+  ungroup() %>%
+  group_by(smode,income_c) %>%
+  summarize(total = median(total),
+            sum = sum(wtperfin),
+            pct = sum(wtperfin)/total,
+            survey = first(survey))
+
+survey_school_mode_inc_tt <-
+  all_respondents_school_tt %>%
+  filter(income_c != "missing") %>%
+  group_by(income_c) %>%
+  mutate(total = sum(WGTP)) %>%
+  ungroup() %>%
+  group_by(smode,income_c) %>%
+  summarize(total = median(total),
+            sum = sum(WGTP),
+            pct = sum(WGTP)/total,
+            survey = first(survey))
+
+survey_school_mode_inc <-
+  survey_school_mode_inc_mdt %>%
+  rbind(survey_school_mode_inc_tt)
+
+school_trips_p0.1 <-
+  survey_school_mode_inc %>%
+  filter(smode == "Walk") %>%
+  ggplot(aes(x = pct, y = income_c)) +
+  geom_col(aes(fill = survey),position = position_dodge2(reverse = T)) +
+  theme_cmap(vline = 0, gridlines = "v") +
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+                     limits = c(0,.45)) +
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
+                 group = survey),
+             position = position_dodge2(reverse = T, width = 0.9),
+             label.size = 0,
+             fill = "white",
+             hjust = 0) +
+  cmap_fill_discrete(palette = "friday")
+
+finalize_plot(school_trips_p0.1,
+              title = "Walk mode share by income, comparing 2008 to 2019 (survey).",
+              caption = "Note: Mode share represents survey responses to the
+              question, \"How do you usually get to school?\" Figures are not
+              based on observed or recorded travel behavior.
+              <br><br>
+              Source: CMAP analysis of MDT and TT data.",
+              filename = "school_trips_p0.1",
+              mode = "png",
+              overwrite = T,
+              height = 4,
+              width = 6)
 
 ################################################################################
 #
@@ -371,11 +559,11 @@ finalize_plot(school_trips_p3,
 #   all_school_mdt %>%
 #   filter(
 #     # Only include trips that are more than 0 minutes and less than 2.5 hours
-#     travtime_pg < 150 & travtime_pg > 0,
+#     travtime_pg_calc < 150 & travtime_pg_calc > 0,
 #     # Exclude households with missing income information
 #     income_c != "missing") %>%
 #   group_by(income_c) %>%
-#   summarize(travtime = weighted.mean(travtime_pg, w = wtperfin)) %>%
+#   summarize(travtime = as.numeric(weighted.mean(travtime_pg_calc, w = wtperfin))) %>%
 #   mutate(survey = "My Daily Travel (2019)")
 #
 # # Repeat for TT
@@ -468,7 +656,7 @@ school_time_race_mdt <-
   all_school_mdt %>%
   filter(
     # Only include trips that are more than 0 minutes and less than 2.5 hours
-    travtime_pg < 150 & travtime_pg > 0,
+    travtime_pg_calc < 150 & travtime_pg_calc > 0,
     # Exclude households with missing race and ethnicity information
     race_eth != "missing") %>%
   # Add breakdown between K-8 and 9-12
@@ -476,7 +664,7 @@ school_time_race_mdt <-
                       "Elementary and middle school",
                       "High school")) %>%
   group_by(race_eth,k12) %>%
-  summarize(travtime = weighted.mean(travtime_pg, w = wtperfin)) %>%
+  summarize(travtime = as.numeric(weighted.mean(travtime_pg_calc, w = wtperfin))) %>%
   mutate(survey = "My Daily Travel (2019)")
 
 # Chart of travel time to school by household income
@@ -550,7 +738,9 @@ finalize_plot(school_trips_p7,
 
 all_school_mdt_lm <-
   all_school_mdt %>%
-  filter(travtime_pg < 150) %>%
+  mutate(travtime_lm = as.double(travtime_pg_calc)) %>%
+  filter(travtime_lm < 150,
+         travtime_lm > 0) %>%
   mutate(
     white = case_when(
       race_eth == "white" ~ 1,
@@ -591,7 +781,7 @@ all_school_mdt_lm <-
     )
 
 school_trips_regression <-
-  lm(travtime_pg ~ white + black + hispa + asian + high_inc +
+  lm(travtime_lm ~ white + black + hispa + asian + high_inc +
        distance_pg + cook + car_trip + school_bus + transit +
        walk + bike + k8,
      all_school_mdt_lm,
@@ -601,7 +791,7 @@ summary(school_trips_regression)
 
 
 all_school_mdt_lm %>%
-  ggplot(aes(x = travtime_pg, y = race_eth)) +
+  ggplot(aes(x = travtime_lm, y = race_eth)) +
   geom_boxplot()
 
 
@@ -825,9 +1015,9 @@ county_schools_comparison <-
   school_county_locations_mdt %>%
   rename(school_county_fips = county_fips) %>%
   filter(school_county_fips %in% cmap_counties) %>%
-  mutate(school_county_fips = as.integer(sub("17","",school_county_fips))) %>%
   mutate(survey = "mdt") %>%
-  rbind(school_county_locations_tt %>% mutate(survey = "tt")) %>%
+  rbind(school_county_locations_tt %>%
+          mutate(survey = "tt")) %>%
   select(-name,-value,-total_w,-total_uw) %>%
   distinct() %>%
   pivot_longer(cols = ends_with("school_trips")) %>%
@@ -839,6 +1029,7 @@ county_schools_comparison <-
             mutate(survey = "tt")) %>%
       mutate(name = "Tracts with schools") %>%
       rename(value = n)) %>%
+  filter(school_county_fips %in% cmap_counties) %>%
   mutate(school_county_fips = recode(school_county_fips,
                        "31" = "Cook",
                        "43" = "DuPage",
