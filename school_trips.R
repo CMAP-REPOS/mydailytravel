@@ -43,10 +43,19 @@ all_school_mdt <-
   filter(mode_c != "missing") %>%    #
   # Keep only trips to school
   filter(tpurp_c == "school") %>%    #
+  # Keep only trips to identified school locations
+  filter(loctype == 3) # %>%               # 4001 records
   # Exclude Kendall County (for validation purposes only)
   # filter(county_fips != 93) %>%
-  # Keep only trips to identified school locations
-  filter(loctype == 3)               # 4001 records
+  # # Code to exclude high and low weight households, by zone
+  # left_join(zones, by = "sampno") %>%
+  # arrange(wtperfin) %>%
+  # group_by(cluster) %>%
+  # mutate(rank = row_number()) %>%
+  # mutate(max_rank = max(rank)) %>%
+  # mutate(pct_rank = rank / max_rank) %>%
+  # filter(pct_rank >= 0.10,
+  #        pct_rank <= 0.90)
 
 
 
@@ -273,17 +282,23 @@ finalize_plot(school_trips_p0.1,
 ### Calculate proportions for TT
 all_school_mode_c_tt <-
   all_school_tt %>%
+  ungroup() %>%
+  mutate(total = sum(weight)) %>%
   group_by(mode_c) %>%
-  summarize(mode_c_total = sum(weight)) %>%
-  mutate(mode_c_pct = mode_c_total / sum(.$mode_c_total),
+  summarize(mode_c_total = sum(weight),
+            total = median(total)) %>%
+  mutate(mode_c_pct = mode_c_total / total,
          survey = "tt")
 
 ### Calculate proportions for MDT
 all_school_mode_c_mdt <-
   all_school_mdt %>%
+  ungroup() %>%
+  mutate(total = sum(wtperfin)) %>%
   group_by(mode_c) %>%
-  summarize(mode_c_total = sum(wtperfin)) %>%
-  mutate(mode_c_pct = mode_c_total / sum(.$mode_c_total),
+  summarize(mode_c_total = sum(wtperfin),
+            total = median(total)) %>%
+  mutate(mode_c_pct = mode_c_total / total,
          survey = "mdt")
 
 ### Join MDT and TT
@@ -317,7 +332,7 @@ finalize_plot(school_trips_p1,
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
               filename = "school_trips_p1",
-              mode = "png",
+              # mode = "png",
               width = 11.3,
               height = 6.3,
               overwrite = T)
@@ -428,43 +443,30 @@ finalize_plot(school_trips_p1,
 
 ### Calculate proportions for TT
 
-# Total trips by income bucket
-all_school_inc_total_tt <-
-  all_school_tt %>%
-  # filter(home_county == 31) %>%
-  group_by(income_c) %>%
-  summarize(total = sum(weight),
-            n_tt = n())
-
 all_school_inc_mode_c_tt <-
   all_school_tt %>%
   # filter(home_county == 31) %>%
+  group_by(income_c) %>%
+  mutate(total = sum(weight)) %>%
+  ungroup() %>%
   group_by(mode_c,income_c) %>%
-  summarize(mode_c_total = sum(weight)) %>%
-  # join with total trips by income bucket to allow for percentages
-  left_join(.,
-            all_school_inc_total_tt,
-            by = c("income_c")) %>%
+  summarize(mode_c_total = sum(weight),
+            total = median(total)) %>%
   # Calculate mode share percents
   mutate(mode_c_pct = mode_c_total / total,
          survey = "tt")
 
 ### Calculate proportions for MDT (repeat from TT)
-all_school_inc_total_mdt <-
-  all_school_mdt %>%
-  # filter(home_county == 31) %>%
-  group_by(income_c) %>%
-  summarize(total = sum(wtperfin),
-            n_mdt = n())
 
 all_school_inc_mode_c_mdt <-
   all_school_mdt %>%
   # filter(home_county == 31) %>%
+  group_by(income_c) %>%
+  mutate(total = sum(wtperfin)) %>%
+  ungroup() %>%
   group_by(mode_c,income_c) %>%
-  summarize(mode_c_total = sum(wtperfin)) %>%
-  left_join(.,
-            all_school_inc_total_mdt,
-            by = c("income_c")) %>%
+  summarize(mode_c_total = sum(wtperfin),
+            total = median(total)) %>%
   mutate(mode_c_pct = mode_c_total / total,
          survey = "mdt")
 
@@ -504,7 +506,7 @@ finalize_plot(school_trips_p3,
               height = 6.3,
               width = 11.3,
               filename = "school_trips_p3",
-              mode = "png",
+              # mode = "png",
               overwrite = T
               )
 
@@ -690,7 +692,7 @@ finalize_plot(school_trips_p7,
               <br><br>
               Source: CMAP analysis of MDT.",
               filename = "school_trips_p7",
-              mode = "png",
+              # mode = "png",
               height = 6.3,
               width = 11.3,
               overwrite = T)

@@ -62,6 +62,10 @@ region <- read_csv("location.csv") %>%
 # Trip chains
 chains <- read_csv("chains.csv")
 
+# Travel zones
+zones <- read_csv("zones.csv") %>%
+  select(sampno,cluster)
+
 # home location flag
 home_wip <- region %>%
   filter(home == 1) %>% # identify home locations
