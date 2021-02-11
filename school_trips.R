@@ -175,7 +175,7 @@ survey_school_mode <-
   survey_school_mode_mdt %>%
   rbind(survey_school_mode_tt)
 
-school_trips_p0 <-
+school_trips_p1 <-
   survey_school_mode %>%
   ggplot(aes(x = pct, y = reorder(smode,desc(-pct)))) +
   geom_col(aes(fill = survey),position = position_dodge2(reverse = T)) +
@@ -190,14 +190,14 @@ school_trips_p0 <-
              hjust = 0) +
   cmap_fill_discrete(palette = "friday")
 
-finalize_plot(school_trips_p0,
+finalize_plot(school_trips_p1,
               title = "Typical mode used to get to school, comparing 2008 to 2019 (survey).",
               caption = "Note: Mode share represents survey responses to the
               question, \"How do you usually get to school?\" Figures are not
               based on observed or recorded travel behavior.
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
-              filename = "school_trips_p0",
+              filename = "school_trips_p1",
               mode = "png",
               overwrite = T,
               height = 4,
@@ -228,7 +228,7 @@ survey_school_mode_inc <-
   survey_school_mode_inc_mdt %>%
   rbind(survey_school_mode_inc_tt)
 
-school_trips_p0.1 <-
+school_trips_p1a <-
   survey_school_mode_inc %>%
   filter(smode == "Walk") %>%
   ggplot(aes(x = pct, y = income_c)) +
@@ -244,14 +244,14 @@ school_trips_p0.1 <-
              hjust = 0) +
   cmap_fill_discrete(palette = "friday")
 
-finalize_plot(school_trips_p0.1,
+finalize_plot(school_trips_p1a,
               title = "Walk mode share by income, comparing 2008 to 2019 (survey).",
               caption = "Note: Mode share represents survey responses to the
               question, \"How do you usually get to school?\" Figures are not
               based on observed or recorded travel behavior.
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
-              filename = "school_trips_p0.1",
+              filename = "school_trips_p1a",
               mode = "png",
               overwrite = T,
               height = 4,
@@ -285,7 +285,7 @@ total_school_mode_c <-
         all_school_mode_c_mdt)
 
 # Chart of mode share for K-12 trips, MDT vs TT
-school_trips_p1 <-
+school_trips_p2 <-
   total_school_mode_c %>%
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
@@ -302,15 +302,15 @@ school_trips_p1 <-
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),n.breaks = 6, limits = c(0,.45)) +
   cmap_fill_discrete(palette = "friday")
 
-finalize_plot(school_trips_p1,
+finalize_plot(school_trips_p2,
               "Mode share of K-12 school trips, 2008 vs. 2019.",
               "Note: Includes trips for travelers enrolled in K-12 and at least
               5 years old. Travel Tracker had two school-related trip categories
               (both included) while My Daily Travel had only one.
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
-              filename = "school_trips_p1",
-              # mode = "png",
+              filename = "school_trips_p2",
+              mode = "png",
               width = 11.3,
               height = 6.3,
               overwrite = T)
@@ -378,10 +378,8 @@ finalize_plot(school_trips_p3,
               height = 6.3,
               width = 11.3,
               filename = "school_trips_p3",
-              # mode = "png",
-              overwrite = T
-)
-
+              mode = "png",
+              overwrite = T)
 
 ################################################################################
 #
@@ -407,7 +405,7 @@ school_time_race_mdt <-
   mutate(survey = "My Daily Travel (2019)")
 
 # Chart of travel time to school by household income
-school_trips_p7 <-
+school_trips_p4 <-
   school_time_race_mdt %>%
   mutate(label = round(travtime)) %>%
   mutate(race_eth = factor(race_eth, levels = c("black","hispanic","other",
@@ -421,15 +419,15 @@ school_trips_p7 <-
   facet_wrap(~k12) +
   cmap_fill_race()
 
-finalize_plot(school_trips_p7,
+finalize_plot(school_trips_p4,
               "Travel time to school by race and ethnicity (minutes).",
               "Note: Includes trips for travelers enrolled in K-12 and at least
               5 years old. Trips with no travel time or lasting 150 minutes or
               more are excluded as outliers.
               <br><br>
               Source: CMAP analysis of MDT.",
-              filename = "school_trips_p7",
-              # mode = "png",
+              filename = "school_trips_p4",
+              mode = "png",
               height = 6.3,
               width = 11.3,
               overwrite = T)
@@ -744,7 +742,7 @@ county_schools_comparison <-
                                      "197" = "Will"))
 
 
-school_trips_p9 <-
+school_trips_p5 <-
   county_schools_comparison %>%
   mutate(xmax =
            case_when(
@@ -772,14 +770,14 @@ school_trips_p9 <-
   geom_blank(aes(x = xmax)) +
   facet_wrap(~name,ncol = 3,scales = "free_x")
 
-finalize_plot(school_trips_p9,
+finalize_plot(school_trips_p5,
               title = "Overview of school trip data distribution.",
               caption = "Source: CMAP analysis of MDT and TT data.",
               width = 11.3,
               title_width = 1.5,
               height = 6.3,
               mode = "png",
-              filename = "school_trips_p9",
+              filename = "school_trips_p5",
               overwrite = T)
 
 ################################################################################
