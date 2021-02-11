@@ -123,19 +123,35 @@ mdt <- mdt %>%
   mutate(start_times_pg = lag(deptime_pg,1)) %>%
   mutate(sampno_lag = lag(sampno,1),
          perno_lag = lag(perno,1)) %>%
+  # Add lagged out_region flag
+  mutate(out_region_lag = lag(out_region,1)) %>%
+  # Check whether the previous trip is a match
   mutate(check = perno == perno_lag & sampno == sampno_lag) %>%
-  mutate(start_times_pg = case_when(
-    check ~ start_times_pg,
-    !check ~ ymd_hms(NA),
-    TRUE ~ ymd_hms(NA))) %>%
+  # If it isn't a match, change start_times_pg and out_region_lag to NA
+  mutate(
+    start_times_pg = case_when(
+      check ~ start_times_pg,
+      !check ~ ymd_hms(NA),
+      TRUE ~ ymd_hms(NA)),
+    out_region_lag = case_when(
+      check ~ out_region_lag,
+      !check ~ -1,
+      TRUE ~ -1)
+    ) %>%
+  # Create new out_region flag for trips that neither started nor ended in the CMAP region
+  mutate(out_region_trip = case_when(
+    out_region == 0 | out_region_lag == 0 ~ 0,
+    TRUE ~ 1
+  )) %>%
+  # Calculate travel time based on actual departure and arrival
   mutate(travtime_pg_calc = (arrtime_pg - start_times_pg)/60) %>%
-  select(-sampno_lag,-perno_lag,-check)
+  select(-sampno_lag,-perno_lag,-check,-out_region_lag)
 
 mdt <- mdt %>%
-  # Remove trips that leave the CMAP region
-  filter(out_region==0) %>% # 125211 records
+  # Remove trips that both start and end outside the CMAP region
+  filter(out_region_trip==0) %>% # 125752 records
   # Remove trips >= 100 miles
-  filter(distance<100) # 125,091 records
+  filter(distance<100) # 125463 records
 
 # Remove placegroup stats
 rm(placeGroupStats)
@@ -234,14 +250,38 @@ tt <- tt %>%
          # If respondent recorded two weekdays, divide weight in half
          weight = if_else(weekdays2==1, WGTP/2, WGTP))
 
+# Identify trips that either start or end within the CMAP region
+tt <- tt %>%
+  arrange(SAMPN,PERNO) %>%
+  mutate(out_region = ifelse(FIPS %in% cmap_state_nine_counties,
+                             1,
+                             0)) %>%
+  mutate(out_region_lag = lag(out_region,1),
+         perno_lag = lag(PERNO,1),
+         sampn_lag = lag(SAMPN,1)) %>%
+  mutate(check = PERNO == perno_lag & SAMPN == sampn_lag) %>%
+  # If it isn't a match, change =out_region_lag to NA
+  mutate(
+    out_region_lag = case_when(
+      check ~ out_region_lag,
+      !check ~ -1,
+      TRUE ~ -1)
+  ) %>%
+  # Create new out_region flag for trips that neither started nor ended in the CMAP region
+  mutate(out_region_trip = case_when(
+    out_region == 0 | out_region_lag == 0 ~ 0,
+    TRUE ~ 1
+  )) %>%
+  select(-sampn_lag,-perno_lag,-check,-out_region_lag)
 
-# Remove trips not part of the CMAP survey, that end outside the nine county
-# region, are over 100 miles, and/or on weekends
-tt <- tt %>%           # 218,945 records
-  filter(MPO==1) %>%   # 159,856 records
-  filter(FIPS %in% cmap_state_nine_counties) %>% # 155,977 records
-  filter(DIST<100) %>% # 155,977 records
-  filter(weekend==0)   # 137,941 records
+
+# Remove trips not part of the CMAP survey, that start or end (but not both)
+# outside the nine county region, are over 100 miles, and/or on weekends
+tt <- tt %>%           # 218945 records
+  filter(MPO==1) %>%   # 159856 records
+  filter(out_region_trip == 1) %>% # 153437 records
+  filter(DIST<100) %>% # 153437 records
+  filter(weekend==0)   # 135306 records
 
 # Select the correct number of trips per day (based on day number)
 tt <- tt %>%
