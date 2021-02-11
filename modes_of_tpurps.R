@@ -13,6 +13,8 @@ library(slider)
 library(cmapplot)
 library(matrixStats)
 
+source("pct_calculator.R")
+
 #################################################
 #                                               #
 #                 Data Prep                     #
@@ -79,85 +81,31 @@ tt_base_1 <-
 # DINING
 ################################################################################
 
-## Create totals for trips by mode category (within universe of dining trips)
-
-### Filter data
-all_dining_mdt <-
-  mdt_base_1 %>%              # 96919 records
-  filter(tpurp_c == "dining") # 6544 records
-
-all_dining_tt <-
-  tt_base_1 %>%               # 100880 records
-  filter(tpurp_c == "dining") # 5898 records
-
-### Calculate proportions for TT
-all_dining_mode_c_tt <-
-  all_dining_tt %>%
-  # Establish totals
-  mutate(total = sum(weight)) %>%
-  # Calculate percentages
-  group_by(mode_c) %>%
-  summarize(mode_c_total = sum(weight),
-            total = median(total)) %>%
-  mutate(mode_c_pct = mode_c_total / total,
-         survey = "tt")
-
-### Calculate proportions for MDT
-all_dining_mode_c_mdt <-
-  all_dining_mdt %>%
-  # Establish totals
-  mutate(total = sum(wtperfin)) %>%
-  # Calculate percentages
-  group_by(mode_c) %>%
-  summarize(mode_c_total = sum(wtperfin),
-            total = median(total)) %>%
-  mutate(mode_c_pct = mode_c_total / total,
-         survey = "mdt")
-
-### Join MDT and TT
-total_dining_mode_c <-
-  rbind(all_dining_mode_c_tt,
-        all_dining_mode_c_mdt) %>%
-  mutate(tpurp = "Dining outside of home (all)") %>%
-  select(-total)
-
-
 ### Calculate proportions for subcategories for dining in MDT
 detailed_dining_mode_c_mdt <-
-  all_dining_mdt %>%
-  # Establish totals
-  group_by(tpurp) %>%
-  mutate(trip_total = sum(wtperfin)) %>%
-  # Establish percentages
-  group_by(tpurp,mode_c) %>%
-  summarize(mode_c_total = sum(wtperfin),
-            trip_total = median(trip_total)) %>%
-  mutate(mode_c_pct = mode_c_total / trip_total) %>%
-  select(-trip_total) %>%
-  mutate(survey = "mdt") %>%
-  ungroup()
-
-all_dining_mode_c <-
-  rbind(total_dining_mode_c,
-        detailed_dining_mode_c_mdt)
+  pct_calculator(mdt_base_1,
+                 subset = "dining",
+                 subset_of = "tpurp_c",
+                 breakdown_by = "mode_c",
+                 second_breakdown = "tpurp",
+                 weight = "wtperfin",
+                 survey = "mdt")
 
 ################################################################################
 # Chart of dining sub-purposes by mode
 ################################################################################
 
 modes_of_tpurps_p1 <-
-  all_dining_mode_c %>%
-  filter(survey == "mdt", tpurp != "Dining outside of home (all)") %>%
+  detailed_dining_mode_c_mdt %>%
   mutate(tpurp = factor(tpurp,levels = c("Drive thru / take-out dining",
-                                         "Ate / dined out")),
-         survey = factor(survey, levels = c("tt","mdt"))) %>%
-  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)),
-             x = mode_c_pct)) +
+                                         "Ate / dined out"))) %>%
+  ggplot(aes(y = reorder(mode_c,desc(-pct)),
+             x = pct)) +
   geom_col(aes(fill = tpurp),
            position = position_dodge2(width = .8,reverse = TRUE)) +
   theme_cmap(gridlines = "v",vline = 0) +
   scale_x_continuous(labels = scales::label_percent(accuracy=1),n.breaks = 6,limits = c(0,.75)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(mode_c_pct),
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
                  group = tpurp),
              position = position_dodge2(width = .8,reverse = T),
              hjust = 0,
@@ -171,13 +119,160 @@ finalize_plot(modes_of_tpurps_p1,
               width = 11.3,
               height = 6.3,
               filename = "modes_of_tpurps_p1",
-              mode = "png",
+              # mode = "png",
               overwrite = T)
 
+################################################################################
+#
+# HEALTHCARE
+################################################################################
+
+### Calculate proportions for subcategories for dining in MDT
+detailed_health_mode_c_mdt <-
+  pct_calculator(mdt_base_1,
+                 subset = "health",
+                 subset_of = "tpurp_c",
+                 breakdown_by = "mode_c",
+                 second_breakdown = "tpurp",
+                 weight = "wtperfin",
+                 survey = "mdt")
+
+################################################################################
+# Chart of healthcare sub-purposes by mode
+################################################################################
+
+modes_of_tpurps_p2 <-
+  detailed_health_mode_c_mdt %>%
+  mutate(tpurp = factor(tpurp,levels = c("Visited a person staying at the hospital",
+                                         "Health care visit for someone else",
+                                         "Health care visit for self"))) %>%
+  ggplot(aes(y = reorder(mode_c,desc(-pct)), x = pct)) +
+  geom_col(aes(fill = tpurp),
+           position = position_dodge2(reverse = TRUE)) +
+  theme_cmap(gridlines = "v",legend.max.columns = 1, vline = 0) +
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct)),
+             position = position_dodge2(reverse = TRUE,width = 0.9),
+             hjust = 0,
+             label.size = 0) +
+  scale_x_continuous(labels = scales::label_percent(),n.breaks = 6,
+                     limits = c(0,.85)) +
+  cmap_fill_discrete(palette = "governance")
+
+finalize_plot(modes_of_tpurps_p2,
+              "Mode share of health trips, 2019.",
+              "Source: CMAP analysis of MDT data.",
+              width = 11.3,
+              height = 6.3,
+              filename = "modes_of_tpurps_p2",
+              # mode = "png",
+              overwrite = TRUE)
+
+
+################################################################################
+#
+# COMMUNITY
+################################################################################
+
+### Calculate proportions for subcategories for community in MDT
+
+detailed_community_mode_c_mdt <-
+  pct_calculator(mdt_base_1,
+                 subset = "community",
+                 subset_of = "tpurp_c",
+                 breakdown_by = "mode_c",
+                 second_breakdown = "tpurp",
+                 weight = "wtperfin",
+                 survey = "mdt")
+
+################################################################################
+# Chart of community sub-purposes by mode
+################################################################################
+
+modes_of_tpurps_p3 <-
+  detailed_community_mode_c_mdt %>%
+  mutate(tpurp = factor(tpurp,levels = c("Socialized with relatives",
+                                         "Socialized with friends",
+                                         "Attended a religious event",
+                                         "Attended a community event"
+                                         )),
+         category = recode_factor(tpurp,
+                                  "Socialized with friends" = "Friends/Family",
+                                  "Socialized with relatives" = "Friends/Family",
+                                  "Attended a community event" = "Civic/Religious",
+                                  "Attended a religious event" = "Civic/Religious"
+
+         )) %>%
+  filter(survey == "mdt") %>%
+  ggplot(aes(y = reorder(mode_c,desc(-pct)), x = pct)) +
+  geom_col(aes(fill = tpurp),
+           position = position_dodge2(reverse = TRUE)) +
+  facet_wrap(~category) +
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct)),
+             position = position_dodge2(reverse = T, width = .9),
+             hjust = 0,
+             label.size = 0) +
+  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0) +
+  scale_x_continuous(labels = scales::label_percent(),
+                     limits = c(0,.65)) +
+  cmap_fill_discrete(palette = "mobility")
+
+finalize_plot(modes_of_tpurps_p3,
+              "Mode share of community trips, 2019.",
+              "Source: CMAP analysis of MDT data.",
+              width = 11.3,
+              height = 6.3,
+              overwrite = T,
+              # mode = "png",
+              filename = "modes_of_tpurps_p3")
+
+################################################################################
+# Average distances for community trips
+################################################################################
+
+mdt_base_1 %>%
+  filter(tpurp_c == "community") %>%
+  group_by(tpurp) %>%
+  summarize(distance = weightedMedian(distance_pg,wtperfin))
+
+################################################################################
+# ARCHIVE
+#
+################################################################################
 
 ################################################################################
 # Archive - TT vs. MDT comparison of dining sub-purposes by mode
 ################################################################################
+
+# ## Create totals for trips by mode category (within universe of dining trips)
+#
+# ### Calculate proportions for TT
+# all_dining_mode_c_tt <-
+#   pct_calculator(tt_base_2,
+#                  subset = "dining",
+#                  subset_of = "tpurp_c",
+#                  breakdown_by = "mode_c",
+#                  weight = "weight",
+#                  survey = "tt")
+#
+# ### Calculate proportions for MDT
+# all_dining_mode_c_mdt <-
+#   pct_calculator(mdt_base_2,
+#                  subset = "dining",
+#                  subset_of = "tpurp_c",
+#                  breakdown_by = "mode_c",
+#                  weight = "wtperfin",
+#                  survey = "mdt")
+#
+# ### Join MDT and TT
+# total_dining_mode_c <-
+#   rbind(all_dining_mode_c_tt,
+#         all_dining_mode_c_mdt) %>%
+#   mutate(tpurp = "Dining outside of home (all)") %>%
+#   select(-total)
+#
+# all_dining_mode_c <-
+#   rbind(total_dining_mode_c,
+#         detailed_dining_mode_c_mdt)
 
 # modes_of_tpurps_p1a <-
 #   all_dining_mode_c %>%
@@ -188,7 +283,7 @@ finalize_plot(modes_of_tpurps_p1,
 #   mutate(survey = recode_factor(survey,
 #                                 mdt = "My Daily Travel (2019)",
 #                                 tt = "Travel Tracker (2008)")) %>%
-#   ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = tpurp)) +
+#   ggplot(aes(y = reorder(mode_c,desc(-=pct)), x = =pct, fill = tpurp)) +
 #   geom_col(position = position_dodge2(reverse = TRUE)) +
 #   facet_wrap(~survey,ncol = 1) +
 #   theme_cmap(gridlines = "v") +
@@ -204,113 +299,40 @@ finalize_plot(modes_of_tpurps_p1,
 #               mode = "png")
 
 ################################################################################
-#
-# HEALTHCARE
-################################################################################
-
-
-## Create totals for trips by mode category (within universe of health trips)
-
-### Filter data
-all_health_mdt <-
-  mdt_base_1 %>%              # 96919 records
-  filter(tpurp_c == "health") # 2048 records
-
-all_health_tt <-
-  tt_base_1 %>%               # 100880 records
-  filter(tpurp_c == "health") # 2206 records
-
-### Calculate proportions for TT
-all_health_mode_c_tt <-
-  all_health_tt %>%
-  # Establish totals
-  mutate(total = sum(weight)) %>%
-  # Calculate percentages
-  group_by(mode_c) %>%
-  summarize(mode_c_total = sum(weight),
-            total = median(total)) %>%
-  mutate(mode_c_pct = mode_c_total / total,
-         survey = "tt")
-
-### Calculate proportions for MDT
-all_health_mode_c_mdt <-
-  all_health_mdt %>%
-  # Establish totals
-  mutate(total = sum(wtperfin)) %>%
-  # Calculate percentages
-  group_by(mode_c) %>%
-  summarize(mode_c_total = sum(wtperfin),
-            total = median(total)) %>%
-  mutate(mode_c_pct = mode_c_total / total,
-         survey = "mdt")
-
-### Join MDT and TT
-total_health_mode_c <-
-  rbind(all_health_mode_c_tt,
-        all_health_mode_c_mdt) %>%
-  mutate(tpurp = "Healthcare (all)") %>%
-  select(-total)
-
-
-### Calculate proportions for subcategories for health in MDT
-
-detailed_health_mode_c_mdt <-
-  all_health_mdt %>%
-  # Establish totals
-  group_by(tpurp) %>%
-  mutate(trip_total = sum(wtperfin)) %>%
-  # Establish percentages
-  group_by(tpurp,mode_c) %>%
-  summarize(mode_c_total = sum(wtperfin),
-            trip_total = median(trip_total)) %>%
-  mutate(mode_c_pct = mode_c_total / trip_total) %>%
-  select(-trip_total) %>%
-  mutate(survey = "mdt") %>%
-  ungroup()
-
-all_health_mode_c <-
-  rbind(total_health_mode_c,
-        detailed_health_mode_c_mdt)
-
-
-
-################################################################################
-# Chart of healthcare sub-purposes by mode
-################################################################################
-
-modes_of_tpurps_p2 <-
-  all_health_mode_c %>%
-  filter(tpurp != "Healthcare (all)") %>%
-  mutate(tpurp = factor(tpurp,levels = c("Visited a person staying at the hospital",
-                                         "Health care visit for someone else",
-                                         "Health care visit for self"))) %>%
-  filter(survey == "mdt") %>%
-  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct)) +
-  geom_col(aes(fill = tpurp),
-           position = position_dodge2(reverse = TRUE)) +
-  theme_cmap(gridlines = "v",legend.max.columns = 1, vline = 0) +
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(mode_c_pct)),
-             position = position_dodge2(reverse = TRUE,width = 0.9),
-             hjust = 0,
-             label.size = 0) +
-  scale_x_continuous(labels = scales::label_percent(),n.breaks = 6,
-                     limits = c(0,.85)) +
-  cmap_fill_discrete(palette = "governance")
-
-finalize_plot(modes_of_tpurps_p2,
-              "Mode share of health trips, 2019.",
-              "Source: CMAP analysis of MDT data.",
-              width = 11.3,
-              height = 6.3,
-              filename = "modes_of_tpurps_p2",
-              mode = "png",
-              overwrite = TRUE)
-
-
-################################################################################
 # Archive - TT vs. MDT comparison of healthcare sub-purposes by mode
 ################################################################################
 #
+# ## Create totals for trips by mode category (within universe of health trips)
+#
+# ### Calculate proportions for TT
+# all_health_mode_c_tt <-
+#   pct_calculator(tt_base_1,
+#                  subset = "health",
+#                  subset_of = "tpurp_c",
+#                  breakdown_by = "mode_c",
+#                  weight = "weight",
+#                  survey = "tt")
+#
+# ### Calculate proportions for MDT
+# all_health_mode_c_mdt <-
+#   pct_calculator(mdt_base_1,
+#                  subset = "health",
+#                  subset_of = "tpurp_c",
+#                  breakdown_by = "mode_c",
+#                  weight = "wtperfin",
+#                  survey = "mdt")
+#
+# ### Join MDT and TT
+# total_health_mode_c <-
+#   rbind(all_health_mode_c_tt,
+#         all_health_mode_c_mdt) %>%
+#   mutate(tpurp = "Healthcare (all)") %>%
+#   select(-total)
+#
+# all_health_mode_c <-
+#   rbind(total_health_mode_c,
+#         detailed_health_mode_c_mdt)
+
 # modes_of_tpurps_p2a <-
 #   all_health_mode_c %>%
 #   mutate(tpurp = factor(tpurp,levels = c("Healthcare (all)",
@@ -338,148 +360,53 @@ finalize_plot(modes_of_tpurps_p2,
 #               overwrite = TRUE)
 
 ################################################################################
-#
-# COMMUNITY
-################################################################################
-
-
-## Create totals for trips by mode category (within universe of community trips)
-
-### Filter data
-all_community_mdt <-
-  mdt_base_1 %>%                 # 96919 records
-  filter(tpurp_c == "community") # 3932 records
-
-all_community_tt <-
-  tt_base_1 %>%                  # 100880 records
-  filter(tpurp_c == "community") # 4810 records
-
-### Calculate proportions for TT
-all_community_mode_c_tt <-
-  all_community_tt %>%
-  # Establish totals
-  mutate(total = sum(weight)) %>%
-  # Calculate percentages
-  group_by(mode_c) %>%
-  summarize(mode_c_total = sum(weight),
-            total = median(total)) %>%
-  mutate(mode_c_pct = mode_c_total / total,
-         survey = "tt")
-
-### Calculate proportions for MDT
-all_community_mode_c_mdt <-
-  all_community_mdt %>%
-  # Establish totals
-  mutate(total = sum(wtperfin)) %>%
-  # Calculate percentages
-  group_by(mode_c) %>%
-  summarize(mode_c_total = sum(wtperfin),
-            total = median(total)) %>%
-  mutate(mode_c_pct = mode_c_total / total,
-         survey = "mdt")
-
-### Join MDT and TT
-total_community_mode_c <-
-  rbind(all_community_mode_c_tt,
-        all_community_mode_c_mdt) %>%
-  mutate(tpurp = "Community (all)") %>%
-  select(-total)
-
-
-### Calculate proportions for subcategories for community in TT
-
-detailed_community_mode_c_tt <-
-  all_community_tt %>%
-  # Establish totals
-  group_by(tpurp) %>%
-  mutate(trip_total = sum(weight)) %>%
-  # Establish percentages
-  group_by(tpurp,mode_c) %>%
-  summarize(mode_c_total = sum(weight),
-            trip_total = median(trip_total)) %>%
-  mutate(mode_c_pct = mode_c_total / trip_total) %>%
-  select(-trip_total) %>%
-  mutate(survey = "mdt") %>%
-  ungroup()
-
-### Calculate proportions for subcategories for community in MDT
-
-detailed_community_mode_c_mdt <-
-  all_community_mdt %>%
-  # Establish totals
-  group_by(tpurp) %>%
-  mutate(trip_total = sum(wtperfin)) %>%
-  # Establish percentages
-  group_by(tpurp,mode_c) %>%
-  summarize(mode_c_total = sum(wtperfin),
-            trip_total = median(trip_total)) %>%
-  mutate(mode_c_pct = mode_c_total / trip_total) %>%
-  select(-trip_total) %>%
-  mutate(survey = "mdt") %>%
-  ungroup()
-
-all_community_mode_c <-
-  rbind(total_community_mode_c,
-        detailed_community_mode_c_mdt,
-        detailed_community_mode_c_tt)
-
-################################################################################
-# Chart of community sub-purposes by mode
-################################################################################
-
-modes_of_tpurps_p3 <-
-  all_community_mode_c %>%
-  filter(tpurp %in% c("Socialized with relatives",
-                      "Socialized with friends",
-                      "Attended a community event",
-                      "Attended a religious event")) %>%
-  mutate(tpurp = factor(tpurp,levels = c("Socialized with relatives",
-                                         "Socialized with friends",
-                                         "Attended a religious event",
-                                         "Attended a community event"
-                                         )),
-         category = recode_factor(tpurp,
-                                  "Socialized with friends" = "Friends/Family",
-                                  "Socialized with relatives" = "Friends/Family",
-                                  "Attended a community event" = "Civic/Religious",
-                                  "Attended a religious event" = "Civic/Religious"
-
-         )) %>%
-  filter(survey == "mdt") %>%
-  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct)) +
-  geom_col(aes(fill = tpurp),
-           position = position_dodge2(reverse = TRUE)) +
-  facet_wrap(~category) +
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(mode_c_pct)),
-             position = position_dodge2(reverse = T, width = .9),
-             hjust = 0,
-             label.size = 0) +
-  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0) +
-  scale_x_continuous(labels = scales::label_percent(),
-                     limits = c(0,.65)) +
-  cmap_fill_discrete(palette = "mobility")
-
-finalize_plot(modes_of_tpurps_p3,
-              "Mode share of community trips, 2019.",
-              "Source: CMAP analysis of MDT data.",
-              width = 11.3,
-              height = 6.3,
-              overwrite = T,
-              mode = "png",
-              filename = "modes_of_tpurps_p3")
-
-################################################################################
-# Average distances for community trips
-################################################################################
-
-all_community_mdt %>%
-  group_by(tpurp) %>%
-  summarize(distance = weightedMedian(distance_pg,wtperfin))
-
-################################################################################
 # Archive - TT vs. MDT comparison of community sub-purposes by mode
 ################################################################################
 #
+
+## Create totals for trips by mode category (within universe of community trips)
+#
+# ### Calculate proportions for TT
+# all_community_mode_c_tt <-
+#   pct_calculator(tt_base_1,
+#                  subset = "community",
+#                  subset_of = "tpurp_c",
+#                  breakdown_by = "mode_c",
+#                  weight = "weight",
+#                  survey = "tt")
+#
+# ### Calculate proportions for MDT
+# all_community_mode_c_mdt <-
+#   pct_calculator(mdt_base_1,
+#                  subset = "community",
+#                  subset_of = "tpurp_c",
+#                  breakdown_by = "mode_c",
+#                  weight = "wtperfin",
+#                  survey = "mdt")
+#
+# ### Join MDT and TT
+# total_community_mode_c <-
+#   rbind(all_community_mode_c_tt,
+#         all_community_mode_c_mdt) %>%
+#   mutate(tpurp = "Community (all)")
+#
+# ### Calculate proportions for subcategories for community in TT
+#
+# detailed_community_mode_c_tt <-
+#   pct_calculator(tt_base_1,
+#                  subset = "community",
+#                  subset_of = "tpurp_c",
+#                  breakdown_by = "mode_c",
+#                  second_breakdown = "tpurp",
+#                  weight = "weight",
+#                  survey = "tt")
+#
+#
+# all_community_mode_c <-
+#   rbind(total_community_mode_c,
+#         detailed_community_mode_c_mdt,
+#         detailed_community_mode_c_tt)
+
 # modes_of_tpurps_p3a <-
 #   all_community_mode_c %>%
 #   mutate(tpurp = factor(tpurp,levels = c("Community (all)",
@@ -503,7 +430,7 @@ all_community_mdt %>%
 #   mutate(survey = recode_factor(survey,
 #                                 mdt = "My Daily Travel",
 #                                 tt = "Travel Tracker")) %>%
-#   ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = tpurp)) +
+#   ggplot(aes(y = reorder(mode_c,desc(-pct)), x = pct, fill = tpurp)) +
 #   geom_col(position = position_dodge2(reverse = TRUE)) +
 #   facet_wrap(survey~category) +
 #   theme_cmap(gridlines = "v",legend.max.columns = 3) +

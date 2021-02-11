@@ -1,5 +1,8 @@
 # This script produces analyses on school trips in the CMAP region.
 
+###### NEED TO UPDATE TO USE pct_calculator.R
+
+
 #################################################
 #                                               #
 #                 Load libraries                #

@@ -80,28 +80,18 @@ driver_pax_tt <-
 
 # Create age bucket totals and mode shares for driving and passenger trips
 driver_pax_age_mdt <-
-  driver_pax_mdt %>%
-  # Calculate totals
-  group_by(age_bin) %>%
-  mutate(total = sum(wtperfin)) %>%
-  # Calculate percentages
-  group_by(age_bin, mode_c) %>%
-  summarise(mode_count = sum(wtperfin),
-            total = median(total)) %>%
-  mutate(mode_share = (mode_count / total)) %>%
-  mutate(survey = "mdt")
+  pct_calculator(driver_pax_mdt,
+                 breakdown_by = "mode_c",
+                 second_breakdown = "age_bin",
+                 weight = "wtperfin",
+                 survey = "mdt")
 
 driver_pax_age_tt <-
-  driver_pax_tt %>%
-  # Calculate totals
-  group_by(age_bin) %>%
-  mutate(total = sum(weight)) %>%
-  # Calculate percentages
-  group_by(age_bin, mode_c) %>%
-  summarise(mode_count = sum(weight),
-            total = median(total)) %>%
-  mutate(mode_share = (mode_count / total)) %>%
-  mutate(survey = "tt")
+  pct_calculator(driver_pax_tt,
+                 breakdown_by = "mode_c",
+                 second_breakdown = "age_bin",
+                 weight = "weight",
+                 survey = "tt")
 
 ################################################################################
 # Chart of passenger share by age
@@ -110,8 +100,8 @@ driver_pax_age_tt <-
 # Create age bin chart
 driver_pax_p1 <-
   # Combine data
-  rbind(driver_pax_age_mdt %>% select(age_bin,mode_c,mode_share,survey),
-      driver_pax_age_tt  %>% select(age_bin,mode_c,mode_share,survey)) %>%
+  rbind(driver_pax_age_mdt %>% select(age_bin,mode_c,pct,survey),
+      driver_pax_age_tt  %>% select(age_bin,mode_c,pct,survey)) %>%
   # Factor age bin into desired order
   mutate(age_bin = factor(age_bin,
                           levels = c("70 to 89","50 to 69","30 to 49","25 to 29",
@@ -132,7 +122,7 @@ driver_pax_p1 <-
   # Remove <18 travelers (since their share is so much higher due to non-drivers)
   filter(mode_c == "passenger" & age_bin != "5 to 9" & age_bin != "10 to 17") %>%
   # Create ggplot object
-  ggplot(aes(y = age_bin, x = mode_share, pattern = type)) +
+  ggplot(aes(y = age_bin, x = pct, pattern = type)) +
   # Use "geom_col_pattern" to add texture to a subset of columns
   geom_col_pattern(aes(fill = survey),
                    color = "white",
@@ -147,7 +137,7 @@ driver_pax_p1 <-
   scale_pattern_manual(values = c("Increasing passenger share" = "stripe",
                                   "Decreasing passenger share" = "none")) +
   # Add labels
-  geom_label(aes(label = scales::label_percent(accuracy = .1)(mode_share),
+  geom_label(aes(label = scales::label_percent(accuracy = .1)(pct),
                  group = survey),
              position = position_dodge2(width = 0.9,reverse = T),
              hjust = 0,
@@ -170,7 +160,7 @@ finalize_plot(driver_pax_p1,
               travelers younger than 18 and older than 89.<br><br>
               Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p1",
-              mode = "png",
+              # mode = "png",
               width = 11.3,
               height = 6.3,
               overwrite = T
@@ -184,7 +174,7 @@ finalize_plot(driver_pax_p1,
 rbind(driver_pax_age_mdt,
       driver_pax_age_tt) %>%
   group_by(mode_c,survey) %>%
-  summarize(mode_count = sum(mode_count)) %>%
+  summarize(mode_count = sum(breakdown_total)) %>%
   pivot_wider(id_cols = c("survey"),names_from = "mode_c",values_from = c("mode_count")) %>%
   mutate(pax_share = passenger/(passenger + driver))
 
@@ -194,28 +184,18 @@ rbind(driver_pax_age_mdt,
 ################################################################################
 
 driver_pax_inc_mdt <-
-  driver_pax_mdt %>%
-  # Create totals
-  group_by(income_c) %>%
-  mutate(total = sum(wtperfin)) %>%
-  # Create percentages
-  group_by(income_c, mode_c) %>%
-  summarise(mode_count = sum(wtperfin),
-            total = median(total)) %>%
-  mutate(mode_share = (mode_count / total)) %>%
-  mutate(survey = "mdt")
+  pct_calculator(driver_pax_mdt,
+                 breakdown_by = "mode_c",
+                 second_breakdown = "income_c",
+                 weight = "wtperfin",
+                 survey = "mdt")
 
 driver_pax_inc_tt <-
-  driver_pax_tt %>%
-  # Create totals
-  group_by(income_c) %>%
-  mutate(total = sum(weight)) %>%
-  # Create percentages
-  group_by(income_c, mode_c) %>%
-  summarise(mode_count = sum(weight),
-            total = median(total)) %>%
-  mutate(mode_share = (mode_count / total)) %>%
-  mutate(survey = "tt")
+  pct_calculator(driver_pax_tt,
+                 breakdown_by = "mode_c",
+                 second_breakdown = "income_c",
+                 weight = "weight",
+                 survey = "tt")
 
 
 ################################################################################
@@ -223,22 +203,22 @@ driver_pax_inc_tt <-
 ################################################################################
 
 driver_pax_p2 <- rbind(driver_pax_inc_mdt %>%
-                                   select(income_c,mode_c,mode_share,survey),
+                                   select(income_c,mode_c,pct,survey),
                                  driver_pax_inc_tt  %>%
-                                   select(income_c,mode_c,mode_share,survey)) %>%
+                                   select(income_c,mode_c,pct,survey)) %>%
   filter(mode_c == "passenger", income_c != "missing") %>%
   mutate(survey = recode_factor(survey,
-                                mdt = "My Daily Travel (2019)",
-                                tt = "Travel Tracker (2008)"),
+                                mdt = "My Daily Travel ('19)",
+                                tt = "Travel Tracker ('08)"),
          income_c = recode_factor(income_c,
                                   "high" = "High",
                                   "middle-high" = "Middle-high",
                                   "middle-low" = "Middle-low",
                                   "low" = "Low")) %>%
-  ggplot(aes(y = income_c, x = mode_share, fill = survey)) +
+  ggplot(aes(y = income_c, x = pct, fill = survey)) +
   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
   theme_cmap(gridlines = "v", vline = 0) +
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_share),
+  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(pct),
                  group = survey),
              position = position_dodge2(0.9,reverse = T),
              hjust = 0,
@@ -254,7 +234,7 @@ finalize_plot(driver_pax_p2,
               travelers younger than 18 and older than 89.<br><br>
               Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p2",
-              mode = "png",
+              # mode = "png",
               width = 11.3,
               height = 6.3,
               overwrite = T
@@ -271,16 +251,11 @@ finalize_plot(driver_pax_p2,
 ### responder.
 
 driver_pax_race_mdt <-
-  driver_pax_mdt %>%
-  # Create totals
-  group_by(race_eth) %>%
-  mutate(total = sum(wtperfin)) %>%
-  # Create percentages
-  group_by(race_eth, mode_c) %>%
-  summarise(mode_count = sum(wtperfin),
-            total = median(total)) %>%
-  mutate(mode_share = (mode_count / total)) %>%
-  mutate(survey = "2019 - My Daily Travel")
+  pct_calculator(driver_pax_mdt,
+                 breakdown_by = "mode_c",
+                 second_breakdown = "race_eth",
+                 weight = "wtperfin",
+                 survey = "mdt")
 
 
 ################################################################################
@@ -289,12 +264,12 @@ driver_pax_race_mdt <-
 
 driver_pax_p3 <-
   driver_pax_race_mdt %>%
-  select(race_eth,mode_c,mode_share,survey) %>%
+  select(race_eth,mode_c,pct,survey) %>%
   filter(mode_c == "passenger", race_eth != "missing") %>%
-  ggplot(aes(y = reorder(race_eth,desc(mode_share)), x = mode_share)) +
+  ggplot(aes(y = reorder(race_eth,desc(pct)), x = pct)) +
   geom_col(aes(fill = race_eth)) +
   theme_cmap(gridlines = "v", legend.position = "none", vline = 0) +
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_share)),
+  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(pct)),
              label.size = 0,
              hjust = 0) +
   cmap_fill_race() +
@@ -311,7 +286,7 @@ finalize_plot(driver_pax_p3,
               <br><br>
               Source: CMAP analysis of My Daily Travel surveys.",
               filename = "driver_pax_p3",
-              mode = "png",
+              # mode = "png",
               height = 6.3,
               width = 11.3,
               overwrite = T
