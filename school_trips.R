@@ -1,8 +1,5 @@
 # This script produces analyses on school trips in the CMAP region.
 
-###### NEED TO UPDATE TO USE pct_calculator.R
-
-
 #################################################
 #                                               #
 #                 Load libraries                #
@@ -13,6 +10,8 @@ library(ggplot2)
 library(tidyverse)
 library(cmapplot)
 library(sf)
+
+source("pct_calculator.R")
 
 #################################################
 #                                               #
@@ -161,25 +160,16 @@ all_respondents_school_tt <-
 ################################################################################
 
 survey_school_mode_mdt <-
-  all_respondents_school_mdt %>%
-  mutate(total = sum(wtperfin)) %>%
-  ungroup() %>%
-  group_by(smode) %>%
-  summarize(total = median(total),
-            sum = sum(wtperfin),
-            pct = sum(wtperfin)/total,
-            survey = first(survey))
-
+  pct_calculator(all_respondents_school_mdt,
+                 breakdown_by = "smode",
+                 weight = "wtperfin",
+                 survey = "mdt")
 
 survey_school_mode_tt <-
-  all_respondents_school_tt %>%
-  mutate(total = sum(WGTP)) %>%
-  ungroup() %>%
-  group_by(smode) %>%
-  summarize(total = median(total),
-            sum = sum(WGTP),
-            pct = sum(WGTP)/total,
-            survey = first(survey))
+  pct_calculator(all_respondents_school_tt,
+                 breakdown_by = "smode",
+                 weight = "WGTP",
+                 survey = "tt")
 
 survey_school_mode <-
   survey_school_mode_mdt %>%
@@ -215,32 +205,24 @@ finalize_plot(school_trips_p0,
 
 
 ################################################################################
-# Chart of walk shaer by income, survey responses
+# Chart of walk share by income, survey responses
 ################################################################################
 
 survey_school_mode_inc_mdt <-
-  all_respondents_school_mdt %>%
-  filter(income_c != "missing") %>%
-  group_by(income_c) %>%
-  mutate(total = sum(wtperfin)) %>%
-  ungroup() %>%
-  group_by(smode,income_c) %>%
-  summarize(total = median(total),
-            sum = sum(wtperfin),
-            pct = sum(wtperfin)/total,
-            survey = first(survey))
+  pct_calculator(all_respondents_school_mdt %>%
+                   filter(income_c != "missing"),
+                 breakdown_by = "smode",
+                 second_breakdown = "income_c",
+                 weight = "wtperfin",
+                 survey = "mdt")
 
 survey_school_mode_inc_tt <-
-  all_respondents_school_tt %>%
-  filter(income_c != "missing") %>%
-  group_by(income_c) %>%
-  mutate(total = sum(WGTP)) %>%
-  ungroup() %>%
-  group_by(smode,income_c) %>%
-  summarize(total = median(total),
-            sum = sum(WGTP),
-            pct = sum(WGTP)/total,
-            survey = first(survey))
+  pct_calculator(all_respondents_school_tt %>%
+                   filter(income_c != "missing"),
+                 breakdown_by = "smode",
+                 second_breakdown = "income_c",
+                 weight = "WGTP",
+                 survey = "tt")
 
 survey_school_mode_inc <-
   survey_school_mode_inc_mdt %>%
@@ -284,25 +266,18 @@ finalize_plot(school_trips_p0.1,
 
 ### Calculate proportions for TT
 all_school_mode_c_tt <-
-  all_school_tt %>%
-  ungroup() %>%
-  mutate(total = sum(weight)) %>%
-  group_by(mode_c) %>%
-  summarize(mode_c_total = sum(weight),
-            total = median(total)) %>%
-  mutate(mode_c_pct = mode_c_total / total,
-         survey = "tt")
+  pct_calculator(all_school_tt,
+                 breakdown_by = "mode_c",
+                 weight = "weight",
+                 survey = "tt")
+
 
 ### Calculate proportions for MDT
 all_school_mode_c_mdt <-
-  all_school_mdt %>%
-  ungroup() %>%
-  mutate(total = sum(wtperfin)) %>%
-  group_by(mode_c) %>%
-  summarize(mode_c_total = sum(wtperfin),
-            total = median(total)) %>%
-  mutate(mode_c_pct = mode_c_total / total,
-         survey = "mdt")
+  pct_calculator(all_school_mdt,
+                 breakdown_by = "mode_c",
+                 weight = "wtperfin",
+                 survey = "mdt")
 
 ### Join MDT and TT
 total_school_mode_c <-
@@ -315,9 +290,9 @@ school_trips_p1 <-
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
                                 tt = "Travel Tracker (2008)")) %>%
-  ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
+  ggplot(aes(y = reorder(mode_c,desc(-pct)), x = pct, fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(mode_c_pct),
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
                  group = survey),
             position = position_dodge2(0.9,reverse = T),
             hjust = 0,
@@ -342,103 +317,6 @@ finalize_plot(school_trips_p1,
 
 ################################################################################
 #
-# Archived chart - Overall school trip mode share by home county
-################################################################################
-#
-# ### Calculate proportions for TT
-# all_school_county_mode_c_tt <-
-#   all_school_tt %>%
-#   filter(home_county %in% cmap_counties) %>%
-#   group_by(mode_c,home_county) %>%
-#   summarize(mode_c_total = sum(weight)) %>%
-#   group_by(home_county) %>%
-#   mutate(mode_c_pct = mode_c_total / sum(mode_c_total),
-#          survey = "tt")
-#
-# ### Calculate proportions for MDT
-# all_school_county_mode_c_mdt <-
-#   all_school_mdt %>%
-#   filter(home_county %in% cmap_counties) %>%
-#   group_by(mode_c,home_county) %>%
-#   summarize(mode_c_total = sum(wtperfin)) %>%
-#   group_by(home_county) %>%
-#   mutate(mode_c_pct = mode_c_total / sum(mode_c_total),
-#          survey = "mdt")
-#
-# ### Join MDT and TT
-# total_school_county_mode_c <-
-#   rbind(all_school_county_mode_c_tt,
-#         all_school_county_mode_c_mdt)
-#
-# # Chart of mode share for K-12 trips, MDT vs TT by county
-# school_trips_p1a <-
-#   total_school_county_mode_c %>%
-#   mutate(survey = recode_factor(survey,
-#                                 mdt = "My Daily Travel (2019)",
-#                                 tt = "Travel Tracker (2008)")) %>%
-#   ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
-#   geom_col(position = position_dodge2(reverse = TRUE)) +
-#   # geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
-#   #                group = survey),
-#   #            position = position_dodge2(0.9,reverse = T),
-#   #            hjust = 0,
-#   #            label.size = 0,
-#   #            fill = "white") +
-#   theme_cmap(gridlines = "v") +
-#   facet_wrap(~home_county) +
-#   scale_x_continuous(labels = scales::label_percent()) +
-#   cmap_fill_discrete(palette = "friday")
-#
-# finalize_plot(school_trips_p1a,
-#               "Mode share of K-12 school trips, 2008 vs. 2019.",
-#               "Note: Includes trips for travelers enrolled in K-12 and at least
-#               5 years old. Travel Tracker had two school-related trip categories
-#               (both included) while My Daily Travel had only one.
-#               <br><br>
-#               Source: CMAP analysis of MDT and TT data.",
-#               filename = "school_trips_p1a",
-#               # mode = "png",
-#               width = 11.3,
-#               height = 6.3,
-#               overwrite = T)
-
-################################################################################
-#
-# Archived chart - total number of school trips
-################################################################################
-#
-# # Chart of absolute numbers of school trips, MDT vs TT
-# school_trips_p2 <-
-#   total_school_mode_c %>%
-#   mutate(survey = recode_factor(survey,
-#                                 mdt = "My Daily Travel (2019)",
-#                                 tt = "Travel Tracker (2008)")) %>%
-#   ggplot(aes(y = reorder(mode_c,desc(-mode_c_total)),
-#              x = mode_c_total,
-#              fill = survey)) +
-#   geom_col(position = position_dodge2(reverse = TRUE)) +
-#   geom_label(aes(label = scales::label_comma(accuracy = 1)(mode_c_total),
-#                  group = survey),
-#              position = position_dodge2(0.9,reverse = T),
-#              hjust = 0, label.size = 0, fill = "white") +
-#   theme_cmap(gridlines = "v") +
-#   scale_x_continuous(labels = scales::label_comma(scale = .001),
-#                      n.breaks = 6,
-#                      limits=c(0,600000)) +
-#   cmap_fill_discrete(palette = "friday")
-#
-# finalize_plot(school_trips_p2,
-#               "Total number of K-12 school trips by mode, 2008 vs. 2019 (in thousands).",
-#               "Note: Includes trips for travelers enrolled in K-12 and at least
-#               5 years old. Travel Tracker had two school-related trip categories
-#               (both included) while My Daily Travel had only one.
-#               <br><br>
-#               Source: CMAP analysis of MDT and TT data.",
-#               filename = "school_trips_p2",
-#               mode = "plot")
-
-################################################################################
-#
 # School walk trips by income
 ################################################################################
 
@@ -447,31 +325,22 @@ finalize_plot(school_trips_p1,
 ### Calculate proportions for TT
 
 all_school_inc_mode_c_tt <-
-  all_school_tt %>%
-  # filter(home_county == 31) %>%
-  group_by(income_c) %>%
-  mutate(total = sum(weight)) %>%
-  ungroup() %>%
-  group_by(mode_c,income_c) %>%
-  summarize(mode_c_total = sum(weight),
-            total = median(total)) %>%
-  # Calculate mode share percents
-  mutate(mode_c_pct = mode_c_total / total,
-         survey = "tt")
+  pct_calculator(all_school_tt %>%
+                   filter(income_c != "missing"),
+                 breakdown_by = "mode_c",
+                 second_breakdown = "income_c",
+                 weight = "weight",
+                 survey = "tt")
 
 ### Calculate proportions for MDT (repeat from TT)
 
 all_school_inc_mode_c_mdt <-
-  all_school_mdt %>%
-  # filter(home_county == 31) %>%
-  group_by(income_c) %>%
-  mutate(total = sum(wtperfin)) %>%
-  ungroup() %>%
-  group_by(mode_c,income_c) %>%
-  summarize(mode_c_total = sum(wtperfin),
-            total = median(total)) %>%
-  mutate(mode_c_pct = mode_c_total / total,
-         survey = "mdt")
+  pct_calculator(all_school_mdt %>%
+                   filter(income_c != "missing"),
+                 breakdown_by = "mode_c",
+                 second_breakdown = "income_c",
+                 weight = "wtperfin",
+                 survey = "mdt")
 
 ### Join MDT and TT
 total_school_inc_mode_c <-
@@ -486,17 +355,17 @@ school_trips_p3 <-
                                 tt = "Travel Tracker (2008)")) %>%
   filter(income_c != "missing",
          mode_c == "walk"
-         ) %>%
-  ggplot(aes(y = income_c, x = mode_c_pct, fill = survey)) +
+  ) %>%
+  ggplot(aes(y = income_c, x = pct, fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(mode_c_pct),
-                group = survey),
-            position = position_dodge2(0.9,reverse = T),
-            hjust = 0, label.size = 0, fill = "white") +
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
+                 group = survey),
+             position = position_dodge2(0.9,reverse = T),
+             hjust = 0, label.size = 0, fill = "white") +
   theme_cmap(gridlines = "v") +
   scale_x_continuous(labels = scales::label_percent(),n.breaks = 6,
                      limits = c(0,.45)
-                     ) +
+  ) +
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(school_trips_p3,
@@ -511,143 +380,8 @@ finalize_plot(school_trips_p3,
               filename = "school_trips_p3",
               # mode = "png",
               overwrite = T
-              )
+)
 
-################################################################################
-#
-# Archived chart - all mode share by income
-################################################################################
-#
-# # Chart of mode share by income category
-# school_trips_p4 <-
-#   total_school_inc_mode_c %>%
-#   mutate(survey = recode_factor(survey,
-#                                 mdt = "My Daily Travel (2019)",
-#                                 tt = "Travel Tracker (2008)")) %>%
-#   filter(income_c != "missing") %>%
-#   ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)),
-#              x = mode_c_pct,
-#              fill = survey)) +
-#   geom_col(position = position_dodge2(reverse = TRUE)) +
-#   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
-#                  group = survey),
-#              position = position_dodge2(0.9,reverse = T),
-#              hjust = 0, label.size = 0, fill = "white",
-#              label.padding = unit(.1,"lines")) +
-#   theme_cmap(gridlines = "v") +
-#   facet_wrap(~income_c) +
-#   scale_x_continuous(labels = scales::label_percent(),
-#                      n.breaks = 4,
-#                      limits = c(0,.6)) +
-#   cmap_fill_discrete(palette = "friday")
-#
-# finalize_plot(school_trips_p4,
-#               "Mode-share of K-12 school trips by household income category,
-#               2008 vs. 2019.",
-#               "Note: Includes trips for travelers enrolled in K-12 and at least
-#               5 years old.
-#               <br><br>
-#               Source: CMAP analysis of MDT and TT data.",
-#               height = 8,
-#               filename = "school_trips_p4",
-#               mode = "plot")
-
-################################################################################
-#
-# Archive - Travel times by income
-################################################################################
-#
-# ## What about travel times by income for school trips
-#
-# # Filter data for MDT
-# school_time_mdt <-
-#   all_school_mdt %>%
-#   filter(
-#     # Only include trips that are more than 0 minutes and less than 2.5 hours
-#     travtime_pg_calc < 150 & travtime_pg_calc > 0,
-#     # Exclude households with missing income information
-#     income_c != "missing") %>%
-#   group_by(income_c) %>%
-#   summarize(travtime = as.numeric(weighted.mean(travtime_pg_calc, w = wtperfin))) %>%
-#   mutate(survey = "My Daily Travel (2019)")
-#
-# # Repeat for TT
-# school_time_tt <-
-#   all_school_tt %>%
-#   filter(TRPDUR < 150 & TRPDUR > 0,
-#          income_c != "missing") %>%
-#   group_by(income_c) %>%
-#   summarize(travtime = weighted.mean(TRPDUR, w = weight)) %>%
-#   mutate(survey = "Travel Tracker (2008)")
-#
-# # Chart of travel time to school by household income
-# school_trips_p5 <-
-#   school_time_mdt %>%
-#   rbind(.,
-#         school_time_tt) %>%
-#   ggplot(aes(x = income_c, y = travtime, fill = reorder(survey,desc(survey)))) +
-#   geom_col(position = position_dodge2()) +
-#   theme_cmap(gridlines = "h",
-#              legend.position = "None",
-#              axis.text.x = element_text(angle = 45, hjust = 1)) +
-#   facet_wrap(~survey,ncol = 2) +
-#   cmap_fill_discrete(palette = "prosperity")
-#
-# finalize_plot(school_trips_p5,
-#               "Travel time to school by household income (minutes).",
-#               "Note: Includes trips for travelers enrolled in K-12 and at least
-#               5 years old. Trips with no travel time or lasting 150 minutes or
-#               more are excluded as outliers.
-#               <br><br>
-#               Source: CMAP analysis of MDT and TT.",
-#               filename = "school_trips_p5",
-#               mode = "plot")
-
-################################################################################
-#
-# Archive - Trip distances by income
-################################################################################
-#
-# ## What about trip distances by income for school trips
-#
-# # Repeat filtering from above (travel time) for trip distances
-# school_distance_mdt <-
-#   all_school_mdt %>%
-#   filter(distance_pg > 0, # use distance_pg as it is the consolidated distance from the placegroup
-#          income_c != "missing") %>%
-#   group_by(income_c) %>%
-#   summarize(tripdist = weighted.mean(distance_pg, w = wtperfin)) %>%
-#   mutate(survey = "My Daily Travel (2019)")
-#
-# school_distance_tt <-
-#   all_school_tt %>%
-#   filter(DIST > 0,
-#          income_c != "missing") %>%
-#   group_by(income_c) %>%
-#   summarize(tripdist = weighted.mean(DIST, w = weight)) %>%
-#   mutate(survey = "Travel Tracker (2008)")
-#
-# # Chart of trip distances by household income
-# school_trips_p6 <-
-#   school_distance_mdt %>%
-#   rbind(.,
-#         school_distance_tt) %>%
-#   ggplot(aes(x = income_c, y = tripdist, fill = reorder(survey,desc(survey)))) +
-#   geom_col(position = position_dodge2()) +
-#   theme_cmap(gridlines = "h",
-#              legend.position = "None",
-#              axis.text.x = element_text(angle = 45, hjust = 1)) +
-#   facet_wrap(~survey,ncol = 2) +
-#   cmap_fill_discrete(palette = "legislation")
-#
-# finalize_plot(school_trips_p6,
-#               "Trip distance to school by household income (miles).",
-#               "Note: Includes trips for travelers enrolled in K-12 and at least
-#               5 years old that are greater than 0 miles.
-#               <br><br>
-#               Source: CMAP analysis of MDT and TT.",
-#               filename = "school_trips_p6",
-#               mode = "plot")
 
 ################################################################################
 #
@@ -702,40 +436,6 @@ finalize_plot(school_trips_p7,
 
 ################################################################################
 #
-# Archive - Travel distance by income
-################################################################################
-#
-# ## What about trip distances by income for school trips
-#
-# # Repeat filtering from above (travel time) for trip distances
-# school_distance_race_mdt <-
-#   all_school_mdt %>%
-#   filter(distance_pg > 0, # use distance_pg as it is the consolidated distance from the placegroup
-#          race_eth != "missing") %>%
-#   group_by(race_eth) %>%
-#   summarize(tripdist = weighted.mean(distance_pg, w = wtperfin)) %>%
-#   mutate(survey = "My Daily Travel (2019)")
-#
-# # Chart of trip distances by household income
-# school_trips_p8 <-
-#   school_distance_race_mdt %>%
-#   ggplot(aes(x = reorder(race_eth,desc(tripdist)), y = tripdist, fill = race_eth)) +
-#   geom_col(position = position_dodge2()) +
-#   theme_cmap(gridlines = "h",
-#              legend.position = "None") +
-#   cmap_fill_race()
-#
-# finalize_plot(school_trips_p8,
-#               "Trip distance to school by race and ethnicity (miles).",
-#               "Note: Includes trips for travelers enrolled in K-12 and at least
-#               5 years old that are greater than 0 miles.
-#               <br><br>
-#               Source: CMAP analysis of MDT and TT.",
-#               filename = "school_trips_p8",
-#               mode = "plot")
-
-################################################################################
-#
 # Regression on income, race, and ethnicity
 ################################################################################
 
@@ -783,7 +483,7 @@ all_school_mdt_lm <-
     k8 = case_when(
       schol == 3 ~ 1,
       TRUE ~ 0)
-    )
+  )
 
 school_trips_regression <-
   lm(travtime_lm ~ white + black + hispa + asian + high_inc +
@@ -798,7 +498,6 @@ summary(school_trips_regression)
 all_school_mdt_lm %>%
   ggplot(aes(x = travtime_lm, y = race_eth)) +
   geom_boxplot()
-
 
 
 ################################################################################
@@ -847,8 +546,8 @@ school_trips_map1 <-
              legend.direction = "vertical",
              legend.key.height = grid::unit(20,"bigpts")) +
   cmap_fill_continuous(palette = "seq_blues")
-  # scale_fill_binned(breaks = c(5,10,25,50,100))
-  # scale_fill_binned(type = "viridis")
+# scale_fill_binned(breaks = c(5,10,25,50,100))
+# scale_fill_binned(type = "viridis")
 
 finalize_plot(school_trips_map1,
               title = "Number of school trips per tract (weighted).",
@@ -1036,13 +735,13 @@ county_schools_comparison <-
       rename(value = n)) %>%
   filter(school_county_fips %in% cmap_counties) %>%
   mutate(school_county_fips = recode(school_county_fips,
-                       "31" = "Cook",
-                       "43" = "DuPage",
-                       "89" = "Kane",
-                       "93" = "Kendall",
-                       "97" = "Lake",
-                       "111" = "McHenry",
-                       "197" = "Will"))
+                                     "31" = "Cook",
+                                     "43" = "DuPage",
+                                     "89" = "Kane",
+                                     "93" = "Kendall",
+                                     "97" = "Lake",
+                                     "111" = "McHenry",
+                                     "197" = "Will"))
 
 
 school_trips_p9 <-
@@ -1082,3 +781,270 @@ finalize_plot(school_trips_p9,
               mode = "png",
               filename = "school_trips_p9",
               overwrite = T)
+
+################################################################################
+#
+# Archived chart - Overall school trip mode share by home county
+################################################################################
+#
+# ### Calculate proportions for TT
+# all_school_county_mode_c_tt <-
+#   all_school_tt %>%
+#   filter(home_county %in% cmap_counties) %>%
+#   group_by(mode_c,home_county) %>%
+#   summarize(mode_c_total = sum(weight)) %>%
+#   group_by(home_county) %>%
+#   mutate(mode_c_pct = mode_c_total / sum(mode_c_total),
+#          survey = "tt")
+#
+# ### Calculate proportions for MDT
+# all_school_county_mode_c_mdt <-
+#   all_school_mdt %>%
+#   filter(home_county %in% cmap_counties) %>%
+#   group_by(mode_c,home_county) %>%
+#   summarize(mode_c_total = sum(wtperfin)) %>%
+#   group_by(home_county) %>%
+#   mutate(mode_c_pct = mode_c_total / sum(mode_c_total),
+#          survey = "mdt")
+#
+# ### Join MDT and TT
+# total_school_county_mode_c <-
+#   rbind(all_school_county_mode_c_tt,
+#         all_school_county_mode_c_mdt)
+#
+# # Chart of mode share for K-12 trips, MDT vs TT by county
+# school_trips_p1a <-
+#   total_school_county_mode_c %>%
+#   mutate(survey = recode_factor(survey,
+#                                 mdt = "My Daily Travel (2019)",
+#                                 tt = "Travel Tracker (2008)")) %>%
+#   ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)), x = mode_c_pct, fill = survey)) +
+#   geom_col(position = position_dodge2(reverse = TRUE)) +
+#   # geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
+#   #                group = survey),
+#   #            position = position_dodge2(0.9,reverse = T),
+#   #            hjust = 0,
+#   #            label.size = 0,
+#   #            fill = "white") +
+#   theme_cmap(gridlines = "v") +
+#   facet_wrap(~home_county) +
+#   scale_x_continuous(labels = scales::label_percent()) +
+#   cmap_fill_discrete(palette = "friday")
+#
+# finalize_plot(school_trips_p1a,
+#               "Mode share of K-12 school trips, 2008 vs. 2019.",
+#               "Note: Includes trips for travelers enrolled in K-12 and at least
+#               5 years old. Travel Tracker had two school-related trip categories
+#               (both included) while My Daily Travel had only one.
+#               <br><br>
+#               Source: CMAP analysis of MDT and TT data.",
+#               filename = "school_trips_p1a",
+#               # mode = "png",
+#               width = 11.3,
+#               height = 6.3,
+#               overwrite = T)
+
+################################################################################
+#
+# Archived chart - total number of school trips
+################################################################################
+#
+# # Chart of absolute numbers of school trips, MDT vs TT
+# school_trips_p2 <-
+#   total_school_mode_c %>%
+#   mutate(survey = recode_factor(survey,
+#                                 mdt = "My Daily Travel (2019)",
+#                                 tt = "Travel Tracker (2008)")) %>%
+#   ggplot(aes(y = reorder(mode_c,desc(-mode_c_total)),
+#              x = mode_c_total,
+#              fill = survey)) +
+#   geom_col(position = position_dodge2(reverse = TRUE)) +
+#   geom_label(aes(label = scales::label_comma(accuracy = 1)(mode_c_total),
+#                  group = survey),
+#              position = position_dodge2(0.9,reverse = T),
+#              hjust = 0, label.size = 0, fill = "white") +
+#   theme_cmap(gridlines = "v") +
+#   scale_x_continuous(labels = scales::label_comma(scale = .001),
+#                      n.breaks = 6,
+#                      limits=c(0,600000)) +
+#   cmap_fill_discrete(palette = "friday")
+#
+# finalize_plot(school_trips_p2,
+#               "Total number of K-12 school trips by mode, 2008 vs. 2019 (in thousands).",
+#               "Note: Includes trips for travelers enrolled in K-12 and at least
+#               5 years old. Travel Tracker had two school-related trip categories
+#               (both included) while My Daily Travel had only one.
+#               <br><br>
+#               Source: CMAP analysis of MDT and TT data.",
+#               filename = "school_trips_p2",
+#               mode = "plot")
+################################################################################
+#
+# Archived chart - all mode share by income
+################################################################################
+#
+# # Chart of mode share by income category
+# school_trips_p4 <-
+#   total_school_inc_mode_c %>%
+#   mutate(survey = recode_factor(survey,
+#                                 mdt = "My Daily Travel (2019)",
+#                                 tt = "Travel Tracker (2008)")) %>%
+#   filter(income_c != "missing") %>%
+#   ggplot(aes(y = reorder(mode_c,desc(-mode_c_pct)),
+#              x = mode_c_pct,
+#              fill = survey)) +
+#   geom_col(position = position_dodge2(reverse = TRUE)) +
+#   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_c_pct),
+#                  group = survey),
+#              position = position_dodge2(0.9,reverse = T),
+#              hjust = 0, label.size = 0, fill = "white",
+#              label.padding = unit(.1,"lines")) +
+#   theme_cmap(gridlines = "v") +
+#   facet_wrap(~income_c) +
+#   scale_x_continuous(labels = scales::label_percent(),
+#                      n.breaks = 4,
+#                      limits = c(0,.6)) +
+#   cmap_fill_discrete(palette = "friday")
+#
+# finalize_plot(school_trips_p4,
+#               "Mode-share of K-12 school trips by household income category,
+#               2008 vs. 2019.",
+#               "Note: Includes trips for travelers enrolled in K-12 and at least
+#               5 years old.
+#               <br><br>
+#               Source: CMAP analysis of MDT and TT data.",
+#               height = 8,
+#               filename = "school_trips_p4",
+#               mode = "plot")
+
+################################################################################
+#
+# Archive - Travel times by income
+################################################################################
+#
+# ## What about travel times by income for school trips
+#
+# # Filter data for MDT
+# school_time_mdt <-
+#   all_school_mdt %>%
+#   filter(
+#     # Only include trips that are more than 0 minutes and less than 2.5 hours
+#     travtime_pg_calc < 150 & travtime_pg_calc > 0,
+#     # Exclude households with missing income information
+#     income_c != "missing") %>%
+#   group_by(income_c) %>%
+#   summarize(travtime = as.numeric(weighted.mean(travtime_pg_calc, w = wtperfin))) %>%
+#   mutate(survey = "My Daily Travel (2019)")
+#
+# # Repeat for TT
+# school_time_tt <-
+#   all_school_tt %>%
+#   filter(TRPDUR < 150 & TRPDUR > 0,
+#          income_c != "missing") %>%
+#   group_by(income_c) %>%
+#   summarize(travtime = weighted.mean(TRPDUR, w = weight)) %>%
+#   mutate(survey = "Travel Tracker (2008)")
+#
+# # Chart of travel time to school by household income
+# school_trips_p5 <-
+#   school_time_mdt %>%
+#   rbind(.,
+#         school_time_tt) %>%
+#   ggplot(aes(x = income_c, y = travtime, fill = reorder(survey,desc(survey)))) +
+#   geom_col(position = position_dodge2()) +
+#   theme_cmap(gridlines = "h",
+#              legend.position = "None",
+#              axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   facet_wrap(~survey,ncol = 2) +
+#   cmap_fill_discrete(palette = "prosperity")
+#
+# finalize_plot(school_trips_p5,
+#               "Travel time to school by household income (minutes).",
+#               "Note: Includes trips for travelers enrolled in K-12 and at least
+#               5 years old. Trips with no travel time or lasting 150 minutes or
+#               more are excluded as outliers.
+#               <br><br>
+#               Source: CMAP analysis of MDT and TT.",
+#               filename = "school_trips_p5",
+#               mode = "plot")
+
+################################################################################
+#
+# Archive - Trip distances by income
+################################################################################
+#
+# ## What about trip distances by income for school trips
+#
+# # Repeat filtering from above (travel time) for trip distances
+# school_distance_mdt <-
+#   all_school_mdt %>%
+#   filter(distance_pg > 0, # use distance_pg as it is the consolidated distance from the placegroup
+#          income_c != "missing") %>%
+#   group_by(income_c) %>%
+#   summarize(tripdist = weighted.mean(distance_pg, w = wtperfin)) %>%
+#   mutate(survey = "My Daily Travel (2019)")
+#
+# school_distance_tt <-
+#   all_school_tt %>%
+#   filter(DIST > 0,
+#          income_c != "missing") %>%
+#   group_by(income_c) %>%
+#   summarize(tripdist = weighted.mean(DIST, w = weight)) %>%
+#   mutate(survey = "Travel Tracker (2008)")
+#
+# # Chart of trip distances by household income
+# school_trips_p6 <-
+#   school_distance_mdt %>%
+#   rbind(.,
+#         school_distance_tt) %>%
+#   ggplot(aes(x = income_c, y = tripdist, fill = reorder(survey,desc(survey)))) +
+#   geom_col(position = position_dodge2()) +
+#   theme_cmap(gridlines = "h",
+#              legend.position = "None",
+#              axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   facet_wrap(~survey,ncol = 2) +
+#   cmap_fill_discrete(palette = "legislation")
+#
+# finalize_plot(school_trips_p6,
+#               "Trip distance to school by household income (miles).",
+#               "Note: Includes trips for travelers enrolled in K-12 and at least
+#               5 years old that are greater than 0 miles.
+#               <br><br>
+#               Source: CMAP analysis of MDT and TT.",
+#               filename = "school_trips_p6",
+#               mode = "plot")
+
+################################################################################
+#
+# Archive - Travel distance by income
+################################################################################
+#
+# ## What about trip distances by income for school trips
+#
+# # Repeat filtering from above (travel time) for trip distances
+# school_distance_race_mdt <-
+#   all_school_mdt %>%
+#   filter(distance_pg > 0, # use distance_pg as it is the consolidated distance from the placegroup
+#          race_eth != "missing") %>%
+#   group_by(race_eth) %>%
+#   summarize(tripdist = weighted.mean(distance_pg, w = wtperfin)) %>%
+#   mutate(survey = "My Daily Travel (2019)")
+#
+# # Chart of trip distances by household income
+# school_trips_p8 <-
+#   school_distance_race_mdt %>%
+#   ggplot(aes(x = reorder(race_eth,desc(tripdist)), y = tripdist, fill = race_eth)) +
+#   geom_col(position = position_dodge2()) +
+#   theme_cmap(gridlines = "h",
+#              legend.position = "None") +
+#   cmap_fill_race()
+#
+# finalize_plot(school_trips_p8,
+#               "Trip distance to school by race and ethnicity (miles).",
+#               "Note: Includes trips for travelers enrolled in K-12 and at least
+#               5 years old that are greater than 0 miles.
+#               <br><br>
+#               Source: CMAP analysis of MDT and TT.",
+#               filename = "school_trips_p8",
+#               mode = "plot")
+
