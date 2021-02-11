@@ -119,7 +119,7 @@ finalize_plot(modes_of_tpurps_p1,
               width = 11.3,
               height = 6.3,
               filename = "modes_of_tpurps_p1",
-              # mode = "png",
+              mode = "png",
               overwrite = T)
 
 ################################################################################
@@ -164,7 +164,7 @@ finalize_plot(modes_of_tpurps_p2,
               width = 11.3,
               height = 6.3,
               filename = "modes_of_tpurps_p2",
-              # mode = "png",
+              mode = "png",
               overwrite = TRUE)
 
 
@@ -222,11 +222,11 @@ finalize_plot(modes_of_tpurps_p3,
               width = 11.3,
               height = 6.3,
               overwrite = T,
-              # mode = "png",
+              mode = "png",
               filename = "modes_of_tpurps_p3")
 
 ################################################################################
-# Average distances for community trips
+# Median distances for community trips
 ################################################################################
 
 mdt_base_1 %>%

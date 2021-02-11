@@ -133,7 +133,7 @@ finalize_plot(tpurps_of_modes_p1,
               filename = "tpurps_of_modes_p1",
               height = 6.3,
               width = 11.3,
-              # mode = "png",
+              mode = "png",
               overwrite = T
               )
 
@@ -155,7 +155,7 @@ detailed_bike_tpurp_c_mdt <-
 # Chart of trip purposes, bike share vs. personal bike
 ################################################################################
 
-tpurps_of_modes_p3 <-
+tpurps_of_modes_p2 <-
   detailed_bike_tpurp_c_mdt %>%
   filter(tpurp_c != "missing") %>%
 
@@ -171,12 +171,12 @@ tpurps_of_modes_p3 <-
              label.size = 0) +
   cmap_fill_discrete(palette = "friday")
 
-finalize_plot(tpurps_of_modes_p3,
+finalize_plot(tpurps_of_modes_p2,
               "Trip purposes of bike trips in 2019, personal vs. bike share",
               "Source: CMAP analysis of MDT data.",
               width = 11.3,
               height = 6.3,
-              filename = "tpurps_of_modes_p3",
+              filename = "tpurps_of_modes_p2",
               mode = "png",
               overwrite = T)
 
@@ -237,14 +237,14 @@ all_tnc_tpurp_c <-
 # Chart of total TNC/taxi trips, MDT vs. TT
 ################################################################################
 
-tpurps_of_modes_p6_total_labels <-
+tpurps_of_modes_p3_total_labels <-
   tibble(survey = c("My Daily Travel ('19)")) %>%
   cbind(all_tnc_tpurp_c %>%
           filter(mode == "tnc (all)") %>%
           summarize(n = sum(breakdown_total))
   )
 
-tpurps_of_modes_p6 <-
+tpurps_of_modes_p3 <-
   all_tnc_tpurp_c %>%
   filter(mode != "tnc (all)") %>%
   group_by(survey,mode) %>%
@@ -267,7 +267,7 @@ tpurps_of_modes_p6 <-
              label.size = 0,
              color = "white",
              show.legend = FALSE) +
-  geom_label(data = tpurps_of_modes_p6_total_labels,
+  geom_label(data = tpurps_of_modes_p3_total_labels,
              aes(label = scales::label_comma(accuracy = 1)(n),
                  x = survey,
                  y = n),
@@ -276,11 +276,11 @@ tpurps_of_modes_p6 <-
              label.padding = unit(.5,"lines")) +
   scale_y_continuous(labels = scales::label_comma(scale = 1))
 
-finalize_plot(tpurps_of_modes_p6,
+finalize_plot(tpurps_of_modes_p3,
               "Change in daily TNC and taxi trips, 2008 vs. 2019.",
               "Source: CMAP analysis of MDT and TT data.",
-              filename = "tpurps_of_modes_p6",
-              # mode = "png",
+              filename = "tpurps_of_modes_p3",
+              mode = "png",
               height = 6.3,
               width = 11.3,
               overwrite = T)
@@ -289,7 +289,7 @@ finalize_plot(tpurps_of_modes_p6,
 # Chart of trip purposes for TNC/taxi trips, MDT vs. TT
 ################################################################################
 
-tpurps_of_modes_p7 <-
+tpurps_of_modes_p4 <-
   all_tnc_tpurp_c %>%
   filter(tpurp_c != "missing",
          survey == "mdt",
@@ -312,7 +312,7 @@ tpurps_of_modes_p7 <-
                      limits = c(0, .45)) +
   scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c"))
 
-finalize_plot(tpurps_of_modes_p7,
+finalize_plot(tpurps_of_modes_p4,
               "Trip purposes of TNC and taxi trips, 2019.",
               "Note: \"All other\" includes categories with less than 5% of the
               overall mode share for taxis and TNCs. This includes healthcare,
@@ -321,8 +321,8 @@ finalize_plot(tpurps_of_modes_p7,
               Source: CMAP analysis of MDT and TT data.",
               width = 11.3,
               height = 6.3,
-              filename = "tpurps_of_modes_p7",
-              # mode = "png",
+              filename = "tpurps_of_modes_p4",
+              mode = "png",
               overwrite = T)
 
 ################################################################################
