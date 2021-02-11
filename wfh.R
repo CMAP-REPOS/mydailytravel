@@ -14,6 +14,8 @@ library(ggplot2)
 library(tidyverse)
 library(cmapplot)
 
+source("pct_calculator.R")
+
 #################################################
 #                                               #
 #                 Data Prep                     #

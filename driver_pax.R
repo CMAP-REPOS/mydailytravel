@@ -14,6 +14,8 @@ library(cmapplot)
 # devtools::install_github("coolbutuseless/ggpattern")
 library(ggpattern)
 
+source("pct_calculator.R")
+
 #################################################
 #                                               #
 #                 Data Prep                     #
@@ -160,7 +162,7 @@ finalize_plot(driver_pax_p1,
               travelers younger than 18 and older than 89.<br><br>
               Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p1",
-              # mode = "png",
+              mode = "png",
               width = 11.3,
               height = 6.3,
               overwrite = T
@@ -234,7 +236,7 @@ finalize_plot(driver_pax_p2,
               travelers younger than 18 and older than 89.<br><br>
               Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p2",
-              # mode = "png",
+              mode = "png",
               width = 11.3,
               height = 6.3,
               overwrite = T
@@ -286,7 +288,7 @@ finalize_plot(driver_pax_p3,
               <br><br>
               Source: CMAP analysis of My Daily Travel surveys.",
               filename = "driver_pax_p3",
-              # mode = "png",
+              mode = "png",
               height = 6.3,
               width = 11.3,
               overwrite = T

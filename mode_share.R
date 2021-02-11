@@ -10,6 +10,8 @@ library(ggplot2)
 library(tidyverse)
 library(cmapplot)
 
+source("pct_calculator.R")
+
 #################################################
 #                                               #
 #                 Data Prep                     #
@@ -72,35 +74,28 @@ tt_base_3 <-
 
 # Create baseline totals for percentage calculations
 mdt_mode_all <-
-  mdt_base_3 %>%
-  mutate(total = sum(wthhfin)) %>%
-  group_by(mode_c) %>%
-  summarise(count = sum(wthhfin),
-            mdt_share = round((count/median(total))*100, digits = 2)) %>%
-  select(mode_c, mdt_share, count)
+  pct_calculator(mdt_base_3,
+                 breakdown_by = "mode_c",
+                 weight = "wtperfin")
 
 mdt_mode_counties <-
-  mdt_base_3 %>%
-  filter(home_county %in% cmap_counties) %>%
-  rbind(mdt_base_3 %>%
-          filter(home_county %in% cmap_counties) %>%
-          mutate(home_county = "CMAP region")
-  ) %>%
-  group_by(home_county) %>%
-  mutate(total = sum(wtperfin)) %>%
-  group_by(mode_c,home_county) %>%
-  summarise(count = sum(wtperfin),
-            mdt_share = round((count/median(total))*100, digits = 2)) %>%
-  select(home_county,mode_c, mdt_share, count) %>%
+  pct_calculator(mdt_base_3 %>%
+                   filter(home_county %in% cmap_counties) %>%
+                   rbind(mdt_base_3 %>%
+                           filter(home_county %in% cmap_counties) %>%
+                           mutate(home_county = "CMAP region")),
+                 breakdown_by = "mode_c",
+                 second_breakdown = "home_county",
+                 weight = "wtperfin") %>%
   mutate(home_county = recode(home_county,
-                       "31" = "Cook",
-                       "CMAP region" = "CMAP region",
-                       "97" = "Lake",
-                       "43" = "DuPage",
-                       "89" = "Kane",
-                       "93" = "Kendall",
-                       "111" = "McHenry",
-                       "197" = "Will"))
+                              "31" = "Cook",
+                              "CMAP region" = "CMAP region",
+                              "97" = "Lake",
+                              "43" = "DuPage",
+                              "89" = "Kane",
+                              "93" = "Kendall",
+                              "111" = "McHenry",
+                              "197" = "Will"))
 
 ################################################################################
 # Chart of mode share by home county
@@ -110,29 +105,29 @@ mode_share_p1_labels <-
   mdt_mode_counties %>%
   filter(mode_c %in% c("walk","transit","bike","other")) %>%
   group_by(home_county) %>%
-  summarize(total = sum(mdt_share))
+  summarize(label = sum(pct))
 
 mode_share_p1 <-
   mdt_mode_counties %>%
   left_join(mode_share_p1_labels, by = "home_county") %>%
   mutate(mode_c = factor(mode_c,levels = c("driver","passenger","walk",
                                            "transit","bike","other")),
-         mdt_share = ifelse(mode_c %in% c("driver","passenger"),-1 *mdt_share,mdt_share)
+         pct = ifelse(mode_c %in% c("driver","passenger"),-1 *pct,pct)
   ) %>%
 
-  ggplot(aes(x = mdt_share, y = reorder(home_county,total))) +
+  ggplot(aes(x = pct, y = reorder(home_county,label))) +
   geom_col(aes(fill = mode_c),position = position_stack(reverse = T)) +
   geom_label(data = mode_share_p1_labels,
-             aes(label = scales::label_percent(scale = 1,accuracy = 0.1)(total),
-                 x = total, y = home_county),
+             aes(label = scales::label_percent(accuracy = 0.1)(label),
+                 x = label, y = home_county),
              label.size = 0,
              hjust = 0,
              fill = "white") +
 
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 10) +
   cmap_fill_discrete(palette = "mobility") +
-  scale_x_continuous(n.breaks = 6, labels = scales::label_percent(scale = 1),
-                     limits = c(-100,40))
+  scale_x_continuous(n.breaks = 6, labels = scales::label_percent(),
+                     limits = c(-1,.4))
 
 finalize_plot(mode_share_p1,
               title = "Mode share for trips in the CMAP region by home county,
