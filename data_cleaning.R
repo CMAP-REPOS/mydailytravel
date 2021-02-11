@@ -41,7 +41,7 @@ setwd("~/GitHub/mydailytravel")
 source("recoding.R")
 
 # Load My Daily Travel
-setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2018 survey/Data")
+setwd("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data")
 
 # trips
 trips <- read_csv("place.csv") %>%
@@ -169,7 +169,7 @@ mdt_all_respondents <- ppl %>% # 30,683 records
 #################################################
 
 # Downloaded from CMAP data portal; exported from Microsoft Access database to csv.
-setwd("C:/Users/dcomeaux/OneDrive - Chicago Metropolitan Agency for Planning/My Daily Travel 2020/2008 survey")
+setwd("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2008 survey")
 
 # Household
 tt_hh <- read_csv("hh_public.csv") %>%
