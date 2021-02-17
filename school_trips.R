@@ -46,7 +46,10 @@ all_school_mdt <-
   # Keep only trips to school
   filter(tpurp_c == "school") %>%    #
   # Keep only trips to identified school locations
-  filter(loctype == 3) # %>%               # 4001 records
+  filter(loctype == 3) %>%               # 4001 records
+  # Keep only trips that start or end between 7am and 9am
+  filter(hour(arrtime_pg) %in% c(7,8) |  # 3530 records
+           hour(start_times_pg) %in% c(7,8))
   # Exclude Kendall County (for validation purposes only)
   # filter(county_fips != 93) %>%
   # # Code to exclude high and low weight households, by zone
@@ -81,8 +84,10 @@ all_school_tt <-
             by = "locno") %>%
   # Exclude Kendall County (for validation purposes only)
   # filter(school_county_fips != 17093) %>%
+  # Keep only trips that start or end between 7am and 9am
+  filter(ARR_HR %in% c(7,8) | start_hr %in% c(7,8)) %>% # 2874 records
   # Remove home locations (there are none)
-  filter(substr(locno,1,1) != "9")  # 3329 records
+  filter(substr(locno,1,1) != "9")  # 2874 records
 
 #################################################
 #                                               #
@@ -363,7 +368,7 @@ school_trips_p3 <-
              position = position_dodge2(0.9,reverse = T),
              hjust = 0, label.size = 0, fill = "white") +
   theme_cmap(gridlines = "v") +
-  scale_x_continuous(labels = scales::label_percent(),n.breaks = 6,
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),n.breaks = 6,
                      limits = c(0,.45)
   ) +
   cmap_fill_discrete(palette = "friday")

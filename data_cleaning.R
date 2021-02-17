@@ -181,7 +181,7 @@ tt_ppl <- read_csv("per_public.csv") %>%
 
 # trips
 tt_place <- read_csv("place_public.csv") %>%
-  select(MPO, SAMPN, PERNO, DAYNO, PLANO, locno, TPURP, MODE, DIST, TRPDUR)
+  select(MPO, SAMPN, PERNO, DAYNO, PLANO, locno, TPURP, MODE, DIST, TRPDUR, ARR_HR, ARR_MIN, DEP_HR, DEP_MIN)
 
 # Location file
 tt_location <- read.csv("loc_public.csv") %>%
@@ -260,7 +260,7 @@ tt <- tt %>%
          perno_lag = lag(PERNO,1),
          sampn_lag = lag(SAMPN,1)) %>%
   mutate(check = PERNO == perno_lag & SAMPN == sampn_lag) %>%
-  # If it isn't a match, change =out_region_lag to NA
+  # If it isn't a match, change =out_region_lag to -1
   mutate(
     out_region_lag = case_when(
       check ~ out_region_lag,
@@ -272,8 +272,29 @@ tt <- tt %>%
     out_region == 0 | out_region_lag == 0 ~ 0,
     TRUE ~ 1
   )) %>%
-  select(-sampn_lag,-perno_lag,-check,-out_region_lag)
+  select(-sampn_lag,-perno_lag,-out_region_lag)
 
+
+# Identify trip start times (based on lagged DEP_HR and DEP_MIN)
+tt <- tt %>%
+  arrange(SAMPN,PERNO) %>%
+  mutate(
+    start_hr_lag = lag(DEP_HR,1),
+    start_min_lag = lag(DEP_MIN,1),
+    start_time_calc = lubridate::hms(paste(ARR_HR,ARR_MIN,0)) - TRPDUR * 60) %>%
+  mutate(
+    start_hr_calc = hour(start_time_calc),
+    start_min_calc = minute(start_time_calc)) %>%
+  # If it isn't a match, change the lagged times to calculated ones
+  mutate(
+    start_hr = case_when(
+      check ~ start_hr_lag,
+      !check ~ start_hr_calc),
+    start_min = case_when(
+      check ~ start_min_lag,
+      !check ~ start_min_calc)) %>%
+  select(-check,-start_hr_lag,-start_min_lag,
+         -start_time_calc,-start_hr_calc,-start_min_calc)
 
 # Remove trips not part of the CMAP survey, that start or end (but not both)
 # outside the nine county region, are over 100 miles, and/or on weekends
