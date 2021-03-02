@@ -13,6 +13,7 @@
 library(ggplot2)
 library(tidyverse)
 library(cmapplot)
+library(matrixStats)
 
 source("pct_calculator.R")
 
@@ -28,7 +29,8 @@ source("data_cleaning.R")
 # diary entry for working from home but did not report home as their workplace
 extra_wfhers <- mdt %>%
   filter(wmode == 18 | wtrav == 0, wplace != 2, tpurp == "Worked at home (paid)") %>%
-  select(sampno,perno)
+  mutate(identifier = paste(sampno,perno,sep = "_")) %>%
+  select(identifier)
 
 # Summary statistics (includes individuals with no trips)
 wfh_mdt_all <-
@@ -43,7 +45,7 @@ wfh_mdt_all <-
              TRUE ~ 0),
          wfh = case_when(
            wplace == 2 ~ 1,
-           sampno %in% extra_wfhers$sampno & perno %in% extra_wfhers$perno ~ 1,
+           paste(sampno,perno,sep = "_") %in% extra_wfhers$identifier ~ 1,
            TRUE ~ 0),
          tc_frequency =
            case_when(
@@ -52,6 +54,14 @@ wfh_mdt_all <-
              tcdays >= 4 ~ 2,
              TRUE ~ 0)
          ) %>%
+  # Create a consolidated flag for wfh and tc behavior
+  mutate(combined_tc_wfh =
+           case_when(
+             tc_frequency == 1 ~ 1, # Flag all infrequent telecommuters
+             tc_frequency == 2 ~ 2, # Then flag all frequent telecommuters
+             wfh == 1 ~ 2,          # Add any WFHers that are not reporting themselves in either of the first two categories
+             tc_frequency == 0 ~ 0  # Finally add any remaining to the "none" category
+           )) %>%
   ungroup()
 
 # Create working dataset for charts (relies on individuals with trips)
@@ -60,7 +70,7 @@ wfh_mdt <-
   # Add a flag for whether the respondent worked from home or in general today
   left_join(mdt %>%
               mutate(
-                # Identify trips that were work-from-home
+                # Identify trips that were work from home
                 wfh_today = case_when(
                   tpurp == "Worked at home (paid)" ~ 1,
                   TRUE ~ 0),
@@ -71,7 +81,7 @@ wfh_mdt <-
                                "Work related (off-site meeting)") ~ 1,
                   TRUE ~ 0)) %>%
               group_by(sampno,perno) %>%
-              # Flag any travelers with at least one tc or work trip
+              # Flag any travelers with at least one wfh record or work trip
               summarize(wfh_today = max(0,min(1,sum(wfh_today))),
                         wfo_today = max(0,min(1,sum(wfo_today)))),
             # Join these new flags to the above data set
@@ -80,7 +90,7 @@ wfh_mdt <-
   # employed individuals above. For those that are in the list, add the flags we
   # developed on telecommuting and working from home.
   inner_join(wfh_mdt_all %>%
-               select(sampno,perno,tc,wfh,tc_frequency),
+               select(sampno,perno,tc,wfh,tc_frequency,combined_tc_wfh),
              by = c("sampno","perno"))
 
 # Summarize data at the traveler level
@@ -249,16 +259,6 @@ wfh_worktrips_person_level <-
   # Look only at the universe of individuals who had a work trip outside of the
   # home today and did not also work from home
   filter(wfo_today == 1 & wfh_today == 0) %>%
-  # Flag for different levels of TC/WFH
-  mutate(wfh_andor_tc = case_when(
-    # People who do not telecommute or WFH
-    wplace != 2 & tcdays < 1 ~ 0,
-    # People who telecommute 1-3 days a week
-    tcdays >= 1 & tcdays <= 3 ~ 1,
-    # People who telecommute 4+ days a week and/or work from home
-    wplace == 2 | tcdays >= 4 ~ 2,
-    tcdays > 0 ~ 1,
-    TRUE ~ 0)) %>%
   # Examine only trips that were part of a work trip chain
   filter(chain %in% c("Work trip","Return home (work)")) %>%
   # Remove "beginning" trips
@@ -268,7 +268,7 @@ wfh_worktrips_person_level <-
 
   group_by(sampno,perno) %>%
   summarize(pertrips = n(),
-            wfh_andor_tc = first(wfh_andor_tc),
+            combined_tc_wfh = first(combined_tc_wfh),
             wfh_today = first(wfh_today),
             wfo_today = first(wfo_today),
             distance_pg = sum(distance_pg, na.rm = TRUE),
@@ -278,12 +278,12 @@ wfh_worktrips_person_level <-
 
 wfh_worktrips_general <-
   wfh_worktrips_person_level %>%
-  group_by(wfh_andor_tc) %>%
-  summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
-            pertrips = weighted.mean(pertrips, w = wtperfin),
-            travtime_pg = weighted.mean(travtime_pg, w = wtperfin)) %>%
+  group_by(combined_tc_wfh) %>%
+  summarize(distance_pg = weightedMedian(distance_pg, w = wtperfin),
+            pertrips = weightedMedian(pertrips, w = wtperfin),
+            travtime_pg = weightedMedian(travtime_pg, w = wtperfin)) %>%
   pivot_longer(cols = distance_pg:travtime_pg) %>%
-  rename(flag = wfh_andor_tc)
+  rename(flag = combined_tc_wfh)
 
 ################################################################################
 # Chart of work trips for individuals who report working from home sometimes but
@@ -291,15 +291,20 @@ wfh_worktrips_general <-
 # the office today
 ################################################################################
 
+# Helper function to order titles with strings wrapped
+str_wrap_factor <- function(x, ...) {
+  levels(x) <- stringr::str_wrap(levels(x), ...)
+  x
+}
+
 wfh_p2 <-
   wfh_worktrips_general %>%
   filter(name == "distance_pg") %>%
-  mutate(flag = recode(flag,
-                       "0" = "Do not telecommute or work from home and worked
-                       from outside the home today",
-                       "1" = "Work from home and/or telecommute at least one day
-                       a week and worked from outside the home today")) %>%
-  ggplot(aes(x = value, y = stringr::str_wrap(flag,20))) +
+  mutate(flag = recode_factor(factor(flag),
+                       "0" = "Does not telecommute or work from home",
+                       "1" = "Sometimes telecommutes or works from home (1-3 days/week)",
+                       "2" = "Almost always telecommutes or works from home (4+ days/week)")) %>%
+  ggplot(aes(x = value, y = str_wrap_factor(flag,20))) +
   geom_col(aes(fill = name)) +
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
              legend.position = "none", vline = 0) +
@@ -310,19 +315,33 @@ wfh_p2 <-
   cmap_fill_discrete(palette = "mobility")
 
 finalize_plot(wfh_p2,
-              "Travel characteristics for trips in work trip chains of
-              individuals who telecommute and/or work from home vs. those who do
-              not, on days when they are only working outside the home.",
+              "Median trip distance for work trips on days when travelers are only working outside the home",
               "Note: These estimates are based on on answers given in
               both the survey and travel diary components of MDT.
               <br><br>
               Source: CMAP analysis of MDT data.",
               filename = "wfh_p2",
-              mode = "png",
+              # mode = "png",
               overwrite = T,
               height = 6.3,
               width = 11.3
               )
+
+
+# Code to generate boxplot
+#
+# wfh_p2a <-
+#   wfh_worktrips_person_level %>%
+#   mutate(flag = recode_factor(factor(combined_tc_wfh),
+#                               "0" = "Does not telecommute or work from home",
+#                               "1" = "Sometimes telecommutes or works from home (1-3 days/week)",
+#                               "2" = "Almost always telecommutes or works from home (4+ days/week)")) %>%
+#   ggplot(aes(x = distance_pg, y = str_wrap_factor(flag,20))) +
+#   geom_boxplot() +
+#   theme_cmap(gridlines = "v",
+#              legend.position = "none")
+#
+# wfh_p2a
 
 ################################################################################
 # Archive - old analysis
