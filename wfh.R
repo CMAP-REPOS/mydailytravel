@@ -13,9 +13,10 @@
 library(ggplot2)
 library(tidyverse)
 library(cmapplot)
+library(sf)
 library(matrixStats)
 
-source("pct_calculator.R")
+source("helper_fns.R")
 
 #################################################
 #                                               #
@@ -163,111 +164,43 @@ wfh_mdt_all %>% # 17,656 records
 
 ################################################################################
 #
-# WFH/TC ALL TRIPS
-################################################################################
-
-### Create chart with travel characteristics for those who report working from
-### home on days when they do and do not work from home
-
-wfh_with_today_status <-
-  wfh_person_level_plus_no_trips %>%
-  mutate(
-    category = case_when(
-      wfh_today == 1 & wfo_today == 1 ~ 1,
-      wfh_today == 1 ~ 2,
-      wfo_today == 1 ~ 3,
-      TRUE ~ 4),
-    wfh_andor_tc = case_when(
-      wfh == 1 ~ 1,
-      tc == 1 ~ 1,
-      TRUE ~ 0)) %>%
-  group_by(category,wfh_andor_tc) %>%
-  summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
-            pertrips = weighted.mean(pertrips, w = wtperfin),
-            travtime_pg = weighted.mean(travtime_pg, w = wtperfin),
-            n = n()) %>%
-  pivot_longer(cols = distance_pg:travtime_pg) %>%
-  mutate(type = "tc_with_today_status")
-
-################################################################################
-# Chart of trip distances for individuals depending on their WFH/TC status and
-# today's travel behavior
-################################################################################
-
-wfh_p1 <-
-  wfh_with_today_status %>%
-  filter(name != "travtime_pg") %>%
-  mutate(flag = recode_factor(wfh_andor_tc,
-                              "1" = "Telecommute at least one day a week and/or work from home",
-                              "0" = "Do not regularly telecommute or work from home"),
-         xmax = case_when(
-           name == "distance_pg" ~ 45,
-           name == "pertrips" ~ 5.95
-         ),
-         name = recode_factor(name,
-                              "distance_pg" = "Distance (mi.)",
-                              "pertrips" = "Trips")) %>%
-  mutate(category = recode_factor(category,
-                                  "2" = "Only worked at \nhome today",
-                                  "4" = "Did not work today",
-                                  "1" = "Worked both from \nhome and outside \nthe home today",
-                                  "3" = "Only worked outside \nthe home today")) %>%
-  mutate(category = factor(category, levels = c("Only worked at \nhome today",
-                                                "Did not work today",
-                                                "Worked both from \nhome and outside \nthe home today",
-                                                "Only worked outside \nthe home today"))) %>%
-  filter(name == "Distance (mi.)") %>%
-  ggplot(aes(x = value, y = category, fill = flag)) +
-  geom_col(position = position_dodge2(reverse = T)) +
-  # facet_wrap(~name,scales = "free_x") +
-  theme_cmap(gridlines = "v",legend.max.columns = 1,
-             vline = 0, xlab = "Distance (mi.)") +
-  geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
-                 group = flag),
-             position = position_dodge2(reverse = T, width = 0.9),
-             label.size = 0,
-             hjust = 0,
-             fill = "white") +
-  geom_blank(aes(x = xmax)) +
-  cmap_fill_discrete(palette = "legislation")
-
-finalize_plot(wfh_p1,
-              "Travel characteristics individuals who telecommute or work from
-              home vs. those who do not, on days when they are and are not
-              working from home.",
-              "Note: These estimates are based on on answers given in
-              both the survey and travel diary components of MDT.
-              <br><br>
-              Source: CMAP analysis of MDT data.",
-              title_width = 2.5,
-              width = 11.3,
-              height = 6.3,
-              filename = "wfh_p1",
-              mode = "png",
-              overwrite = T)
-
-
-################################################################################
-#
 # WFH/TC WORK TRIPS
 ################################################################################
 
-# Specific analysis of work trips for individuals who report telecommuting or
-# working from home (survey)
+# Specific analysis of work trips vs. non-work trips for individuals who report
+# telecommuting or working from home (survey)
 wfh_worktrips_person_level <-
   wfh_mdt %>%
-  # Look only at the universe of individuals who had a work trip outside of the
-  # home today and did not also work from home
-  filter(wfo_today == 1 & wfh_today == 0) %>%
-  # Examine only trips that were part of a work trip chain
-  filter(chain %in% c("Work trip","Return home (work)")) %>%
+  # Flag trips that were part of a work trip chain
+  mutate(worktrip = case_when(
+    # Assign any work chain trips that don't have an associated out-of-home work
+    # trip as 0 (this handles a few "work-from-home" trips that have significant
+    # distances associated with them)
+    chain %in% c("Work trip","Return home (work)") & wfo_today == 0 ~ 0,
+    # Assign all other work chains as 1
+    chain %in% c("Work trip","Return home (work)") ~ 1,
+    # Assign all other trips as 0
+    TRUE ~ 0)) %>%
+  # Add a flag for Cook County residents
+  mutate(cook_county = ifelse(home_county == "31",1,0)) %>%
   # Remove "beginning" trips
   filter(mode != "beginning") %>%
   # Exclude trips with zero distance
   filter(distance_pg > 0) %>%
-
-  group_by(sampno,perno) %>%
+  # # Create a flag for travelers that have trips in both categories
+  # group_by(sampno,perno) %>%
+  # mutate(bothtrips = ifelse(min(worktrip) == 0 & max(worktrip) == 1,1,0)) %>%
+  # filter(bothtrips == 1) %>%
+  # Group by traveler and work trip status
+  group_by(sampno,perno,worktrip) %>%
+  # Collapse into traveler-level statistics
   summarize(pertrips = n(),
+            income_c = first(income_c),
+            cook_county = first(cook_county),
+            home_county = first(home_county),
+            home_tract = first(home_tract),
+            home_long = first(home_long),
+            home_lat = first(home_lat),
             combined_tc_wfh = first(combined_tc_wfh),
             wfh_today = first(wfh_today),
             wfo_today = first(wfo_today),
@@ -278,11 +211,9 @@ wfh_worktrips_person_level <-
 
 wfh_worktrips_general <-
   wfh_worktrips_person_level %>%
-  group_by(combined_tc_wfh) %>%
+  group_by(combined_tc_wfh,worktrip,cook_county) %>%
   summarize(distance_pg = weightedMedian(distance_pg, w = wtperfin),
-            pertrips = weightedMedian(pertrips, w = wtperfin),
-            travtime_pg = weightedMedian(travtime_pg, w = wtperfin)) %>%
-  pivot_longer(cols = distance_pg:travtime_pg) %>%
+            n = n()) %>%
   rename(flag = combined_tc_wfh)
 
 ################################################################################
@@ -291,57 +222,245 @@ wfh_worktrips_general <-
 # the office today
 ################################################################################
 
-# Helper function to order titles with strings wrapped
-str_wrap_factor <- function(x, ...) {
-  levels(x) <- stringr::str_wrap(levels(x), ...)
-  x
-}
+exclusion <- tibble(worktrip = 1, flag = 2)
 
 wfh_p2 <-
   wfh_worktrips_general %>%
-  filter(name == "distance_pg") %>%
+  anti_join(exclusion) %>%
+  rbind(tibble(worktrip = 1, flag = 2, cook_county = c(0,1),distance_pg = 0,n = 0)) %>%
   mutate(flag = recode_factor(factor(flag),
-                       "0" = "Does not telecommute or work from home",
+                       "0" = "Does not regularly telecommute or work from home",
                        "1" = "Sometimes telecommutes or works from home (1-3 days/week)",
-                       "2" = "Almost always telecommutes or works from home (4+ days/week)")) %>%
-  ggplot(aes(x = value, y = str_wrap_factor(flag,20))) +
-  geom_col(aes(fill = name)) +
+                       "2" = "Almost always telecommutes or works from home (4+ days/week)"),
+         worktrip = recode_factor(factor(worktrip),
+                                  "1" = "Work trips outside the home",
+                                  "0" = "Other trips"),
+         cook_county = recode_factor(factor(cook_county),
+                                     "1" = "Cook County residents",
+                                     "0" = "Residents of other counties")
+         ) %>%
+  ggplot(aes(x = distance_pg, y = str_wrap(worktrip,18))) +
+  geom_col(aes(fill = flag), position = position_dodge2(reverse = T)) +
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
-             legend.position = "none", vline = 0) +
-  geom_label(aes(label = scales::label_number(accuracy = 0.1)(value)),
+             # legend.position = "none",
+             legend.max.columns = 1,
+             vline = 0,
+             xlab = "Median miles traveled",
+             strip.text = element_text(face = "bold", hjust = 0.5)) +
+  geom_label(aes(label = ifelse(distance_pg != 0, scales::label_number(accuracy = 0.1)(distance_pg),NA),
+                 group = flag),
              hjust = 0,
-             label.size = 0) +
-  scale_x_continuous(limits = c(0,42)) +
+             label.size = 0,
+             position = position_dodge2(width= 0.9, reverse = T)) +
+  scale_x_continuous(limits = c(0,55)) +
+  facet_wrap(~cook_county,ncol = 1) +
+  # facet_wrap(~worktrip, nrow  = 1) +
   cmap_fill_discrete(palette = "mobility")
 
 finalize_plot(wfh_p2,
-              "Median trip distance for work trips on days when travelers are only working outside the home",
-              "Note: These estimates are based on on answers given in
-              both the survey and travel diary components of MDT.
+              "Median daily distance traveled for travelers based on work from
+              home and telecommute status.",
+              "Note: These estimates are based on on answers given in both the
+              survey and travel diary components of My Daily Travel. \"Work
+              trips outside the home\" include all trips associated with a work
+              trip chain that included a work destination outside the home (both
+              fixed and non-fixed) \"Other trips\" includes all other trips.
+              Travelers are only counted for the category(ies) in which they had
+              trips. Due to low sample sizes, work trips for travelers that
+              telecommute or work from home 4+ days per week are excluded.
               <br><br>
-              Source: CMAP analysis of MDT data.",
+              Source: CMAP analysis of My Daily Travel data.",
               filename = "wfh_p2",
-              # mode = "png",
+              mode = "png",
               overwrite = T,
               height = 6.3,
               width = 11.3
               )
 
 
-# Code to generate boxplot
+# # Code to generate boxplot
 #
-# wfh_p2a <-
+# wfh_p2_bp <-
 #   wfh_worktrips_person_level %>%
 #   mutate(flag = recode_factor(factor(combined_tc_wfh),
-#                               "0" = "Does not telecommute or work from home",
+#                               "2" = "Almost always telecommutes or works from home (4+ days/week)",
 #                               "1" = "Sometimes telecommutes or works from home (1-3 days/week)",
-#                               "2" = "Almost always telecommutes or works from home (4+ days/week)")) %>%
+#                               "0" = "Does not telecommute or work from home"),
+#          worktrip = recode_factor(factor(worktrip),
+#                                   "1" = "Work trips outside the home",
+#                                   "0" = "Other trips"),
+#          cook_county = recode_factor(factor(cook_county),
+#                                      "1" = "Cook County residents",
+#                                      "0" = "Residents of other counties")
+#          ) %>%
 #   ggplot(aes(x = distance_pg, y = str_wrap_factor(flag,20))) +
 #   geom_boxplot() +
+#   facet_wrap(worktrip~cook_county) +
 #   theme_cmap(gridlines = "v",
 #              legend.position = "none")
 #
-# wfh_p2a
+# wfh_p2_bp
+
+####### KEEP WORKING ON THIS - IGNORE CODE FROM HERE TO NEXT SECTION
+
+# Understand the distribution of 1-3 day/week tc/wfh-ers by county
+
+
+tc13 <-
+  wfh_worktrips_person_level %>%
+  filter(combined_tc_wfh == 1) %>%
+  select(home_lat,home_long,home_county,home_tract,income_c)
+
+wfh_worktrips_person_level %>%
+  group_by(combined_tc_wfh,home_county) %>%
+  summarize(n = sum(wtperfin)) %>%
+  mutate(total = sum(n)) %>%
+  mutate(pct = n/total) %>%
+  View()
+
+
+write.csv(tc13,"tc13.csv")
+
+#
+# # Map the 1-3 day/week tc/wfh-ers by tract
+# tract_sf <- sf::read_sf("V:/Demographic_and_Forecast/Census/2010/Geography/CMAP_Region_Projected/Tracts_CMAP_TIGER2010.shp")
+#
+# tract_wfh_count <-
+#   wfh_worktrips_person_level %>%
+#   group_by(home_county,home_tract) %>%
+#   summarize(n = n(),
+#             weighted_n = sum(wtperfin))
+#
+# tract_tc13 <-
+#   tract_sf %>%
+#   mutate(TRACTCE10 = as.integer(TRACTCE10),
+#          COUNTYFP10 = as.integer(COUNTYFP10)) %>%
+#   left_join(tract_wfh_count, by = c("TRACTCE10" = "home_tract",
+#                                          "COUNTYFP10" = "home_county")) %>%
+#   select(TRACTCE10,COUNTYFP10,n,weighted_n,geometry)
+#
+#
+# wfh_tracts_map1 <-
+#   tract_tc13 %>%
+#   ggplot(aes(fill = weighted_n)) +
+#   geom_sf() +
+#   theme_cmap(axis.text = element_blank(),
+#              legend.position = "right",
+#              legend.direction = "vertical",
+#              legend.key.height = grid::unit(20,"bigpts")) +
+#   cmap_fill_continuous(palette = "seq_blues")
+#
+#
+# finalize_plot(wfh_tracts_map1,
+#               title = "Number of tc/wfh 1-3 days/week per tract (weighted).",
+#               caption = "Source: CMAP analysis of MDT data.",
+#               sidebar_width = 0,
+#               legend_shift = FALSE,
+#               filename = "wfh_tracts_map1",
+#               # mode = "png",
+#               overwrite = T
+# )
+#
+#
+# map <- get_map("Chicago, Illinois")
+#
+# coords_map <-
+#   ggplot() +
+#   geom_point(data = wfh_worktrips_person_level %>% filter(combined_tc_wfh == 1) %>% filter(home_county %in% cmap_counties),
+#              aes(x = home_long, y = home_lat),
+#              fill = "red",
+#              shape=23,
+#              alpha = 0.8)
+#   # geom_sf(data = tract_sf)
+#
+# coords_map
+
+
+################################################################################
+#
+# WFH/TC ALL TRIPS
+################################################################################
+
+### Create chart with travel characteristics for those who report working from
+### home on days when they do and do not work from home
+#
+# wfh_with_today_status <-
+#   wfh_person_level_plus_no_trips %>%
+#   mutate(
+#     category = case_when(
+#       wfh_today == 1 & wfo_today == 1 ~ 1,
+#       wfh_today == 1 ~ 2,
+#       wfo_today == 1 ~ 3,
+#       TRUE ~ 4),
+#     wfh_andor_tc = case_when(
+#       wfh == 1 ~ 1,
+#       tc == 1 ~ 1,
+#       TRUE ~ 0)) %>%
+#   group_by(category,wfh_andor_tc) %>%
+#   summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
+#             pertrips = weighted.mean(pertrips, w = wtperfin),
+#             travtime_pg = weighted.mean(travtime_pg, w = wtperfin),
+#             n = n()) %>%
+#   pivot_longer(cols = distance_pg:travtime_pg) %>%
+#   mutate(type = "tc_with_today_status")
+
+################################################################################
+# Chart of trip distances for individuals depending on their WFH/TC status and
+# today's travel behavior
+################################################################################
+#
+# wfh_p1 <-
+#   wfh_with_today_status %>%
+#   filter(name != "travtime_pg") %>%
+#   mutate(flag = recode_factor(wfh_andor_tc,
+#                               "1" = "Telecommute at least one day a week and/or work from home",
+#                               "0" = "Do not regularly telecommute or work from home"),
+#          xmax = case_when(
+#            name == "distance_pg" ~ 45,
+#            name == "pertrips" ~ 5.95
+#          ),
+#          name = recode_factor(name,
+#                               "distance_pg" = "Distance (mi.)",
+#                               "pertrips" = "Trips")) %>%
+#   mutate(category = recode_factor(category,
+#                                   "2" = "Only worked at \nhome today",
+#                                   "4" = "Did not work today",
+#                                   "1" = "Worked both from \nhome and outside \nthe home today",
+#                                   "3" = "Only worked outside \nthe home today")) %>%
+#   mutate(category = factor(category, levels = c("Only worked at \nhome today",
+#                                                 "Did not work today",
+#                                                 "Worked both from \nhome and outside \nthe home today",
+#                                                 "Only worked outside \nthe home today"))) %>%
+#   filter(name == "Distance (mi.)") %>%
+#   ggplot(aes(x = value, y = category, fill = flag)) +
+#   geom_col(position = position_dodge2(reverse = T)) +
+#   # facet_wrap(~name,scales = "free_x") +
+#   theme_cmap(gridlines = "v",legend.max.columns = 1,
+#              vline = 0, xlab = "Distance (mi.)") +
+#   geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
+#                  group = flag),
+#              position = position_dodge2(reverse = T, width = 0.9),
+#              label.size = 0,
+#              hjust = 0,
+#              fill = "white") +
+#   geom_blank(aes(x = xmax)) +
+#   cmap_fill_discrete(palette = "legislation")
+#
+# finalize_plot(wfh_p1,
+#               "Travel characteristics individuals who telecommute or work from
+#               home vs. those who do not, on days when they are and are not
+#               working from home.",
+#               "Note: These estimates are based on on answers given in
+#               both the survey and travel diary components of MDT.
+#               <br><br>
+#               Source: CMAP analysis of MDT data.",
+#               title_width = 2.5,
+#               width = 11.3,
+#               height = 6.3,
+#               filename = "wfh_p1",
+#               mode = "png",
+#               overwrite = T)
+
 
 ################################################################################
 # Archive - old analysis
