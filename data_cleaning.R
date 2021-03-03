@@ -54,11 +54,11 @@ ppl <- read_csv("person.csv") %>%
 
 # household info
 hh <- read_csv("household.csv") %>%
-  select(sampno, hhinc, hhveh, wthhfin)
+  select(sampno, hhinc, hhveh, travday, wthhfin)
 
 # location file w/region flag
 region <- read_csv("location.csv") %>%
-  select(sampno, locno, loctype, out_region, county_fips, tract_fips, home)
+  select(sampno, locno, loctype, out_region, county_fips, tract_fips, home, latitude, longitude)
 
 # Trip chains
 chains <- read_csv("chains.csv")
@@ -71,8 +71,11 @@ zones <- read_csv("zones.csv") %>%
 home_wip <- region %>%
   filter(home == 1) %>% # identify home locations
   select(sampno,
-         home_county = county_fips) %>%
-  distinct() # keep distinct home locations based on sample
+         home_county = county_fips,
+         home_tract = tract_fips,
+         home_lat = latitude,
+         home_long = longitude) %>%
+  distinct(sampno,home_county,.keep_all = TRUE) # keep distinct home locations based on sample
 
 # There are 68 households coded as having home locations in multiple counties. Identify them.
 two_homes <- (home_wip %>%
@@ -84,8 +87,12 @@ two_homes <- (home_wip %>%
 home <- home_wip %>%
   mutate(home_county = case_when(
     sampno %in% two_homes ~ 999,
-    TRUE ~ home_county)) %>%
-  distinct()
+    TRUE ~ home_county),
+    home_tract = case_when(
+      sampno %in% two_homes ~ 999999,
+      TRUE ~ home_tract
+    )) %>%
+  distinct(sampno,home_county,.keep_all = TRUE)
 
 # Remove WIP tables
 rm(home_wip, two_homes)
