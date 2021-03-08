@@ -7,13 +7,13 @@
 #                                               #
 #################################################
 
+library(matrixStats)
 library(ggplot2)
 library(tidyverse)
 library(slider)
 library(cmapplot)
-library(matrixStats)
 
-source("pct_calculator.R")
+source("helper_fns.R")
 
 #################################################
 #                                               #
@@ -99,25 +99,44 @@ modes_of_tpurps_p1 <-
   detailed_dining_mode_c_mdt %>%
   mutate(tpurp = factor(tpurp,levels = c("Drive thru / take-out dining",
                                          "Ate / dined out"))) %>%
-  ggplot(aes(y = reorder(mode_c,desc(-pct)),
-             x = pct)) +
-  geom_col(aes(fill = tpurp),
-           position = position_dodge2(width = .8,reverse = TRUE)) +
+  mutate(mode_c = recode_factor(mode_c,
+                                "driver" = "By car",
+                                "passenger" = "By car",
+                                "walk" = "Walking",
+                                "transit" = "Other modes",
+                                "other" = "Other modes",
+                                "bike" = "Other modes")) %>%
+  group_by(mode_c,tpurp) %>%
+  summarize(pct = sum(pct)) %>%
+  ggplot(aes(x = pct, y = tpurp,
+             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+  geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
+  scale_x_continuous(labels = scales::label_percent()) +
+  geom_text(position = position_stack(vjust = 0.5),
+            color = "white") +
+  # ggplot(aes(y = reorder(mode_c,desc(-pct)),
+  #            x = pct)) +
+  # geom_col(aes(fill = tpurp),
+  #          position = position_dodge2(width = .8,reverse = TRUE)) +
   theme_cmap(gridlines = "v",vline = 0) +
-  scale_x_continuous(labels = scales::label_percent(accuracy=1),n.breaks = 6,limits = c(0,.75)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
-                 group = tpurp),
-             position = position_dodge2(width = .8,reverse = T),
-             hjust = 0,
-             label.size = 0,
-             fill = "white") +
-  cmap_fill_discrete(palette = "friday")
+  # scale_x_continuous(labels = scales::label_percent(accuracy=1),n.breaks = 6,limits = c(0,.75)) +
+  # geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
+                 # group = tpurp),
+             # position = position_dodge2(width = .8,reverse = T),
+             # hjust = 0,
+             # label.size = 0,
+             # fill = "white") +
+  cmap_fill_discrete(palette = "environment")
 
 finalize_plot(modes_of_tpurps_p1,
               "Mode share of dining trips, 2019.",
-              "Source: CMAP analysis of MDT data.",
-              width = 11.3,
-              height = 6.3,
+              "Source: CMAP analysis of My Daily Travel data. \"By car\"
+              includes trips as either a driver of a passenger of a personal
+              vehicle (not including services like taxis or TNCs). \"Other
+              modes\" includes transit, biking, and all other modes. Unlabeled
+              bars have less than 5 percent mode share.",
+              # width = 11.3,
+              # height = 6.3,
               filename = "modes_of_tpurps_p1",
               mode = "png",
               overwrite = T)
@@ -146,23 +165,42 @@ modes_of_tpurps_p2 <-
   mutate(tpurp = factor(tpurp,levels = c("Visited a person staying at the hospital",
                                          "Health care visit for someone else",
                                          "Health care visit for self"))) %>%
-  ggplot(aes(y = reorder(mode_c,desc(-pct)), x = pct)) +
-  geom_col(aes(fill = tpurp),
-           position = position_dodge2(reverse = TRUE)) +
-  theme_cmap(gridlines = "v",legend.max.columns = 1, vline = 0) +
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct)),
-             position = position_dodge2(reverse = TRUE,width = 0.9),
-             hjust = 0,
-             label.size = 0) +
-  scale_x_continuous(labels = scales::label_percent(),n.breaks = 6,
-                     limits = c(0,.85)) +
-  cmap_fill_discrete(palette = "governance")
+  mutate(mode_c = recode_factor(mode_c,
+                                "driver" = "By car",
+                                "passenger" = "By car",
+                                "transit" = "Transit",
+                                "walk" = "Other modes",
+                                "other" = "Other modes",
+                                "bike" = "Other modes")) %>%
+  group_by(mode_c,tpurp) %>%
+  summarize(pct = sum(pct)) %>%
+  ggplot(aes(x = pct, y = str_wrap_factor(tpurp,15),
+             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+  geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
+  scale_x_continuous(labels = scales::label_percent()) +
+  geom_text(position = position_stack(vjust = 0.5),
+            color = "white") +
+  # ggplot(aes(y = reorder(mode_c,desc(-pct)), x = pct)) +
+  # geom_col(aes(fill = tpurp),
+  #          position = position_dodge2(reverse = TRUE)) +
+  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0) +
+  # geom_label(aes(label = scales::label_percent(accuracy = 1)(pct)),
+  #            position = position_dodge2(reverse = TRUE,width = 0.9),
+  #            hjust = 0,
+  #            label.size = 0) +
+  # scale_x_continuous(labels = scales::label_percent(),n.breaks = 6,
+  #                    limits = c(0,.85)) +
+  cmap_fill_discrete(palette = "legislation")
 
 finalize_plot(modes_of_tpurps_p2,
               "Mode share of health trips, 2019.",
-              "Source: CMAP analysis of MDT data.",
-              width = 11.3,
-              height = 6.3,
+              "Source: CMAP analysis of My Daily Travel data. \"By car\"
+              includes trips as either a driver of a passenger of a personal
+              vehicle (not including services like taxis or TNCs). \"Other
+              modes\" includes walking, biking, and all other modes. Unlabeled
+              bars have less than 5 percent mode share.",
+              # width = 11.3,
+              # height = 6.3,
               filename = "modes_of_tpurps_p2",
               mode = "png",
               overwrite = TRUE)
@@ -202,25 +240,46 @@ modes_of_tpurps_p3 <-
                                   "Attended a religious event" = "Civic/Religious"
 
          )) %>%
-  filter(survey == "mdt") %>%
-  ggplot(aes(y = reorder(mode_c,desc(-pct)), x = pct)) +
-  geom_col(aes(fill = tpurp),
-           position = position_dodge2(reverse = TRUE)) +
-  facet_wrap(~category) +
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct)),
-             position = position_dodge2(reverse = T, width = .9),
-             hjust = 0,
-             label.size = 0) +
+  filter(survey == "mdt",
+         category == "Friends/Family") %>%
+  mutate(mode_c = recode_factor(mode_c,
+                                "driver" = "By car",
+                                "passenger" = "By car",
+                                "walk" = "Walking",
+                                "transit" = "Other modes",
+                                "other" = "Other modes",
+                                "bike" = "Other modes")) %>%
+  group_by(mode_c,tpurp) %>%
+  summarize(pct = sum(pct)) %>%
+  ggplot(aes(x = pct, y = tpurp,
+             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+  geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
+  scale_x_continuous(labels = scales::label_percent()) +
+  geom_text(position = position_stack(vjust = 0.5),
+            color = "white") +
+  # ggplot(aes(y = reorder(mode_c,desc(-pct)), x = pct)) +
+  # geom_col(aes(fill = tpurp),
+  #          position = position_dodge2(reverse = TRUE)) +
+  # facet_wrap(~category) +
+  # geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
+  #                group = tpurp),
+  #            position = position_dodge2(reverse = T, width = .9),
+  #            hjust = 0,
+  #            label.size = 0) +
   theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0) +
-  scale_x_continuous(labels = scales::label_percent(),
-                     limits = c(0,.65)) +
-  cmap_fill_discrete(palette = "mobility")
+  # scale_x_continuous(labels = scales::label_percent(),
+                     # limits = c(0,.9)) +
+  cmap_fill_discrete(palette = "environment")
 
 finalize_plot(modes_of_tpurps_p3,
-              "Mode share of community trips, 2019.",
-              "Source: CMAP analysis of MDT data.",
-              width = 11.3,
-              height = 6.3,
+              "Mode share of trips to visit friends and family, 2019.",
+              "Source: CMAP analysis of My Daily Travel data. \"By car\"
+              includes trips as either a driver of a passenger of a personal
+              vehicle (not including services like taxis or TNCs). \"Other
+              modes\" includes transit, biking, and all other modes. Unlabeled
+              bars have less than 5 percent mode share.",
+              # width = 6.5,
+              # height = 4,
               overwrite = T,
               mode = "png",
               filename = "modes_of_tpurps_p3")
