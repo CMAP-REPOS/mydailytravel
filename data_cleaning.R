@@ -262,8 +262,8 @@ tt <- tt %>%
 tt <- tt %>%
   arrange(SAMPN,PERNO) %>%
   mutate(out_region = ifelse(FIPS %in% cmap_state_nine_counties,
-                             1,
-                             0)) %>%
+                             0,
+                             1)) %>%
   mutate(out_region_lag = lag(out_region,1),
          perno_lag = lag(PERNO,1),
          sampn_lag = lag(SAMPN,1)) %>%
@@ -308,7 +308,7 @@ tt <- tt %>%
 # outside the nine county region, are over 100 miles, and/or on weekends
 tt <- tt %>%           # 218945 records
   filter(MPO==1) %>%   # 159856 records
-  filter(out_region_trip == 1) %>% # 153437 records
+  filter(out_region_trip == 0) %>% # 153437 records
   filter(DIST<100) %>% # 153437 records
   filter(weekend==0)   # 135306 records
 
