@@ -13,7 +13,7 @@ library(lubridate)
 library(slider)
 library(cmapplot)
 
-source("tim_calculator.R")
+source("helper_fns.R")
 
 #################################################
 #                                               #
