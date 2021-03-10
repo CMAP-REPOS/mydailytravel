@@ -11,7 +11,7 @@ library(tidyverse)
 library(cmapplot)
 library(sf)
 
-source("pct_calculator.R")
+source("helper_fns.R")
 
 #################################################
 #                                               #
@@ -49,18 +49,19 @@ all_school_mdt <-
   filter(loctype == 3) %>%               # 4001 records
   # Keep only trips that start or end between 7am and 9am
   filter(hour(arrtime_pg) %in% c(7,8) |  # 3530 records
-           hour(start_times_pg) %in% c(7,8))
+           hour(start_times_pg) %in% c(7,8)) %>%
   # Exclude Kendall County (for validation purposes only)
   # filter(county_fips != 93) %>%
   # # Code to exclude high and low weight households, by zone
-  # left_join(zones, by = "sampno") %>%
-  # arrange(wtperfin) %>%
-  # group_by(cluster) %>%
-  # mutate(rank = row_number()) %>%
-  # mutate(max_rank = max(rank)) %>%
-  # mutate(pct_rank = rank / max_rank) %>%
-  # filter(pct_rank >= 0.10,
-  #        pct_rank <= 0.90)
+  left_join(zones, by = "sampno") %>%
+  arrange(wtperfin) %>%
+  group_by(cluster) %>%
+  mutate(rank = row_number()) %>%
+  mutate(max_rank = max(rank)) %>%
+  mutate(pct_rank = rank / max_rank) %>%
+  filter(pct_rank >= 0.05,
+         pct_rank <= 0.95) %>%
+  ungroup()
 
 
 
@@ -203,7 +204,7 @@ finalize_plot(school_trips_p1,
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
               filename = "school_trips_p1",
-              mode = "png",
+              # mode = "png",
               overwrite = T,
               height = 4,
               width = 6)
@@ -257,7 +258,7 @@ finalize_plot(school_trips_p1a,
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
               filename = "school_trips_p1a",
-              mode = "png",
+              # mode = "png",
               overwrite = T,
               height = 4,
               width = 6)
@@ -315,7 +316,7 @@ finalize_plot(school_trips_p2,
               <br><br>
               Source: CMAP analysis of MDT and TT data.",
               filename = "school_trips_p2",
-              mode = "png",
+              # mode = "png",
               width = 11.3,
               height = 6.3,
               overwrite = T)
@@ -355,12 +356,18 @@ total_school_inc_mode_c <-
 # Chart of walking mode share
 school_trips_p3 <-
   total_school_inc_mode_c %>%
+  # mutate(unweighted = breakdown_n/total_n) %>%
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel (2019)",
                                 tt = "Travel Tracker (2008)")) %>%
   filter(income_c != "missing",
          mode_c == "walk"
   ) %>%
+  mutate(income_c = recode_factor(income_c,
+                "low" = "$34,999 or less",
+                "middle-low" = "$35,000 to $59,999",
+                "middle-high" = "$60,000 to $99,999",
+                "high" = "$100,000 or more")) %>%
   ggplot(aes(y = income_c, x = pct, fill = survey)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
@@ -369,19 +376,22 @@ school_trips_p3 <-
              hjust = 0, label.size = 0, fill = "white") +
   theme_cmap(gridlines = "v") +
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),n.breaks = 6,
-                     limits = c(0,.45)
+                     limits = c(0,.44)
   ) +
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(school_trips_p3,
               "Walk mode-share of K-12 school trips by household income
               category, 2008 vs. 2019.",
-              "Note: Includes trips for travelers enrolled in K-12 and at least
-              5 years old.
+              "Note: Includes trips starting or ending between 7:00 A.M. and
+              9:00 A.M. to a school location for travelers enrolled in K-12 and
+              at least 5 years old. Excludes highest and lowest 5 percent of
+              weighted records.
               <br><br>
-              Source: CMAP analysis of MDT and TT data.",
-              height = 6.3,
-              width = 11.3,
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel and Travel Tracker data.",
+              # height = 6.3,
+              # width = 11.3,
               filename = "school_trips_p3",
               mode = "png",
               overwrite = T)
@@ -413,28 +423,34 @@ school_time_race_mdt <-
 school_trips_p4 <-
   school_time_race_mdt %>%
   mutate(label = round(travtime)) %>%
-  mutate(race_eth = factor(race_eth, levels = c("black","hispanic","other",
-                                                "white","asian"))) %>%
-  ggplot(aes(x = race_eth, y = travtime, fill = race_eth)) +
+  mutate(race_eth = recode(race_eth,
+                           "black" = "Black","white" = "White",
+                           "asian" = "Asian","other" = "Other",
+                           "hispanic" = "Hispanic")) %>%
+  ggplot(aes(x = reorder(race_eth,-travtime), y = travtime, fill = race_eth)) +
   geom_col() +
   theme_cmap(gridlines = "h",
              legend.position = "None") +
   geom_label(aes(label = scales::label_number(accuracy = 1)(travtime)),
              vjust = 0, label.size = 0, fill = "white") +
   facet_wrap(~k12) +
-  cmap_fill_race()
+  cmap_fill_race(white = "White",black = "Black",hispanic = "Hispanic",asian = "Asian",other = "Other")
 
 finalize_plot(school_trips_p4,
-              "Travel time to school by race and ethnicity (minutes).",
-              "Note: Includes trips for travelers enrolled in K-12 and at least
-              5 years old. Trips with no travel time or lasting 150 minutes or
-              more are excluded as outliers.
+              "Average travel time to school by race and ethnicity (minutes).",
+              "Note: Includes trips starting or ending between 7:00 A.M. and
+              9:00 A.M. to a school location for travelers enrolled in K-12 and
+              at least 5 years old. Excludes highest and lowest 5 percent of
+              weighted records. Trips with no travel time or lasting 150 minutes
+              or more are also excluded as outliers.
               <br><br>
-              Source: CMAP analysis of MDT.",
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel data.",
               filename = "school_trips_p4",
+              sidebar_width = 2,
               mode = "png",
-              height = 6.3,
-              width = 11.3,
+              # # height = 6.3,
+              # width = 11.3,
               overwrite = T)
 
 ################################################################################
