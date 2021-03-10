@@ -31,12 +31,9 @@ all_school_mdt <-
     # Those 5 or older
     age >= 5 |
       # or those in an age category from 5 to 44
-      aage %in% c(2,3,4,5) |
+      age < 0 & aage %in% c(2,3,4,5) |
       # or those enrolled in 9th-12th grade
-      schol %in% c(4) |
-      # or those identified as attending school manually
-      sampno %in% c(70038312,
-                    70051607)) %>%
+      age < 0 & schol %in% c(4)) %>%
   # Exclude "beginning" trips
   filter(mode_c != "beginning") %>%  #
   # Keep only trips with nonzero distance

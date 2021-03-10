@@ -31,8 +31,8 @@ mdt_base_1 <-
   # based on age buckets, school enrollment, or manual location identification
   # of school trips
   filter(age >= 5 |                   # 125099
-           aage %in% c(2,3,4,5,6,7) |
-           schol %in% c(4,5,6,7,8) |
+           age < 0 & aage %in% c(2,3,4,5,6,7) |
+           age < 0 & schol %in% c(4,5,6,7,8) |
            sampno %in% c(70038312,
                          70051607)) %>%
   # Exclude beginning trips

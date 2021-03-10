@@ -35,7 +35,7 @@ driver_pax_mdt <-
   filter(age < 90,               #
          age >= 18 |             #
            # Keep those who are 18 or older, OR
-         aage %in% c(5,6,7)) %>%
+           age < 0 & aage %in% c(5,6,7)) %>%
            # age buckets that are > 18
   # Keep only trips with > 0 distance
   filter(distance_pg > 0) %>%    #
