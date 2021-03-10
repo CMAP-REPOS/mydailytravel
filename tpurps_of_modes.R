@@ -29,8 +29,8 @@ mdt_base_2 <-
   # based on age buckets, school enrollment, or manual location identification
   # of school trips
   filter(age >= 5 |                   #
-           age < 0 & aage %in% c(2,3,4,5,6,7) |
-           age < 0 & schol %in% c(4,5,6,7,8) |
+           (age < 0 & aage %in% c(2,3,4,5,6,7)) |
+           (age < 0 & schol %in% c(4,5,6,7,8)) |
            sampno %in% c(70038312,
                          70051607)) %>%
   # Exclude beginning trips
@@ -48,17 +48,18 @@ mdt_base_2 <-
 tt_base_2 <-
   tt %>%                             # 137491 records
   # Keep only records for travelers >= 5 or who we can identify as being >= 5
-  # based on age buckets or school enrollment
-  filter(AGE >= 5 |                  #
-           SCHOL %in% c(4,5,6,7,8) |
-           AGEB == 2) %>%
+  # based on age buckets or school enrollment. Note that 99 is DK/RF for AGE.
+  filter((AGE >= 5 & AGE < 99) |                  #
+           (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) |
+           (AGE == 99 & AGEB == 2)) %>%
   # Exclude trips with no travel distance. Note this is a different difference
   # calculation than that used in MDT (great circle vs. actual travel distance).
   filter(DIST > 0) %>%              #
   filter(tpurp_c != "missing") %>%  # 100619 records
   # Add flag for under 18 vs. 18 and over. None of the school enrollment or age
   # buckets are precise enough to code either way.
-  mutate(under18 = ifelse(AGE >= 18, "18 and over", "Under 18")) %>%
+  mutate(under18 = ifelse(AGE >= 18 & AGE < 99, "18 and over",
+                          ifelse(AGE != 99,"Under 18",NA))) %>%
   ungroup()
 
 #################################################

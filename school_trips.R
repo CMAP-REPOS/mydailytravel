@@ -68,8 +68,8 @@ all_school_tt <-
   filter(
     # Keep records of travelers enrolled in K-12
     SCHOL %in% c(3,4),              #
-    # Keep only those 5 or older
-    AGE >= 5 | AGEB == 2) %>%       #
+    # Keep only those 5 or older. Note that 99 is DK/RF for AGE.
+    (AGE >= 5 & AGE < 99) | (AGE == 99 & AGEB == 2)) %>%       #
   # Keep only trips with nonzero distance (note this is a different difference
   # calculation than the MDT one - TT used great circle)
   filter(DIST > 0) %>%              #

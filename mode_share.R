@@ -46,10 +46,10 @@ mdt_base_3 <-
 # tt_base_3 <-
 #   tt %>%                               # 140751 records
 #   # Keep only travelers >= 16 years old, either through age, age bucket, or
-#   # school enrollment
-#   filter(AGE >= 16 |                   # 118886
-#            SCHOL %in% c(5,6,7,8) |
-#            AGEB == 2) %>%
+#   # school enrollment. Note that 99 is DK/RF for AGE.
+#   filter((AGE >= 16 & AGE < 99) |                   # 118886
+#            (AGE == 99 & SCHOL %in% c(5,6,7,8)) |
+#            (AGE == 99 & AGEB == 2)) %>%
 #   # Keep only trips with nonzero distance
 #   filter(DIST > 0) %>%                 # 89784
 #   # Exclude missing modes

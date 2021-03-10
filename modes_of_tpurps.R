@@ -52,10 +52,10 @@ mdt_base_1 <-
 tt_base_1 <-
   tt %>%                             # 140751 records
   # Keep only records for travelers >= 5 or who we can identify as being >= 5
-  # based on age buckets or school enrollment
-  filter(AGE >= 5 |                  # 133989
-           SCHOL %in% c(4,5,6,7,8) |
-           AGEB == 2) %>%
+  # based on age buckets or school enrollment. Note that 99 is DK/RF for AGE.
+  filter((AGE >= 5 & AGE < 99)|                  # 133989
+           (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) |
+           (AGE == 99 & AGEB == 2)) %>%
   # Exclude trips with no travel distance. Note this is a different difference
   # calculation than that used in MDT (great circle vs. actual travel distance).
   filter(DIST > 0) %>%              # 100880
