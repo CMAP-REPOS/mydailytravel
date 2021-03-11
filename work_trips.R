@@ -27,12 +27,13 @@ all_work_mdt <-
   filter(
     # keep only employed respondents (either those who report having 1+ jobs or
     # those who report being employed)
-    emply_ask == 1 | jobs > 0, # 17,656 records
+    emply_ask == 1 | jobs > 0) %>% # 17,656 records
+  filter(
     # Keep only:                     #
     # Those 16 or older
     age >= 16 |
       # or those in an age category from 5 to 44
-      age < 0 & aage %in% c(4,5,6,7)) %>%
+      (age < 0 & aage %in% c(4,5,6,7))) %>%
   # Exclude "beginning" trips
   filter(mode_c != "beginning") %>%  #
   # Keep only trips with nonzero distance
@@ -68,8 +69,6 @@ all_work_mdt <-
 # Travel times by race
 ################################################################################
 
-## What about travel times by race for school trips
-
 # Filter data for MDT
 work_time_race_mdt <-
   all_work_mdt %>%
@@ -79,8 +78,7 @@ work_time_race_mdt <-
     # Exclude households with missing race and ethnicity information
     race_eth != "missing") %>%
   group_by(race_eth) %>%
-  summarize(travtime = as.numeric(weighted.mean(travtime_pg_calc, w = wtperfin))) %>%
-  mutate(survey = "My Daily Travel (2019)")
+  summarize(travtime = as.numeric(weighted.mean(travtime_pg_calc, w = wtperfin)))
 
 # Chart of travel time to school by household income
 work_trips_p1 <-
@@ -102,7 +100,9 @@ work_trips_p1 <-
 
 finalize_plot(work_trips_p1,
               "Average travel time to work by race and ethnicity (minutes).",
-              "Note: Includes trips by employed residents to a fixed work location.
+              "Note: 'Hispanic' includes individuals of any racial group that
+              identify as Hispanic. All other categories are non-Hispanic.
+              Includes trips by employed residents to a fixed work location.
               Trips with no travel time or lasting 150 minutes or more are
               excluded as outliers.
               <br><br>
