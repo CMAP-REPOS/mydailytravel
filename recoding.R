@@ -316,6 +316,7 @@ recode_income_buckets_mdt <-
 
 # These vectors are used to filter counties in the CMAP area
 
-cmap_counties <- c(31,43,89,93,97,111,197)
-cmap_state_counties <- c("17031","17043","17089","17093","17097","17111","17197")
+cmap_seven_counties <- c(31,43,89,93,97,111,197)
+cmap_nine_counties <- c(cmap_seven_counties,37,63)
+cmap_state_seven_counties <- c("17031","17043","17089","17093","17097","17111","17197")
 cmap_state_nine_counties <- c(cmap_state_counties,"17037","17063")
