@@ -2,25 +2,26 @@
 # Travel Tracker. The file outputs a number of tables; the most important are:
 #
 # - mdt: this table represents the trips taken in the MDT survey, with added
-#   characteristics about the person, household, and location of the trip. Trips
-#   that are within the same "place group" are collapsed into one trip with the
-#   cumulative travel time, distance, and start/end times. Trips that neither
-#   start nor end in the CMAP region or are greater than 100 miles are excluded.
-#   Mode, purpose, income, and race and ethnicity are added and recoded, using
-#   lists and vectors from recoding.R where relevant.
+# characteristics about the person, household, and location of the trip. Trips
+# that are within the same "place group" are collapsed into one trip with the
+# cumulative travel time, distance, and start/end times. Trips that neither
+# start nor end in Cook, Kane, Kendall, McHenry, Lake, DuPage, Will, DeKalb, or
+# Grundy County are excluded. Trips greater than 100 miles are also excluded.
+# Mode, purpose, income, and race and ethnicity are added and recoded, using
+# lists and vectors from recoding.R where relevant.
 #
 # - tt: this table represents the trips taken in the TT survey, with added
-#   characteristics about the person, household, and location of the trip. Trips
-#   on the weekend are excluded and weights are adjusted to account for surveys
-#   that had two weekday trip diaries. Trips that neither start nor end in Cook,
-#   Kane, Kendall, McHenry, Lake, DuPage, Will, DeKalb, or Grundy County are
-#   excluded. Trips greater than 100 miles are also excluded. Mode, purpose, and
-#   income are added and recoded, using lists and vectors from recoding.R where
-#   relevant.
+# characteristics about the person, household, and location of the trip. Trips
+# on the weekend are excluded and weights are adjusted to account for surveys
+# that had two weekday trip diaries. Trips that neither start nor end in Cook,
+# Kane, Kendall, McHenry, Lake, DuPage, Will, DeKalb, or Grundy County are
+# excluded. Trips greater than 100 miles are also excluded. Mode, purpose, and
+# income are added and recoded, using lists and vectors from recoding.R where
+# relevant.
 #
 # - mdt_all_respondents and tt_all_respondents: these tables includes person and
-#   household information for all respondents in the survey, whether or not they
-#   traveled, with income recoded using the definitions from recoding.R.
+# household information for all respondents in the survey, whether or not they
+# traveled, with income recoded using the definitions from recoding.R.
 
 
 
