@@ -88,11 +88,10 @@ passenger_totals_under18_tt <-
   pct_calculator(tt_base_2,
                  subset = "passenger",
                  subset_of = "mode_c",
-                 breakdown_by = "MODE",
+                 breakdown_by = "mode",
                  second_breakdown = "under18",
                  weight = "weight",
                  survey = "tt") %>%
-  rename(mode = MODE) %>%
   mutate(mode = "Passenger (all)")
 
 all_passenger_under18 <-
@@ -195,7 +194,7 @@ finalize_plot(tpurps_of_modes_p2,
 all_tnc_tpurp_c_tt <-
   pct_calculator(tt_base_2,
                  subset = c("rideshare","shared rideshare","taxi"),
-                 subset_of = "MODE",
+                 subset_of = "mode",
                  breakdown_by = "tpurp_c",
                  weight = "weight",
                  survey = "tt")
