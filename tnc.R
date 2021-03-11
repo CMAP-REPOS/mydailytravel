@@ -17,7 +17,10 @@ library(cmapplot)
 #                                               #
 #################################################
 
+setwd("~/GitHub/mydailytravel")
+source("helper_fns.R")
 source("data_cleaning.R")
+
 
 # Create base data set with TNC variables (not included in the base data pull)
 tnc_base <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/person.csv") %>%

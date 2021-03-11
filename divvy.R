@@ -13,13 +13,14 @@ library(lubridate)
 library(slider)
 library(cmapplot)
 
-source("helper_fns.R")
-
 #################################################
 #                                               #
 #                 Data Prep                     #
 #                                               #
 #################################################
+
+setwd("~/GitHub/mydailytravel")
+source("helper_fns.R")
 
 divvy_zip <- tempfile()
 download.file("https://divvy-tripdata.s3.amazonaws.com/Divvy_Trips_2019_Q3.zip",divvy_zip)

@@ -10,15 +10,16 @@ library(ggplot2)
 library(tidyverse)
 library(cmapplot)
 
-source("helper_fns.R")
-
 #################################################
 #                                               #
 #                 Data Prep                     #
 #                                               #
 #################################################
 
+setwd("~/GitHub/mydailytravel")
+source("helper_fns.R")
 source("data_cleaning.R")
+
 
 # Create base dataset for mode analyses
 

@@ -14,14 +14,14 @@ library(cmapplot)
 # devtools::install_github("coolbutuseless/ggpattern")
 library(ggpattern)
 
-source("pct_calculator.R")
-
 #################################################
 #                                               #
 #                 Data Prep                     #
 #                                               #
 #################################################
 
+setwd("~/GitHub/mydailytravel")
+source("helper_fns.R")
 source("data_cleaning.R")
 
 # Age bins

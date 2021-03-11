@@ -11,15 +11,16 @@ library(tidyverse)
 library(cmapplot)
 library(sf)
 
-source("helper_fns.R")
-
 #################################################
 #                                               #
 #                 Data Prep                     #
 #                                               #
 #################################################
 
+setwd("~/GitHub/mydailytravel")
+source("helper_fns.R")
 source("data_cleaning.R")
+
 
 ### Filter data
 all_school_mdt <-

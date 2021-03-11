@@ -13,15 +13,16 @@ library(cmapplot)
 library(sf)
 library(matrixStats)
 
-source("helper_fns.R")
-
 #################################################
 #                                               #
 #                 Data Prep                     #
 #                                               #
 #################################################
 
+setwd("~/GitHub/mydailytravel")
+source("helper_fns.R")
 source("data_cleaning.R")
+
 
 # Identify respondents who report that they don't travel for work and have a
 # diary entry for working from home but did not report home as their workplace

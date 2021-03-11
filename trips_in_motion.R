@@ -8,6 +8,8 @@
 #                                               #
 #################################################
 
+setwd("~/GitHub/mydailytravel")
+
 library(tidyverse) # A package that enables new data manipulation functionality (and a broader "grammar" for R)
 library(ggplot2) # A graphing package
 library(lubridate) # A date handling package

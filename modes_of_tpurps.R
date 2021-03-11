@@ -13,15 +13,16 @@ library(tidyverse)
 library(slider)
 library(cmapplot)
 
-source("helper_fns.R")
-
 #################################################
 #                                               #
 #                 Data Prep                     #
 #                                               #
 #################################################
 
+setwd("~/GitHub/mydailytravel")
+source("helper_fns.R")
 source("data_cleaning.R")
+
 
 # Create base dataset for mode analyses
 
