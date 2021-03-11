@@ -142,11 +142,23 @@ zones <- read_csv("zones.csv") %>%
 home_wip <- region %>%
   filter(home == 1) %>% # identify home locations
   select(sampno,
+         home_state = state_fips,
          home_county = county_fips,
          home_tract = tract_fips,
          home_lat = latitude,
          home_long = longitude) %>%
   distinct(sampno,home_county,.keep_all = TRUE) # keep distinct home locations based on sample
+
+# # Note - there are four homes out of state and 7 homes with an unknown state.
+# # Each of these households also has a home in the CMAP region. They are
+# # handled by the two_homes approach below.
+#
+# out_of_state <-
+#   home_wip %>% filter(home_state != 17) %>%
+#   select(sampno)
+#
+# home_wip %>%
+#   filter(sampno %in% out_of_state$sampno) %>%
 
 
 # There are 68 households coded as having home locations in multiple counties. Identify them.
@@ -157,9 +169,16 @@ two_homes <- (home_wip %>%
 
 # Replace multi-county records with a county_fips of 999
 home <- home_wip %>%
-  mutate(home_county = case_when(
-    sampno %in% two_homes ~ 999,
-    TRUE ~ home_county),
+  mutate(
+    # Make everyone's home state Illinois
+    home_state = case_when(
+      sampno %in% two_homes ~ 17,
+      TRUE ~ home_state),
+    # Replace multi-county home households with 999
+    home_county = case_when(
+      sampno %in% two_homes ~ 999,
+      TRUE ~ home_county),
+    # Replace multi-county home households with 999999 for the tract
     home_tract = case_when(
       sampno %in% two_homes ~ 999999,
       TRUE ~ home_tract
@@ -312,11 +331,13 @@ tt_home <- tt_location %>%
     substr(LOCNO,1,1) == "9" ~ 1,
     TRUE ~ 0)) %>%
   filter(home == 1) %>%
+  # Extract FIPS for state from larger FIPS code
+  mutate(home_state = as.integer(substr(FIPS,1,2))) %>%
   # Extract FIPS for county from larger FIPS code
   mutate(home_county = as.integer(substr(FIPS,3,5))) %>%
-  select(-FIPS,home) %>%
-  inner_join(.,
-             tt_place %>% select(SAMPN,PERNO,PLANO,locno),
+  # Remove unneeded variables
+  select(-FIPS,-home) %>%
+  inner_join(tt_place %>% select(SAMPN,PERNO,PLANO,locno),
              by = c("LOCNO" = "locno"))
 
 # # Check - is each sample associated with exactly one home
@@ -346,7 +367,7 @@ tt_home <- tt_location %>%
 
 # Create flag for home county location
 tt_home <- tt_home %>% # 105,554 records
-  select(SAMPN,home_county) %>%
+  select(SAMPN,home_county,home_state) %>%
   distinct() # 14,376 records
 
 

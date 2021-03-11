@@ -383,7 +383,7 @@ finalize_plot(school_trips_p3,
               "Note: Includes trips starting or ending between 7:00 A.M. and
               9:00 A.M. to a school location for travelers enrolled in K-12 and
               at least 5 years old. Excludes highest and lowest 5 percent of
-              weighted records.
+              weighted records for My Daily Travel.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel and Travel Tracker data.",
@@ -438,8 +438,8 @@ finalize_plot(school_trips_p4,
               "Note: Includes trips starting or ending between 7:00 A.M. and
               9:00 A.M. to a school location for travelers enrolled in K-12 and
               at least 5 years old. Excludes highest and lowest 5 percent of
-              weighted records. Trips with no travel time or lasting 150 minutes
-              or more are also excluded as outliers.
+              weighted records for My Daily Travel. Trips with no travel time or
+              lasting 150 minutes or more are also excluded as outliers.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
