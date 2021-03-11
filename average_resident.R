@@ -1,9 +1,14 @@
+# This script analyzes average travel behavior in MDT and TT
+
+#################################################
+#                                               #
+#                 Library loading               #
+#                                               #
+#################################################
+
 library(tidyverse)
 library(cmapplot)
 library(forcats)
-
-
-
 
 #################################################
 #                                               #
@@ -11,13 +16,9 @@ library(forcats)
 #                                               #
 #################################################
 
+setwd("~/GitHub/mydailytravel")
+source("helper_fns.R")
 source("data_cleaning.R")
-
-#################################################
-#                                               #
-#            Average resident behavior          #
-#                                               #
-#################################################
 
 
 ### MY DAILY TRAVEL - closely aligns with Sarah's work, seem to be right
@@ -46,34 +47,6 @@ daily_travelers_mdt <-
   select(sampno,perno,wtperfin) %>%
   distinct() %>%
   summarize(total_travelers = sum(wtperfin))
-
-# Calculate summary statistics
-avgtravel_mdt %>%
-  summarize(
-    total_distance = sum(hdist_pg_weight),
-    total_trips = sum(wtperfin),
-    avg_trip_length = total_distance / total_trips,
-  ) %>%
-  left_join(daily_travelers_mdt,
-            by = character()) %>%
-  mutate(distance_per_capita = total_distance / total_travelers,
-         trips_per_capita = total_trips / total_travelers) %>%
-  View()
-
-
-# Total distance
-sum(avgtravel_mdt$hdist_pg_weight)
-
-# Mileage per traveler
-sum(avgtravel_mdt$hdist_pg_weight) / daily_travelers_mdt
-
-# Average trip length
-sum(avgtravel_mdt$hdist_pg_weight) / sum(avgtravel_mdt$wtperfin)
-
-# Trips per person
-sum(avgtravel_mdt$wtperfin) / daily_travelers_mdt
-
-
 
 
 ##### TRAVEL TRACKER - note that due to differences in collection of distances
@@ -152,6 +125,48 @@ daily_travelers_tt %>%
 # missing %>%
 #   left_join(tt_place, by = c("SAMPN","PERNO")) %>%
 #   View()
+
+#################################################
+#                                               #
+#            Average resident behavior          #
+#                                               #
+#################################################
+
+################################################################################
+#
+# My Daily Travel
+################################################################################
+
+# Calculate summary statistics
+avgtravel_mdt %>%
+  summarize(
+    total_distance = sum(hdist_pg_weight),
+    total_trips = sum(wtperfin),
+    avg_trip_length = total_distance / total_trips,
+  ) %>%
+  left_join(daily_travelers_mdt,
+            by = character()) %>%
+  mutate(distance_per_capita = total_distance / total_travelers,
+         trips_per_capita = total_trips / total_travelers) %>%
+  View()
+
+
+# Total distance
+sum(avgtravel_mdt$hdist_pg_weight)
+
+# Mileage per traveler
+sum(avgtravel_mdt$hdist_pg_weight) / daily_travelers_mdt
+
+# Average trip length
+sum(avgtravel_mdt$hdist_pg_weight) / sum(avgtravel_mdt$wtperfin)
+
+# Trips per person
+sum(avgtravel_mdt$wtperfin) / daily_travelers_mdt
+
+################################################################################
+#
+# Travel Tracker
+################################################################################
 
 # Calculate summary statistics
 avgtravel_tt %>%
