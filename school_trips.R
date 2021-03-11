@@ -48,7 +48,7 @@ all_school_mdt <-
   filter(hour(arrtime_pg) %in% c(7,8) |  # 3530 records
            hour(start_times_pg) %in% c(7,8)) %>%
   # Exclude Kendall County (for validation purposes only)
-  # filter(county_fips != 93) %>%
+  # filter(!(state_fips == 17 & county_fips == 93)) %>%
   # # Code to exclude high and low weight households, by zone
   left_join(zones, by = "sampno") %>%
   arrange(wtperfin) %>%
@@ -532,7 +532,7 @@ county_sf <- sf::read_sf("V:/Administrative_and_Political_Boundaries/Counties/Cn
 # Identify the locations of schools
 school_locations_mdt <-
   all_school_mdt %>%
-  filter(county_fips %in% cmap_counties) %>%
+  filter(state_fips == 17 & county_fips %in% cmap_seven_counties) %>%
   group_by(county_fips,tract_fips) %>%
   summarize(uw_school_trips = n(),
             w_school_trips = sum(wtperfin))
@@ -632,7 +632,7 @@ finalize_plot(school_trips_map2,
 
 ### Tracts
 tract_sf_tt <- sf::read_sf("V:/Demographic_and_Forecast/Census/2000/Geography/TractILne11co_Census_2000.shp") %>%
-  filter(FIPSSTCO %in% cmap_state_counties)
+  filter(FIPSSTCO %in% cmap_state_seven_counties)
 
 
 # Identify the locations of schools
@@ -734,7 +734,7 @@ finalize_plot(school_trips_map4,
 county_schools_comparison <-
   school_county_locations_mdt %>%
   rename(school_county_fips = county_fips) %>%
-  filter(school_county_fips %in% cmap_counties) %>%
+  filter(school_county_fips %in% cmap_seven_counties) %>%
   mutate(survey = "mdt") %>%
   rbind(school_county_locations_tt %>%
           mutate(survey = "tt")) %>%
@@ -749,7 +749,7 @@ county_schools_comparison <-
             mutate(survey = "tt")) %>%
       mutate(name = "Tracts with schools") %>%
       rename(value = n)) %>%
-  filter(school_county_fips %in% cmap_counties) %>%
+  filter(school_county_fips %in% cmap_seven_counties) %>%
   mutate(school_county_fips = recode(school_county_fips,
                                      "31" = "Cook",
                                      "43" = "DuPage",
@@ -806,7 +806,7 @@ finalize_plot(school_trips_p5,
 # ### Calculate proportions for TT
 # all_school_county_mode_c_tt <-
 #   all_school_tt %>%
-#   filter(home_county %in% cmap_counties) %>%
+#   filter(home_county %in% cmap_seven_counties) %>%
 #   group_by(mode_c,home_county) %>%
 #   summarize(mode_c_total = sum(weight)) %>%
 #   group_by(home_county) %>%
@@ -816,7 +816,7 @@ finalize_plot(school_trips_p5,
 # ### Calculate proportions for MDT
 # all_school_county_mode_c_mdt <-
 #   all_school_mdt %>%
-#   filter(home_county %in% cmap_counties) %>%
+#   filter(home_county %in% cmap_seven_counties) %>%
 #   group_by(mode_c,home_county) %>%
 #   summarize(mode_c_total = sum(wtperfin)) %>%
 #   group_by(home_county) %>%

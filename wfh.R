@@ -143,7 +143,7 @@ wfh_mdt_all %>% # 17,656 records
 
 # Breakdown of tc behavior by home county
 wfh_mdt_all %>% # 17,656 records
-  filter(home_county %in% cmap_counties) %>% # 17,220 records
+  filter(home_county %in% cmap_seven_counties) %>% # 17,220 records
   group_by(home_county) %>%
   summarize(tc_pct = weighted.mean(x = tc,w = wtperfin),
             n = sum(wtperfin)) %>%
@@ -364,7 +364,7 @@ write.csv(tc13,"tc13.csv")
 #
 # coords_map <-
 #   ggplot() +
-#   geom_point(data = wfh_worktrips_person_level %>% filter(combined_tc_wfh == 1) %>% filter(home_county %in% cmap_counties),
+#   geom_point(data = wfh_worktrips_person_level %>% filter(combined_tc_wfh == 1) %>% filter(home_county %in% cmap_seven_counties),
 #              aes(x = home_long, y = home_lat),
 #              fill = "red",
 #              shape=23,

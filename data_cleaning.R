@@ -4,16 +4,19 @@
 # - mdt: this table represents the trips taken in the MDT survey, with added
 #   characteristics about the person, household, and location of the trip. Trips
 #   that are within the same "place group" are collapsed into one trip with the
-#   cumulative travel time, distance, and start/end times. Trips that leave the
-#   CMAP region or are greater than 100 miles are excluded. Mode, purpose,
-#   income, and race and ethnicity are added and recoded, using lists and
-#   vectors from recoding.R where relevant.
+#   cumulative travel time, distance, and start/end times. Trips that neither
+#   start nor end in the CMAP region or are greater than 100 miles are excluded.
+#   Mode, purpose, income, and race and ethnicity are added and recoded, using
+#   lists and vectors from recoding.R where relevant.
 #
 # - tt: this table represents the trips taken in the TT survey, with added
 #   characteristics about the person, household, and location of the trip. Trips
 #   on the weekend are excluded and weights are adjusted to account for surveys
-#   that had two weekday trip diaries. Trips out of the CMAP region and trips
-#   greater than 100 miles are also excluded.
+#   that had two weekday trip diaries. Trips that neither start nor end in Cook,
+#   Kane, Kendall, McHenry, Lake, DuPage, Will, DeKalb, or Grundy County are
+#   excluded. Trips greater than 100 miles are also excluded. Mode, purpose, and
+#   income are added and recoded, using lists and vectors from recoding.R where
+#   relevant.
 #
 # - mdt_all_respondents and tt_all_respondents: these tables includes person and
 #   household information for all respondents in the survey, whether or not they
@@ -45,27 +48,95 @@ setwd("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation
 
 # trips
 trips <- read_csv("place.csv") %>%
-  select(sampno, locno, perno, placeno, placeGroup, mode, arrtime, deptime, travtime, tpurp, distance, hdist)
+  select(sampno, perno, locno, placeno, # Identifiers for the household (sampno),
+                     # the person (perno), the destination of the trip (locno),
+                     # and the order in which that place was visited in the
+                     # context of the entire day (placeno).
+
+         placeGroup, # A supplement for placeno that combines continuous trips
+                     # that were artificially broken apart into multiple
+                     # segments.
+
+         tpurp,      # The purpose of the trip.
+         mode,       # The mode of the trip.
+
+         arrtime,    # The arrival time to the place identified above. This
+                     # represents the end time of the trip to the identified
+                     # place.
+         deptime,    # The departure time from the place identified above. This
+                     # represents the start time of the next trip (if
+                     # applicable).
+
+         travtime,   # The travel time of the trip.
+
+         distance,   # The network distance of the trip.
+         hdist       # The haversine distance of the trip (used for comparisons
+                     # with Travel Tracker)
+         )
 
 # person info
 ppl <- read_csv("person.csv") %>%
-  select(sampno, perno, age, aage, schol, smode, hisp, race, pertrips,
-         wtperfin, tcoff, tcdays, emply_ask, jobs, wplace, wmode, wtrav)
+  select(sampno, perno, # Identifiers for household (sampno) and person (perno)
+
+         age,        # The age (in years) of the respondent.
+         aage,       # Range of ages (only for those without an answer to age).
+
+         schol,      # School enrollment status.
+         smode,      # Regular mode used to get to school.
+
+         hisp,       # The individual's status as Hispanic/non-Hispanic
+         race,       # The individual's race (self-identified).
+
+         pertrips,   # The number of trips taken by the traveler.
+
+         tcoff,      # Whether or not telecommuting is offered by the
+                     # respondent's workplace.
+         tcdays,     # How often the respondent telecommutes.
+
+         emply_ask,  # Is the respondent employed?
+         jobs,       # How many jobs does the respondent report having?
+
+         wplace,     # What kind of workplace does the respondent have (i.e., a
+                     # fixed workplace, work at home, etc.)?
+         wmode,      # How does the respondent usually get to work?
+         wtrav,      # How many times a week does the respondent travel to work?
+
+         wtperfin    # The weight for the respondent.
+         )
 
 # household info
 hh <- read_csv("household.csv") %>%
-  select(sampno, hhinc, hhveh, travday, wthhfin)
+  select(sampno,     # Identifier for the household.
+         hhinc,      # Household income (in dollars).
+         hhveh,      # Number of vehicles in the household.
+         travday,    # The day of the week for the household's travel diary.
+         wthhfin)    # The weight for the household.
 
 # location file w/region flag
 region <- read_csv("location.csv") %>%
-  select(sampno, locno, loctype, out_region, county_fips, tract_fips, home, latitude, longitude)
+  select(sampno,locno, # Identifier for the household (sampno) and location
+                     # (locno)
+
+         loctype,    # The type of location (e.g., home, work, school).
+
+         out_region, # Whether the location is outside the CMAP modeled region.
+
+         state_fips,county_fips,tract_fips, # The state, tract, and county FIPS
+                     # codes for the location
+
+         home,       # Whether the location is a designated home location.
+
+         latitude, longitude # The lat/long coordinates of the place.
+         )
 
 # Trip chains
 chains <- read_csv("chains.csv")
 
 # Travel zones
 zones <- read_csv("zones.csv") %>%
-  select(sampno,cluster)
+  select(sampno,     # The household identifier.
+         cluster)    # Designates the household's inclusion in one of 11 travel
+                     # zones, used for weighting the overall survey.
 
 # home location flag
 home_wip <- region %>%
@@ -76,6 +147,7 @@ home_wip <- region %>%
          home_lat = latitude,
          home_long = longitude) %>%
   distinct(sampno,home_county,.keep_all = TRUE) # keep distinct home locations based on sample
+
 
 # There are 68 households coded as having home locations in multiple counties. Identify them.
 two_homes <- (home_wip %>%
@@ -181,15 +253,53 @@ setwd("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation
 
 # Household
 tt_hh <- read_csv("hh_public.csv") %>%
-  select(SAMPN, SURVEY, ASSN, DAY, HHVEH, INCOM)
+  select(MPO,        # Whether the person is a respondent for the CMAP survey
+                     # (1) or the NIRPC survey (2).
+
+         SAMPN,      # The household identifier.
+         SURVEY,     # Whether the household had a 1- or 2-day survey.
+         DAY,        # The day of the week of the travel day.
+         HHVEH,      # The number of household vehicles.
+         INCOM)      # Household income.
 
 # people
 tt_ppl <- read_csv("per_public.csv") %>%
-  select(SAMPN, PERNO, MPO_per = MPO, SURVEY, PTRIPS1, PTRIPS2, AGE, AGEB, SCHOL, SMODE, HISP, RACE, WGTP)
+  select(SAMPN,PERNO,# The identifier for households (SAMPN) and person (PERNO).
+
+         PTRIPS1, PTRIPS2, # The number of trips taken by the traveler on the
+                     # first day of the travel diary (PTRIPS1) and, if
+                     # applicable, on the second day (PTRIPS2).
+
+         AGE,        # Age (in years). 99 is "Don't know/refused."
+         AGEB,       # Range of ages (for those who did not provide an age).
+
+         SCHOL,      # Status of school enrollment.
+         SMODE,      # Mode regularly used to get to school.
+
+         WGTP        # The weight for the respondent.
+         )
 
 # trips
 tt_place <- read_csv("place_public.csv") %>%
-  select(MPO, SAMPN, PERNO, DAYNO, PLANO, locno, TPURP, MODE, DIST, TRPDUR, ARR_HR, ARR_MIN, DEP_HR, DEP_MIN)
+  select(SAMPN, PERNO, DAYNO, PLANO, locno, # Identifiers for the household
+                     # (SAMPN), person (PERNO), survey day (DAYNO), order of
+                     # place visited (PLANO), and location visited (locno).
+
+         TPURP,      # The purpose of the trip.
+         MODE,       # The mode of the trip.
+
+         DIST,       # The haversine distance from the start of the trip (i.e.,
+                     # the location of the previous record) to the end of the
+                     # trip at this location.
+         TRPDUR,     # The duration of the trip in minutes.
+
+         ARR_HR, ARR_MIN, # The arrival hour and minute at the place in this
+                     # record. This represents the end of the trip identified by
+                     # this record.
+         DEP_HR, DEP_MIN  # The departure hour and minute from the place in this
+                     # record. This represents the beginning of the next trip
+                     # (if applicable).
+         )
 
 # Location file
 tt_location <- read.csv("loc_public.csv") %>%
@@ -209,7 +319,7 @@ tt_home <- tt_location %>%
              tt_place %>% select(SAMPN,PERNO,PLANO,locno),
              by = c("LOCNO" = "locno"))
 
-# Check - is each sample associated with exactly one home
+# # Check - is each sample associated with exactly one home
 # test1 <- tt_home %>% distinct(SAMPN,LOCNO,home_county,.keep_all = TRUE)
 #
 # number <- test1 %>%
@@ -243,7 +353,7 @@ tt_home <- tt_home %>% # 105,554 records
 # Combine datasets
 tt <- tt_place %>% # 218,945 records
   inner_join(tt_ppl, by = c("SAMPN", "PERNO")) %>% # 218,945 records
-  inner_join(tt_hh, by = c("SAMPN", "SURVEY")) %>% # 218,945 records
+  inner_join(tt_hh, by = c("SAMPN")) %>% # 218,945 records
   inner_join(tt_location, by = c("locno" = "LOCNO")) %>% # 218,945 records
   left_join(tt_home, by = "SAMPN") # 218,945 records (58 records lack a home county; they are kept for analyses that do not rely on home location)
 
@@ -319,8 +429,9 @@ tt <- tt %>%
 
 # Create a TT dataset of all respondents (regardless of trip behavior)
 tt_all_respondents <- tt_ppl %>% # 32,366 records
-  inner_join(tt_hh, by = c("SAMPN", "SURVEY")) %>% # 32,366 records
-  left_join(tt_home, by = "SAMPN") # 32,366 records (22 records lack a home county; they are kept for analyses that do not rely on home location)
+  inner_join(tt_hh, by = c("SAMPN")) %>% # 32,366 records
+  left_join(tt_home, by = "SAMPN") # 32,366 records (22 records lack a home
+    # county; they are kept for analyses that do not rely on home location)
 
 
 #################################################

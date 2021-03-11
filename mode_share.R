@@ -80,9 +80,9 @@ mdt_mode_all <-
 
 mdt_mode_counties <-
   pct_calculator(mdt_base_3 %>%
-                   filter(home_county %in% cmap_counties) %>%
+                   filter(home_state == 17 & home_county %in% cmap_seven_counties) %>%
                    rbind(mdt_base_3 %>%
-                           filter(home_county %in% cmap_counties) %>%
+                           filter(home_state == 17 & home_county %in% cmap_seven_counties) %>%
                            mutate(home_county = "CMAP region")),
                  breakdown_by = "mode_c",
                  second_breakdown = "home_county",

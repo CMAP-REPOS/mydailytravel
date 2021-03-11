@@ -207,7 +207,7 @@ tnc %>%
 # Usage by home county
 tnc %>%
   filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
-  filter(home_county %in% cmap_counties) %>%
+  filter(home_county %in% cmap_seven_counties) %>%
   group_by(home_county) %>%
   summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
             n = n()) %>%
@@ -216,7 +216,7 @@ tnc %>%
 # Cost by home county
 tnc %>%
   filter(tnc_cost>0) %>%
-  filter(home_county %in% cmap_counties) %>%
+  filter(home_county %in% cmap_seven_counties) %>%
   group_by(home_county) %>%
   summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
             n = n()) %>%
