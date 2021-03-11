@@ -1,0 +1,1 @@
+While this repo is primarily for the use of the primary author (Daniel Comeaux), if anyone comes along and has suggestions or input, those would certainly be welcome! Please share those by creating a new issue.
