@@ -153,7 +153,7 @@ daily_travelers_tt %>%
 #   left_join(tt_place, by = c("SAMPN","PERNO")) %>%
 #   View()
 
-# Calculate summary statistics by county
+# Calculate summary statistics
 avgtravel_tt %>%
   summarize(
     total_distance = sum(dist_weight),
