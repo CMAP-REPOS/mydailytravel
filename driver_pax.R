@@ -35,7 +35,7 @@ driver_pax_mdt <-
   filter(age < 90,               #
          age >= 18 |             #
            # Keep those who are 18 or older, OR
-           age < 0 & aage %in% c(5,6,7)) %>%
+           (age < 0 & aage %in% c(5,6,7))) %>%
            # age buckets that are > 18
   # Keep only trips with > 0 distance
   filter(distance_pg > 0) %>%    #
@@ -126,7 +126,7 @@ driver_pax_p1 <-
   # Create ggplot object
   ggplot(aes(y = age_bin, x = pct, pattern = type)) +
   # Use "geom_col_pattern" to add texture to a subset of columns
-  geom_col_pattern(aes(fill = survey),
+  ggpattern::geom_col_pattern(aes(fill = survey),
                    color = "white",
                    pattern_fill = "black",
                    pattern_angle = 45,
@@ -149,7 +149,7 @@ driver_pax_p1 <-
   theme_cmap(gridlines = "v", vline = 0) +
   cmap_fill_discrete(palette = "mobility") +
   # Adjust x axis labels
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1),limits = c(0,.25)) +
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),limits = c(0,.27)) +
   # Adjust legend for formatting
   guides(pattern = guide_legend(override.aes = list(fill = "white", color = "black")),
          fill = guide_legend(override.aes = list(pattern = "none")))
@@ -158,13 +158,15 @@ driver_pax_p1 <-
 finalize_plot(driver_pax_p1,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver, over time and by age.",
-              caption = "Note: Excludes trips out of the CMAP region, as well as
-              travelers younger than 18 and older than 89.<br><br>
-              Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
+              caption = "Note: Excludes travelers younger than 18 and older than
+              89.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of
+              Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p1",
               mode = "png",
-              width = 11.3,
-              height = 6.3,
+              # width = 11.3,
+              # height = 6.3,
               overwrite = T
               )
 
@@ -232,9 +234,11 @@ driver_pax_p2 <- rbind(driver_pax_inc_mdt %>%
 finalize_plot(driver_pax_p2,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver, over time and by income.",
-              caption = "Note: Excludes trips out of the CMAP region, as well as
-              travelers younger than 18 and older than 89.<br><br>
-              Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
+              caption = "Note: Excludes travelers younger than 18 and older than
+              89.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of
+              Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p2",
               mode = "png",
               width = 11.3,
@@ -281,16 +285,16 @@ driver_pax_p3 <-
 finalize_plot(driver_pax_p3,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver,  by race and ethnicity.",
-              caption = "Note: Excludes trips out of the CMAP region, as well as
-              travelers younger than 18 and older than 89. \"Hispanic\" includes
-              all travelers who identified as Hispanic. Other groups (e.g.,
-              \"White\") are non-Hispanic.
+              caption = "Note: Excludes travelers younger than 18 and older than
+              89. \"Hispanic\" includes all travelers who identified as Hispanic.
+              Other groups (e.g., \"White\") are non-Hispanic.
               <br><br>
-              Source: CMAP analysis of My Daily Travel surveys.",
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel survey.",
               filename = "driver_pax_p3",
               mode = "png",
-              height = 6.3,
-              width = 11.3,
+              # height = 6.3,
+              # width = 11.3,
               overwrite = T
 )
 
@@ -344,12 +348,12 @@ driver_pax_p4 <-
 finalize_plot(driver_pax_p4,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver, over time, by race and income.",
-              caption = "Note: Excludes trips out of the CMAP region, as well as
-              travelers younger than 18 and older than 89.\"Hispanic\" includes
-              all travelers who identified as Hispanic. Other groups (e.g.,
-              \"White\") are non-Hispanic.
+              caption = "Note: Excludes travelers younger than 18 and older than
+              89.\"Hispanic\" includes all travelers who identified as Hispanic.
+              Other groups (e.g., \"White\") are non-Hispanic.
               <br><br>
-              Source: CMAP analysis of Travel Tracker and My Daily Travel surveys.",
+              Source: Chicago Metropolitan Agency for Planning analysis of
+              Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p4",
               mode = "png",
               width = 11.3,

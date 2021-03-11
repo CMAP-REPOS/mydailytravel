@@ -1,8 +1,5 @@
 # This script analyzes travel behavior for individuals that work from home
 # and/or telecommute.
-#
-# NOTE: I need to think more about the nuances of individuals that telecommute
-# vs individuals that work at home and also travel around (e.g., realtors)
 
 #################################################
 #                                               #
@@ -269,12 +266,13 @@ finalize_plot(wfh_p2,
               trips. Due to low sample sizes, work trips for travelers that
               telecommute or work from home 4+ days per week are excluded.
               <br><br>
-              Source: CMAP analysis of My Daily Travel data.",
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel data.",
               filename = "wfh_p2",
               mode = "png",
               overwrite = T,
-              height = 6.3,
-              width = 11.3
+              # height = 6.3,
+              # width = 11.3
               )
 
 

@@ -130,11 +130,13 @@ modes_of_tpurps_p1 <-
 
 finalize_plot(modes_of_tpurps_p1,
               "Mode share of dining trips, 2019.",
-              "Source: CMAP analysis of My Daily Travel data. \"By car\"
-              includes trips as either a driver of a passenger of a personal
-              vehicle (not including services like taxis or TNCs). \"Other
-              modes\" includes transit, biking, and all other modes. Unlabeled
-              bars have less than 5 percent mode share.",
+              "Note: \"By car\" includes trips as either a driver of a passenger
+              of a personal vehicle (not including services like taxis or TNCs).
+              \"Other modes\" includes transit, biking, and all other modes.
+              Unlabeled bars have less than 5 percent mode share.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel data. ",
               # width = 11.3,
               # height = 6.3,
               filename = "modes_of_tpurps_p1",
@@ -194,11 +196,13 @@ modes_of_tpurps_p2 <-
 
 finalize_plot(modes_of_tpurps_p2,
               "Mode share of health trips, 2019.",
-              "Source: CMAP analysis of My Daily Travel data. \"By car\"
-              includes trips as either a driver of a passenger of a personal
-              vehicle (not including services like taxis or TNCs). \"Other
-              modes\" includes walking, biking, and all other modes. Unlabeled
-              bars have less than 5 percent mode share.",
+              "Note: \"By car\" includes trips as either a driver of a passenger
+              of a personal vehicle (not including services like taxis or TNCs).
+              \"Other modes\" includes walking, biking, and all other modes.
+              Unlabeled bars have less than 5 percent mode share.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel data. ",
               # width = 11.3,
               # height = 6.3,
               filename = "modes_of_tpurps_p2",
@@ -273,11 +277,13 @@ modes_of_tpurps_p3 <-
 
 finalize_plot(modes_of_tpurps_p3,
               "Mode share of trips to visit friends and family, 2019.",
-              "Source: CMAP analysis of My Daily Travel data. \"By car\"
-              includes trips as either a driver of a passenger of a personal
-              vehicle (not including services like taxis or TNCs). \"Other
-              modes\" includes transit, biking, and all other modes. Unlabeled
-              bars have less than 5 percent mode share.",
+              "Note: \"By car\" includes trips as either a driver of a passenger
+              of a personal vehicle (not including services like taxis or TNCs).
+              \"Other modes\" includes transit, biking, and all other modes.
+              Unlabeled bars have less than 5 percent mode share.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel data. ",
               # width = 6.5,
               # height = 4,
               overwrite = T,

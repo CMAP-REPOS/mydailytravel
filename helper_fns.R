@@ -1,16 +1,43 @@
-
-# Helper function to order titles with strings wrapped
+################################################################################
+# Purpose: A wrapper for stringr::str_wrap that enables text wrapping of
+# string factors in charts.
+################################################################################
+# Inputs: * x, a vector of strings.
+#         * ..., arguments for the str_wrap function
+################################################################################
 str_wrap_factor <- function(x, ...) {
   levels(x) <- stringr::str_wrap(levels(x), ...)
   x
 }
 
 
+################################################################################
+# Purpose: Calculate percentage breakdowns of data based on chosen fields.
+#
+################################################################################
+# Inputs: * data, the table to be analyzed.
+#         * subset_of and subset, a string and a vector of strings. Defaults to
+#           NULL. If included, the function will filter the column "subset_of"
+#           for inclusion in the strings given in "subset".
+#         * breakdown_by, a string. This should be the name of the column upon
+#           which the percentage breakdown calculations should be performed.
+#         * weight, a string. Defaults to NULL. If included, this should be the
+#           name of the column in which data weights can be found.
+#         * second_breakdown, a string. Defaults to NULL. If included, this
+#           enables the user to add a second breakdown column for calculation.
+#         * survey, a string. Defaults to NULL. If included, the output table
+#           will include a column called "survey" with the provided value as the
+#           entry for each record.
+################################################################################
+# Outputs: This function calculates the rolling average of trips in motion
+#          within a specified set of categories (e.g., by mode) over the course
+#          of a single day, running from 3am to 3am.
+################################################################################
 pct_calculator <- function(data,
-                           subset = NULL,
                            subset_of = NULL,
+                           subset = NULL,
                            breakdown_by,
-                           weight,
+                           weight = NULL,
                            second_breakdown = NULL,
                            survey = NULL) {
 
@@ -22,35 +49,61 @@ pct_calculator <- function(data,
       filter(.data[[subset_of]] %in% subset)
   }
 
-  if (is.null(second_breakdown)) {
-    percents <-
-      relevant_data %>%
-      # Create totals
-      mutate(total = sum(.data[[weight]]),
-             total_n = n()) %>%
-      # Calculate percentages
-      group_by(.data[[breakdown_by]]) %>%
-      summarize(breakdown_total = sum(.data[[weight]]),
-                total = median(total),
-                total_n = median(total_n),
-                breakdown_n = n()) %>%
-      mutate(pct = breakdown_total / total)
-  }
-  else {
-    percents <-
-      relevant_data %>%
-      # Create totals
-      group_by(.data[[second_breakdown]]) %>%
-      mutate(total = sum(.data[[weight]]),
-             total_n = n()) %>%
-      # Calculate percentages
-      group_by(.data[[breakdown_by]],.data[[second_breakdown]]) %>%
-      summarize(breakdown_total = sum(.data[[weight]]),
-                total = median(total),
-                total_n = median(total_n),
-                breakdown_n = n()) %>%
-      mutate(pct = breakdown_total / total)
+  if (!is.null(weight)) {
+    if (is.null(second_breakdown)) {
+      percents <-
+        relevant_data %>%
+        # Create totals
+        mutate(total = sum(.data[[weight]]),
+               total_n = n()) %>%
+        # Calculate percentages
+        group_by(.data[[breakdown_by]]) %>%
+        summarize(breakdown_total = sum(.data[[weight]]),
+                  total = median(total),
+                  total_n = median(total_n),
+                  breakdown_n = n()) %>%
+        mutate(pct = breakdown_total / total)
+    }
+    else {
+      percents <-
+        relevant_data %>%
+        # Create totals
+        group_by(.data[[second_breakdown]]) %>%
+        mutate(total = sum(.data[[weight]]),
+               total_n = n()) %>%
+        # Calculate percentages
+        group_by(.data[[breakdown_by]],.data[[second_breakdown]]) %>%
+        summarize(breakdown_total = sum(.data[[weight]]),
+                  total = median(total),
+                  total_n = median(total_n),
+                  breakdown_n = n()) %>%
+        mutate(pct = breakdown_total / total)
 
+    }
+  } else {
+    if (is.null(second_breakdown)) {
+      percents <-
+        relevant_data %>%
+        # Create totals
+        mutate(total = n()) %>%
+        # Calculate percentages
+        group_by(.data[[breakdown_by]]) %>%
+        summarize(total = median(total),
+                  breakdown = n()) %>%
+        mutate(pct = breakdown / total)
+    }
+    else {
+      percents <-
+        relevant_data %>%
+        # Create totals
+        group_by(.data[[second_breakdown]]) %>%
+        mutate(total = n()) %>%
+        # Calculate percentages
+        group_by(.data[[breakdown_by]],.data[[second_breakdown]]) %>%
+        summarize(total = median(total),
+                  breakdown = n()) %>%
+        mutate(pct = breakdown / total)
+    }
   }
 
   percents <-
@@ -63,10 +116,6 @@ pct_calculator <- function(data,
 
   return(percents)
 }
-
-
-# pct_calculator(mdt_base_2,"bike","mode_c","tpurp_c",weight = "wtperfin",survey = "mdt")
-
 
 
 ################################################################################

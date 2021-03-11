@@ -11,7 +11,7 @@ library(ggplot2)
 library(tidyverse)
 library(cmapplot)
 
-source("pct_calculator.R")
+source("helper_fns.R")
 
 #################################################
 #                                               #
@@ -130,10 +130,11 @@ finalize_plot(tpurps_of_modes_p1,
               "Note: Travel Tracker did not have a 'Carpool' category, and so
               'Passenger (all)' includes both types of trips.
               <br><br>
-              Source: CMAP analysis of MDT and TT data.",
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel and Travel Tracker data.",
               filename = "tpurps_of_modes_p1",
-              height = 6.3,
-              width = 11.3,
+              # height = 6.3,
+              # width = 11.3,
               mode = "png",
               overwrite = T
               )
@@ -174,9 +175,10 @@ tpurps_of_modes_p2 <-
 
 finalize_plot(tpurps_of_modes_p2,
               "Trip purposes of bike trips in 2019, personal vs. bike share",
-              "Source: CMAP analysis of MDT data.",
-              width = 11.3,
-              height = 6.3,
+              "Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel and Travel Tracker data.",
+              # width = 11.3,
+              # height = 6.3,
               filename = "tpurps_of_modes_p2",
               mode = "png",
               overwrite = T)
@@ -275,15 +277,16 @@ tpurps_of_modes_p3 <-
              vjust = 0,
              label.size = 0,
              label.padding = unit(.5,"lines")) +
-  scale_y_continuous(labels = scales::label_comma(scale = 1))
+  scale_y_continuous(labels = scales::label_comma(scale = 1),limits = c(0,215000))
 
 finalize_plot(tpurps_of_modes_p3,
               "Change in daily TNC and taxi trips, 2008 vs. 2019.",
-              "Source: CMAP analysis of MDT and TT data.",
+              "Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel and Travel Tracker data.",
               filename = "tpurps_of_modes_p3",
               mode = "png",
-              height = 6.3,
-              width = 11.3,
+              # height = 6.3,
+              # width = 11.3,
               overwrite = T)
 
 ################################################################################

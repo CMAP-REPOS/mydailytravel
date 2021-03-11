@@ -186,9 +186,9 @@ finalize_plot(mode_share_p1,
               travelers from ages 16 and older.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel and Travel Tracker data.",
-              height = 5.5,
-              width = 11.3,
+              Daily Travel data.",
+              # height = 5.5,
+              # width = 11.3,
               filename = "mode_share_p1",
               mode = "png",
               overwrite = T)
@@ -223,7 +223,7 @@ mode_share_p2 <-
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 10) +
   cmap_fill_discrete(palette = "mobility") +
   scale_x_continuous(n.breaks = 6, labels = scales::label_percent(),
-                     limits = c(-1,.55))
+                     limits = c(-1,.6))
 
 finalize_plot(mode_share_p2,
               title = "Mode share for trips in the CMAP region by household income,
@@ -232,9 +232,9 @@ finalize_plot(mode_share_p2,
               travelers from ages 16 and older.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel and Travel Tracker data.",
-              height = 5.5,
-              width = 11.3,
+              Daily Travel data.",
+              # height = 5.5,
+              # width = 11.3,
               filename = "mode_share_p2",
               mode = "png",
               overwrite = T)
@@ -324,9 +324,9 @@ finalize_plot(mode_share_p4,
               travelers from ages 16 and older.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel and Travel Tracker data.",
-              height = 5.5,
-              width = 11.3,
+              Daily Travel data.",
+              # # height = 5.5,
+              # width = 11.3,
               filename = "mode_share_p4",
               mode = "png",
               overwrite = T)

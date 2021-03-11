@@ -13,10 +13,8 @@ library(ggplot2) # A graphing package
 library(lubridate) # A date handling package
 library(slider) # A package that allows rolling average calculation
 library(cmapplot) # CMAP's custom style package (an extension of ggplot)
-# cmapplot can be installed by running the following code (once per machine)
-# devtools::install_github("CMAP-REPOS/cmapplot")
 
-source("tim_calculator.R")
+source("helper_fns.R")
 
 #################################################
 #                                               #
@@ -145,11 +143,11 @@ trip_times_mode_c_and_chain_mdt_25 <-
   tim_calculator(criteria = tim_mdt_wip$mode_c_chain,
                  crosstab = T,crosstab1 = "mode_c",crosstab2 = "chain")
 
-# Trips in motion by trip chain and mode category (55 minute rolling average)
-trip_times_mode_and_chain_mdt_55 <-
-  tim_calculator(criteria = tim_mdt_wip$mode_chain,
-                 rolling_n = 55,
-                 crosstab = T,crosstab1 = "mode",crosstab2 = "chain")
+# # Trips in motion by trip chain and mode category (55 minute rolling average)
+# trip_times_mode_and_chain_mdt_55 <-
+#   tim_calculator(criteria = tim_mdt_wip$mode_chain,
+#                  rolling_n = 55,
+#                  crosstab = T,crosstab1 = "mode",crosstab2 = "chain")
 
 #################################################################
 #                                                               #
@@ -188,12 +186,14 @@ finalize_plot(trips_in_motion_p1,
               "Trips in motion in the CMAP region by mode on weekdays.",
               "Note: Trips in motion are 25-minute rolling averages.
               <br><br>
-              Source: CMAP analysis of My Daily Travel survey.",
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel survey.",
               filename = "trips_in_motion_p1",
               mode = "png",
               overwrite = TRUE,
-              height = 6.3,
-              width = 11.3)
+              # height = 6.3,
+              # width = 11.3
+              )
 
 # Graph trips in motion by trip chains
 trips_in_motion_p2 <-
@@ -214,12 +214,14 @@ finalize_plot(trips_in_motion_p2,
               "Trips in motion in the CMAP region by trip chain type on weekdays.",
               "Note: Trips in motion are 25-minute rolling averages.
               <br><br>
-              Source: CMAP analysis of My Daily Travel survey.",
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel survey.",
               filename = "trips_in_motion_p2",
               mode = "png",
               overwrite = TRUE,
-              height = 6.3,
-              width = 11.3)
+              # height = 6.3,
+              # width = 11.3
+              )
 
 # Graph trips in motion by mode category, faceting for different chain types
 trips_in_motion_p3 <-
@@ -245,19 +247,21 @@ trips_in_motion_p3 <-
                                "#0084ac","#efa7a7","#67ac00")) +
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
-             legend.max.columns = 10)
+             legend.max.columns = 5)
 
 finalize_plot(trips_in_motion_p3,
               "Trips in motion in the CMAP region by trip chain type on
               weekdays.",
               "Note: Trips in motion are 25-minute rolling averages.
               <br><br>
-              Source: CMAP analysis of My Daily Travel survey.",
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel survey.",
               filename = "trips_in_motion_p3",
               mode = "png",
               overwrite = TRUE,
-              height = 6.3,
-              width = 11.3)
+              # height = 6.3,
+              # width = 11.3
+              )
 
 ################################################################################
 # Drive-thru
@@ -304,9 +308,10 @@ finalize_plot(trips_in_motion_p4,
               weekdays.",
               "Note: Trips in motion are 55-minute rolling averages.
               <br><br>
-              Source: CMAP analysis of My Daily Travel survey.",
-              height = 6.3,
-              width = 11.3,
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel survey.",
+              # height = 6.3,
+              # width = 11.3,
               mode = "png",
               filename = "trips_in_motion_p4",
               overwrite = T)
@@ -356,9 +361,10 @@ finalize_plot(trips_in_motion_p5,
               weekdays.",
               "Note: Trips in motion are 55-minute rolling averages.
               <br><br>
-              Source: CMAP analysis of My Daily Travel survey.",
-              height = 6.3,
-              width = 11.3,
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel survey.",
+              # height = 6.3,
+              # width = 11.3,
               mode = "png",
               filename = "trips_in_motion_p5",
               overwrite = T)
@@ -411,9 +417,10 @@ finalize_plot(trips_in_motion_p6,
               weekdays.",
               "Note: Trips in motion are 55-minute rolling averages.
               <br><br>
-              Source: CMAP analysis of My Daily Travel survey.",
-              height = 6.3,
-              width = 11.3,
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel survey.",
+              # height = 6.3,
+              # width = 11.3,
               mode = "png",
               filename = "trips_in_motion_p6",
               overwrite = T)
@@ -457,9 +464,10 @@ finalize_plot(trips_in_motion_p7,
               weekdays.",
               "Note: Trips in motion are 25-minute rolling averages.
               <br><br>
-              Source: CMAP analysis of My Daily Travel survey.",
-              height = 6.3,
-              width = 11.3,
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel survey.",
+              # height = 6.3,
+              # width = 11.3,
               mode = "png",
               filename = "trips_in_motion_p7",
               overwrite = T)
@@ -468,14 +476,24 @@ finalize_plot(trips_in_motion_p7,
 # Bikes
 ################################################################################
 
+tim_mdt_bike <-
+  tim_mdt_wip %>%
+  # Filter to just the purpose in question
+  filter(mode == "personal bike")
+
+trip_times_bike_and_chain_mdt <-
+  tim_calculator(base_weights = tim_mdt_bike$wtperfin,
+                 trip_interval = tim_mdt_bike$trip_interval,
+                 criteria = tim_mdt_bike$chain,
+                 rolling_n = 55)
+
 # Graph output of trips in motion by purpose for bike trips (personal bike only)
 trips_in_motion_p8 <-
-  trip_times_mode_and_chain_mdt_55 %>%
-  mutate(chain = factor(chain, levels = c("Work trip","Return home (work)",
+  trip_times_bike_and_chain_mdt %>%
+  mutate(chain = factor(identifier, levels = c("Work trip","Return home (work)",
                                           "Shopping trip",
                                           "Return home (shopping)",
                                           "Other trip"))) %>%
-  filter(mode == "personal bike") %>%
   ggplot(aes(x = time_band,y = rolling_count)) +
   geom_area(aes(fill = chain), position = position_stack(reverse = T)) +
   scale_x_datetime(labels = scales::date_format("%H:%M",
@@ -484,7 +502,7 @@ trips_in_motion_p8 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
   scale_fill_discrete(type = c("#009ccc","#72cae5","#cc8200",
                                "#e5b172","#3d6600")) +
-  theme_cmap(gridlines = "hv",
+  theme_cmap(gridlines = "hv",legend.max.columns = 3,
              panel.grid.major.x = element_line(color = "light gray"))
 
 finalize_plot(trips_in_motion_p8,
@@ -492,12 +510,14 @@ finalize_plot(trips_in_motion_p8,
               "Note: Excludes bike share due to limited sample size. Trips in
               motion are 55-minute rolling averages.
               <br><br>
-              Source: CMAP analysis of My Daily Travel survey.",
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel survey.",
               filename = "trips_in_motion_p8",
               mode = "png",
               overwrite = TRUE,
-              height = 6.3,
-              width = 11.3)
+              # height = 6.3,
+              # width = 11.3
+              )
 #
 # # Graph output of trips in motion by purpose for bike trips
 # trips_in_motion_p6 <-

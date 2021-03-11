@@ -143,15 +143,15 @@ daily_travelers_tt %>%
   summarize(total_travelers = sum(weight))
 
 # Identify travelers in one set but not the other
-missing <-
-  daily_travelers_tt_test %>%
-  anti_join(daily_travelers_tt, by = c("SAMPN","PERNO"))
-
-sum(missing$WGTP)
-
-missing %>%
-  left_join(tt_place, by = c("SAMPN","PERNO")) %>%
-  View()
+# missing <-
+#   daily_travelers_tt_test %>%
+#   anti_join(daily_travelers_tt, by = c("SAMPN","PERNO"))
+#
+# sum(missing$WGTP)
+#
+# missing %>%
+#   left_join(tt_place, by = c("SAMPN","PERNO")) %>%
+#   View()
 
 # Calculate summary statistics by county
 avgtravel_tt %>%

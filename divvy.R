@@ -101,6 +101,9 @@ divvy_p1 <-
   trip_times_divvy_counts %>%
   # Relevel user type
   mutate(identifier = factor(identifier, levels = c("Subscriber","Customer"))) %>%
+  mutate(identifier = recode_factor(identifier,
+                                    "Subscriber" = "Subscriber",
+                                    "Customer" = "One-time user")) %>%
   # Create ggplot object
   ggplot(aes(x = time_band,y = rolling_count, fill = identifier)) +
   # Reverse stacking position
@@ -116,15 +119,17 @@ divvy_p1 <-
 
 # Export plot
 finalize_plot(divvy_p1,
-              title = "Divvy trips in motion on an average weekday, by customer type.",
+              title = "Divvy trips in motion on an average Q3 weekday, by
+              customer type.",
               caption = "Note: Trips in motion are 25-minute rolling averages.
-              \"Customer\" means non-subsciber. Analysis is based on total Divvy
-              ridership data from Q3 2019, which had a total of 64 non-holiday
-              weekdays.
+              \"One-time user\" refers to Divvy cusomters that purchased a day
+              pass or one ride. Analysis is based on total Divvy ridership data
+              from Q3 2019, which had a total of 64 non-holiday weekdays.
               <br><br>
-              Source: CMAP analysis of Q3 2019 Divvy ridership data.",
+              Source: Chicago Metropolitan Agency for Planning analysis of Divvy
+              ridership data from July 1 - September 30, 2019.",
               filename = "divvy_p1",
               mode = "png",
-              height = 6.3,
-              width = 11.3,
+              # height = 6.3,
+              # width = 11.3,
               overwrite = T)
