@@ -36,3 +36,4 @@ vignettes/*.pdf
 *.knit.md
 *.png
 tc13.csv
+*.Rproj
