@@ -282,9 +282,6 @@ mdt <- mdt %>%
   select(-c(
     # Flags used for filtering
     out_region_trip,home,
-    # Chain inputs
-    home_to_work,work_to_work,work_to_home,
-    home_to_shop,shop_to_shop,shop_to_home,
     # Original arrival and departures (superseded by pg)
     deptime,arrtime,
     # Deptime_pg - incorporated into new start_times_pg column
@@ -575,26 +572,22 @@ tt <- tt %>%
 mdt <- mdt %>%
   mutate(income = factor(recode(hhinc,
                                 !!!recode_income_detailed_mdt))) %>%
-  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_mdt)) %>%
-  select(-hhinc)
+  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_mdt))
 
 tt <- tt %>%
   mutate(income = factor(recode(INCOM,
                                 !!!recode_income_detailed_tt))) %>%
-  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_tt)) %>%
-  select(-INCOM)
+  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_tt))
 
 mdt_all_respondents <- mdt_all_respondents %>%
   mutate(income = factor(recode(hhinc,
                                 !!!recode_income_detailed_mdt))) %>%
-  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_mdt)) %>%
-  select(-hhinc)
+  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_mdt))
 
 tt_all_respondents <- tt_all_respondents %>%
   mutate(income = factor(recode(INCOM,
                                 !!!recode_income_detailed_tt))) %>%
-  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_tt)) %>%
-  select(-INCOM)
+  mutate(income_c = fct_collapse(income,!!!recode_income_buckets_tt))
 
 # Recode into race and ethnicity groups
 mdt <- mdt %>%
@@ -643,7 +636,10 @@ mdt <- mdt %>%
   mutate(chain = factor(chain,
                         levels = c("Work trip","Return home (work)",
                                    "Shopping trip","Return home (shopping)",
-                                   "Other trip")))
+                                   "Other trip"))) %>% 
+  # Remove chain helper columns
+  select(-c(home_to_work,work_to_work,work_to_home,
+            home_to_shop,shop_to_shop,shop_to_home))
 
 #################################################
 #                                               #
