@@ -30,19 +30,19 @@ age_labels <- c("5 to 9", "10 to 17", "18 to 24", "25 to 29",
                 "30 to 49", "50 to 69","70 to 89")
 
 driver_pax_mdt <-
-  mdt %>%                        # 125091 records
+  mdt %>%                        # 125463 records
   # Keep only travelers from age 18 to 89
-  filter(age < 90,               #
-         age >= 18 |             #
-           # Keep those who are 18 or older, OR
-           (age < 0 & aage %in% c(5,6,7))) %>%
+  filter(age < 90) %>%           # 125366 records
+  # Keep those who are 18 or older, OR
+  filter(age >= 18 |             # 105606 records
            # age buckets that are > 18
+           (age < 0 & aage %in% c(5,6,7))) %>%
   # Keep only trips with > 0 distance
-  filter(distance_pg > 0) %>%    #
+  filter(distance_pg > 0) %>%    # 82749 records
   # Keep only driver or passenger trips, but exclude motorcycles
   filter(mode_c %in% c("driver", #
                        "passenger"),
-         mode != "motorcycle"    # 60077 records
+         mode != "motorcycle"    # 60406 records
          ) %>%
   # Add age bins
   mutate(age_bin = cut(age, breaks = breaks,
@@ -51,14 +51,15 @@ driver_pax_mdt <-
 
 
 driver_pax_tt <-
-  tt %>%                         # 137491 records
-  # Keep only travelers from age 18 to 89
-  filter(AGE < 90,               #
-         AGE >= 18) %>%          #
+  tt %>%                         # 139769 records
+  # Keep only travelers from age 18 to 89 (this handles DK/RF since that is
+  # coded as 99)
+  filter(AGE < 90) %>%           # 136889 records
+  filter(AGE >= 18) %>%          # 112123 records
   # Keep only trips with > 0 distance
-  filter(DIST > 0) %>%           #
+  filter(DIST > 0) %>%           # 85405 records
   # Keep only driver and passenger trips
-  filter(mode_c %in% c("driver", # 71322 records
+  filter(mode_c %in% c("driver", # 71487 records
                        "passenger")) %>%
   # Add age bins
   mutate(age_bin = cut(AGE, breaks = breaks,
@@ -104,10 +105,17 @@ driver_pax_p1 <-
   # Combine data
   rbind(driver_pax_age_mdt %>% select(age_bin,mode_c,pct,survey),
       driver_pax_age_tt  %>% select(age_bin,mode_c,pct,survey)) %>%
+  # Keep only passenger statistics
+  filter(mode_c == "passenger") %>% 
+  # Exclude statistics on passengers without an age (these are included only for
+  # MDT with age buckets).
+  filter(!is.na(age_bin)) %>% 
+  # Remove <18 travelers (since their share is so much higher due to non-drivers)
+  filter(!(age_bin %in% c("5 to 9","10 to 17"))) %>%
   # Factor age bin into desired order
   mutate(age_bin = factor(age_bin,
-                          levels = c("70 to 89","50 to 69","30 to 49","25 to 29",
-                                     "18 to 24","10 to 17","5 to 9"
+                          levels = c("70 to 89","50 to 69","30 to 49",
+                                     "25 to 29","18 to 24"
                                      ))) %>%
   # Create "type" for increasing vs. decreasing
   mutate(type = case_when(
@@ -121,10 +129,14 @@ driver_pax_p1 <-
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel ('19)",
                                 tt = "Travel Tracker ('08)")) %>%
-  # Remove <18 travelers (since their share is so much higher due to non-drivers)
-  filter(mode_c == "passenger" & age_bin != "5 to 9" & age_bin != "10 to 17") %>%
   # Create ggplot object
-  ggplot(aes(y = age_bin, x = pct, pattern = type)) +
+  ggplot(aes(y = age_bin, x = pct, pattern = type)) + 
+  geom_label(aes(label = scales::label_percent(accuracy = .1)(pct),
+                 group = survey),
+             position = position_dodge2(width = 0.9,reverse = T),
+             hjust = 0,
+             label.size = 0,
+             fill = "white") +
   # Use "geom_col_pattern" to add texture to a subset of columns
   ggpattern::geom_col_pattern(aes(fill = survey),
                    color = "white",
@@ -138,18 +150,14 @@ driver_pax_p1 <-
   # Re-assign patterns manually
   scale_pattern_manual(values = c("Increasing passenger share" = "stripe",
                                   "Decreasing passenger share" = "none")) +
-  # Add labels
-  geom_label(aes(label = scales::label_percent(accuracy = .1)(pct),
-                 group = survey),
-             position = position_dodge2(width = 0.9,reverse = T),
-             hjust = 0,
-             label.size = 0,
-             fill = "white") +
+
   # Call CMAP style and palette
   theme_cmap(gridlines = "v", vline = 0) +
   cmap_fill_discrete(palette = "mobility") +
+  
   # Adjust x axis labels
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),limits = c(0,.27)) +
+  
   # Adjust legend for formatting
   guides(pattern = guide_legend(override.aes = list(fill = "white", color = "black")),
          fill = guide_legend(override.aes = list(pattern = "none")))
@@ -179,7 +187,9 @@ rbind(driver_pax_age_mdt,
       driver_pax_age_tt) %>%
   group_by(mode_c,survey) %>%
   summarize(mode_count = sum(breakdown_total)) %>%
-  pivot_wider(id_cols = c("survey"),names_from = "mode_c",values_from = c("mode_count")) %>%
+  pivot_wider(id_cols = c("survey"),
+              names_from = "mode_c",
+              values_from = c("mode_count")) %>%
   mutate(pax_share = passenger/(passenger + driver))
 
 ################################################################################
@@ -206,30 +216,39 @@ driver_pax_inc_tt <-
 # Chart of passenger share by income
 ################################################################################
 
-driver_pax_p2 <- rbind(driver_pax_inc_mdt %>%
-                                   select(income_c,mode_c,pct,survey),
-                                 driver_pax_inc_tt  %>%
-                                   select(income_c,mode_c,pct,survey)) %>%
+driver_pax_p2 <- 
+  # Combine surveys
+  rbind(driver_pax_inc_mdt %>% select(income_c,mode_c,pct,survey),
+        driver_pax_inc_tt  %>% select(income_c,mode_c,pct,survey)) %>%
+  # Keep only pasenger data and exclude those with no household income data
   filter(mode_c == "passenger", income_c != "missing") %>%
+  # Recode for presentation
   mutate(survey = recode_factor(survey,
                                 mdt = "My Daily Travel ('19)",
                                 tt = "Travel Tracker ('08)"),
          income_c = recode_factor(income_c,
-                                  "high" = "High",
-                                  "middle-high" = "Middle-high",
-                                  "middle-low" = "Middle-low",
-                                  "low" = "Low")) %>%
+                                  "high" = "$100,000 or more",
+                                  "middle-high" = "$60,000 to $99,999",
+                                  "middle-low" = "$35,000 to $59,999",
+                                  "low" = "$34,999 or less")) %>%
+  
+  # Create ggplot object
   ggplot(aes(y = income_c, x = pct, fill = survey)) +
   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
-  theme_cmap(gridlines = "v", vline = 0) +
   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(pct),
                  group = survey),
              position = position_dodge2(0.9,reverse = T),
              hjust = 0,
              fill = "white",
              label.size = 0) +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v", vline = 0) +
   cmap_fill_discrete(palette = "mobility") +
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1),limits = c(0,.25))
+  
+  # Adjust axes
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+                     limits = c(0,.25))
 
 finalize_plot(driver_pax_p2,
               title = "Share of weekday car trips in the CMAP region where the
@@ -240,9 +259,9 @@ finalize_plot(driver_pax_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of
               Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p2",
-              mode = "png",
-              width = 11.3,
-              height = 6.3,
+              # mode = "png",
+              # width = 11.3,
+              # height = 6.3,
               overwrite = T
 
 )
@@ -254,7 +273,7 @@ finalize_plot(driver_pax_p2,
 
 ### Same analysis, looking at race and ethnicity instead - only looking at MDT
 ### since TT only asked about race and ethnicity for primary household
-### responder.
+### responder, which would not be comparable with MDT's individual-level data.
 
 driver_pax_race_mdt <-
   pct_calculator(driver_pax_mdt,
@@ -269,16 +288,31 @@ driver_pax_race_mdt <-
 ################################################################################
 
 driver_pax_p3 <-
-  driver_pax_race_mdt %>%
-  select(race_eth,mode_c,pct,survey) %>%
+  # Get data
+  driver_pax_race_mdt %>% select(race_eth,mode_c,pct,survey) %>%
+  # Keep only passenger statistics and exclude those missing race/ethnicity data.
   filter(mode_c == "passenger", race_eth != "missing") %>%
+  # Reformat race/ethnicity for capitalization
+  mutate(race_eth = recode_factor(race_eth,
+                                  "white" = "White",
+                                  "asian" = "Asian",
+                                  "hispanic" = "Hispanic",
+                                  "other" = "Other",
+                                  "black" = "Black")) %>% 
+  
+  # Create ggplot object
   ggplot(aes(y = reorder(race_eth,desc(pct)), x = pct)) +
   geom_col(aes(fill = race_eth)) +
-  theme_cmap(gridlines = "v", legend.position = "none", vline = 0) +
   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(pct)),
              label.size = 0,
              hjust = 0) +
-  cmap_fill_race() +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v", legend.position = "none", vline = 0) +
+  cmap_fill_race(white = "White",asian = "Asian",hispanic = "Hispanic",
+                 other = "Other",black = "Black") +
+  
+  # Adjust axes
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),
                      limits = c(0,.21))
 
@@ -322,27 +356,45 @@ driver_pax_inc_race_mdt <-
 
 # Chart of drivers and passengers by income and race/ethnicity
 driver_pax_p4 <-
+  # Get data
   driver_pax_inc_race_mdt %>%
+  # Filter for appropriate data
   filter(mode_c == "passenger", income_c != "missing", race_eth != "missing") %>%
+  # Reformat
   mutate(income_c = recode_factor(income_c,
-                                  "low" = "Low",
-                                  "middle-low" = "Middle-low",
-                                  "middle-high" = "Middle-high",
-                                  "high" = "High"),
-         race_eth = factor(race_eth, levels = c("white","asian","black","hispanic","other"))) %>%
+                                  "high" = "$100,000 or more",
+                                  "middle-high" = "$60,000 to $99,999",
+                                  "middle-low" = "$35,000 to $59,999",
+                                  "low" = "$34,999 or less"),
+         race_eth = recode_factor(race_eth,
+                                  "white" = "White",
+                                  "asian" = "Asian",
+                                  "hispanic" = "Hispanic",
+                                  "other" = "Other",
+                                  "black" = "Black")) %>% 
+  
+  # Create ggplot object
   ggplot(aes(y = income_c, x = mode_share, fill = race_eth)) +
   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
-  theme_cmap(gridlines = "v",
-             axis.text.y = element_blank()) +
   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_share),
                  group = race_eth),
              position = position_dodge2(0.9,reverse = T),
              hjust = 0,
              label.size = 0,
              fill = "white") +
-  cmap_fill_race() +
+  
+  # CMAP style
+  theme_cmap(gridlines = "v",
+             axis.text.y = element_blank()) +
+  cmap_fill_race(white = "White",asian = "Asian",hispanic = "Hispanic",
+                 other = "Other",black = "Black") +
+  
+  
+  # Facet
   facet_wrap(~income_c,scales = "free_y") +
-  scale_x_continuous(labels = scales::label_percent(),limits = c(0,.65))
+  
+  # Adjust axis
+  scale_x_continuous(labels = scales::label_percent(),limits = c(0,.3))
 
 
 finalize_plot(driver_pax_p4,
@@ -355,11 +407,12 @@ finalize_plot(driver_pax_p4,
               Source: Chicago Metropolitan Agency for Planning analysis of
               Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p4",
-              mode = "png",
-              width = 11.3,
-              height = 6.3,
+              # # # mode = "png",
+              # # width = 11.3,
+              # height = 6.3,
               overwrite = T
 )
+
 ################################################################################
 # ARCHIVE - Explaration of "Other" category
 ################################################################################
