@@ -1,5 +1,3 @@
-#### TO BE REVIEWED
-
 # This script analyzes travel behavior for individuals that work from home
 # and/or telecommute.
 
@@ -10,10 +8,10 @@
 #################################################
 
 library(ggplot2)
+library(matrixStats)
 library(tidyverse)
 library(cmapplot)
 library(sf)
-library(matrixStats)
 
 #################################################
 #                                               #
@@ -29,14 +27,16 @@ source("data_cleaning.R")
 # Identify respondents who report that they don't travel for work and have a
 # diary entry for working from home but did not report home as their workplace
 extra_wfhers <- mdt %>%
-  filter(wmode == 18 | wtrav == 0, wplace != 2, tpurp == "Worked at home (paid)") %>%
+  filter(wmode == 18 | wtrav == 0, 
+         wplace != 2, 
+         tpurp == "Worked at home (paid)") %>%
   mutate(identifier = paste(sampno,perno,sep = "_")) %>%
   select(identifier)
 
 # Summary statistics (includes individuals with no trips)
 wfh_mdt_all <-
   mdt_all_respondents %>% # 30,683 records
-  # keep only employed respondents (either those who report having 1+ jobs or
+  # Keep only employed respondents (either those who report having 1+ jobs or
   # those who report being employed)
   filter(emply_ask == 1 | jobs > 0) %>% # 17,656 records
   # Create a flag for people who telecommute and/or work from home
@@ -44,10 +44,13 @@ wfh_mdt_all <-
            case_when(
              tcdays >= 1 ~ 1,
              TRUE ~ 0),
-         wfh = case_when(
-           wplace == 2 ~ 1,
-           paste(sampno,perno,sep = "_") %in% extra_wfhers$identifier ~ 1,
-           TRUE ~ 0),
+         
+         wfh = 
+           case_when(
+             wplace == 2 ~ 1,
+             paste(sampno,perno,sep = "_") %in% extra_wfhers$identifier ~ 1,
+             TRUE ~ 0),
+         
          tc_frequency =
            case_when(
              tcdays < 1 ~ 0,
@@ -58,8 +61,8 @@ wfh_mdt_all <-
   # Create a consolidated flag for wfh and tc behavior
   mutate(combined_tc_wfh =
            case_when(
-             tc_frequency == 1 ~ 1, # Flag all infrequent telecommuters
-             tc_frequency == 2 ~ 2, # Then flag all frequent telecommuters
+             tc_frequency == 1 ~ 1, # Flag all 1-3 day/week telecommuters
+             tc_frequency == 2 ~ 2, # Then flag all 4-5 day/week telecommuters
              wfh == 1 ~ 2,          # Add any WFHers that are not reporting themselves in either of the first two categories
              tc_frequency == 0 ~ 0  # Finally add any remaining to the "none" category
            )) %>%
@@ -90,13 +93,13 @@ wfh_mdt <-
   # Remove trips by individuals that do not appear in the filtered list of
   # employed individuals above. For those that are in the list, add the flags we
   # developed on telecommuting and working from home.
-  inner_join(wfh_mdt_all %>%
+  inner_join(wfh_mdt_all %>% # 83291 records
                select(sampno,perno,tc,wfh,tc_frequency,combined_tc_wfh),
              by = c("sampno","perno"))
 
 # Summarize data at the traveler level
 wfh_person_level <-
-  wfh_mdt %>% # 83025 records
+  wfh_mdt %>% # 83291 records
   group_by(sampno,perno) %>% # 17524 groups
   summarize(wfh_today = first(wfh_today),
             wfo_today = first(wfo_today),
@@ -104,11 +107,13 @@ wfh_person_level <-
             travtime_pg = sum(travtime_pg, na.rm = TRUE)) %>%
   ungroup()
 
-wfh_person_level_plus_no_trips <-
-  wfh_mdt_all %>%
-  left_join(wfh_person_level, by = c("sampno","perno")) %>%
-  mutate(across(all_of(c("wfh_today","wfo_today","travtime_pg","distance_pg")),
-                ~replace_na(.,0)))
+# # Archive - additional data set with non-travelers.
+# 
+# wfh_person_level_plus_no_trips <-
+#   wfh_mdt_all %>%
+#   left_join(wfh_person_level, by = c("sampno","perno")) %>%
+#   mutate(across(all_of(c("wfh_today","wfo_today","travtime_pg","distance_pg")),
+#                 ~replace_na(.,0)))
 
 #################################################
 #                                               #
@@ -142,7 +147,8 @@ wfh_mdt_all %>% # 17,656 records
   summarize(tc_pct = weighted.mean(x = tc,w = wtperfin),
             n = sum(wtperfin)) %>%
   mutate(tcers = n * tc_pct) %>%
-  mutate(tcers_pct = tcers / sum(.$tcers))
+  mutate(tcers_pct = tcers / sum(.$tcers)) %>% 
+  arrange(tc_pct)
 
 # Breakdown of tc behavior by home county
 wfh_mdt_all %>% # 17,656 records
@@ -151,7 +157,8 @@ wfh_mdt_all %>% # 17,656 records
   summarize(tc_pct = weighted.mean(x = tc,w = wtperfin),
             n = sum(wtperfin)) %>%
   mutate(tcers = n * tc_pct) %>%
-  mutate(tcers_pct = tcers / sum(.$tcers))
+  mutate(tcers_pct = tcers / sum(.$tcers)) %>% 
+  arrange(tc_pct)
 
 # Breakdown of tc behavior by race and ethnicity
 wfh_mdt_all %>% # 17,656 records
@@ -160,7 +167,8 @@ wfh_mdt_all %>% # 17,656 records
   summarize(tc_pct = weighted.mean(x = tc,w = wtperfin),
             n = sum(wtperfin)) %>%
   mutate(tcers = n * tc_pct) %>%
-  mutate(tcers_pct = tcers / sum(.$tcers))
+  mutate(tcers_pct = tcers / sum(.$tcers)) %>% 
+  arrange(tc_pct)
 
 ################################################################################
 #
@@ -170,12 +178,13 @@ wfh_mdt_all %>% # 17,656 records
 # Specific analysis of work trips vs. non-work trips for individuals who report
 # telecommuting or working from home (survey)
 wfh_worktrips_person_level <-
-  wfh_mdt %>%
+  wfh_mdt %>% # 83291 records
   # Flag trips that were part of a work trip chain
   mutate(worktrip = case_when(
     # Assign any work chain trips that don't have an associated out-of-home work
     # trip as 0 (this handles a few "work-from-home" trips that have significant
-    # distances associated with them)
+    # distances associated with them because they were the next step in a larger
+    # trip chain that did not include a physical work trip).
     chain %in% c("Work trip","Return home (work)") & wfo_today == 0 ~ 0,
     # Assign all other work chains as 1
     chain %in% c("Work trip","Return home (work)") ~ 1,
@@ -183,10 +192,12 @@ wfh_worktrips_person_level <-
     TRUE ~ 0)) %>%
   # Add a flag for Cook County residents
   mutate(cook_county = ifelse(home_county == "31",1,0)) %>%
+  # Remove travelers with homes in multiple counties
+  filter(home_county != "999") %>% # 82772 records
   # Remove "beginning" trips
-  filter(mode != "beginning") %>%
+  filter(mode != "beginning") %>% # 65433 records
   # Exclude trips with zero distance
-  filter(distance_pg > 0) %>%
+  filter(distance_pg > 0) %>% # 65393 records
   # # Create a flag for travelers that have trips in both categories
   # group_by(sampno,perno) %>%
   # mutate(bothtrips = ifelse(min(worktrip) == 0 & max(worktrip) == 1,1,0)) %>%
@@ -222,12 +233,18 @@ wfh_worktrips_general <-
 # the office today
 ################################################################################
 
+# Due to low sample size, exclude work trips for those that almost always work
+# from home/telecommute
 exclusion <- tibble(worktrip = 1, flag = 2)
 
 wfh_p2 <-
+  # Get data
   wfh_worktrips_general %>%
+  # Exclude work trips for almost always wfh/tcers
   anti_join(exclusion) %>%
+  # Add 0 values for the excluded variables
   rbind(tibble(worktrip = 1, flag = 2, cook_county = c(0,1),distance_pg = 0,n = 0)) %>%
+  # Reformat and reorder
   mutate(flag = recode_factor(factor(flag),
                        "0" = "Does not regularly telecommute or work from home",
                        "1" = "Sometimes telecommutes or works from home (1-3 days/week)",
@@ -239,35 +256,41 @@ wfh_p2 <-
                                      "1" = "Cook County residents",
                                      "0" = "Residents of other counties")
          ) %>%
+  
+  # Create ggplot object
   ggplot(aes(x = distance_pg, y = str_wrap(worktrip,18))) +
   geom_col(aes(fill = flag), position = position_dodge2(reverse = T)) +
-  theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
-             # legend.position = "none",
-             legend.max.columns = 1,
-             vline = 0,
-             xlab = "Median miles traveled",
-             strip.text = element_text(face = "bold", hjust = 0.5)) +
   geom_label(aes(label = ifelse(distance_pg != 0, scales::label_number(accuracy = 0.1)(distance_pg),NA),
                  group = flag),
              hjust = 0,
              label.size = 0,
              position = position_dodge2(width= 0.9, reverse = T)) +
+  
+  # Adjust axis
   scale_x_continuous(limits = c(0,55)) +
+  
+  # Add faceting
   facet_wrap(~cook_county,ncol = 1) +
-  # facet_wrap(~worktrip, nrow  = 1) +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
+             legend.max.columns = 1,
+             vline = 0,
+             xlab = "Median miles traveled",
+             strip.text = element_text(face = "bold", hjust = 0.5)) +
   cmap_fill_discrete(palette = "mobility")
 
 finalize_plot(wfh_p2,
               "Median daily distance traveled for travelers based on work from
               home and telecommute status.",
               "Note: These estimates are based on on answers given in both the
-              survey and travel diary components of My Daily Travel. \"Work
-              trips outside the home\" include all trips associated with a work
+              survey and travel diary components of My Daily Travel. 'Work
+              trips outside the home' include all trips associated with a work
               trip chain that included a work destination outside the home (both
-              fixed and non-fixed) \"Other trips\" includes all other trips.
+              fixed and non-fixed) 'Other trips' includes all other trips.
               Travelers are only counted for the category(ies) in which they had
               trips. Due to low sample sizes, work trips for travelers that
-              telecommute or work from home 4+ days per week are excluded.
+              telecommute 4+ days per week or work from home are excluded.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
@@ -302,16 +325,11 @@ finalize_plot(wfh_p2,
 #
 # wfh_p2_bp
 
-####### KEEP WORKING ON THIS - IGNORE CODE FROM HERE TO NEXT SECTION
+####### Location
 
 # Understand the distribution of 1-3 day/week tc/wfh-ers by county
 
-
-tc13 <-
-  wfh_worktrips_person_level %>%
-  filter(combined_tc_wfh == 1) %>%
-  select(home_lat,home_long,home_county,home_tract,income_c)
-
+# Count the workers by tc/wfh behavior by home county
 wfh_worktrips_person_level %>%
   group_by(combined_tc_wfh,home_county) %>%
   summarize(n = sum(wtperfin)) %>%
@@ -319,7 +337,12 @@ wfh_worktrips_person_level %>%
   mutate(pct = n/total) %>%
   View()
 
+# Create table for exporting location and tc/wfh behavior
+tc13 <-
+  wfh_worktrips_person_level %>%
+  select(combined_tc_wfh,home_lat,home_long,home_county,home_tract,income_c)
 
+# Export for analysis in a GIS software
 write.csv(tc13,"tc13.csv")
 
 #
