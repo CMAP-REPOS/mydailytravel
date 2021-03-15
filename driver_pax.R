@@ -36,7 +36,9 @@ driver_pax_mdt <-
   # Keep those who are 18 or older, OR
   filter(age >= 18 |             # 105606 records
            # age buckets that are > 18
-           (age < 0 & aage %in% c(5,6,7))) %>%
+           (age < 0 & aage %in% c(5,6,7)) |
+           # those that said they were over 18
+           (age <0 & age18 == 1)) %>%
   # Keep only trips with > 0 distance
   filter(distance_pg > 0) %>%    # 82749 records
   # Keep only driver or passenger trips, but exclude motorcycles
@@ -53,9 +55,14 @@ driver_pax_mdt <-
 driver_pax_tt <-
   tt %>%                         # 139769 records
   # Keep only travelers from age 18 to 89 (this handles DK/RF since that is
-  # coded as 99)
+  # coded as 99). Note: we do not include anyone without a specific age from TT
+  # because they can't be put into the bins we want, and since the AGEB variable
+  # only has <16 or 16+, we don't know if they are 18+.
   filter(AGE < 90) %>%           # 136889 records
   filter(AGE >= 18) %>%          # 112123 records
+  # Exclude the first record of the day - this is the beginning record, and does
+  # not represent a trip.
+  filter(PLANO != 1) %>%         # 89812 records
   # Keep only trips with > 0 distance
   filter(DIST > 0) %>%           # 85405 records
   # Keep only driver and passenger trips
@@ -64,9 +71,6 @@ driver_pax_tt <-
   # Add age bins
   mutate(age_bin = cut(AGE, breaks = breaks,
                        labels = age_labels)) %>%
-  # Note: we do not include anyone without a specific age from TT because they
-  # can't be put into the bins we want, and since the AGEB variable only has <16
-  # or 16+, we don't know if they are 18+
   ungroup()
 
 
