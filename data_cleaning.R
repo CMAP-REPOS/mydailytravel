@@ -81,6 +81,7 @@ ppl <- read_csv("person.csv") %>%
 
          age,        # The age (in years) of the respondent.
          aage,       # Range of ages (only for those without an answer to age).
+         age18,      # Either younger than 18 (2) or 18 or older (2)
 
          schol,      # School enrollment status.
          smode,      # Regular mode used to get to school.
@@ -102,6 +103,11 @@ ppl <- read_csv("person.csv") %>%
          wmode,      # How does the respondent usually get to work?
          wtrav,      # How many times a week does the respondent travel to work?
 
+         smrtphn,    # Do they own a smartphone?
+         tnc_use,    # How often did they use Uber, Lyft, or Via in the last week?
+         tnc_cost,   # How much do those trips usually cost?
+         
+         
          wtperfin    # The weight for the respondent.
          )
 
