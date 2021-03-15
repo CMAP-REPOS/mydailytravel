@@ -63,7 +63,10 @@ mdt_base_1 <-
 #   filter((AGE >= 5 & AGE < 99)|                  # 132680
 #            (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) |
 #            (AGE == 99 & AGEB == 2)) %>%
-#   # Exclude trips with no travel distance. 
+#   # Exclude the first record of the day - this is the beginning record, and does
+#   # not represent a trip.
+#   filter(PLANO != 1) %>%            # 105568 records
+#   # Exclude trips with no travel distance.
 #   filter(DIST > 0) %>%              # 100573
 #   # Remove missing modes
 #   filter(mode_c != "missing") %>%   # 100573
