@@ -158,47 +158,113 @@ summary(tnc_use_lm)
 
 
 ################################################################################
+# 
 # Statistics about usage and cost by age, race/ethnicity, and home county
 ################################################################################
 
-## Look at usage by age
-tnc %>%
+################################################################################
+# PLOT OF AGE CHARACTERISTICS
+################################################################################
+
+# Helper for month conversions (from weeks)
+w_to_m <- 
+  (365/7) / # Number of weeks in a year
+  12 # Divided by the number of months in a year
+
+## Look at usage by age - turned into a monthly figure
+age_usage <-
+  tnc_wide %>%
   filter(!(tnc_use %in% c(-9,-8,-7,-1)),
          !(is.na(age_bin))) %>%
   group_by(age_bin) %>%
-  summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+  summarize(tnc_use = w_to_m*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
             n = n())
 
 # Cost by age
-tnc %>%
-  filter(tnc_cost >0,
+age_cost <- 
+  tnc_wide %>%
+  filter(tnc_cost > 0,
          !(is.na(age_bin))) %>%
   group_by(age_bin) %>%
   summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
             n = n())
 
-# Usage by race and ethnicity
-tnc %>%
+# Combine age data for cost and usage
+age_cost_and_usage <-
+  left_join(age_usage %>% select(-n),
+            age_cost %>% select(-n),
+            by = "age_bin") %>% 
+  pivot_longer(cols = c("tnc_use","tnc_cost"))
+
+# Generate output chart for age
+tnc_p1 <-
+  # Get data
+  age_cost_and_usage %>% 
+  # Reformat
+  mutate(name = recode(factor(name,levels = c("tnc_use","tnc_cost")),
+                       "tnc_cost" = "Average cost per TNC trip ($)",
+                       "tnc_use" = "Average monthly TNC trips")) %>% 
+  mutate(blank = case_when(
+    name == "Average cost per TNC trip ($)" ~ 20.5,
+    TRUE ~ 4
+  )) %>% 
+  
+  # Create ggplot object
+  ggplot(aes(x = value, y = factor(age_bin,levels = rev(levels(age_bin))), fill = name)) +
+  geom_col() +
+  geom_label(aes(label = ifelse(name == "Average monthly TNC trips",
+                                scales::label_number(accuracy = 0.1)(value),
+                                scales::label_dollar(accuracy = 1)(value))),
+             hjust = 0,
+             label.size = 0,
+             fill = "white") +
+  geom_blank(aes(x = blank)) +
+  facet_wrap(~name, scales = "free_x") +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v",hline = 0,legend.position = "none")
+
+finalize_plot(tnc_p1,
+              "Average usage and cost patterns for Transportation Network 
+              Companies (TNCs) by traveler age, 2019.",
+              "Note: Monthly TNC usage was extrapolated from responses to a 
+              question that asked how frequently the respondent used Uber, Lyft, 
+              or Via in the prior week. Average values from that question were 
+              multiplied by approximately 4.3 to yield a monthly figure.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My 
+              Daily Travel data.",
+              filename = "tnc_p1",
+              mode = "png",
+              overwrite = T)
+
+################################################################################
+# OTHER CHARACTERISTICS
+################################################################################
+
+# Usage by race and ethnicity - turned into a monthly figure
+tnc_wide %>%
   filter(race_eth != "missing",
          !(tnc_use %in% c(-9,-8,-7,-1))) %>%
   group_by(race_eth) %>%
-  summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+  summarize(tnc_use = w_to_m*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
             n = n())
 
-# Usage by home county
-tnc %>%
+# Usage by home county - monthly
+tnc_wide %>%
   filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
   filter(home_county %in% cmap_seven_counties) %>%
   group_by(home_county) %>%
-  summarize(tnc_use = weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+  summarize(tnc_use = w_to_m*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
             n = n()) %>%
   arrange(-tnc_use)
 
 # Cost by home county
-tnc %>%
+tnc_wide %>%
   filter(tnc_cost>0) %>%
   filter(home_county %in% cmap_seven_counties) %>%
   group_by(home_county) %>%
   summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
             n = n()) %>%
   arrange(-tnc_cost)
+
