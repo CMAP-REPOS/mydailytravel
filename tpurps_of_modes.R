@@ -1,5 +1,3 @@
-#### TO BE REVIEWED
-
 # This script produces analyses and charts on the trip purposes of trips made by
 # specific modes, e.g., ridesharing.
 
@@ -27,40 +25,51 @@ source("data_cleaning.R")
 # Create base dataset for mode analyses
 
 mdt_base_2 <-
-  mdt %>%                             # 125091 records
+  mdt %>%                             # 125463 records
   # Keep only records for travelers >= 5 or who we can identify as being >= 5
-  # based on age buckets, school enrollment, or manual location identification
-  # of school trips
-  filter(age >= 5 |                   #
+  # based on age buckets (those from age 5 and above), school enrollment
+  # (starting from 9th grade, since the prior bucket includes kindergarten and
+  # that could include 4-year-olds), or manual location identification of school
+  # trips.
+  filter(age >= 5 |                   # 125459 records
            (age < 0 & aage %in% c(2,3,4,5,6,7)) |
            (age < 0 & schol %in% c(4,5,6,7,8)) |
            sampno %in% c(70038312,
                          70051607)) %>%
   # Exclude beginning trips
-  filter(mode_c != "beginning") %>%  #
+  filter(mode_c != "beginning") %>%  # 97374 records
   # Exclude trips with no travel distance
-  filter(distance_pg > 0) %>%        #
+  filter(distance_pg > 0) %>%        # 97316 records
   # Exclude trips with no trip purpose
-  filter(tpurp_c != "missing") %>%   # 96874
-  # Add flag for under 18 vs. 18 and over
-  mutate(under18 = ifelse(age >= 18 | aage %in% c(5,6,7),
+  filter(tpurp_c != "missing") %>%   # 97245 records
+  # Add flag for under 18 vs. 18 and over (combining all age variables)
+  mutate(under18 = ifelse(age >= 18 | 
+                            (age < 0 & aage %in% c(5,6,7)) |
+                            (age < 0 & age18 == 1),
                           "18 and over", "Under 18")) %>%
   ungroup()
 
 
 tt_base_2 <-
-  tt %>%                             # 137491 records
+  tt %>%                             # 139769 records
   # Keep only records for travelers >= 5 or who we can identify as being >= 5
-  # based on age buckets or school enrollment. Note that 99 is DK/RF for AGE.
-  filter((AGE >= 5 & AGE < 99) |                  #
+  # based on age buckets (greater than 16) or school enrollment (from 9th grade
+  # up, for similar reasons as in MDT - kindergarten could include 4-year-olds).
+  # Note that 99 is DK/RF for AGE.
+  filter((AGE >= 5 & AGE < 99) |                  # 132680 records
            (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) |
            (AGE == 99 & AGEB == 2)) %>%
+  # Exclude the first record of the day - this is the beginning record, and does
+  # not represent a trip.
+  filter(PLANO != 1) %>%            # 105568 records
   # Exclude trips with no travel distance. Note this is a different difference
   # calculation than that used in MDT (great circle vs. actual travel distance).
-  filter(DIST > 0) %>%              #
-  filter(tpurp_c != "missing") %>%  # 100619 records
+  filter(DIST > 0) %>%              # 100573 records
+  # Exclude trips with a missing trip purpose
+  filter(tpurp_c != "missing") %>%  # 100573 records
   # Add flag for under 18 vs. 18 and over. None of the school enrollment or age
-  # buckets are precise enough to code either way.
+  # buckets are precise enough to code either way, so those without a defined
+  # age are coded as NA.
   mutate(under18 = ifelse(AGE >= 18 & AGE < 99, "18 and over",
                           ifelse(AGE != 99,"Under 18",NA))) %>%
   ungroup()
@@ -105,25 +114,40 @@ all_passenger_under18 <-
 ################################################################################
 
 tpurps_of_modes_p1 <-
+  # Get data
   all_passenger_under18 %>%
+  # Filter out NAs
+  filter(!is.na(under18)) %>% 
+  # Group by age flag and survey flag
   group_by(under18,survey) %>%
+  # Calculate totals by the chosen groups
   mutate(total = sum(breakdown_total)) %>%
   ungroup() %>%
-  mutate(survey = factor(survey,levels = c("tt","mdt")),
-         mode = factor(mode, levels = c("Passenger (all)","personal auto (passenger)","carpool"))) %>%
-  mutate(survey = recode_factor(survey,
+  # Add factor levels for chart ordering
+  mutate(mode = factor(mode, levels = c("Passenger (all)",
+                                        "personal auto (passenger)",
+                                        "carpool")),
+         survey = recode_factor(factor(survey),
                                 "tt" = "Travel Tracker ('08)",
                                 "mdt" = "My Daily Travel ('19)")) %>%
+  
+  # Create ggplot object
   ggplot(aes(x = survey, y = breakdown_total, fill = mode)) +
   geom_col(position = position_stack(reverse = T)) +
-  theme_cmap() +
-  facet_wrap(~under18, ncol = 1) +
   geom_label(aes(label = scales::label_comma(accuracy = 1)(total),
                  y = total),
              fill = "white",
              vjust = 0,
              label.size = 0) +
+  
+  # Facet formatting
+  facet_wrap(~under18, ncol = 1) +
+  
+  # Add CMAP style
+  theme_cmap() +
   cmap_fill_discrete(palette = "friday",reverse = F) +
+  
+  # Adjust axis
   scale_y_continuous(labels = scales::label_comma(scale = 1),
                      limits = c(0,3200000))
 
@@ -137,7 +161,7 @@ finalize_plot(tpurps_of_modes_p1,
               filename = "tpurps_of_modes_p1",
               # height = 6.3,
               # width = 11.3,
-              mode = "png",
+              # mode = "png",
               overwrite = T
               )
 
@@ -145,6 +169,15 @@ finalize_plot(tpurps_of_modes_p1,
 #
 # BIKE TRIPS
 ################################################################################
+
+### Note: Bike trip totals are not easily comparable between MDT and TT. In TT,
+### trip diaries were conducted in a geographically phased approach, with the
+### north side of Chicago conducted entirely in the winter months. Since this
+### part of the region has the highest rates of bike ridership, this sequencing
+### likely skewed the overall amount of bike trips captured in the survey, as
+### well as potentially skewed the purposes of those trips (e.g., by decreasing
+### the share of recreational bike trips). In contrast, there was no such
+### geographic phasing in the data collection for MDT.
 
 ### Calculate proportions for subcategories for biking in MDT
 detailed_bike_tpurp_c_mdt <-
@@ -160,19 +193,25 @@ detailed_bike_tpurp_c_mdt <-
 ################################################################################
 
 tpurps_of_modes_p2 <-
+  # Get data
   detailed_bike_tpurp_c_mdt %>%
-  filter(tpurp_c != "missing") %>%
 
+  # Create ggplot object
   ggplot(aes(y = reorder(tpurp_c,desc(-pct)), x = pct, fill = mode)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
-  theme_cmap(gridlines = "v",vline = 0) +
-  scale_x_continuous(labels = scales::label_percent(), limits = c(0,.38)) +
   geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
                  group = mode),
              fill = "white",
              position = position_dodge2(reverse = T, width = 0.9),
              hjust = 0,
-             label.size = 0) +
+             label.size = 0,
+             label.padding = unit(1,"bigpts")) +
+  
+  # Adjust axis
+  scale_x_continuous(labels = scales::label_percent(), limits = c(0,.38)) +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v",vline = 0) +
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(tpurps_of_modes_p2,
@@ -182,7 +221,7 @@ finalize_plot(tpurps_of_modes_p2,
               # width = 11.3,
               # height = 6.3,
               filename = "tpurps_of_modes_p2",
-              mode = "png",
+              # mode = "png",
               overwrite = T)
 
 ################################################################################
@@ -190,12 +229,17 @@ finalize_plot(tpurps_of_modes_p2,
 # RIDESHARE VS. SHARED RIDESHARE VS. TAXI
 ################################################################################
 
-## Create totals for trips by purpose category (within universe of rideshare trips)
+# Note: TT did not include any questions about ride-sharing or TNCs, since the
+# survey predates the widespread adoption of those services. We thus use taxis
+# as the closest proxy for comparison.
+
+## Create totals for trips by purpose category (within universe of rideshare
+## trips)
 
 ### Calculate proportions for TT
 all_tnc_tpurp_c_tt <-
   pct_calculator(tt_base_2,
-                 subset = c("rideshare","shared rideshare","taxi"),
+                 subset = "taxi",
                  subset_of = "mode",
                  breakdown_by = "tpurp_c",
                  weight = "weight",
@@ -214,14 +258,17 @@ all_tnc_tpurp_c_mdt <-
 total_tnc_tpurp_c <-
   rbind(all_tnc_tpurp_c_tt,
         all_tnc_tpurp_c_mdt) %>%
+  # Add mode flag to differentiate TT (taxi) from MDT (taxi + TNCs)
   mutate(mode = case_when(
     survey == "mdt" ~ "tnc (all)",
     TRUE ~ "taxi"))
 
 
-### Calculate proportions for subcategories for rideshare in MDT
+### Calculate proportions for subcategories for rideshare in MDT (using the
+### "second_breakdown" argument of pct_calculator)
 detailed_tnc_tpurp_c_mdt <-
   pct_calculator(mdt_base_2 %>%
+                   # Collapse low-perecentage modes into "all other" for chart
                    mutate(tpurp_c =
                             fct_collapse(tpurp_c,
                                          "all other" = c("health","recreation/fitness",
@@ -242,6 +289,7 @@ all_tnc_tpurp_c <-
 # Chart of total TNC/taxi trips, MDT vs. TT
 ################################################################################
 
+# Create label for total of MDT
 tpurps_of_modes_p3_total_labels <-
   tibble(survey = c("My Daily Travel ('19)")) %>%
   cbind(all_tnc_tpurp_c %>%
@@ -249,20 +297,32 @@ tpurps_of_modes_p3_total_labels <-
           summarize(n = sum(breakdown_total))
   )
 
+# Create chart
 tpurps_of_modes_p3 <-
+  # Get data
   all_tnc_tpurp_c %>%
+  # Exclude the MDT totals so that we can make a stacked bar chart
   filter(mode != "tnc (all)") %>%
+  # Group into mode and survey categories to enable summaries (instead of by
+  # trip purpose category)
   group_by(survey,mode) %>%
   summarize(total = sum(breakdown_total)) %>%
-  mutate(survey = factor(survey,levels = c("tt","mdt")),
-         mode = factor(mode, levels = c("taxi","rideshare","shared rideshare"))) %>%
-  mutate(survey = recode_factor(survey,
+  
+  # Add factor levels and format for chart ordering
+  mutate(mode = recode_factor(factor(mode, levels = c("taxi",
+                                                      "rideshare",
+                                                      "shared rideshare")),
+                              "taxi" = "Taxi",
+                              "rideshare" = "Rideshare",
+                              "shared rideshare" = "Shared rideshare"),
+         survey = recode_factor(factor(survey, levels = c("tt","mdt")),
                                 "tt" = "Travel Tracker ('08)",
                                 "mdt" = "My Daily Travel ('19)")) %>%
+  
+  # Create ggplot object
   ggplot(aes(x = survey, y = total)) +
   geom_col(aes(fill = mode), position = position_stack(reverse = T)) +
-  theme_cmap(hline = 0) +
-  scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c")) +
+  # Add labels within stacked bars
   geom_label(aes(label = scales::label_comma(accuracy = 1)(total),
                  group = mode,
                  fill = mode),
@@ -272,6 +332,7 @@ tpurps_of_modes_p3 <-
              label.size = 0,
              color = "white",
              show.legend = FALSE) +
+  # Add total label to MDT column
   geom_label(data = tpurps_of_modes_p3_total_labels,
              aes(label = scales::label_comma(accuracy = 1)(n),
                  x = survey,
@@ -279,7 +340,15 @@ tpurps_of_modes_p3 <-
              vjust = 0,
              label.size = 0,
              label.padding = unit(.5,"lines")) +
-  scale_y_continuous(labels = scales::label_comma(scale = 1),limits = c(0,215000))
+  
+  # Adjust axis
+  scale_y_continuous(labels = scales::label_comma(scale = 1),
+                     limits = c(0,215000)) +
+  
+  # Add CMAP style
+  theme_cmap(hline = 0) +
+  # Manually include CMAP colors
+  scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c"))
 
 finalize_plot(tpurps_of_modes_p3,
               "Change in daily TNC and taxi trips, 2008 vs. 2019.",
@@ -292,17 +361,33 @@ finalize_plot(tpurps_of_modes_p3,
               overwrite = T)
 
 ################################################################################
-# Chart of trip purposes for TNC/taxi trips, MDT vs. TT
+# Chart of trip purposes for TNC/taxi trips, MDT
 ################################################################################
 
 tpurps_of_modes_p4 <-
+  # Get data
   all_tnc_tpurp_c %>%
-  filter(tpurp_c != "missing",
-         survey == "mdt",
+  # Keep only subcategories and MDT responses
+  filter(survey == "mdt",
          mode != "tnc (all)") %>%
-  mutate(mode = factor(mode, levels = c("taxi","rideshare","shared rideshare")),
-         tpurp_c = factor(tpurp_c,c("all other","dining","community",
-                                    "shopping/errands","work","home"))) %>%
+  # Add factor levels and format for chart ordering
+  mutate(mode = recode_factor(factor(mode, levels = c("taxi",
+                                                      "rideshare",
+                                                      "shared rideshare")),
+                              "taxi" = "Taxi",
+                              "rideshare" = "Rideshare",
+                              "shared rideshare" = "Shared rideshare"),
+         tpurp_c = recode_factor(factor(tpurp_c,
+                                        c("all other","dining","community",
+                                          "shopping/errands","work","home")),
+                                 "all other" = "All other",
+                                 "dining" = "Dining",
+                                 "community" = "Community",
+                                 "shopping/errands" = "Shopping/errands",
+                                 "work" = "Work",
+                                 "home" = "Home")) %>%
+  
+  # Create ggplot object
   ggplot(aes(y = tpurp_c, x = pct, fill = mode)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
@@ -311,11 +396,15 @@ tpurps_of_modes_p4 <-
                                         width = 0.9),
              hjust = 0,
              label.size = 0,
+             label.padding = unit(3,"bigpts"),
              fill = "white") +
-  theme_cmap(gridlines = "v",
-             vline = 0) +
+  
+  # Adjust axis
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),
-                     limits = c(0, .45)) +
+                     limits = c(0, .42)) +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v",vline = 0) +
   scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c"))
 
 finalize_plot(tpurps_of_modes_p4,
@@ -324,11 +413,12 @@ finalize_plot(tpurps_of_modes_p4,
               overall mode share for taxis and TNCs. This includes healthcare,
               school, transport, transfers, and other.
               <br><br>
-              Source: CMAP analysis of MDT and TT data.",
-              width = 11.3,
-              height = 6.3,
+              Source: Chicago Metropolitan Agency for Planning analysis of My 
+              Daily Travel data.",
+              # width = 11.3,
+              # height = 6.3,
               filename = "tpurps_of_modes_p4",
-              mode = "png",
+              # mode = "png",
               overwrite = T)
 
 ################################################################################
