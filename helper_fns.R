@@ -133,12 +133,14 @@ pct_calculator <- function(data,
 #           which trip counts are distributed (e.g., mode categories or trip
 #           chains by mode).
 #         * rolling_interval, numeric. This is the width of the time interval in
-#           minutes in which trips will be counted. Defaults to 5.
+#           minutes in which trips will be counted. This must be a whole number
+#           and a divisor of the total number of minutes in the day (i.e.,
+#           values like 2, 5, 10, 30, 60). Defaults to 5.
 #         * rolling_n, numeric. This is the length of the rolling average
 #           window, in minutes. Defaults to 25 minutes. The rolling average is
 #           calculated as a straddling rolling average, with the interval plus a
-#           symmetric window on either side. rolling_n should be an odd multiple
-#           of rolling_interval.
+#           symmetric window on either side. rolling_n should be a whole number
+#           and an odd multiple of rolling_interval.
 #         * crosstab, bool. Defaults to FALSE. this should be set to TRUE if the
 #           criteria includes two buckets (e.g., chain and mode category).
 #         * crosstab1, crosstab2, both strings. This should be supplied when
@@ -160,18 +162,33 @@ tim_calculator <- function(base_weights = tim_mdt_wip$wtperfin,
                            crosstab1 = NULL,
                            crosstab2 = NULL) {
 
+  # Require rolling_n and rolling_interval to be integers
+  if (rolling_interval %% 1 != 0 | rolling_n %% 1 != 0) {
+    stop("Both `rolling_n` and `rolling_interval` must be whole numbers.")
+  }
+  
+  # Require `rolling_interval` to be a divisor of the number of seconds in a day
+  if (((60*60*24) %% (rolling_interval * 60)) != 0) {
+    stop("The specified value for `rolling_interval` is not a divisor of the number of minutes in the day.")
+  }
+  
+  # Require rolling_n to be a multiple of rolling_interval by an odd number
+  if ((rolling_n %% rolling_interval) != 0 | (rolling_n / rolling_interval) %% 2 != 0) {
+    stop("The value for `rolling_n` should be a multiple of the value for `rolling_interval`. Dividing the two should also yield an odd number to allow for an even distribution of intervals for the rolling average calculations.")
+  }
+  
   # Create a helper tibble of possible criteria
   possibilities <- tibble(identifier = unique(criteria))
 
   # Create tibble of all possible trip intervals
   trip_times <-
-    # Establish sequence of times over the day (in five minute increments)
+    # Establish sequence of times over the day (in specified minute increments)
     tibble(time_band = seq.POSIXt(
       from = as.POSIXct("2020-01-01 03:00:00", tz = "America/Chicago"),
-      to = as.POSIXct("2020-01-02 02:55:00", tz = "America/Chicago"),
+      to = as.POSIXct("2020-01-02 03:00:00", tz = "America/Chicago") - rolling_interval * 60,
       # Interval using input above, defaults to 5
       by = paste0(rolling_interval," min"))) %>%
-    mutate(time_band_interval = interval(time_band, time_band + 5 * 60 - 1, tz = "America/Chicago"))
+    mutate(time_band_interval = interval(time_band, time_band + rolling_interval * 60 - 1, tz = "America/Chicago"))
 
   # Calculate number of intervals on either side of the interval needed for
   # rolling average
