@@ -281,8 +281,9 @@ wfh_p2 <-
   cmap_fill_discrete(palette = "mobility")
 
 finalize_plot(wfh_p2,
-              "Median daily distance traveled for travelers based on work from
-              home and telecommute status.",
+              "Median daily distance traveled by employed individuals in 
+              northeastern Illinois based on work from home and telecommute 
+              status.",
               "Note: These estimates are based on on answers given in both the
               survey and travel diary components of My Daily Travel. 'Work
               trips outside the home' include all trips associated with a work
