@@ -1,3 +1,7 @@
+library(stringr)
+library(tidyverse)
+library(lubridate)
+
 ################################################################################
 # Purpose: A wrapper for stringr::str_wrap that enables text wrapping of
 # string factors in charts.
@@ -18,11 +22,12 @@ str_wrap_factor <- function(x, ...) {
 # Inputs: * data, the table to be analyzed.
 #         * subset_of and subset, a string and a vector of strings. Defaults to
 #           NULL. If included, the function will filter the column "subset_of"
-#           for inclusion in the strings given in "subset".
+#           for inclusion in the string(s) given in "subset".
 #         * breakdown_by, a string. This should be the name of the column upon
 #           which the percentage breakdown calculations should be performed.
 #         * weight, a string. Defaults to NULL. If included, this should be the
-#           name of the column in which data weights can be found.
+#           name of the column in which data weights can be found. If it remains
+#           NULL, the implied weight of each record will be 1.
 #         * second_breakdown, a string. Defaults to NULL. If included, this
 #           enables the user to add a second breakdown column for calculation.
 #         * survey, a string. Defaults to NULL. If included, the output table
@@ -41,71 +46,61 @@ pct_calculator <- function(data,
                            second_breakdown = NULL,
                            survey = NULL) {
 
+  # Load data
   relevant_data <- data
+  # Create helper weight name variable
+  weight_name <- weight
 
+  # If there is a subset filter the data
   if (!is.null(subset)) {
     relevant_data <- relevant_data %>%
       # Filter data to relevant data
       filter(.data[[subset_of]] %in% subset)
   }
 
-  if (!is.null(weight)) {
-    if (is.null(second_breakdown)) {
-      percents <-
-        relevant_data %>%
-        # Create totals
-        mutate(total = sum(.data[[weight]]),
-               total_n = n()) %>%
-        # Calculate percentages
-        group_by(.data[[breakdown_by]]) %>%
-        summarize(breakdown_total = sum(.data[[weight]]),
-                  total = median(total),
-                  total_n = median(total_n),
-                  breakdown_n = n()) %>%
-        mutate(pct = breakdown_total / total)
-    }
-    else {
-      percents <-
-        relevant_data %>%
-        # Create totals
-        group_by(.data[[second_breakdown]]) %>%
-        mutate(total = sum(.data[[weight]]),
-               total_n = n()) %>%
-        # Calculate percentages
-        group_by(.data[[breakdown_by]],.data[[second_breakdown]]) %>%
-        summarize(breakdown_total = sum(.data[[weight]]),
-                  total = median(total),
-                  total_n = median(total_n),
-                  breakdown_n = n()) %>%
-        mutate(pct = breakdown_total / total)
-
-    }
-  } else {
-    if (is.null(second_breakdown)) {
-      percents <-
-        relevant_data %>%
-        # Create totals
-        mutate(total = n()) %>%
-        # Calculate percentages
-        group_by(.data[[breakdown_by]]) %>%
-        summarize(total = median(total),
-                  breakdown = n()) %>%
-        mutate(pct = breakdown / total)
-    }
-    else {
-      percents <-
-        relevant_data %>%
-        # Create totals
-        group_by(.data[[second_breakdown]]) %>%
-        mutate(total = n()) %>%
-        # Calculate percentages
-        group_by(.data[[breakdown_by]],.data[[second_breakdown]]) %>%
-        summarize(total = median(total),
-                  breakdown = n()) %>%
-        mutate(pct = breakdown / total)
-    }
+  # If there is no weight specified, add a column with a uniform weight of 1
+  if (is.null(weight)) {
+    relevant_data <- relevant_data %>% 
+      mutate(uniform_weight = 1)
+    
+    # Load this name into the helper weight name variable
+    weight_name <- "uniform_weight"
+  }
+    
+  # Now we calculate the percents. First, if there is no second breakdown.
+  if (is.null(second_breakdown)) {
+    percents <-
+      relevant_data %>%
+      # Create totals
+      mutate(total = sum(.data[[weight_name]]),
+             total_n = n()) %>%
+      # Calculate percentages
+      group_by(.data[[breakdown_by]]) %>%
+      summarize(breakdown_total = sum(.data[[weight_name]]),
+                total = median(total),
+                total_n = median(total_n),
+                breakdown_n = n()) %>%
+      mutate(pct = breakdown_total / total)
+  }
+  # Next, if there is a second breakdown.
+  else {
+    percents <-
+      relevant_data %>%
+      # Create totals
+      group_by(.data[[second_breakdown]]) %>%
+      mutate(total = sum(.data[[weight_name]]),
+             total_n = n()) %>%
+      # Calculate percentages
+      group_by(.data[[breakdown_by]],.data[[second_breakdown]]) %>%
+      summarize(breakdown_total = sum(.data[[weight_name]]),
+                total = median(total),
+                total_n = median(total_n),
+                breakdown_n = n()) %>%
+      mutate(pct = breakdown_total / total)
+    
   }
 
+  # If there is a survey marker, add it.
   percents <-
     if (is.null(survey)) {
       percents
@@ -114,6 +109,14 @@ pct_calculator <- function(data,
         mutate(survey = survey)
     }
 
+  # If there was no weight, remove the duplicate calculations.
+  if (is.null(weight)) {
+    percents <- 
+      percents %>% 
+      select(-total_n,-breakdown_n)
+  }
+  
+  # Return the data.
   return(percents)
 }
 
