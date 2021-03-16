@@ -22,7 +22,7 @@ library(cmapplot)
 #################################################
 
 setwd("~/GitHub/mydailytravel")
-source("helper_fns.R")
+source("R/helper_fns.R")
 
 # Download 2019 data (split into four quarters)
 divvy_zip <- tempfile()

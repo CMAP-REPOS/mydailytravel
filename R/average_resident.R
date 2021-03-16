@@ -1,5 +1,3 @@
-#### TO BE REVIEWED
-
 # This script analyzes average travel behavior in MDT and TT
 
 #################################################
@@ -19,8 +17,8 @@ library(forcats)
 #################################################
 
 setwd("~/GitHub/mydailytravel")
-source("helper_fns.R")
-source("data_cleaning.R")
+source("R/helper_fns.R")
+source("R/data_cleaning.R")
 
 
 ### MY DAILY TRAVEL - closely aligns with Sarah's work, seem to be right

@@ -42,7 +42,7 @@ library(lubridate)
 
 # Load recoding information
 setwd("~/GitHub/mydailytravel")
-source("recoding.R")
+source("R/recoding.R")
 
 # Load My Daily Travel
 setwd("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data")

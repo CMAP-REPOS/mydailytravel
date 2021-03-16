@@ -20,8 +20,8 @@ library(sf)
 #################################################
 
 setwd("~/GitHub/mydailytravel")
-source("helper_fns.R")
-source("data_cleaning.R")
+source("R/helper_fns.R")
+source("R/data_cleaning.R")
 
 
 # Identify respondents who report that they don't travel for work and have a

@@ -1,4 +1,4 @@
-source("helper_fns.R")
+source("R/helper_fns.R")
 
 # Create a dummy data set to run the helper_fns calculation on. Verify this
 # works after any changes to the function.

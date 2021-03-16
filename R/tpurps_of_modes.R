@@ -18,8 +18,8 @@ library(cmapplot)
 #################################################
 
 setwd("~/GitHub/mydailytravel")
-source("helper_fns.R")
-source("data_cleaning.R")
+source("R/helper_fns.R")
+source("R/data_cleaning.R")
 
 
 # Create base dataset for mode analyses

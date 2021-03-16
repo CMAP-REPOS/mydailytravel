@@ -21,8 +21,8 @@ library(ggpattern)
 #################################################
 
 setwd("~/GitHub/mydailytravel")
-source("helper_fns.R")
-source("data_cleaning.R")
+source("R/helper_fns.R")
+source("R/data_cleaning.R")
 
 # Age bins
 breaks <- c(-1, 9, 17, 24, 29, 49, 69, 89)
