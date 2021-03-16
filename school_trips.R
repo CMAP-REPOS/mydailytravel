@@ -99,172 +99,6 @@ all_school_tt <-
 
 ################################################################################
 #
-# Survey responses - Mode share for school
-################################################################################
-
-all_respondents_school_mdt <-
-  mdt_all_respondents %>%
-  filter(smode >0,
-         schol %in% c(3,4)) %>%
-  filter(age >= 5 |
-           # or those in an age category from 5 to 44
-           aage %in% c(2,3,4,5) |
-           # or those enrolled in 9th-12th grade
-           schol %in% c(4) |
-           # or those identified as attending school manually
-           sampno %in% c(70038312,
-                         70051607)) %>%
-  mutate(smode = recode(smode,
-                        "1" = "Walk",
-                        "2" = "Bike",
-                        "3" = "Driver",
-                        "4" = "Driver",
-                        "5" = "Passenger",
-                        "6" = "Passenger",
-                        "7" = "School bus",
-                        "8" = "Transit",
-                        "9" = "Transit",
-                        "10" = "Transit",
-                        "11" = "Other",
-                        "12" = "Other",
-                        "13" = "Other",
-                        "14" = "Other",
-                        "15" = "Other",
-                        "16" = "Other",
-                        "17" = "Other",
-                        "18" = "Other",
-                        "97" = "Other")) %>%
-  mutate(survey = "My Daily Travel ('19)")
-
-all_respondents_school_tt <-
-  tt_all_respondents %>%
-  filter(!is.na(SMODE),
-         !(SMODE %in% c(98,99)),
-         SCHOL %in% c(3,4),
-         # Keep only those 5 or older
-         AGE >= 5 | AGEB == 2) %>%
-  filter(!is.na(WGTP)) %>%
-  mutate(smode = recode(SMODE,
-                        "1" = "Walk",
-                        "2" = "Bike",
-                        "3" = "Driver",
-                        "4" = "Passenger",
-                        "5" = "Transit",
-                        "6" = "Transit",
-                        "7" = "Transit",
-                        "8" = "Transit",
-                        "9" = "Other",
-                        "10" = "Other",
-                        "11" = "School bus",
-                        "12" = "Other",
-                        "14" = "Transit",
-                        "97" = "Other")) %>%
-  mutate(survey = "Travel Tracker ('09)")
-
-################################################################################
-# Chart of mode share, survey responses
-################################################################################
-
-survey_school_mode_mdt <-
-  pct_calculator(all_respondents_school_mdt,
-                 breakdown_by = "smode",
-                 weight = "wtperfin",
-                 survey = "mdt")
-
-survey_school_mode_tt <-
-  pct_calculator(all_respondents_school_tt,
-                 breakdown_by = "smode",
-                 weight = "WGTP",
-                 survey = "tt")
-
-survey_school_mode <-
-  survey_school_mode_mdt %>%
-  rbind(survey_school_mode_tt)
-
-school_trips_p1 <-
-  survey_school_mode %>%
-  ggplot(aes(x = pct, y = reorder(smode,desc(-pct)))) +
-  geom_col(aes(fill = survey),position = position_dodge2(reverse = T)) +
-  theme_cmap(vline = 0, gridlines = "v") +
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
-                     limits = c(0,.36)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
-                 group = survey),
-             position = position_dodge2(reverse = T, width = 0.9),
-             label.size = 0,
-             fill = "white",
-             hjust = 0) +
-  cmap_fill_discrete(palette = "friday")
-
-finalize_plot(school_trips_p1,
-              title = "Typical mode used to get to school, comparing 2008 to 2019 (survey).",
-              caption = "Note: Mode share represents survey responses to the
-              question, \"How do you usually get to school?\" Figures are not
-              based on observed or recorded travel behavior.
-              <br><br>
-              Source: CMAP analysis of MDT and TT data.",
-              filename = "school_trips_p1",
-              # mode = "png",
-              overwrite = T,
-              height = 4,
-              width = 6)
-
-
-################################################################################
-# Chart of walk share by income, survey responses
-################################################################################
-
-survey_school_mode_inc_mdt <-
-  pct_calculator(all_respondents_school_mdt %>%
-                   filter(income_c != "missing"),
-                 breakdown_by = "smode",
-                 second_breakdown = "income_c",
-                 weight = "wtperfin",
-                 survey = "mdt")
-
-survey_school_mode_inc_tt <-
-  pct_calculator(all_respondents_school_tt %>%
-                   filter(income_c != "missing"),
-                 breakdown_by = "smode",
-                 second_breakdown = "income_c",
-                 weight = "WGTP",
-                 survey = "tt")
-
-survey_school_mode_inc <-
-  survey_school_mode_inc_mdt %>%
-  rbind(survey_school_mode_inc_tt)
-
-school_trips_p1a <-
-  survey_school_mode_inc %>%
-  filter(smode == "Walk") %>%
-  ggplot(aes(x = pct, y = income_c)) +
-  geom_col(aes(fill = survey),position = position_dodge2(reverse = T)) +
-  theme_cmap(vline = 0, gridlines = "v") +
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
-                     limits = c(0,.45)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
-                 group = survey),
-             position = position_dodge2(reverse = T, width = 0.9),
-             label.size = 0,
-             fill = "white",
-             hjust = 0) +
-  cmap_fill_discrete(palette = "friday")
-
-finalize_plot(school_trips_p1a,
-              title = "Walk mode share by income, comparing 2008 to 2019 (survey).",
-              caption = "Note: Mode share represents survey responses to the
-              question, \"How do you usually get to school?\" Figures are not
-              based on observed or recorded travel behavior.
-              <br><br>
-              Source: CMAP analysis of MDT and TT data.",
-              filename = "school_trips_p1a",
-              # mode = "png",
-              overwrite = T,
-              height = 4,
-              width = 6)
-
-################################################################################
-#
 # Mode share for school
 ################################################################################
 
@@ -518,6 +352,172 @@ all_school_mdt_lm %>%
   ggplot(aes(x = travtime_lm, y = race_eth)) +
   geom_boxplot()
 
+
+################################################################################
+#
+# Survey responses - Mode share for school
+################################################################################
+
+all_respondents_school_mdt <-
+  mdt_all_respondents %>%
+  filter(smode >0,
+         schol %in% c(3,4)) %>%
+  filter(age >= 5 |
+           # or those in an age category from 5 to 44
+           aage %in% c(2,3,4,5) |
+           # or those enrolled in 9th-12th grade
+           schol %in% c(4) |
+           # or those identified as attending school manually
+           sampno %in% c(70038312,
+                         70051607)) %>%
+  mutate(smode = recode(smode,
+                        "1" = "Walk",
+                        "2" = "Bike",
+                        "3" = "Driver",
+                        "4" = "Driver",
+                        "5" = "Passenger",
+                        "6" = "Passenger",
+                        "7" = "School bus",
+                        "8" = "Transit",
+                        "9" = "Transit",
+                        "10" = "Transit",
+                        "11" = "Other",
+                        "12" = "Other",
+                        "13" = "Other",
+                        "14" = "Other",
+                        "15" = "Other",
+                        "16" = "Other",
+                        "17" = "Other",
+                        "18" = "Other",
+                        "97" = "Other")) %>%
+  mutate(survey = "My Daily Travel ('19)")
+
+all_respondents_school_tt <-
+  tt_all_respondents %>%
+  filter(!is.na(SMODE),
+         !(SMODE %in% c(98,99)),
+         SCHOL %in% c(3,4),
+         # Keep only those 5 or older
+         AGE >= 5 | AGEB == 2) %>%
+  filter(!is.na(WGTP)) %>%
+  mutate(smode = recode(SMODE,
+                        "1" = "Walk",
+                        "2" = "Bike",
+                        "3" = "Driver",
+                        "4" = "Passenger",
+                        "5" = "Transit",
+                        "6" = "Transit",
+                        "7" = "Transit",
+                        "8" = "Transit",
+                        "9" = "Other",
+                        "10" = "Other",
+                        "11" = "School bus",
+                        "12" = "Other",
+                        "14" = "Transit",
+                        "97" = "Other")) %>%
+  mutate(survey = "Travel Tracker ('09)")
+
+################################################################################
+# Chart of mode share, survey responses
+################################################################################
+
+survey_school_mode_mdt <-
+  pct_calculator(all_respondents_school_mdt,
+                 breakdown_by = "smode",
+                 weight = "wtperfin",
+                 survey = "mdt")
+
+survey_school_mode_tt <-
+  pct_calculator(all_respondents_school_tt,
+                 breakdown_by = "smode",
+                 weight = "WGTP",
+                 survey = "tt")
+
+survey_school_mode <-
+  survey_school_mode_mdt %>%
+  rbind(survey_school_mode_tt)
+
+school_trips_p1 <-
+  survey_school_mode %>%
+  ggplot(aes(x = pct, y = reorder(smode,desc(-pct)))) +
+  geom_col(aes(fill = survey),position = position_dodge2(reverse = T)) +
+  theme_cmap(vline = 0, gridlines = "v") +
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+                     limits = c(0,.36)) +
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
+                 group = survey),
+             position = position_dodge2(reverse = T, width = 0.9),
+             label.size = 0,
+             fill = "white",
+             hjust = 0) +
+  cmap_fill_discrete(palette = "friday")
+
+finalize_plot(school_trips_p1,
+              title = "Typical mode used to get to school, comparing 2008 to 2019 (survey).",
+              caption = "Note: Mode share represents survey responses to the
+              question, \"How do you usually get to school?\" Figures are not
+              based on observed or recorded travel behavior.
+              <br><br>
+              Source: CMAP analysis of MDT and TT data.",
+              filename = "school_trips_p1",
+              # mode = "png",
+              overwrite = T,
+              height = 4,
+              width = 6)
+
+
+################################################################################
+# Chart of walk share by income, survey responses
+################################################################################
+
+survey_school_mode_inc_mdt <-
+  pct_calculator(all_respondents_school_mdt %>%
+                   filter(income_c != "missing"),
+                 breakdown_by = "smode",
+                 second_breakdown = "income_c",
+                 weight = "wtperfin",
+                 survey = "mdt")
+
+survey_school_mode_inc_tt <-
+  pct_calculator(all_respondents_school_tt %>%
+                   filter(income_c != "missing"),
+                 breakdown_by = "smode",
+                 second_breakdown = "income_c",
+                 weight = "WGTP",
+                 survey = "tt")
+
+survey_school_mode_inc <-
+  survey_school_mode_inc_mdt %>%
+  rbind(survey_school_mode_inc_tt)
+
+school_trips_p1a <-
+  survey_school_mode_inc %>%
+  filter(smode == "Walk") %>%
+  ggplot(aes(x = pct, y = income_c)) +
+  geom_col(aes(fill = survey),position = position_dodge2(reverse = T)) +
+  theme_cmap(vline = 0, gridlines = "v") +
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+                     limits = c(0,.45)) +
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
+                 group = survey),
+             position = position_dodge2(reverse = T, width = 0.9),
+             label.size = 0,
+             fill = "white",
+             hjust = 0) +
+  cmap_fill_discrete(palette = "friday")
+
+finalize_plot(school_trips_p1a,
+              title = "Walk mode share by income, comparing 2008 to 2019 (survey).",
+              caption = "Note: Mode share represents survey responses to the
+              question, \"How do you usually get to school?\" Figures are not
+              based on observed or recorded travel behavior.
+              <br><br>
+              Source: CMAP analysis of MDT and TT data.",
+              filename = "school_trips_p1a",
+              # mode = "png",
+              overwrite = T,
+              height = 4,
+              width = 6)
 
 ################################################################################
 #
