@@ -125,77 +125,102 @@ pct_calculator <- function(data,
 # Purpose: Calculate trip times within the intervals that meet given criteria.
 #
 ################################################################################
-# Inputs: * base_weights, a numeric vector. This defaults to the full list of
-#           weights in the tim_mdt_wip table, but can be modified to use a
-#           shorter list (for subset analyses) or a different column (e.g., for
-#           unweighted analyses)
+# Inputs: * data, the base data set for analysis.
+#         * weights, a string representing the name of a weight column. Defaults
+#           to NULL, in which case a uniform weight of 1 is applied. The most
+#           common use of this will be the MDT weight column, `wtperfin`,
+#           although others can be applied.
 #         * trip_interval, a vector of date-time objects. This defaults to the
 #           full list of trip intervals in the tim_mdt_wip table, but can be
 #           modified to use a shorter list for subset analyses.
 #         * criteria, a vector of strings. This will be the categorization into
-#           which trip counts are distributed (e.g., mode categories or trip
-#           chains by mode).
-#         * rolling_interval, numeric. This is the width of the time interval in
+#           which trip counts are distributed (e.g., mode categories).
+#         * criteria2, a vector of strings. Defaults to NULL. If included, the
+#           function will calculate using both criteria as grouping variables.
+#           This will significantly increase processing times for large datasets.
+#         * interval, numeric. This is the width of the time interval in
 #           minutes in which trips will be counted. This must be a whole number
 #           and a divisor of the total number of minutes in the day (i.e.,
 #           values like 2, 5, 10, 30, 60). Defaults to 5.
-#         * rolling_n, numeric. This is the length of the rolling average
+#         * rolling_window, numeric. This is the length of the rolling average
 #           window, in minutes. Defaults to 25 minutes. The rolling average is
 #           calculated as a straddling rolling average, with the interval plus a
-#           symmetric window on either side. rolling_n should be a whole number
-#           and an odd multiple of rolling_interval.
-#         * crosstab, bool. Defaults to FALSE. this should be set to TRUE if the
-#           criteria includes two buckets (e.g., chain and mode category).
-#         * crosstab1, crosstab2, both strings. This should be supplied when
-#           crosstab = T. Each string will be outputted as the variable name for
-#           the final trips in motion calculation. For example, a crosstab
-#           analysis of tim_wip_mdt$mode_tpurp_c should have a value of
-#           crosstab1 = "mode" and crosstab2 = "tpurp_c"
+#           symmetric window on either side. rolling_window should be a whole number
+#           and a multiple of interval by an odd number.
 ################################################################################
 # Outputs: This function calculates the rolling average of trips in motion
 #          within a specified set of categories (e.g., by mode) over the course
 #          of a single day, running from 3am to 3am.
 ################################################################################
-tim_calculator <- function(base_weights = tim_mdt_wip$wtperfin,
-                           trip_interval = tim_mdt_wip$trip_interval,
+tim_calculator <- function(data,
+                           weights = NULL,
+                           trip_interval = "trip_interval",
                            criteria,
-                           rolling_interval = 5,
-                           rolling_n = 25,
-                           crosstab = F,
-                           crosstab1 = NULL,
-                           crosstab2 = NULL) {
+                           criteria2 = NULL,
+                           interval = 5,
+                           rolling_window = 25) {
 
-  # Require rolling_n and rolling_interval to be integers
-  if (rolling_interval %% 1 != 0 | rolling_n %% 1 != 0) {
-    stop("Both `rolling_n` and `rolling_interval` must be whole numbers.")
+  # Require rolling_window and interval to be integers
+  if (interval %% 1 != 0 | rolling_window %% 1 != 0) {
+    stop("Both `rolling_window` and `interval` must be whole numbers.")
   }
   
-  # Require `rolling_interval` to be a divisor of the number of seconds in a day
-  if (((60*60*24) %% (rolling_interval * 60)) != 0) {
-    stop("The specified value for `rolling_interval` is not a divisor of the number of minutes in the day.")
+  # Require `interval` to be a divisor of the number of seconds in a day
+  if (((60*60*24) %% (interval * 60)) != 0) {
+    stop("The specified value for `interval` is not a divisor of the number of minutes in the day.")
   }
   
-  # Require rolling_n to be a multiple of rolling_interval by an odd number
-  if ((rolling_n %% rolling_interval) != 0 | (rolling_n / rolling_interval) %% 2 != 0) {
-    stop("The value for `rolling_n` should be a multiple of the value for `rolling_interval`. Dividing the two should also yield an odd number to allow for an even distribution of intervals for the rolling average calculations.")
+  # Require rolling_window to be a multiple of interval by an odd number
+  if ((rolling_window %% interval) != 0 | (rolling_window / interval) %% 2 == 0) {
+    stop("The value for `rolling_window` should be a multiple of the value for `interval`. Dividing the two should also yield an odd number to allow for an even distribution of intervals for the rolling average calculations.")
+  }
+  
+  # Extract relevant columns
+  
+  # First, create a helper joint column for two-criteria function calls
+  if (!is.null(criteria2)) {
+    wip_data <- data %>% 
+      mutate(criteria_wip = 
+               paste(.data[[criteria]],
+                     .data[[criteria2]],
+                     sep = "-"))}
+  else {
+    wip_data <- data %>% 
+      mutate(criteria_wip = .data[[criteria]])
+  }
+  
+  # Now create helper columns for extracting trip intervals
+  wip_data <-
+    wip_data %>% 
+    mutate(trip_interval = .data[[trip_interval]])
+  
+  # Finally, extract weights (when called for) or create a uniform weight of 1
+  if(!is.null(weights)) {
+    wip_data <-
+      wip_data %>% 
+      mutate(weights = .data[[weights]])
+  } else {
+    wip_data <-
+      wip_data %>% 
+      mutate(weights = 1)
   }
   
   # Create a helper tibble of possible criteria
-  possibilities <- tibble(identifier = unique(criteria))
+  possibilities <- tibble(identifier = unique(wip_data$criteria_wip))
 
   # Create tibble of all possible trip intervals
   trip_times <-
     # Establish sequence of times over the day (in specified minute increments)
     tibble(time_band = seq.POSIXt(
       from = as.POSIXct("2020-01-01 03:00:00", tz = "America/Chicago"),
-      to = as.POSIXct("2020-01-02 03:00:00", tz = "America/Chicago") - rolling_interval * 60,
+      to = as.POSIXct("2020-01-02 03:00:00", tz = "America/Chicago") - interval * 60,
       # Interval using input above, defaults to 5
-      by = paste0(rolling_interval," min"))) %>%
-    mutate(time_band_interval = interval(time_band, time_band + rolling_interval * 60 - 1, tz = "America/Chicago"))
+      by = paste0(interval," min"))) %>%
+    mutate(time_band_interval = interval(time_band, time_band + interval * 60 - 1, tz = "America/Chicago"))
 
   # Calculate number of intervals on either side of the interval needed for
   # rolling average
-  rolling_n_calc <- ((rolling_n / rolling_interval) - 1) / 2
+  rolling_window_calc <- ((rolling_window / interval) - 1) / 2
 
   # Calculate trips in motion within the intervals meeting criteria
   raw_count <-
@@ -204,16 +229,24 @@ tim_calculator <- function(base_weights = tim_mdt_wip$wtperfin,
     # Add all possible modes and/or purposes and/or chains
     full_join(possibilities, by = character()) %>%
     # Sum the weights that meet both criteria
-    mutate(count = mapply(function(x,y) sum(base_weights[which(
-      int_overlaps(x,trip_interval) &
-        y == criteria)]),
-      time_band_interval,
-      identifier
+    mutate(count = 
+             mapply(function(x,y) 
+               # Sum the weights that...
+               sum(wip_data$weights[which(
+                 # Overlap the specified time interval, and
+                 lubridate::int_overlaps(x,wip_data$trip_interval) &
+                   # Are the correct category of mode/chain/purpose/etc.
+                   y == wip_data$criteria_wip)]),
+               # x is the sequence of intervals defined above
+               time_band_interval,
+               # y is the list of unique possibilities for mode/chain/purpose
+               # identified above
+               identifier
     ))
 
-  # If crosstab, need to split identifier and group by both columns. Otherwise,
-  # group by identifier.
-  if (!crosstab) {
+  # If there are two criteria, need to split identifier and group by both
+  # columns. Otherwise, group by identifier.
+  if (is.null(criteria2)) {
     grouped_count <-
       raw_count %>%
       group_by(identifier)
@@ -221,10 +254,10 @@ tim_calculator <- function(base_weights = tim_mdt_wip$wtperfin,
     grouped_count <-
       raw_count %>%
       # Split the data using the '-' as a separator
-      separate(identifier,into = c(crosstab1,crosstab2) , sep = "-") %>%
-      # using the .data[[crosstabx]] format allows us to use the string as a
+      separate(identifier,into = c(criteria,criteria2) , sep = "-") %>%
+      # using the .data[[criteriax]] format allows us to use the string as a
       # variable name
-      group_by(.data[[crosstab1]],.data[[crosstab2]])
+      group_by(.data[[criteria]],.data[[criteria2]])
   }
 
   # Calculate rolling averages
@@ -232,10 +265,11 @@ tim_calculator <- function(base_weights = tim_mdt_wip$wtperfin,
     grouped_count %>%
     # Calculate rolling average
     mutate(rolling_count = slide_dbl(count, mean,
-                                     .before = rolling_n_calc,
-                                     .after = rolling_n_calc)) %>%
+                                     .before = rolling_window_calc,
+                                     .after = rolling_window_calc)) %>%
     ungroup()
 
+  # Finally, return output
   return(output)
 
 }
