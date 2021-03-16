@@ -45,10 +45,11 @@ setwd("~/GitHub/mydailytravel")
 source("R/recoding.R")
 
 # Load My Daily Travel
-setwd("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data")
+mdt_zip <- tempfile()
+download.file("https://datahub.cmap.illinois.gov/dataset/02a047a1-e7b8-4ca7-b754-54f2b9bfeab6/resource/c9e82b87-0b4c-45ea-9c06-9cdebdb7071f/download/MyDailyTravelData.zip",mdt_zip)
 
 # trips
-trips <- read_csv("place.csv") %>%
+trips <- read.csv(unzip(mdt_zip,files = "place.csv")) %>%
   select(sampno, perno, locno, placeno, # Identifiers for the household (sampno),
                      # the person (perno), the destination of the trip (locno),
                      # and the order in which that place was visited in the
@@ -76,7 +77,7 @@ trips <- read_csv("place.csv") %>%
          )
 
 # person info
-ppl <- read_csv("person.csv") %>%
+ppl <- read.csv(unzip(mdt_zip,files = "person.csv")) %>%
   select(sampno, perno, # Identifiers for household (sampno) and person (perno)
 
          age,        # The age (in years) of the respondent.
@@ -112,7 +113,7 @@ ppl <- read_csv("person.csv") %>%
          )
 
 # household info
-hh <- read_csv("household.csv") %>%
+hh <- read.csv(unzip(mdt_zip,files = "household.csv")) %>%
   select(sampno,     # Identifier for the household.
          hhinc,      # Household income (in dollars).
          hhveh,      # Number of vehicles in the household.
@@ -120,7 +121,7 @@ hh <- read_csv("household.csv") %>%
   )
 
 # location file w/region flag
-region <- read_csv("location.csv") %>%
+region <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
   select(sampno,locno, # Identifier for the household (sampno) and location
                      # (locno)
 
@@ -138,13 +139,16 @@ region <- read_csv("location.csv") %>%
          latitude, longitude # The lat/long coordinates of the place.
   )
 
+file.remove(mdt_zip,"place.csv","person.csv","household.csv","location.csv")
+rm(mdt_zip)
+
 # Trip chains (provided by CMAP R&A staff). These provide sampno, perno, and
 # placeno as identifiers, as well as identify the trip as part of a chain to
 # work or a shopping trip.
-chains <- read_csv("chains.csv")
+chains <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/chains.csv")
 
 # Travel zones (provided by CMAP R&A staff).
-zones <- read_csv("zones.csv") %>%
+zones <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/zones.csv") %>%
   select(sampno,     # The household identifier.
          cluster)    # Designates the household's inclusion in one of 11 travel
                      # zones, used for weighting the overall survey.
@@ -188,15 +192,15 @@ home <- home_wip %>%
     # at least one home in Illinois above).
     home_state = case_when(
       sampno %in% two_homes ~ 17,
-      TRUE ~ home_state),
+      TRUE ~ as.double(home_state)),
     # Replace multi-county home households with 999 for the county.
     home_county = case_when(
       sampno %in% two_homes ~ 999,
-      TRUE ~ home_county),
+      TRUE ~ as.double(home_county)),
     # Replace multi-county home households with 999999 for the tract.
     home_tract = case_when(
       sampno %in% two_homes ~ 999999,
-      TRUE ~ home_tract
+      TRUE ~ as.double(home_tract)
     )) %>%
   # Select distinct rows to eliminate double counting of two-home households.
   distinct(sampno,home_county,.keep_all = TRUE)
@@ -265,7 +269,7 @@ mdt <- mdt %>%
       !check ~ ymd_hms(NA),
       TRUE ~ ymd_hms(NA)),
     out_region_lag = case_when(
-      check ~ out_region_lag,
+      check ~ as.double(out_region_lag),
       !check ~ -1,
       TRUE ~ -1)
     ) %>%
