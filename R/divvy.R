@@ -1,5 +1,3 @@
-#### TO BE REVIEWED
-
 # This script downloads and analyzes Q3 2019 Divvy ridership data to produce a
 # trips-in-motion chart for Divvy trips over the course of an average weekday.
 
@@ -64,50 +62,28 @@ day_value <- 60*60*24
 # Holidays: New Year's Day, MLK Day, President's Day, Memorial Day, July 4th,
 # Labor Day, Columbus Day, Veterans Day, Thanksgiving, the Day after
 # Thanksgiving, and Christmas Day.
-nyd <- interval(ymd_hms("2019-01-01 03:00:00",
-                        tz = "America/Chicago"),
-                ymd_hms("2019-01-02 02:59:59",
-                        tz = "America/Chicago"))
-mlk <- interval(ymd_hms("2019-01-21 03:00:00",
-                        tz = "America/Chicago"),
-                ymd_hms("2019-01-22 02:59:59",
-                        tz = "America/Chicago"))
-pres <- interval(ymd_hms("2019-02-18 03:00:00",
-                        tz = "America/Chicago"),
-                ymd_hms("2019-02-19 02:59:59",
-                        tz = "America/Chicago"))
-memorial <- interval(ymd_hms("2019-05-27 03:00:00",
-                        tz = "America/Chicago"),
-                ymd_hms("2019-05-28 02:59:59",
-                        tz = "America/Chicago"))
-july4 <- interval(ymd_hms("2019-07-04 03:00:00",
-                          tz = "America/Chicago"),
-                  ymd_hms("2019-07-05 02:59:59",
-                          tz = "America/Chicago"))
-labor <- interval(ymd_hms("2019-09-02 03:00:00",
-                             tz = "America/Chicago"),
-                     ymd_hms("2019-09-03 02:59:59",
-                             tz = "America/Chicago"))
-columbus <- interval(ymd_hms("2019-10-14 03:00:00",
-                             tz = "America/Chicago"),
-                     ymd_hms("2019-10-15 02:59:59",
-                             tz = "America/Chicago"))
-vets <- interval(ymd_hms("2019-11-11 03:00:00",
-                             tz = "America/Chicago"),
-                     ymd_hms("2019-11-12 02:59:59",
-                             tz = "America/Chicago"))
-xgiving <- interval(ymd_hms("2019-11-28 03:00:00",
-                             tz = "America/Chicago"),
-                     ymd_hms("2019-11-29 02:59:59",
-                             tz = "America/Chicago"))
-blackfri <- interval(ymd_hms("2019-11-29 03:00:00",
-                            tz = "America/Chicago"),
-                    ymd_hms("2019-11-30 02:59:59",
-                            tz = "America/Chicago"))
-xmas <- interval(ymd_hms("2019-12-25 03:00:00",
-                             tz = "America/Chicago"),
-                     ymd_hms("2019-12-26 02:59:59",
-                             tz = "America/Chicago"))
+nyd <-      interval(ymd_hms("2019-01-01 03:00:00",tz = "America/Chicago"),
+                     ymd_hms("2019-01-02 02:59:59",tz = "America/Chicago"))
+mlk <-      interval(ymd_hms("2019-01-21 03:00:00",tz = "America/Chicago"),
+                     ymd_hms("2019-01-22 02:59:59",tz = "America/Chicago"))
+pres <-     interval(ymd_hms("2019-02-18 03:00:00",tz = "America/Chicago"),
+                     ymd_hms("2019-02-19 02:59:59",tz = "America/Chicago"))
+memorial <- interval(ymd_hms("2019-05-27 03:00:00",tz = "America/Chicago"),
+                     ymd_hms("2019-05-28 02:59:59",tz = "America/Chicago"))
+july4 <-    interval(ymd_hms("2019-07-04 03:00:00",tz = "America/Chicago"),
+                     ymd_hms("2019-07-05 02:59:59",tz = "America/Chicago"))
+labor <-    interval(ymd_hms("2019-09-02 03:00:00",tz = "America/Chicago"),
+                     ymd_hms("2019-09-03 02:59:59",tz = "America/Chicago"))
+columbus <- interval(ymd_hms("2019-10-14 03:00:00",tz = "America/Chicago"),
+                     ymd_hms("2019-10-15 02:59:59",tz = "America/Chicago"))
+vets <-     interval(ymd_hms("2019-11-11 03:00:00",tz = "America/Chicago"),
+                     ymd_hms("2019-11-12 02:59:59",tz = "America/Chicago"))
+xgiving <-  interval(ymd_hms("2019-11-28 03:00:00",tz = "America/Chicago"),
+                     ymd_hms("2019-11-29 02:59:59",tz = "America/Chicago"))
+blackfri <- interval(ymd_hms("2019-11-29 03:00:00",tz = "America/Chicago"),
+                     ymd_hms("2019-11-30 02:59:59",tz = "America/Chicago"))
+xmas <-     interval(ymd_hms("2019-12-25 03:00:00",tz = "America/Chicago"),
+                     ymd_hms("2019-12-26 02:59:59",tz = "America/Chicago"))
 # Join all holidays into one list
 holidays <- c(nyd,mlk,pres,memorial,july4,labor,
               columbus,vets,xgiving,blackfri,xmas)
@@ -172,9 +148,9 @@ divvy_wip <-
 # Use function defined in helper_fns.R to create trips in motion graph
 trip_times_divvy_counts <-
   tim_calculator(
-    base_weights = divvy_wip$weight,
-    trip_interval = divvy_wip$trip_interval,
-    criteria = divvy_wip$usertype)
+    data = divvy_wip,
+    weights = "weight",
+    criteria = "usertype")
 
 # Define breaks
 breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 03:00:00"),
@@ -220,7 +196,7 @@ finalize_plot(divvy_p1,
               filename = "divvy_p1",
               # sidebar_width = 0,
               # caption_align = 1,
-              # mode = "png",
+              mode = "png",
               # height = 6.3,
               # width = 11.3,
               overwrite = T)
