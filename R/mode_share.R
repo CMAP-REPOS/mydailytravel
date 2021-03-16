@@ -193,11 +193,18 @@ mode_share_p1 <-
   left_join(mode_share_p1_labels, by = "home_county") %>%
   # Make changes for graphing
   mutate(
-    # Reorder factors
-    mode_c = factor(mode_c,levels = c("driver","passenger","walk",
+    # Reorder factors and capitalize
+    mode_c = recode_factor(factor(mode_c,levels = 
+                                    c("driver","passenger","walk",
                                       "transit","bike","other")),
+                           "driver" = "Driver",
+                           "passenger" = "Passenger",
+                           "walk" = "Walk",
+                           "transit" = "Transit",
+                           "bike" = "Bike",
+                           "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
-    pct = ifelse(mode_c %in% c("driver","passenger"),-1 *pct,pct)
+    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct)
   ) %>%
   
   # Create ggplot object
@@ -211,7 +218,7 @@ mode_share_p1 <-
              fill = "white") +
 
   # Add CMAP style
-  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 10) +
+  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6) +
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
@@ -219,9 +226,12 @@ mode_share_p1 <-
                      limits = c(-1,.4))
 
 finalize_plot(mode_share_p1,
-              title = "Mode share for trips in the CMAP region by home county,
-              highlighting non-car mode share.",
-              caption = "Note: Excludes trips by travelers younger than 16.
+              title = "Mode share for trips in northeastern Illinois by home 
+              county, highlighting non-car mode share.",
+              caption = "Note: Includes trips by residents of the region that 
+              start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
+              Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
+              travelers younger than 16.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
@@ -250,11 +260,18 @@ mode_share_p2 <-
   left_join(mode_share_p2_labels, by = "hhinc") %>%
   # Make changes for graphing
   mutate(
-    # Reorder factors
-    mode_c = factor(mode_c,levels = c("driver","passenger","walk",
+    # Reorder factors and capitalize
+    mode_c = recode_factor(factor(mode_c,levels = 
+                                    c("driver","passenger","walk",
                                       "transit","bike","other")),
+                           "driver" = "Driver",
+                           "passenger" = "Passenger",
+                           "walk" = "Walk",
+                           "transit" = "Transit",
+                           "bike" = "Bike",
+                           "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
-    pct = ifelse(mode_c %in% c("driver","passenger"),-1 *pct,pct)
+    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct)
   ) %>%
   
   # Create ggplot object
@@ -268,7 +285,7 @@ mode_share_p2 <-
              fill = "white") +
 
   # Add CMAP style
-  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 10) +
+  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6) +
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
@@ -276,9 +293,12 @@ mode_share_p2 <-
                      limits = c(-1,.6))
 
 finalize_plot(mode_share_p2,
-              title = "Mode share for trips in the CMAP region by household income,
-              highlighting non-car mode share.",
-              caption = "Note: Excludes trips by travelers younger than 16.
+              title = "Mode share for trips in northeastern Illinois by household 
+              income, highlighting non-car mode share.",
+              caption = "Note: Includes trips by residents of the region that 
+              start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
+              Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
+              travelers younger than 16.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
@@ -307,11 +327,18 @@ mode_share_p3 <-
   left_join(mode_share_p3_labels, by = "race_eth") %>%
   # Make changes for graphing
   mutate(
-    # Reorder factors
-    mode_c = factor(mode_c,levels = c("driver","passenger","walk",
+    # Reorder factors and capitalize
+    mode_c = recode_factor(factor(mode_c,levels = 
+                                    c("driver","passenger","walk",
                                       "transit","bike","other")),
+                           "driver" = "Driver",
+                           "passenger" = "Passenger",
+                           "walk" = "Walk",
+                           "transit" = "Transit",
+                           "bike" = "Bike",
+                           "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
-    pct = ifelse(mode_c %in% c("driver","passenger"),-1 *pct,pct)
+    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct)
   ) %>%
   
   # Create ggplot object
@@ -325,7 +352,7 @@ mode_share_p3 <-
              fill = "white") +
 
   # Add CMAP style
-  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 10) +
+  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6) +
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
@@ -333,12 +360,17 @@ mode_share_p3 <-
                      limits = c(-1,.55))
 
 finalize_plot(mode_share_p3,
-              title = "Mode share for trips in the CMAP region by race and ethnicity,
-              highlighting non-car mode share.",
-              caption = "Note: Excludes trips by travelers younger than 16.
+              title = "Mode share for trips in northeastern Illinois by race and 
+              ethnicity, highlighting non-car mode share.",
+              caption = "Note: 'Hispanic' includes respondents who identified as 
+              Hispanic of any racial category. Other categories are non-Hispanic. 
+              Includes trips by residents of the region that  start and/or end 
+              in the Illinois counties of Cook, DeKalb, DuPage, Grundy, Kane, 
+              Kendall, Lake, McHenry, and Will. Excludes trips by travelers 
+              younger than 16.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel and Travel Tracker data.",
+              Daily Travel data.",
               # height = 5.5,
               # width = 11.3,
               filename = "mode_share_p3",
@@ -364,11 +396,18 @@ mode_share_p4 <-
   left_join(mode_share_p4_labels, by = "age_bin") %>%
   # Make changes for graphing
   mutate(
-    # Reorder factors
-    mode_c = factor(mode_c,levels = c("driver","passenger","walk",
+    # Reorder factors and capitalize
+    mode_c = recode_factor(factor(mode_c,levels = 
+                                    c("driver","passenger","walk",
                                       "transit","bike","other")),
+                           "driver" = "Driver",
+                           "passenger" = "Passenger",
+                           "walk" = "Walk",
+                           "transit" = "Transit",
+                           "bike" = "Bike",
+                           "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
-    pct = ifelse(mode_c %in% c("driver","passenger"),-1 *pct,pct)
+    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct)
   ) %>%
   
   # Create ggplot object
@@ -382,7 +421,7 @@ mode_share_p4 <-
              fill = "white") +
 
   # Add CMAP style
-  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 10) +
+  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6) +
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
@@ -390,9 +429,12 @@ mode_share_p4 <-
                      limits = c(-1,.55))
 
 finalize_plot(mode_share_p4,
-              title = "Mode share for trips in the CMAP region by age,
+              title = "Mode share for trips in northeastern Illinois by age, 
               highlighting non-car mode share.",
-              caption = "Note: Excludes trips by travelers younger than 16.
+              caption = "Note: Includes trips by residents of the region that 
+              start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
+              Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
+              travelers younger than 16.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
