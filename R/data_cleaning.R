@@ -33,6 +33,7 @@
 
 library(tidyverse)
 library(lubridate)
+library(RODBC)
 
 #################################################
 #                                               #
@@ -315,12 +316,17 @@ mdt_all_respondents <- ppl %>% # 30,683 records
 #                                               #
 #################################################
 
-# Downloaded from CMAP data portal; exported from Microsoft Access database to
-# a set of csv files.
-setwd("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2008 survey")
+# The underlying Access database can be downloaded from the CMAP data portal.
+# For unknown reasons, if directly downloaded through R, the Access database is
+# corrupted. Those interested in replicating or extending on this analysis can
+# download the file at the following link, and adjust the target directory for
+# the `odbcConnectAccess2007` function call accordingly:
+# "https://datahub.cmap.illinois.gov/dataset/1f424666-3885-493d-8774-81ba7ac625f2/resource/092af96e-9c7a-4182-a1e1-ecff588a9de0/download/TravelTrackerRevisedSurveyData.accdb"Downloaded
+
+con <- odbcConnectAccess2007("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2008 survey/TravelTrackerRevisedSurveyData.accdb")
 
 # Household
-tt_hh <- read_csv("hh_public.csv") %>%
+tt_hh <- sqlFetch(con,'hh_public') %>%
   select(MPO,        # Whether the person is a respondent for the CMAP survey
                      # (1) or the NIRPC survey (2).
 
@@ -332,7 +338,7 @@ tt_hh <- read_csv("hh_public.csv") %>%
   )
 
 # people
-tt_ppl <- read_csv("per_public.csv") %>%
+tt_ppl <- sqlFetch(con,"per_public") %>%
   select(SAMPN,PERNO,# The identifier for households (SAMPN) and person (PERNO).
 
          PTRIPS1, PTRIPS2, # The number of trips taken by the traveler on the
@@ -349,7 +355,7 @@ tt_ppl <- read_csv("per_public.csv") %>%
   )
 
 # trips
-tt_place <- read_csv("place_public.csv") %>%
+tt_place <- sqlFetch(con,"place_public") %>%
   select(SAMPN, PERNO, DAYNO, PLANO, locno, # Identifiers for the household
                      # (SAMPN), person (PERNO), survey day (DAYNO), order of
                      # place visited (PLANO), and location visited (locno).
@@ -371,11 +377,16 @@ tt_place <- read_csv("place_public.csv") %>%
          )
 
 # Location file
-tt_location <- read.csv("loc_public.csv") %>%
+tt_location <- sqlFetch(con,"loc_public") %>%
   select(LOCNO,      # The location identifier.
          FIPS,       # The state and county FIPS code of the location.
          TRACT       # The tract number of the location.
   )
+
+# Close the database connection
+odbcClose(con)
+
+
 
 # home location
 tt_home <- tt_location %>%
