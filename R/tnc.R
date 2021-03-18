@@ -83,9 +83,9 @@ tnc <-
          ))
 
 # Age bins
-breaks <- c(-1, 9, 17, 29, 39, 49, 59, 69, 79, 89)
+breaks <- c(-1, 9, 17, 29, 39, 49, 59, 69, 150)
 age_labels <- c("5 to 9", "10 to 17", "18 to 29", "30 to 39", "40 to 49",
-                "50 to 59", "60 to 69", "70 to 79", "80 to 89")
+                "50 to 59", "60 to 69", "70 and above")
 
 # Reshape data to add flags for each county as individual columns
 tnc_wide <- tnc %>%
