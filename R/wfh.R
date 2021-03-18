@@ -177,7 +177,7 @@ wfh_mdt_all %>% # 17,656 records
 
 # Specific analysis of work trips vs. non-work trips for individuals who report
 # telecommuting or working from home (survey)
-wfh_worktrips_person_level <-
+wfh_worktrips_relevant <-
   wfh_mdt %>% # 83291 records
   # Flag trips that were part of a work trip chain
   mutate(worktrip = case_when(
@@ -197,11 +197,14 @@ wfh_worktrips_person_level <-
   # Remove "beginning" trips
   filter(mode != "beginning") %>% # 65433 records
   # Exclude trips with zero distance
-  filter(distance_pg > 0) %>% # 65393 records
+  filter(distance_pg > 0) # 65393 records
   # # Create a flag for travelers that have trips in both categories
   # group_by(sampno,perno) %>%
   # mutate(bothtrips = ifelse(min(worktrip) == 0 & max(worktrip) == 1,1,0)) %>%
-  # filter(bothtrips == 1) %>%
+  # filter(bothtrips == 1)
+
+wfh_worktrips_person_level <-
+  wfh_worktrips_relevant %>% 
   # Group by traveler and work trip status
   group_by(sampno,perno,worktrip) %>%
   # Collapse into traveler-level statistics
@@ -339,12 +342,44 @@ wfh_worktrips_person_level %>%
   View()
 
 # Create table for exporting location and tc/wfh behavior
-tc13 <-
+tc_homes <-
   wfh_worktrips_person_level %>%
   select(combined_tc_wfh,home_lat,home_long,home_county,home_tract,income_c)
 
 # Export for analysis in a GIS software
-write.csv(tc13,"tc13.csv")
+write.csv(tc_homes,"tc_homes.csv")
+
+tc_od <-
+  wfh_worktrips_person_level %>%
+  filter(combined_tc_wfh == 1,
+         home_county != 31,
+         worktrip == 1)
+
+# Identify the work trip chains closest to the median length for 1-3 day
+# tc/wfh-ers that live outside of Cook County
+tc_od_average <-
+  tc_od %>% 
+  arrange(distance_pg) %>% 
+  mutate(cumsum = cumsum(wtperfin)) %>% 
+  mutate(ranking = cumsum / max(cumsum)) %>% 
+  filter(ranking > .49 & ranking < .51) %>% 
+  mutate(id = paste(sampno,perno,sep = "_"))
+
+# Extract the work trips with lat/long for locations
+df <-
+  wfh_worktrips_relevant %>% 
+  mutate(id = paste(sampno,perno,sep = "_")) %>% 
+  filter(id %in% tc_od_average$id)
+  
+# Export to csv for mapping
+write.csv(df,"average_suburban_tc13_trips.csv")
+
+# # Plot points in R (less useful without ability to select points)
+# 
+# chicago_map <- get_map("chicago, illinois", zoom = 9)
+# 
+# ggmap(chicago_map) +
+#   geom_point(data = df, aes(x = longitude, y = latitude, color = id))
 
 #
 # # Map the 1-3 day/week tc/wfh-ers by tract
