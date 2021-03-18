@@ -180,6 +180,15 @@ finalize_plot(school_trips_p2,
               # height = 6.3,
               overwrite = T)
 
+
+### Calculate proportions for MDT
+all_school_mode_c_race_mdt <-
+  pct_calculator(all_school_mdt,
+                 breakdown_by = "mode_c",
+                 second_breakdown = "race_eth",
+                 weight = "wtperfin",
+                 survey = "mdt")
+
 ################################################################################
 #
 # School walk trips by income
@@ -276,7 +285,7 @@ finalize_plot(school_trips_p3,
 ## household was asked about that data.
 
 # Filter data for MDT
-school_time_race_mdt <-
+school_time_race_person_level_mdt <-
   all_school_mdt %>%                # 3179 records
   # Only include trips that are more than 0 minutes and less than 2.5 hours
   filter(travtime_pg_calc < 150 &   # 3177 records
@@ -286,10 +295,14 @@ school_time_race_mdt <-
   # Add breakdown between K-8 and 9-12
   mutate(k12 = ifelse(schol == 3,
                       "Elementary and middle school",
-                      "High school")) %>%
-  group_by(race_eth,k12) %>%
+                      "High school")) 
+
+school_time_race_mdt <-
+  school_time_race_person_level_mdt %>%
+  group_by(race_eth,k12) %>% 
   # Summarize travel time by race/ethnicity and school enrollment
-  summarize(travtime = as.numeric(weighted.mean(travtime_pg_calc, w = wtperfin))) 
+  summarize(travtime = as.numeric(weighted.mean(travtime_pg_calc, w = wtperfin)),
+            distance = weighted.mean(distance_pg, w =)) 
 
 # Chart of travel time to school by household income
 school_trips_p4 <-
