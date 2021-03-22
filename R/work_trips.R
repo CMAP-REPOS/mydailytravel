@@ -74,14 +74,16 @@ work_time_race_mdt <-
   all_work_mdt %>% # 12099 records
   
   # Only include trips that are more than 0 minutes and less than 2.5 hours
-  filter(travtime_pg_calc < 150 & travtime_pg_calc > 0) %>% # 12044 records
+  filter(
+    # travtime_pg_calc < 150 & 
+           travtime_pg_calc > 0) %>% # 12044 records
   
   # Exclude households with missing race and ethnicity information
   filter(race_eth != "missing") %>% # 12012 records
   
   # Calculate weighted mean of trip times by race and ethnicity
   group_by(race_eth) %>%
-  summarize(travtime = as.numeric(weighted.mean(travtime_pg_calc, w = wtperfin)))
+  summarize(travtime = as.numeric(matrixStats::weightedMedian(travtime_pg_calc, w = wtperfin)))
 
 # Chart of travel time to school by household income
 work_trips_p1 <-
@@ -105,12 +107,11 @@ work_trips_p1 <-
                  asian = "Asian", other = "Other")
 
 finalize_plot(work_trips_p1,
-              "Average travel time to work by race and ethnicity (minutes).",
+              "Median travel time to work by race and ethnicity (minutes).",
               "Note: 'Hispanic' includes individuals of any racial group that
               identify as Hispanic. All other categories are non-Hispanic.
               Includes trips by employed residents to a fixed work location.
-              Trips with no travel time or lasting 150 minutes or more are
-              excluded as outliers.
+              Trips with no travel are excluded.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
