@@ -450,7 +450,7 @@ trips_in_motion_p5 <-
 finalize_plot(trips_in_motion_p5,
               "Healthcare trips in motion in northeastern Illinois by mode on weekdays, 
               2019.",
-              "Note: Trips in motion are 25-minute rolling averages. Trips 
+              "Note: Trips in motion are 55-minute rolling averages. Trips 
               analyzed include all trips by residents of the region that start 
               and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
@@ -648,9 +648,9 @@ trips_in_motion_p8 <-
              panel.grid.major.x = element_line(color = "light gray"))
 
 finalize_plot(trips_in_motion_p8,
-              "Bicycling trips in motion in northeastern Illinois by mode on weekdays, 
+              "Bicycling trips in motion in northeastern Illinois by purpose on weekdays, 
               2019.",
-              "Note: Trips in motion are 25-minute rolling averages. Trips 
+              "Note: Trips in motion are 55-minute rolling averages. Trips 
               analyzed include all trips by residents of the region that start 
               and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
@@ -664,6 +664,64 @@ finalize_plot(trips_in_motion_p8,
               # height = 6.3,
               # width = 11.3
               )
+
+
+
+################################################################################
+# Walking
+################################################################################
+
+tim_mdt_walking <-
+  tim_mdt_wip %>%
+  # Filter to just the purpose in question
+  filter(mode_c == "walk",
+         tpurp_c != "missing")
+
+trip_times_walking_and_tpurp_mdt <-
+  tim_calculator(data = tim_mdt_walking,
+                 weights = "wtperfin",
+                 criteria = "tpurp_c",
+                 rolling_window = 55)
+
+# Graph output of trips in motion by purpose for bike trips (personal bike only)
+trips_in_motion_p9 <-
+  # Get data
+  trip_times_walking_and_tpurp_mdt %>%
+  
+  # Create ggplot object
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = identifier), position = position_stack(reverse = T)) +
+  
+  # Adjust axes
+  scale_x_datetime(labels = scales::date_format("%H:%M",
+                                                tz = "America/Chicago"),
+                   breaks = breaks) +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "hv",legend.max.columns = 3,
+             panel.grid.major.x = element_line(color = "light gray")) +
+  
+  # Add CMAP colors
+  cmap_fill_discrete(palette = "mobility")
+
+finalize_plot(trips_in_motion_p9,
+              "Walking trips in motion in northeastern Illinois by trip purpose on weekdays, 
+              2019.",
+              "Note: Trips in motion are 25-minute rolling averages. Trips 
+              analyzed include all trips by residents of the region that start 
+              and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
+              Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
+              100 miles or lasting longer than 15 hours are excluded.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel trip diaries.",
+              filename = "trips_in_motion_p9",
+              # mode = "png",
+              overwrite = TRUE,
+              # height = 6.3,
+              # width = 11.3
+)
 #
 # # Graph output of trips in motion by purpose for bike trips
 # trips_in_motion_p6 <-
