@@ -183,7 +183,10 @@ finalize_plot(school_trips_p2,
 
 ### Calculate proportions for MDT
 all_school_mode_c_race_mdt <-
-  pct_calculator(all_school_mdt,
+  pct_calculator(all_school_mdt
+                 # Filter to only keep elementary/middle school
+                  # %>% filter(schol == 3)
+                 ,
                  breakdown_by = "mode_c",
                  second_breakdown = "race_eth",
                  weight = "wtperfin",
@@ -287,9 +290,8 @@ finalize_plot(school_trips_p3,
 # Filter data for MDT
 school_time_race_person_level_mdt <-
   all_school_mdt %>%                # 3179 records
-  # Only include trips that are more than 0 minutes and less than 2.5 hours
-  filter(travtime_pg_calc < 150 &   # 3177 records
-           travtime_pg_calc > 0) %>% 
+  # Only include trips that are more than 0 minutes
+  filter(travtime_pg_calc > 0) %>%  # 3177 records
   # Exclude households with missing race and ethnicity information
   filter(race_eth != "missing") %>% # 3167 records
   # Add breakdown between K-8 and 9-12
@@ -299,45 +301,62 @@ school_time_race_person_level_mdt <-
 
 school_time_race_mdt <-
   school_time_race_person_level_mdt %>%
+  mutate(race_eth = case_when(
+    k12 == "High school" & race_eth != "white" ~ "Non-white",
+    TRUE ~ race_eth
+  )) %>% 
   group_by(race_eth,k12) %>% 
   # Summarize travel time by race/ethnicity and school enrollment
-  summarize(travtime = as.numeric(weighted.mean(travtime_pg_calc, w = wtperfin)),
-            distance = weighted.mean(distance_pg, w =)) 
+  summarize(travtime = as.numeric(matrixStats::weightedMedian(travtime_pg_calc, w = wtperfin)),
+            distance = matrixStats::weightedMedian(distance_pg, w = wtperfin),
+            n = n()) 
 
 # Chart of travel time to school by household income
 school_trips_p4 <-
   # Get data
   school_time_race_mdt %>%
   # Capitalize
-  mutate(race_eth = recode(race_eth,
-                           "black" = "Black","white" = "White",
-                           "asian" = "Asian","other" = "Other",
-                           "hispanic" = "Hispanic")) %>%
+  mutate(race_eth = recode_factor(factor(race_eth,
+                                         levels = c("black","asian","Non-white",
+                                                    "white","hispanic","other")),
+                           "black" = "Black", "asian" = "Asian",
+                           "Non-white" = "Non-white","white" = "White",
+                           "hispanic" = "Hispanic","other" = "Other"
+                           )) %>%
   
   # Create ggplot object
-  ggplot(aes(x = reorder(race_eth,-travtime), y = travtime, fill = race_eth)) +
+  ggplot(aes(x = race_eth, y = travtime, fill = race_eth)) +
   geom_col() +
   geom_label(aes(label = scales::label_number(accuracy = 1)(travtime)),
              vjust = 0, label.size = 0, fill = "white") +
   
   # Facet
-  facet_wrap(~k12) +
+  facet_wrap(~k12,scales = "free_x") +
   
   # Add CMAP style
   theme_cmap(gridlines = "h",
              legend.position = "None") +
-  cmap_fill_race(white = "White", black = "Black",
-                 hispanic = "Hispanic", asian = "Asian",
-                 other = "Other")
+  scale_fill_discrete(type = c("#84c87e", # Black
+                               "#e77272", # Asian
+                               "#77008c", # Non-white
+                               "#75a5d8", # White
+                               "#d8ba39", # Hispanic
+                               "#607b88" # Other
+                               ))
 
 finalize_plot(school_trips_p4,
-              "Average travel time to school by race and ethnicity (minutes).",
+              "Median travel time to school by race and ethnicity (minutes).",
               "Note: Includes school trips for travelers enrolled in K-12 and at 
               least 5 years old. Excludes trips to non-school locations and any 
               trips that did not start or end between 7:00 A.M. and 9:00 A.M. 
               Also excludes highest and lowest 5 percent of weighted records, 
-              as well as trips with no travel time or lasting 150 minutes or 
-              more.
+              as well as trips with no travel time. 
+              <br><br>
+              Notes on race and ethnicity: 'Hispanic' represents travelers 
+              who identify as Hispanic regardless of racial identity. Other 
+              categories, e.g., 'White', represent non-Hispanic travelers. 
+              High school trips are presented in only two buckets due to low 
+              sample sizes.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
@@ -347,6 +366,34 @@ finalize_plot(school_trips_p4,
               # # height = 6.3,
               # width = 11.3,
               overwrite = T)
+
+
+# Export school trips for examination in ArcGIS
+school_trips_output <-
+  school_time_race_person_level_mdt %>% 
+  filter((k12 == "Elementary and middle school" & 
+           (race_eth == "black" & travtime_pg_calc >= 14.5 & travtime_pg_calc < 15.5) |
+           (race_eth == "asian" & travtime_pg_calc >= 10.5 & travtime_pg_calc < 11.5) | 
+           (race_eth == "white" & travtime_pg_calc >= 10.5 & travtime_pg_calc < 11.5) |
+           (race_eth == "hispanic" & travtime_pg_calc >= 9.5 & travtime_pg_calc < 10.5) |
+           (race_eth == "other" & travtime_pg_calc >= 9.5 & travtime_pg_calc < 10.5)) |
+           (k12 == "High school" &
+              ((race_eth == "Non-white" & travtime_pg_calc >= 16.5 & travtime_pg_calc < 17.5) |
+                 (race_eth == "white" & travtime_pg_calc >= 14.5 & travtime_pg_calc < 15.5)))) %>% 
+  select(sampno,perno,placeGroup) %>% 
+  mutate(include = 1) %>% 
+  right_join(mdt, by = c("sampno","perno","placeGroup")) %>% 
+  arrange(sampno,perno,placeGroup) %>% 
+  mutate(include_lead = lead(include,1)) %>% 
+  select(sampno,perno,placeGroup,include,include_lead,
+         race_eth,latitude,longitude,mode_c,schol,tpurp_c,
+         travtime_pg_calc,distance_pg) %>% 
+  filter(include == 1 | include_lead == 1)
+
+
+
+write.csv(school_trips_output ,
+          "schooltrips.csv")
 
 ################################################################################
 #

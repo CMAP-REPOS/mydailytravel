@@ -39,3 +39,4 @@ tc13.csv
 *.Rproj
 average_suburban_tc13_trips.csv
 schema.ini
+schooltrips.csv
