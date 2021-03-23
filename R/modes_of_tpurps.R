@@ -160,7 +160,10 @@ finalize_plot(modes_of_tpurps_p1,
 
 ### Calculate proportions for subcategories for dining in MDT
 detailed_health_mode_c_mdt <-
-  pct_calculator(mdt_base_1,
+  pct_calculator(mdt_base_1 %>% 
+                   mutate(tpurp = recode_factor(tpurp,
+                                                "Health care visit for someone else" = "All health care visits for someone else",
+                                                "Visited a person staying at the hospital" = "All health care visits for someone else")),
                  subset = "health",
                  subset_of = "tpurp_c",
                  breakdown_by = "mode_c",
@@ -176,8 +179,7 @@ modes_of_tpurps_p2 <-
   # Get data
   detailed_health_mode_c_mdt %>%
   # Order for graph
-  mutate(tpurp = factor(tpurp,levels = c("Visited a person staying at the hospital",
-                                         "Health care visit for someone else",
+  mutate(tpurp = factor(tpurp,levels = c("All health care visits for someone else",
                                          "Health care visit for self"))) %>%
   # Categorize low-percentage modes into "Other modes"
   mutate(mode_c = recode_factor(mode_c,
@@ -211,8 +213,11 @@ finalize_plot(modes_of_tpurps_p2,
               "Mode share of health trips, 2019.",
               "Note: 'By car' includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
-              'Other modes' includes walking, biking, and all other modes.
-              Unlabeled bars have less than 5 percent mode share.
+              'Other modes' includes walking, biking, and all other modes. 
+              'Health care visit for someone else' includes the small number of 
+              trips that were recorded as visiting another person in the 
+              hospital; both categories had very similar modal splits. Unlabeled 
+              bars have less than five percent mode share.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
