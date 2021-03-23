@@ -202,10 +202,10 @@ tnc_p1 <-
   age_cost_and_usage %>% 
   # Reformat
   mutate(name = recode(factor(name,levels = c("tnc_use","tnc_cost")),
-                       "tnc_cost" = "Average cost per TNC trip ($)",
+                       "tnc_cost" = "Average cost per TNC trip",
                        "tnc_use" = "Average monthly TNC trips")) %>% 
   mutate(blank = case_when(
-    name == "Average cost per TNC trip ($)" ~ 20.5,
+    name == "Average cost per TNC trip" ~ 20.5,
     TRUE ~ 4
   )) %>% 
   
@@ -222,7 +222,8 @@ tnc_p1 <-
   facet_wrap(~name, scales = "free_x") +
   
   # Add CMAP style
-  theme_cmap(gridlines = "v",hline = 0,legend.position = "none")
+  theme_cmap(gridlines = "v",hline = 0,legend.position = "none",
+             panel.spacing.x = unit(40,"bigpts"))
 
 finalize_plot(tnc_p1,
               "Average usage and cost patterns for Transportation Network 
