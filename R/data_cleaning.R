@@ -122,7 +122,7 @@ hh <- read.csv(unzip(mdt_zip,files = "household.csv")) %>%
   )
 
 # location file w/region flag
-region <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
+location <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
   select(sampno,locno, # Identifier for the household (sampno) and location
                      # (locno)
 
@@ -155,7 +155,7 @@ zones <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Tr
                      # zones, used for weighting the overall survey.
 
 # Home location flag
-home_wip <- region %>%
+home_wip <- location %>%
   # Identify home locations
   filter(home == 1) %>%
   # Keep relevant variables and rename
@@ -240,7 +240,7 @@ placeGroupStats <- trips %>%
 mdt <- trips %>% # 128,229 records
   inner_join(ppl, by = c("sampno", "perno")) %>% # 128,229 records
   inner_join(hh, by = "sampno") %>% # 128,229 records
-  inner_join(region, by = c("sampno", "locno")) %>% # 128,229 records
+  inner_join(location, by = c("sampno", "locno")) %>% # 128,229 records
   inner_join(home, by = c("sampno")) %>% # 128,229 records
   inner_join(chains, by = c("sampno", "perno", "placeno")) # 128,229 records
 
