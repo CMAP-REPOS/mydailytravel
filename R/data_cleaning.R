@@ -180,7 +180,7 @@ home_wip <- location %>%
 #   filter(sampno %in% out_of_state$sampno) %>%
 
 
-# There are 68 households coded as having home locations in multiple counties. Identify them.
+# There are <100 households coded as having home locations in multiple counties. Identify them.
 two_homes <- (home_wip %>%
                 group_by(sampno) %>%
                 summarize(n = n()) %>%
@@ -467,9 +467,10 @@ tt <- tt %>%
   arrange(SAMPN,PERNO) %>%
   # Create a flag - is the location in the nine counties?
   mutate(out_region = ifelse(FIPS %in% cmap_state_nine_counties,
-                             0,
-                             1)) %>%
-
+                             0, # 0 if not - these are in-region locations
+                             1) # 1 if true - these are out-region locations
+  ) %>%
+  
   mutate(
     # Use lag to identify the out_region status of the starting point of the
     # trip (from the previous record).
