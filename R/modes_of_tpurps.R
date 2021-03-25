@@ -171,6 +171,27 @@ detailed_health_mode_c_mdt <-
                  weight = "wtperfin",
                  survey = "mdt")
 
+### Calculate proportions for subcategories for dining in MDT
+
+
+# Age bins
+breaks <- c(-1, 17, 29, 49, 69, 150)
+age_labels <- c("5 to 17", "18 to 29", "30 to 49", "50 to 69","70 and older")
+
+detailed_health_mode_c_age_mdt <-
+  pct_calculator(mdt_base_1 %>% 
+                   mutate(tpurp = recode_factor(tpurp,
+                                                "Health care visit for someone else" = "All health care visits for someone else",
+                                                "Visited a person staying at the hospital" = "All health care visits for someone else")) %>% 
+                   mutate(age_bin = cut(age,breaks=breaks,labels = age_labels)),
+                 subset = "health",
+                 subset_of = "tpurp_c",
+                 breakdown_by = "mode_c",
+                 second_breakdown = "tpurp",
+                 third_breakdown = "age_bin",
+                 weight = "wtperfin",
+                 survey = "mdt")
+
 ################################################################################
 # Chart of healthcare sub-purposes by mode
 ################################################################################
@@ -211,6 +232,64 @@ modes_of_tpurps_p2 <-
 
 finalize_plot(modes_of_tpurps_p2,
               "Mode share of health trips, 2019.",
+              "Note: 'By car' includes trips as either a driver of a passenger
+              of a personal vehicle (not including services like taxis or TNCs).
+              'Other modes' includes walking, biking, and all other modes. 
+              'Health care visit for someone else' includes the small number of 
+              trips that were recorded as visiting another person in the 
+              hospital; both categories had very similar modal splits. Unlabeled 
+              bars have less than five percent mode share.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel data. ",
+              # width = 11.3,
+              # height = 6.3,
+              filename = "modes_of_tpurps_p2",
+              # mode = "png",
+              overwrite = TRUE)
+
+
+modes_of_tpurps_p2a <-
+  # Get data
+  detailed_health_mode_c_age_mdt %>%
+  # Exclude those without age bins
+  filter(!is.na(age_bin)) %>%
+  # Order for graph
+  mutate(tpurp = factor(tpurp,levels = c("All health care visits for someone else",
+                                         "Health care visit for self"))) %>%
+  # Categorize low-percentage modes into "Other modes"
+  mutate(mode_c = recode_factor(mode_c,
+                                "driver" = "By car",
+                                "passenger" = "By car",
+                                "transit" = "Transit",
+                                "walk" = "Other modes",
+                                "other" = "Other modes",
+                                "bike" = "Other modes")) %>%
+  # Calculate new values based on collapsed groups
+  group_by(mode_c,tpurp,age_bin) %>%
+  summarize(pct = sum(pct)) %>%
+  
+  # Create ggplot object
+  ggplot(aes(x = pct, y = str_wrap_factor(tpurp,15),
+             # Only label bars that round to at least 5 percent
+             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+  geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
+  geom_text(position = position_stack(vjust = 0.5),
+            color = "white") +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0) +
+  scale_fill_discrete(type = c("#00665c","#36d8ca","#006b8c")) +
+  
+  # Add facet
+  facet_wrap(~age_bin) +
+  
+  # Adjust axis
+  scale_x_continuous(labels = scales::label_percent())
+
+
+finalize_plot(modes_of_tpurps_p2a,
+              "Mode share of health trips by age, 2019.",
               "Note: 'By car' includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               'Other modes' includes walking, biking, and all other modes. 
