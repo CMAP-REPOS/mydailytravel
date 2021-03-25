@@ -309,6 +309,79 @@ mdt_base_1 %>%
   group_by(tpurp) %>%
   summarize(distance = weightedMedian(distance_pg,wtperfin))
 
+
+################################################################################
+#
+# SHOPPING/ERRANDS
+################################################################################
+
+### Calculate proportions for subcategories for community in MDT
+
+detailed_errands_mode_c_mdt <-
+  pct_calculator(mdt_base_1,
+                 subset = "shopping/errands",
+                 subset_of = "tpurp_c",
+                 breakdown_by = "mode_c",
+                 second_breakdown = "tpurp",
+                 weight = "wtperfin",
+                 survey = "mdt")
+
+################################################################################
+# Chart of shopping/errands trips by mode
+################################################################################
+
+modes_of_tpurps_p4 <-
+  # Get data
+  detailed_errands_mode_c_mdt %>%
+  # Order factors
+  mutate(tpurp = factor(tpurp,
+                        levels = c("Serviced a vehicle (purchased gas, regular maintenance)",
+                                   "Drive-thru errands (ATM, dry cleaning, pharmacy, etc.)",
+                                   "Shopped (non-routine like for appliances, cars, home furnishings)",
+                                   "Shopped (routine like grocery, clothing)",
+                                   "Non-shopping errands (banking, post office, government, etc.)"
+                        ))) %>%
+  # Collapse low-percentage modes
+  mutate(mode_c = recode_factor(mode_c,
+                                "driver" = "By car",
+                                "passenger" = "By car",
+                                "walk" = "Walking",
+                                "transit" = "Transit",
+                                "other" = "Other modes",
+                                "bike" = "Other modes")) %>%
+  # Calculate new totals
+  group_by(mode_c,tpurp) %>%
+  summarize(pct = sum(pct)) %>%
+  
+  # Create ggplot object
+  ggplot(aes(x = pct, y = str_wrap_factor(tpurp,20),
+             # Only label bars that round to at least 5 percent
+             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+  geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
+  geom_text(position = position_stack(vjust = 0.5),
+            color = "white") +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0) +
+  scale_fill_discrete(type = c("#00665c","#3f0030","#36d8ca","#006b8c")) +
+  
+  # Adjust axis
+  scale_x_continuous(labels = scales::label_percent())
+
+finalize_plot(modes_of_tpurps_p4,
+              "Mode share of shopping and errands trips, 2019.",
+              "Note: 'By car' includes trips as either a driver of a passenger
+              of a personal vehicle (not including services like taxis or 
+              ride-share). 'Other modes' includes biking, ride-share, and all 
+              other modes. Unlabeled bars have less than 5 percent mode share. 
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel data. ",
+              # width = 6.5,
+              # height = 4,
+              overwrite = T,
+              # mode = "png",
+              filename = "modes_of_tpurps_p4")
 ################################################################################
 # ARCHIVE
 #
