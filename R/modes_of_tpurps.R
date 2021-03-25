@@ -133,7 +133,7 @@ modes_of_tpurps_p1 <-
 
   # Add CMAP style
   theme_cmap(gridlines = "v",vline = 0) +
-  cmap_fill_discrete(palette = "environment") +
+  scale_fill_discrete(type = c("#00665c","#3f0030","#006b8c")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent())
@@ -150,7 +150,7 @@ finalize_plot(modes_of_tpurps_p1,
               # width = 11.3,
               # height = 6.3,
               filename = "modes_of_tpurps_p1",
-              mode = "png",
+              # mode = "png",
               overwrite = T)
 
 ################################################################################
@@ -203,7 +203,7 @@ modes_of_tpurps_p2 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0) +
-  cmap_fill_discrete(palette = "legislation") +
+  scale_fill_discrete(type = c("#00665c","#36d8ca","#006b8c")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent())
@@ -224,7 +224,7 @@ finalize_plot(modes_of_tpurps_p2,
               # width = 11.3,
               # height = 6.3,
               filename = "modes_of_tpurps_p2",
-              mode = "png",
+              # mode = "png",
               overwrite = TRUE)
 
 
@@ -280,7 +280,7 @@ modes_of_tpurps_p3 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0) +
-  cmap_fill_discrete(palette = "environment") +
+  scale_fill_discrete(type = c("#00665c","#3f0030","#006b8c")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent())
