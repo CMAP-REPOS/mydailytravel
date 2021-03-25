@@ -201,7 +201,6 @@ recode_tpurp_buckets_mdt <-
                   "Attended a religious event"),
 
     "recreation/fitness" = c("Other recreation",
-                             "Attended a major special event",
                              "Exercised outdoors",
                              "Went to the gym"),
 
@@ -211,6 +210,7 @@ recode_tpurp_buckets_mdt <-
     transfer = "Changed travel mode / transferred",
 
     other = c("Something else",
+              "Attended a major special event",
               "Volunteered"),
 
     missing = "Missing")
