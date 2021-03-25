@@ -132,7 +132,8 @@ modes_of_tpurps_p1 <-
             color = "white") +
 
   # Add CMAP style
-  theme_cmap(gridlines = "v",vline = 0) +
+  theme_cmap(gridlines = "v",vline = 0,
+             xlab = "Mode share") +
   scale_fill_discrete(type = c("#00665c","#3f0030","#006b8c")) +
   
   # Adjust axis
@@ -223,7 +224,8 @@ modes_of_tpurps_p2 <-
             color = "white") +
   
   # Add CMAP style
-  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0) +
+  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0,
+             xlab = "Mode share") +
   scale_fill_discrete(type = c("#00665c","#36d8ca","#006b8c")) +
   
   # Adjust axis
@@ -231,7 +233,8 @@ modes_of_tpurps_p2 <-
 
 
 finalize_plot(modes_of_tpurps_p2,
-              "Mode share of health trips, 2019.",
+              "Although driving is the most common mode, transit plays an 
+              important role for personal health care visits.",
               "Note: 'By car' includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               'Other modes' includes walking, biking, and all other modes. 
@@ -245,7 +248,7 @@ finalize_plot(modes_of_tpurps_p2,
               # width = 11.3,
               # height = 6.3,
               filename = "modes_of_tpurps_p2",
-              # mode = "png",
+              mode = "png",
               overwrite = TRUE)
 
 
@@ -278,7 +281,8 @@ modes_of_tpurps_p2a <-
             color = "white") +
   
   # Add CMAP style
-  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0) +
+  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0,
+             xlab = "Mode share") +
   scale_fill_discrete(type = c("#00665c","#36d8ca","#006b8c")) +
   
   # Add facet
@@ -358,7 +362,8 @@ modes_of_tpurps_p3 <-
             color = "white") +
   
   # Add CMAP style
-  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0) +
+  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0,
+             xlab = "Mode share") +
   scale_fill_discrete(type = c("#00665c","#3f0030","#006b8c")) +
   
   # Adjust axis

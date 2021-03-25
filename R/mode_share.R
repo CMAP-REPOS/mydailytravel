@@ -218,16 +218,17 @@ mode_share_p1 <-
              fill = "white") +
 
   # Add CMAP style
-  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6) +
+  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,xlab = "Mode share by home county") +
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
-  scale_x_continuous(n.breaks = 6, labels = scales::label_percent(),
+  scale_x_continuous(breaks = seq(-1,.25,by = .25), 
+                     labels = scales::label_percent()(abs(seq(-1,.25,by = .25))),
                      limits = c(-1,.4))
 
 finalize_plot(mode_share_p1,
-              title = "Mode share for trips in northeastern Illinois by home 
-              county, highlighting non-car mode share.",
+              title = "Residents of Cook County have by far the highest non-car 
+              mode share in the CMAP region.",
               caption = "Note: Includes trips by residents of the region that 
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
@@ -289,7 +290,8 @@ mode_share_p2 <-
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
-  scale_x_continuous(n.breaks = 6, labels = scales::label_percent(),
+  scale_x_continuous(breaks = seq(-1,.5,by = .25), 
+                     labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
                      limits = c(-1,.6))
 
 finalize_plot(mode_share_p2,
@@ -356,7 +358,8 @@ mode_share_p3 <-
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
-  scale_x_continuous(n.breaks = 6, labels = scales::label_percent(),
+  scale_x_continuous(breaks = seq(-1,.5,by = .25), 
+                     labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
                      limits = c(-1,.55))
 
 finalize_plot(mode_share_p3,
@@ -425,7 +428,8 @@ mode_share_p4 <-
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
-  scale_x_continuous(n.breaks = 6, labels = scales::label_percent(),
+  scale_x_continuous(breaks = seq(-1,.5,by = .25), 
+                     labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
                      limits = c(-1,.55))
 
 finalize_plot(mode_share_p4,
