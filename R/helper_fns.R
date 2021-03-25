@@ -106,6 +106,7 @@ pct_calculator <- function(data,
                 breakdown_n = n()) %>%
       mutate(pct = breakdown_total / total)
     
+    # Finally, if there is a third breakdown
   } else {
     percents <-
       relevant_data %>%
