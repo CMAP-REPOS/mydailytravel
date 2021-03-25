@@ -28,8 +28,9 @@ str_wrap_factor <- function(x, ...) {
 #         * weight, a string. Defaults to NULL. If included, this should be the
 #           name of the column in which data weights can be found. If it remains
 #           NULL, the implied weight of each record will be 1.
-#         * second_breakdown, a string. Defaults to NULL. If included, this
-#           enables the user to add a second breakdown column for calculation.
+#         * second_breakdown and third_breakdown, both strings. Default to NULL. 
+#           If included, these enable the user to add a second and third 
+#           breakdown column for calculation.
 #         * survey, a string. Defaults to NULL. If included, the output table
 #           will include a column called "survey" with the provided value as the
 #           entry for each record.
@@ -44,8 +45,15 @@ pct_calculator <- function(data,
                            breakdown_by,
                            weight = NULL,
                            second_breakdown = NULL,
+                           third_breakdown = NULL,
                            survey = NULL) {
 
+  # Confirm that if there is a third breakdown there is also every breakdown
+  # above it.
+  if (!is.null(third_breakdown) & is.null(second_breakdown)) {
+    stop("You cannot enter a third breakdown without specifying a second breakdown.")
+  }
+  
   # Load data
   relevant_data <- data
   # Create helper weight name variable
@@ -82,8 +90,8 @@ pct_calculator <- function(data,
                 breakdown_n = n()) %>%
       mutate(pct = breakdown_total / total)
   }
-  # Next, if there is a second breakdown.
-  else {
+  # Next, if there is a second breakdown but not a third breakdown.
+  else if (is.null(third_breakdown)) {
     percents <-
       relevant_data %>%
       # Create totals
@@ -98,6 +106,20 @@ pct_calculator <- function(data,
                 breakdown_n = n()) %>%
       mutate(pct = breakdown_total / total)
     
+  } else {
+    percents <-
+      relevant_data %>%
+      # Create totals
+      group_by(.data[[second_breakdown]],.data[[third_breakdown]]) %>%
+      mutate(total = sum(.data[[weight_name]]),
+             total_n = n()) %>%
+      # Calculate percentages
+      group_by(.data[[breakdown_by]],.data[[second_breakdown]],.data[[third_breakdown]]) %>%
+      summarize(breakdown_total = sum(.data[[weight_name]]),
+                total = median(total),
+                total_n = median(total_n),
+                breakdown_n = n()) %>%
+      mutate(pct = breakdown_total / total)
   }
 
   # If there is a survey marker, add it.
