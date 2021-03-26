@@ -370,11 +370,11 @@ modes_of_tpurps_p3 <-
   scale_x_continuous(labels = scales::label_percent())
 
 finalize_plot(modes_of_tpurps_p3,
-              "Mode share of trips to visit friends and family, 2019.",
+              "Walking and other non-car modes are significantly more common for 
+              trips to socialize with friends than with relatives.",
               "Note: 'By car' includes trips as either a driver of a passenger
-              of a personal vehicle (not including services like taxis or TNCs).
-              'Other modes' includes transit, biking, and all other modes.
-              Unlabeled bars have less than 5 percent mode share.
+              of a personal vehicle (not including services like taxis or TNCs). 
+               'Other modes' includes transit, biking, and all other modes.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
@@ -555,10 +555,10 @@ detailed_allpurps_mode_c_mdt <-
                  survey = "mdt")
 
 ################################################################################
-# Chart of all trips by mode
+# Table of all trips by mode
 ################################################################################
 
-modes_of_tpurps_p6 <-
+modes_of_tpurps_t1 <-
   # Get data
   detailed_allpurps_mode_c_mdt %>%
   # Collapse low-percentage modes
@@ -572,36 +572,8 @@ modes_of_tpurps_p6 <-
   # Calculate new totals
   group_by(mode_c,tpurp) %>%
   summarize(pct = sum(pct)) %>%
+  pivot_wider(id_cols = tpurp, values_from = pct, names_from = mode_c)
   
-  # Create ggplot object
-  ggplot(aes(x = pct, y = str_wrap_factor(tpurp,30),
-             # Only label bars that round to at least 5 percent
-             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
-  geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
-  geom_text(position = position_stack(vjust = 0.5),
-            color = "white") +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0) +
-  scale_fill_discrete(type = c("#00665c","#3f0030","#36d8ca","#006b8c")) +
-  
-  # Adjust axis
-  scale_x_continuous(labels = scales::label_percent())
-
-finalize_plot(modes_of_tpurps_p6,
-              "Mode share of all trip purposes, 2019.",
-              "Note: 'By car' includes trips as either a driver of a passenger
-              of a personal vehicle (not including services like taxis or 
-              ride-share). 'Other modes' includes biking, ride-share, and all 
-              other modes. Unlabeled bars have less than 5 percent mode share. 
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data. ",
-              # width = 6.5,
-              height = 14,
-              overwrite = T,
-              # mode = "png",
-              filename = "modes_of_tpurps_p6")
 
 ################################################################################
 # ARCHIVE
