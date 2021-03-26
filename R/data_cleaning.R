@@ -34,6 +34,7 @@
 library(tidyverse)
 library(lubridate)
 library(RODBC)
+library(RSocrata)
 
 #################################################
 #                                               #
@@ -154,6 +155,14 @@ zones <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Tr
          cluster)    # Designates the household's inclusion in one of 11 travel
                      # zones, used for weighting the overall survey.
 
+# Download tract file for City of Chicago to ID city residents
+chicago_tracts <- read.socrata("https://data.cityofchicago.org/resource/74p9-q2aq.json") %>% 
+  select(statefp10,countyfp10,tractce10) %>% 
+  mutate(statefp10 = as.integer(statefp10),
+         countyfp10 = as.integer(countyfp10),
+         tractce10 = as.integer(tractce10),
+         chicago = 1)
+
 # Home location flag
 home_wip <- location %>%
   # Identify home locations
@@ -204,10 +213,29 @@ home <- home_wip %>%
       TRUE ~ as.double(home_tract)
     )) %>%
   # Select distinct rows to eliminate double counting of two-home households.
-  distinct(sampno,home_county,.keep_all = TRUE)
+  distinct(sampno,home_county,.keep_all = TRUE) %>% 
+  # Flag homes in Chicago
+  left_join(chicago_tracts, by = c("home_state" = "statefp10",
+                                   "home_county" = "countyfp10",
+                                   "home_tract" = "tractce10")) %>% 
+  mutate(chicago = 
+           case_when(is.na(chicago) ~ 0,
+                     TRUE ~ chicago)) %>% 
+  # Create flag for home county with Chicago and suburban Cook
+  mutate(home_county_chi = case_when(
+    chicago == 1 ~ "Chicago",
+    home_county == 31 ~ "Suburban Cook",
+    home_county == 37 ~ "DeKalb",
+    home_county == 63 ~ "Grundy",
+    home_county == 97 ~ "Lake",
+    home_county == 43 ~ "DuPage",
+    home_county == 89 ~ "Kane",
+    home_county == 93 ~ "Kendall",
+    home_county == 111 ~ "McHenry",
+    home_county == 197 ~ "Will"))
 
-# Remove WIP tables
-rm(home_wip, two_homes)
+# Remove WIP tables and Chicago tracts
+rm(home_wip, two_homes,chicago_tracts)
 
 # Add combined duration and distance for placeGroup trips
 placeGroupStats <- trips %>%

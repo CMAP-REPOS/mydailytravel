@@ -92,21 +92,11 @@ mdt_mode_counties <-
       # ...with the same data, replacing county with region-wide
       rbind(mdt_base_3 %>%
               filter(home_state == 17 & home_county %in% cmap_seven_counties) %>%
-              mutate(home_county = "CMAP region")),
+              mutate(home_county_chi = "CMAP region")),
     # Execute the rest of the function
     breakdown_by = "mode_c",
-    second_breakdown = "home_county",
-    weight = "wtperfin") %>%
-  # Recode counties for publication
-  mutate(home_county = recode(home_county,
-                              "31" = "Cook",
-                              "CMAP region" = "CMAP region",
-                              "97" = "Lake",
-                              "43" = "DuPage",
-                              "89" = "Kane",
-                              "93" = "Kendall",
-                              "111" = "McHenry",
-                              "197" = "Will"))
+    second_breakdown = "home_county_chi",
+    weight = "wtperfin") 
 
 # Analyze percents by household income
 mdt_mode_income <-
@@ -182,7 +172,7 @@ mdt_mode_age <-
 mode_share_p1_labels <-
   mdt_mode_counties %>%
   filter(mode_c %in% c("walk","transit","bike","other")) %>%
-  group_by(home_county) %>%
+  group_by(home_county_chi) %>%
   summarize(label = sum(pct))
 
 # Create plot
@@ -190,7 +180,7 @@ mode_share_p1 <-
   # Get data
   mdt_mode_counties %>%
   # Add labels
-  left_join(mode_share_p1_labels, by = "home_county") %>%
+  left_join(mode_share_p1_labels, by = "home_county_chi") %>%
   # Make changes for graphing
   mutate(
     # Reorder factors and capitalize
@@ -208,11 +198,11 @@ mode_share_p1 <-
   ) %>%
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = reorder(home_county,label))) +
+  ggplot(aes(x = pct, y = reorder(home_county_chi,label))) +
   geom_col(aes(fill = mode_c),position = position_stack(reverse = T)) +
   geom_label(data = mode_share_p1_labels,
              aes(label = scales::label_percent(accuracy = 0.1)(label),
-                 x = label, y = home_county),
+                 x = label, y = home_county_chi),
              label.size = 0,
              hjust = 0,
              fill = "white") +
@@ -222,12 +212,12 @@ mode_share_p1 <-
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
-  scale_x_continuous(breaks = seq(-1,.25,by = .25), 
-                     labels = scales::label_percent()(abs(seq(-1,.25,by = .25))),
-                     limits = c(-1,.4))
+  scale_x_continuous(breaks = seq(-1,.5,by = .25), 
+                     labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
+                     limits = c(-1,.58))
 
 finalize_plot(mode_share_p1,
-              title = "Residents of Cook County have by far the highest non-car 
+              title = "Residents of Chicago and Cook County have by far the highest non-car 
               mode share in the CMAP region.",
               caption = "Note: Includes trips by residents of the region that 
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
