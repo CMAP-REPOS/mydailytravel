@@ -199,8 +199,9 @@ trips_in_motion_p1 <-
              xlab = "Weekday trips in motion by time of day")
 
 finalize_plot(trips_in_motion_p1,
-              "Prior to COVID-19, the morning and evening peaks in travel demand 
-              were very pronounced.",
+              "The morning and evening peaks in travel demand are very 
+              pronounced, although the COVID-19 pandemic's impact on these 
+              travel patterns remains uncertain.",
               "Note: Trips in motion are 25-minute rolling averages. Trips 
               analyzed include all weekday trips by residents of the region that
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
