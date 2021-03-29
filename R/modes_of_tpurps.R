@@ -333,7 +333,9 @@ health_mode_c_vehs_mdt %>%
 ### Calculate proportions for subcategories for community in MDT
 
 detailed_community_mode_c_mdt <-
-  pct_calculator(mdt_base_1 %>% filter(distance_pg < 1.5 & distance_pg > 0.5),
+  pct_calculator(mdt_base_1,
+                 # # Optional filter to compare like trips with like
+                 # %>% filter(distance_pg < 1.25 & distance_pg > 0.75),
                  subset = "community",
                  subset_of = "tpurp_c",
                  breakdown_by = "mode_c",
