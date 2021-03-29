@@ -172,26 +172,6 @@ detailed_health_mode_c_mdt <-
                  weight = "wtperfin",
                  survey = "mdt")
 
-### Calculate proportions for subcategories for dining in MDT
-
-
-# Age bins
-breaks <- c(-1, 17, 29, 49, 69, 150)
-age_labels <- c("5 to 17", "18 to 29", "30 to 49", "50 to 69","70 and older")
-
-detailed_health_mode_c_age_mdt <-
-  pct_calculator(mdt_base_1 %>% 
-                   mutate(tpurp = recode_factor(tpurp,
-                                                "Health care visit for someone else" = "All health care visits for someone else",
-                                                "Visited a person staying at the hospital" = "All health care visits for someone else")) %>% 
-                   mutate(age_bin = cut(age,breaks=breaks,labels = age_labels)),
-                 subset = "health",
-                 subset_of = "tpurp_c",
-                 breakdown_by = "mode_c",
-                 second_breakdown = "tpurp",
-                 third_breakdown = "age_bin",
-                 weight = "wtperfin",
-                 survey = "mdt")
 
 ################################################################################
 # Chart of healthcare sub-purposes by mode
@@ -208,7 +188,7 @@ modes_of_tpurps_p2 <-
                                 "driver" = "By car",
                                 "passenger" = "By car",
                                 "transit" = "Transit",
-                                "walk" = "Other modes",
+                                "walk" = "Walking",
                                 "other" = "Other modes",
                                 "bike" = "Other modes")) %>%
   # Calculate new values based on collapsed groups
@@ -224,9 +204,9 @@ modes_of_tpurps_p2 <-
             color = "white") +
   
   # Add CMAP style
-  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0,
+  theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
              xlab = "Mode share") +
-  scale_fill_discrete(type = c("#00665c","#36d8ca","#006b8c")) +
+  scale_fill_discrete(type = c("#00665c","#3f0030","#36d8ca","#006b8c")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent())
@@ -238,8 +218,9 @@ finalize_plot(modes_of_tpurps_p2,
               "Note: 'By car' includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               'Other modes' includes walking, biking, and all other modes. 
-              'Health care visit for someone else' includes the small number of 
-              trips that were recorded as visiting another person in the 
+              'All health care visit for someone else' includes trips recorded 
+              as 'Health care visits for someone else' and the small number
+              of trips that were recorded as visiting another person in the 
               hospital; both categories had very similar modal splits. Unlabeled 
               bars have less than five percent mode share.
               <br><br>
@@ -252,11 +233,27 @@ finalize_plot(modes_of_tpurps_p2,
               overwrite = TRUE)
 
 
+### BACKUPS FOR TEXT - NOT EXPORTED GRAPHICS
+
+detailed_health_race_mode_c_mdt <-
+  pct_calculator(mdt_base_1 %>% 
+                   mutate(tpurp = recode_factor(tpurp,
+                                                "Health care visit for someone else" = "All health care visits for someone else",
+                                                "Visited a person staying at the hospital" = "All health care visits for someone else")),
+                 subset = "health",
+                 subset_of = "tpurp_c",
+                 breakdown_by = "mode_c",
+                 second_breakdown = "tpurp",
+                 third_breakdown = "race_eth",
+                 weight = "wtperfin",
+                 survey = "mdt")
+
+# Breakdown by race and ethnicity
 modes_of_tpurps_p2a <-
   # Get data
-  detailed_health_mode_c_age_mdt %>%
-  # Exclude those without age bins
-  filter(!is.na(age_bin)) %>%
+  detailed_health_race_mode_c_mdt %>%
+  # Exclude those without race and ethnicity
+  filter(race_eth != "missing") %>%
   # Order for graph
   mutate(tpurp = factor(tpurp,levels = c("All health care visits for someone else",
                                          "Health care visit for self"))) %>%
@@ -269,7 +266,7 @@ modes_of_tpurps_p2a <-
                                 "other" = "Other modes",
                                 "bike" = "Other modes")) %>%
   # Calculate new values based on collapsed groups
-  group_by(mode_c,tpurp,age_bin) %>%
+  group_by(mode_c,tpurp,race_eth) %>%
   summarize(pct = sum(pct)) %>%
   
   # Create ggplot object
@@ -286,17 +283,16 @@ modes_of_tpurps_p2a <-
   scale_fill_discrete(type = c("#00665c","#36d8ca","#006b8c")) +
   
   # Add facet
-  facet_wrap(~age_bin) +
+  facet_wrap(~race_eth) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent())
 
 
 finalize_plot(modes_of_tpurps_p2a,
-              "Mode share of health trips by age, 2019.",
+              "Mode share of health trips by race and ethnicity, 2019.",
               "Note: 'By car' includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
-              'Other modes' includes walking, biking, and all other modes. 
               'Health care visit for someone else' includes the small number of 
               trips that were recorded as visiting another person in the 
               hospital; both categories had very similar modal splits. Unlabeled 
@@ -306,10 +302,28 @@ finalize_plot(modes_of_tpurps_p2a,
               Daily Travel data. ",
               # width = 11.3,
               # height = 6.3,
-              filename = "modes_of_tpurps_p2",
+              filename = "modes_of_tpurps_p2a",
               # mode = "png",
               overwrite = TRUE)
 
+# Calculations to understand the relationship between transit use for healthcare
+# and household vehicle ownership
+health_mode_c_vehs_mdt <-
+  pct_calculator(mdt_base_1 %>% 
+                   mutate(hhveh = case_when(
+                     hhveh == 0 ~ 0,
+                     hhveh == 1 ~ 1,
+                     TRUE ~ 2
+                 )),
+                 subset = "Health care visit for self",
+                 subset_of = "tpurp",
+                 breakdown_by = "hhveh",
+                 second_breakdown = "mode_c",
+                 weight = "wtperfin",
+                 survey = "mdt")
+
+health_mode_c_vehs_mdt %>% 
+  View()
 
 ################################################################################
 #
@@ -319,7 +333,7 @@ finalize_plot(modes_of_tpurps_p2a,
 ### Calculate proportions for subcategories for community in MDT
 
 detailed_community_mode_c_mdt <-
-  pct_calculator(mdt_base_1,
+  pct_calculator(mdt_base_1 %>% filter(distance_pg < 1.5 & distance_pg > 0.5),
                  subset = "community",
                  subset_of = "tpurp_c",
                  breakdown_by = "mode_c",
@@ -346,7 +360,7 @@ modes_of_tpurps_p3 <-
                                 "driver" = "By car",
                                 "passenger" = "By car",
                                 "walk" = "Walking",
-                                "transit" = "Other modes",
+                                "transit" = "Transit",
                                 "other" = "Other modes",
                                 "bike" = "Other modes")) %>%
   # Calculate new totals
@@ -362,9 +376,9 @@ modes_of_tpurps_p3 <-
             color = "white") +
   
   # Add CMAP style
-  theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0,
+  theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
              xlab = "Mode share") +
-  scale_fill_discrete(type = c("#00665c","#3f0030","#006b8c")) +
+  scale_fill_discrete(type = c("#00665c","#3f0030","#36d8ca","#006b8c")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent())
@@ -373,15 +387,14 @@ finalize_plot(modes_of_tpurps_p3,
               "Walking and other non-car modes are significantly more common for 
               trips to socialize with friends than with relatives.",
               "Note: 'By car' includes trips as either a driver of a passenger
-              of a personal vehicle (not including services like taxis or TNCs). 
-               'Other modes' includes transit, biking, and all other modes.
+              of a personal vehicle (not including services like taxis or TNCs).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
               # width = 6.5,
               # height = 4,
               overwrite = T,
-              mode = "png",
+              # mode = "png",
               filename = "modes_of_tpurps_p3")
 
 ################################################################################
@@ -571,8 +584,9 @@ modes_of_tpurps_t1 <-
                                 "bike" = "Other modes")) %>%
   # Calculate new totals
   group_by(mode_c,tpurp) %>%
-  summarize(pct = sum(pct)) %>%
-  pivot_wider(id_cols = tpurp, values_from = pct, names_from = mode_c)
+  summarize(pct = sum(pct),
+            n = first(total_n)) %>%
+  pivot_wider(id_cols = c(tpurp,n), values_from = pct, names_from = mode_c)
   
 
 ################################################################################
