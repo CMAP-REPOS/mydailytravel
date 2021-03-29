@@ -449,10 +449,12 @@ trips_in_motion_p5 <-
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
              legend.max.columns = 6,
-             xlab = "Weekday trips in motion by time of day")
+             xlab = "Weekday trips in motion by time of day") 
 
 finalize_plot(trips_in_motion_p5,
-              "Health care trips also have a morning and afternoon peak, but these are much more concentrated around (but not during) the lunch hour.",
+              "Health care trips also have a morning and afternoon peak, but 
+              these are much more concentrated around (but not during) the 
+              lunch hour.",
               "Note: Trips in motion are 55-minute rolling averages. Trips 
               analyzed include all trips by residents of the region that start 
               and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
@@ -463,7 +465,7 @@ finalize_plot(trips_in_motion_p5,
               Daily Travel trip diaries.",
               # height = 6.3,
               # width = 11.3,
-              mode = "png",
+              # mode = "png",
               filename = "trips_in_motion_p5",
               overwrite = T)
 
