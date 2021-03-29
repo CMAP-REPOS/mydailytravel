@@ -408,6 +408,36 @@ mdt_base_1 %>%
   group_by(tpurp) %>%
   summarize(distance = weightedMedian(distance_pg,wtperfin))
 
+################################################################################
+# Understanding number of fellow travelers for community trips
+################################################################################
+
+# Travel party size
+mdt_base_1 %>% 
+  filter(tpurp %in% c("Socialized with friends","Socialized with relatives")) %>% 
+  group_by(sampno,locno,tpurp,arrtime_pg,start_times_pg) %>% 
+  summarize(n = n(),
+            wt = sum(wtperfin)) %>% 
+  group_by(tpurp) %>% 
+  mutate(total = sum(wt)) %>% 
+  group_by(tpurp,n,total) %>% 
+  summarize(breakdown = sum(wt)) %>% 
+  mutate(pct = breakdown / total)
+
+# Travel party age
+mdt_base_1 %>% 
+  filter(tpurp %in% c("Socialized with friends","Socialized with relatives"),
+         age > 0) %>% 
+  group_by(sampno,locno,tpurp,arrtime_pg,start_times_pg) %>% 
+  summarize(n = n(),
+            wt = sum(wtperfin),
+            age = mean(age)) %>% 
+group_by(tpurp) %>% 
+  mutate(total = sum(wt)) %>% 
+  group_by(tpurp,n,total) %>% 
+  summarize(breakdown = sum(wt),
+            age = weighted.mean(age,wt)) %>% 
+  mutate(pct = breakdown / total)  
 
 ################################################################################
 #
