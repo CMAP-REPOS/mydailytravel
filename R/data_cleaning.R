@@ -223,7 +223,13 @@ home <- home_wip %>%
                      TRUE ~ chicago)) %>% 
   # Create flag for home county with Chicago and suburban Cook
   mutate(home_county_chi = case_when(
-    chicago == 1 ~ "Chicago",
+    # Manually assign non-Chicago residents who reside in tracts that overlap Chicago in Cook County (identified through ArcGIS)
+    sampno %in% c(30006322,70003118,70004448,70004613,
+                  70018378,70026774,70029527,70043193,
+                  70044738,70100251,70100542) ~ "Suburban Cook",
+    # Keep all residents of Chicago tracts with residence in Cook County (to
+    # eliminate any residents of O'Hare tracts in DuPage)
+    chicago == 1 & home_county == 31 ~ "Chicago",
     home_county == 31 ~ "Suburban Cook",
     home_county == 37 ~ "DeKalb",
     home_county == 63 ~ "Grundy",
