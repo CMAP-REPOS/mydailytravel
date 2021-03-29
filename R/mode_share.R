@@ -164,6 +164,30 @@ mdt_mode_age <-
   mutate(age_bin = fct_relevel(age_bin,"CMAP region average")) %>%
   mutate(age_bin = fct_rev(factor(age_bin)))
 
+
+
+# Do the same again, but for mileage
+
+# Mileage bins
+mile_breaks <- c(-1,.5,1,2.5,5,25,100)
+mile_labels <- c("0.50 miles or less","0.51 to 1 mile", "1.01 to 2.50 miles", 
+                 "2.51 to 5.00 miles","5.01 to 25.00 miles","More than 25 miles")
+
+mdt_mode_mileage <-
+  pct_calculator(
+    # Keep all respondents with a reported age...
+    mdt_base_3 %>% filter(distance_pg > 0) %>%
+      mutate(mile_bin=cut(distance_pg,breaks=mile_breaks,labels=mile_labels)) %>%
+      # ...and add the whole set again to enable regional totals
+      rbind(mdt_base_3 %>% filter(distance_pg > 0) %>% mutate(mile_bin = "CMAP region average")),
+    # Execute the rest of the function
+    breakdown_by = "mode_c",
+    second_breakdown = "mile_bin",
+    weight = "wtperfin") %>%
+  # Reorder factors for publication
+  mutate(mile_bin = fct_relevel(mile_bin,"CMAP region average")) %>%
+  mutate(mile_bin = fct_rev(factor(mile_bin)))
+
 ################################################################################
 # Chart of mode share by home county
 ################################################################################
@@ -208,7 +232,7 @@ mode_share_p1 <-
              fill = "white") +
 
   # Add CMAP style
-  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,xlab = "Mode share by home county") +
+  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,xlab = "Mode share by home jurisdiction") +
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
@@ -297,7 +321,7 @@ finalize_plot(mode_share_p2,
               # height = 5.5,
               # width = 11.3,
               filename = "mode_share_p2",
-              mode = "png",
+              # mode = "png",
               overwrite = T)
 
 ################################################################################
@@ -438,6 +462,73 @@ finalize_plot(mode_share_p4,
               mode = "png",
               overwrite = T)
 
+################################################################################
+# Chart of mode share by mileage
+################################################################################
+
+# Create labels
+mode_share_p5_labels <-
+  mdt_mode_mileage %>%
+  filter(mode_c %in% c("walk","transit","bike","other")) %>%
+  group_by(mile_bin) %>%
+  summarize(label = sum(pct))
+
+# Create plot
+mode_share_p5 <-
+  # Get data
+  mdt_mode_mileage %>%
+  # Add labels
+  left_join(mode_share_p5_labels, by = "mile_bin") %>%
+  # Make changes for graphing
+  mutate(
+    # Reorder factors and capitalize
+    mode_c = recode_factor(factor(mode_c,levels = 
+                                    c("driver","passenger","walk",
+                                      "transit","bike","other")),
+                           "driver" = "Driver",
+                           "passenger" = "Passenger",
+                           "walk" = "Walk",
+                           "transit" = "Transit",
+                           "bike" = "Bike",
+                           "other" = "Other"),
+    # Make driver/passenger go on the left-hand-side of the graph
+    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct)
+  ) %>%
+  
+  # Create ggplot object
+  ggplot(aes(x = pct, y = mile_bin)) +
+  geom_col(aes(fill = mode_c),position = position_stack(reverse = T)) +
+  geom_label(data = mode_share_p5_labels,
+             aes(label = scales::label_percent(accuracy = 0.1)(label),
+                 x = label, y = mile_bin),
+             label.size = 0,
+             hjust = 0,
+             fill = "white") +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6) +
+  cmap_fill_discrete(palette = "mobility") +
+  
+  # Adjust axis
+  scale_x_continuous(breaks = seq(-1,.75,by = .25), 
+                     labels = scales::label_percent()(abs(seq(-1,.75,by = .25))),
+                     limits = c(-1,.83))
+
+finalize_plot(mode_share_p5,
+              title = "Travelers rely on non-car modes most for the shortest and 
+              the longest trips.",
+              caption = "Note: Includes trips by residents of the region that 
+              start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
+              Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
+              travelers younger than 16.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel data.",
+              # # height = 5.5,
+              # width = 11.3,
+              filename = "mode_share_p5",
+              mode = "png",
+              overwrite = T)
 ################################################################################
 # Archive - Chart of overall mode share
 ################################################################################
