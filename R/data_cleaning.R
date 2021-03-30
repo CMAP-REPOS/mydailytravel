@@ -35,6 +35,8 @@ library(tidyverse)
 library(lubridate)
 library(RODBC)
 library(RSocrata)
+library(tidycensus)
+library(sf)
 
 #################################################
 #                                               #
@@ -48,7 +50,7 @@ source("R/recoding.R")
 
 # Load My Daily Travel
 mdt_zip <- tempfile()
-download.file("https://datahub.cmap.illinois.gov/dataset/02a047a1-e7b8-4ca7-b754-54f2b9bfeab6/resource/c9e82b87-0b4c-45ea-9c06-9cdebdb7071f/download/MyDailyTravelData.zip",mdt_zip)
+download.file("https://datahub.cmap.illinois.gov/dataset/02a047a1-e7b8-4ca7-b754-54f2b9bfeab6/resource/c9e82b87-0b4c-45ea-9c06-9cdebdb7071f/download/MyDailyTravelData.zip",mdt_zip,quiet = TRUE)
 
 # trips
 trips <- read.csv(unzip(mdt_zip,files = "place.csv")) %>%
@@ -144,6 +146,44 @@ location <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
 file.remove(mdt_zip,"place.csv","person.csv","household.csv","location.csv")
 rm(mdt_zip)
 
+# Add status in City of Chicago to location file
+
+# Add geometry to latitude and longitude for locations
+location_xy <- st_as_sf(location,
+                        coords = c(x = "longitude", y = "latitude"),
+                        crs = 4269)
+
+# Download shapefiles of municipalities in Illinois
+municipality_sf <- 
+  get_acs(state = "IL",geography = "place",variables = "B19013_001",geometry = TRUE) %>% 
+  select(GEOID,NAME,geometry)
+
+# Join municipalities with the location file to determine which locations fall
+# within municipal borders
+municipality_locations <- 
+  st_join(x = location_xy,
+          y = municipality_sf,
+          join = st_within) %>% 
+  # Remove geometry
+  as_tibble() %>% 
+  # Keep relevant variables
+  select(sampno,locno,place_id = GEOID,place_name = NAME) %>% 
+  # Eliminate unnecessary endings to place names
+  mutate(place_name = gsub(" city, Illinois","",place_name)) %>% 
+  mutate(place_name = gsub(" village, Illinois","",place_name)) %>% 
+  mutate(place_name = gsub(" town, Illinois","",place_name)) %>% 
+  mutate(place_name = gsub(" CDP, Illinois","",place_name))
+
+# Add municipality flags to locations
+location <- 
+  left_join(
+    location,
+    municipality_locations,
+    by = c("sampno","locno")
+  )
+
+rm(municipality_locations,municipality_sf,location_xy)
+
 # Trip chains (provided by CMAP R&A staff). These provide sampno, perno, and
 # placeno as identifiers, as well as identify the trip as part of a chain to
 # work or a shopping trip.
@@ -155,14 +195,6 @@ zones <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Tr
          cluster)    # Designates the household's inclusion in one of 11 travel
                      # zones, used for weighting the overall survey.
 
-# Download tract file for City of Chicago to ID city residents
-chicago_tracts <- read.socrata("https://data.cityofchicago.org/resource/74p9-q2aq.json") %>% 
-  select(statefp10,countyfp10,tractce10) %>% 
-  mutate(statefp10 = as.integer(statefp10),
-         countyfp10 = as.integer(countyfp10),
-         tractce10 = as.integer(tractce10),
-         chicago = 1)
-
 # Home location flag
 home_wip <- location %>%
   # Identify home locations
@@ -173,7 +205,8 @@ home_wip <- location %>%
          home_county = county_fips,
          home_tract = tract_fips,
          home_lat = latitude,
-         home_long = longitude) %>%
+         home_long = longitude,
+         place_name) %>%
   # Keep distinct home locations based on sample
   distinct(sampno,home_county,.keep_all = TRUE)
 
@@ -214,22 +247,9 @@ home <- home_wip %>%
     )) %>%
   # Select distinct rows to eliminate double counting of two-home households.
   distinct(sampno,home_county,.keep_all = TRUE) %>% 
-  # Flag homes in Chicago
-  left_join(chicago_tracts, by = c("home_state" = "statefp10",
-                                   "home_county" = "countyfp10",
-                                   "home_tract" = "tractce10")) %>% 
-  mutate(chicago = 
-           case_when(is.na(chicago) ~ 0,
-                     TRUE ~ chicago)) %>% 
   # Create flag for home county with Chicago and suburban Cook
   mutate(home_county_chi = case_when(
-    # Manually assign non-Chicago residents who reside in tracts that overlap Chicago in Cook County (identified through ArcGIS)
-    sampno %in% c(30006322,70003118,70004448,70004613,
-                  70018378,70026774,70029527,70043193,
-                  70044738,70100251,70100542) ~ "Suburban Cook",
-    # Keep all residents of Chicago tracts with residence in Cook County (to
-    # eliminate any residents of O'Hare tracts in DuPage)
-    chicago == 1 & home_county == 31 ~ "Chicago",
+    place_name == "Chicago" & home_county == 31 ~ "Chicago",
     home_county == 31 ~ "Suburban Cook",
     home_county == 37 ~ "DeKalb",
     home_county == 63 ~ "Grundy",
@@ -238,10 +258,11 @@ home <- home_wip %>%
     home_county == 89 ~ "Kane",
     home_county == 93 ~ "Kendall",
     home_county == 111 ~ "McHenry",
-    home_county == 197 ~ "Will"))
+    home_county == 197 ~ "Will")) %>% 
+  select(-place_name)
 
 # Remove WIP tables and Chicago tracts
-rm(home_wip, two_homes,chicago_tracts)
+rm(home_wip, two_homes)
 
 # Add combined duration and distance for placeGroup trips
 placeGroupStats <- trips %>%
