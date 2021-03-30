@@ -180,7 +180,18 @@ location <-
     location,
     municipality_locations,
     by = c("sampno","locno")
-  )
+  ) %>% 
+  mutate(county_chi_name = case_when(
+    place_name == "Chicago" & state_fips == 17 & county_fips == 31 ~ "Chicago",
+    state_fips == 17 & county_fips == 31 ~ "Suburban Cook",
+    state_fips == 17 & county_fips == 37 ~ "DeKalb",
+    state_fips == 17 & county_fips == 63 ~ "Grundy",
+    state_fips == 17 & county_fips == 97 ~ "Lake",
+    state_fips == 17 & county_fips == 43 ~ "DuPage",
+    state_fips == 17 & county_fips == 89 ~ "Kane",
+    state_fips == 17 & county_fips == 93 ~ "Kendall",
+    state_fips == 17 & county_fips == 111 ~ "McHenry",
+    state_fips == 17 & county_fips == 197 ~ "Will"))
 
 rm(municipality_locations,municipality_sf,location_xy)
 
@@ -206,7 +217,7 @@ home_wip <- location %>%
          home_tract = tract_fips,
          home_lat = latitude,
          home_long = longitude,
-         place_name) %>%
+         county_chi_name) %>%
   # Keep distinct home locations based on sample
   distinct(sampno,home_county,.keep_all = TRUE)
 
@@ -249,17 +260,9 @@ home <- home_wip %>%
   distinct(sampno,home_county,.keep_all = TRUE) %>% 
   # Create flag for home county with Chicago and suburban Cook
   mutate(home_county_chi = case_when(
-    place_name == "Chicago" & home_county == 31 ~ "Chicago",
-    home_county == 31 ~ "Suburban Cook",
-    home_county == 37 ~ "DeKalb",
-    home_county == 63 ~ "Grundy",
-    home_county == 97 ~ "Lake",
-    home_county == 43 ~ "DuPage",
-    home_county == 89 ~ "Kane",
-    home_county == 93 ~ "Kendall",
-    home_county == 111 ~ "McHenry",
-    home_county == 197 ~ "Will")) %>% 
-  select(-place_name)
+    home_county == 999 ~ "Homes in multiple counties",
+    TRUE ~ county_chi_name)) %>% 
+  select(-county_chi_name)
 
 # Remove WIP tables and Chicago tracts
 rm(home_wip, two_homes)
@@ -299,7 +302,7 @@ mdt <- trips %>% # 128,229 records
   inner_join(home, by = c("sampno")) %>% # 128,229 records
   inner_join(chains, by = c("sampno", "perno", "placeno")) # 128,229 records
 
-# take care of collapsed trips with placeGroup
+# take care of collapsed trips with placeGroup and add lags for trip origins
 mdt <- mdt %>%
   # distinct takes the first row for duplicates, so order by distance to get the
   # "main" mode of the trip.
@@ -311,6 +314,8 @@ mdt <- mdt %>%
   arrange(desc(sampno),perno,placeGroup) %>%
   # Add lagged trip start time
   mutate(start_times_pg = lag(deptime_pg,1)) %>%
+  # Add lagged trip origin location
+  mutate(county_chi_name_lag = lag(county_chi_name,1)) %>% 
   # Add lagged identifiers
   mutate(sampno_lag = lag(sampno,1),
          perno_lag = lag(perno,1)) %>%
@@ -318,7 +323,8 @@ mdt <- mdt %>%
   mutate(out_region_lag = lag(out_region,1)) %>%
   # Check whether the previous trip is a match
   mutate(check = perno == perno_lag & sampno == sampno_lag) %>%
-  # If it isn't a match, change start_times_pg and out_region_lag to NA and -1
+  # If it isn't a match, change start_times_pg, out_region_lag, and
+  # county_chi_name_lag to NA, -1, and "NA"
   mutate(
     start_times_pg = case_when(
       check ~ start_times_pg,
@@ -327,7 +333,10 @@ mdt <- mdt %>%
     out_region_lag = case_when(
       check ~ as.double(out_region_lag),
       !check ~ -1,
-      TRUE ~ -1)
+      TRUE ~ -1),
+    county_chi_name_lag = case_when(
+      check ~ county_chi_name_lag,
+      ! check ~ "")
     ) %>%
   # Create new out_region flag for trips that neither started nor ended in the
   # CMAP region
