@@ -9,6 +9,7 @@
 library(ggplot2)
 library(tidyverse)
 library(cmapplot)
+library(ggpattern)
 
 #################################################
 #                                               #
@@ -121,7 +122,7 @@ mdt_mode_income <-
                              "3" = "$25,000 to $29,999",
                              "2" = "$15,000 to $24,999",
                              "1" = "Less than $15,000",
-                             "99" = "CMAP region average"))
+                             "99" = "CMAP region"))
 
 # Do the same again, but for race and ethnicity
 mdt_mode_race <-
@@ -130,7 +131,7 @@ mdt_mode_race <-
     mdt_base_3 %>% filter(race_eth != "missing") %>%
       # ...and add the whole set again to enable regional totals
       rbind(mdt_base_3 %>% filter(race_eth != "missing") %>%
-                           mutate(race_eth = "CMAP region average")),
+                           mutate(race_eth = "CMAP region")),
     # Execute the rest of the function
     breakdown_by = "mode_c",
     second_breakdown = "race_eth",
@@ -146,22 +147,22 @@ mdt_mode_race <-
 # Do the same again, but for age
 
 # Age bins
-breaks <- c(-1,29, 49, 69, 150)
+age_breaks <- c(-1,29, 49, 69, 150)
 age_labels <- c("16 to 29", "30 to 49",  "50 to 69", "70 and above")
 
 mdt_mode_age <-
   pct_calculator(
     # Keep all respondents with a reported age...
     mdt_base_3 %>% filter(age > 0) %>%
-                   mutate(age_bin=cut(age,breaks=breaks,labels=age_labels)) %>%
+                   mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels)) %>%
       # ...and add the whole set again to enable regional totals
-      rbind(mdt_base_3 %>% filter(age > 0) %>% mutate(age_bin = "CMAP region average")),
+      rbind(mdt_base_3 %>% filter(age > 0) %>% mutate(age_bin = "CMAP region")),
     # Execute the rest of the function
     breakdown_by = "mode_c",
     second_breakdown = "age_bin",
     weight = "wtperfin") %>%
   # Reorder factors for publication
-  mutate(age_bin = fct_relevel(age_bin,"CMAP region average")) %>%
+  mutate(age_bin = fct_relevel(age_bin,"CMAP region")) %>%
   mutate(age_bin = fct_rev(factor(age_bin)))
 
 
@@ -169,24 +170,24 @@ mdt_mode_age <-
 # Do the same again, but for mileage
 
 # Mileage bins
-mile_breaks <- c(-1,.5,1,2.5,5,25,100)
-mile_labels <- c("0.50 miles or less","0.51 to 1 mile", "1.01 to 2.50 miles", 
+mileage_breaks <- c(-1,.5,1,2.5,5,25,100)
+mileage_labels <- c("0.50 miles or less","0.51 to 1 mile", "1.01 to 2.50 miles", 
                  "2.51 to 5.00 miles","5.01 to 25.00 miles","More than 25 miles")
 
 mdt_mode_mileage <-
   pct_calculator(
     # Keep all respondents with a reported age...
     mdt_base_3 %>% filter(distance_pg > 0) %>%
-      mutate(mile_bin=cut(distance_pg,breaks=mile_breaks,labels=mile_labels)) %>%
+      mutate(mileage_bin=cut(distance_pg,breaks=mileage_breaks,labels=mileage_labels)) %>%
       # ...and add the whole set again to enable regional totals
-      rbind(mdt_base_3 %>% filter(distance_pg > 0) %>% mutate(mile_bin = "CMAP region average")),
+      rbind(mdt_base_3 %>% filter(distance_pg > 0) %>% mutate(mileage_bin = "CMAP region")),
     # Execute the rest of the function
     breakdown_by = "mode_c",
-    second_breakdown = "mile_bin",
+    second_breakdown = "mileage_bin",
     weight = "wtperfin") %>%
   # Reorder factors for publication
-  mutate(mile_bin = fct_relevel(mile_bin,"CMAP region average")) %>%
-  mutate(mile_bin = fct_rev(factor(mile_bin)))
+  mutate(mileage_bin = fct_relevel(mileage_bin,"CMAP region")) %>%
+  mutate(mileage_bin = fct_rev(factor(mileage_bin)))
 
 ################################################################################
 # Chart of mode share by home county
@@ -218,12 +219,27 @@ mode_share_p1 <-
                            "bike" = "Bike",
                            "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
-    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct)
-  ) %>%
+    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
+    # Add flag for CMAP region for pattern in display
+    type = ifelse(home_county_chi == "CMAP region","1","0")) %>%
   
   # Create ggplot object
   ggplot(aes(x = pct, y = reorder(home_county_chi,label))) +
-  geom_col(aes(fill = mode_c),position = position_stack(reverse = T)) +
+  # Use "geom_col_pattern" to add texture to a subset of columns
+  ggpattern::geom_col_pattern(aes(fill = mode_c,pattern = type),
+                              pattern_color = "white",
+                              pattern_fill = "white",
+                              pattern_angle = 30,
+                              pattern_density = 0.25,
+                              pattern_spacing = 0.0125,
+                              pattern_key_scale_factor = 0.6,
+                              position = position_stack(reverse = T),
+                              width = 0.8) +  
+  # Re-assign patterns manually
+  scale_pattern_manual(values = c("1" = "stripe",
+                                  "0" = "none"),
+                       guide = "none") +
+  
   geom_label(data = mode_share_p1_labels,
              aes(label = scales::label_percent(accuracy = 0.1)(label),
                  x = label, y = home_county_chi),
@@ -232,13 +248,17 @@ mode_share_p1 <-
              fill = "white") +
 
   # Add CMAP style
-  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,xlab = "Mode share by home jurisdiction") +
+  theme_cmap(gridlines = "v", vline = 0, xlab = "Mode share by home jurisdiction") +
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
                      labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
-                     limits = c(-1,.58))
+                     limits = c(-1,.58)) +
+
+  # Adjust legend for formatting
+  guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
+
 
 finalize_plot(mode_share_p1,
               title = "Residents of Chicago and Cook County have by far the highest non-car 
@@ -253,7 +273,7 @@ finalize_plot(mode_share_p1,
               # height = 5.5,
               # width = 11.3,
               filename = "mode_share_p1",
-              mode = "png",
+              # mode = "png",
               overwrite = T)
 
 ################################################################################
@@ -286,12 +306,27 @@ mode_share_p2 <-
                            "bike" = "Bike",
                            "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
-    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct)
-  ) %>%
+    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
+    # Add flag for CMAP region for pattern in display
+    type = ifelse(hhinc == "CMAP region","1","0")) %>%
   
   # Create ggplot object
   ggplot(aes(x = pct, y = hhinc)) +
-  geom_col(aes(fill = mode_c),position = position_stack(reverse = T)) +
+  # Use "geom_col_pattern" to add texture to a subset of columns
+  ggpattern::geom_col_pattern(aes(fill = mode_c,pattern = type),
+                              pattern_color = "white",
+                              pattern_fill = "white",
+                              pattern_angle = 30,
+                              pattern_density = 0.25,
+                              pattern_spacing = 0.0125,
+                              pattern_key_scale_factor = 0.6,
+                              position = position_stack(reverse = T),
+                              width = 0.8) +  
+  # Re-assign patterns manually
+  scale_pattern_manual(values = c("1" = "stripe",
+                                  "0" = "none"),
+                       guide = "none") +
+  
   geom_label(data = mode_share_p2_labels,
              aes(label = scales::label_percent(accuracy = 0.1)(label),
                  x = label, y = hhinc),
@@ -306,7 +341,10 @@ mode_share_p2 <-
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
                      labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
-                     limits = c(-1,.6))
+                     limits = c(-1,.6))+
+  
+  # Adjust legend for formatting
+  guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
 finalize_plot(mode_share_p2,
               title = "Mode share for trips in northeastern Illinois by household 
@@ -354,19 +392,35 @@ mode_share_p3 <-
                            "bike" = "Bike",
                            "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
-    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct)
-  ) %>%
+    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
+    # Add flag for CMAP region for pattern in display
+    type = ifelse(race_eth == "CMAP region","1","0")) %>%
   
   # Create ggplot object
   ggplot(aes(x = pct, y = reorder(str_wrap(race_eth,18),label))) +
-  geom_col(aes(fill = mode_c),position = position_stack(reverse = T)) +
+  # Use "geom_col_pattern" to add texture to a subset of columns
+  ggpattern::geom_col_pattern(aes(fill = mode_c,pattern = type),
+                              pattern_color = "white",
+                              pattern_fill = "white",
+                              pattern_angle = 30,
+                              pattern_density = 0.25,
+                              pattern_spacing = 0.0125,
+                              pattern_key_scale_factor = 0.6,
+                              position = position_stack(reverse = T),
+                              width = 0.8) +
+  # Re-assign patterns manually
+  scale_pattern_manual(values = c("1" = "stripe",
+                                  "0" = "none"),
+                       guide = "none") +
+  
+  # Add labels
   geom_label(data = mode_share_p3_labels,
              aes(label = scales::label_percent(accuracy = 0.1)(label),
-                 x = label, y = str_wrap(race_eth,18)),
+                 x = label, y = race_eth),
              label.size = 0,
              hjust = 0,
              fill = "white") +
-
+  
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6) +
   cmap_fill_discrete(palette = "mobility") +
@@ -374,7 +428,10 @@ mode_share_p3 <-
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
                      labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
-                     limits = c(-1,.55))
+                     limits = c(-1,.55))+
+  
+  # Adjust legend for formatting
+  guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
 finalize_plot(mode_share_p3,
               title = "Mode share for trips in northeastern Illinois by race and 
@@ -424,12 +481,28 @@ mode_share_p4 <-
                            "bike" = "Bike",
                            "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
-    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct)
-  ) %>%
+    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
+    # Add flag for CMAP region for pattern in display
+    type = ifelse(age_bin == "CMAP region","1","0")) %>%
   
-  # Create ggplot object
+    # Create ggplot object
   ggplot(aes(x = pct, y = age_bin)) +
-  geom_col(aes(fill = mode_c),position = position_stack(reverse = T)) +
+  # Use "geom_col_pattern" to add texture to a subset of columns
+  ggpattern::geom_col_pattern(aes(fill = mode_c,pattern = type),
+                              pattern_color = "white",
+                              pattern_fill = "white",
+                              pattern_angle = 30,
+                              pattern_density = 0.25,
+                              pattern_spacing = 0.0125,
+                              pattern_key_scale_factor = 0.6,
+                              position = position_stack(reverse = T),
+                              width = 0.8) +
+  # Re-assign patterns manually
+  scale_pattern_manual(values = c("1" = "stripe",
+                                  "0" = "none"),
+                       guide = "none") +
+  
+  # Add labels
   geom_label(data = mode_share_p4_labels,
              aes(label = scales::label_percent(accuracy = 0.1)(label),
                  x = label, y = age_bin),
@@ -444,7 +517,10 @@ mode_share_p4 <-
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
                      labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
-                     limits = c(-1,.55))
+                     limits = c(-1,.55))+
+  
+  # Adjust legend for formatting
+  guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
 finalize_plot(mode_share_p4,
               title = "Mode share for trips in northeastern Illinois by age, 
@@ -459,7 +535,7 @@ finalize_plot(mode_share_p4,
               # # height = 5.5,
               # width = 11.3,
               filename = "mode_share_p4",
-              mode = "png",
+              # mode = "png",
               overwrite = T)
 
 ################################################################################
@@ -470,7 +546,7 @@ finalize_plot(mode_share_p4,
 mode_share_p5_labels <-
   mdt_mode_mileage %>%
   filter(mode_c %in% c("walk","transit","bike","other")) %>%
-  group_by(mile_bin) %>%
+  group_by(mileage_bin) %>%
   summarize(label = sum(pct))
 
 # Create plot
@@ -478,7 +554,7 @@ mode_share_p5 <-
   # Get data
   mdt_mode_mileage %>%
   # Add labels
-  left_join(mode_share_p5_labels, by = "mile_bin") %>%
+  left_join(mode_share_p5_labels, by = "mileage_bin") %>%
   # Make changes for graphing
   mutate(
     # Reorder factors and capitalize
@@ -492,15 +568,29 @@ mode_share_p5 <-
                            "bike" = "Bike",
                            "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
-    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct)
-  ) %>%
+    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
+    # Add flag for CMAP region for pattern in display
+    type = ifelse(mileage_bin == "CMAP region","1","0")) %>%
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = mile_bin)) +
-  geom_col(aes(fill = mode_c),position = position_stack(reverse = T)) +
+  ggplot(aes(x = pct, y = mileage_bin)) +
+  # Use "geom_col_pattern" to add texture to a subset of columns
+  ggpattern::geom_col_pattern(aes(fill = mode_c,pattern = type),
+                              pattern_color = "white",
+                              pattern_fill = "white",
+                              pattern_angle = 30,
+                              pattern_density = 0.25,
+                              pattern_spacing = 0.0125,
+                              pattern_key_scale_factor = 0.6,
+                              position = position_stack(reverse = T),
+                              width = 0.8) +
+  # Re-assign patterns manually
+  scale_pattern_manual(values = c("1" = "stripe",
+                                  "0" = "none"),
+                       guide = "none") +
   geom_label(data = mode_share_p5_labels,
              aes(label = scales::label_percent(accuracy = 0.1)(label),
-                 x = label, y = mile_bin),
+                 x = label, y = mileage_bin),
              label.size = 0,
              hjust = 0,
              fill = "white") +
@@ -512,7 +602,10 @@ mode_share_p5 <-
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.75,by = .25), 
                      labels = scales::label_percent()(abs(seq(-1,.75,by = .25))),
-                     limits = c(-1,.83))
+                     limits = c(-1,.83))+
+  
+  # Adjust legend for formatting
+  guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
 finalize_plot(mode_share_p5,
               title = "Travelers rely on non-car modes most for the shortest and 
@@ -529,6 +622,7 @@ finalize_plot(mode_share_p5,
               filename = "mode_share_p5",
               mode = "png",
               overwrite = T)
+
 ################################################################################
 # Archive - Chart of overall mode share
 ################################################################################
