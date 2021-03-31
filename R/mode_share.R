@@ -608,7 +608,7 @@ mode_share_p5 <-
   guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
 finalize_plot(mode_share_p5,
-              title = "Travelers rely on non-car modes most for the shortest and 
+              title = "Travelers rely most on non-car modes for the shortest and 
               the longest trips.",
               caption = "Note: Includes trips by residents of the region that 
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
