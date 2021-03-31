@@ -190,8 +190,8 @@ trips_in_motion_p1 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
   
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#a7efe8",
-                               "#0084ac","#3d6600","#efa7a7")) +
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+                               "#efa7a7","#3d6600","#0084ac")) +
   
   # Add CMAP style
   theme_cmap(gridlines = "hv",
@@ -211,7 +211,7 @@ finalize_plot(trips_in_motion_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries.",
               filename = "trips_in_motion_p1",
-              mode = "png",
+              # mode = "png",
               overwrite = TRUE,
               # height = 6.3,
               # width = 11.3
@@ -300,8 +300,8 @@ trips_in_motion_p3 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
   
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#a7efe8",
-                               "#0084ac","#3d6600","#efa7a7")) +
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+                               "#efa7a7","#3d6600","#0084ac")) +
   
   # Add CMAP style
   theme_cmap(gridlines = "hv",
@@ -372,8 +372,8 @@ trips_in_motion_p4 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
   
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#a7efe8",
-                               "#0084ac","#efa7a7")) +
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+                               "#efa7a7","#0084ac")) +
   
   # Add CMAP style
   theme_cmap(gridlines = "hv",
@@ -442,8 +442,8 @@ trips_in_motion_p5 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
   
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#a7efe8",
-                               "#0084ac","#efa7a7")) +
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+                               "#efa7a7","#0084ac")) +
   
   # Add CMAP style
   theme_cmap(gridlines = "hv",
@@ -515,8 +515,8 @@ trips_in_motion_p6 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
   
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#a7efe8",
-                               "#0084ac","#efa7a7")) +
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+                               "#efa7a7","#0084ac")) +
   
   # Add faceting
   facet_wrap(~tpurp,ncol = 1) +
@@ -584,9 +584,9 @@ trips_in_motion_p7 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
   
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#a7efe8",
-                               "#0084ac","#efa7a7")) +
-
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+                               "#efa7a7","#0084ac")) +
+  
   # Add CMAP style
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
@@ -839,7 +839,7 @@ finalize_plot(trips_in_motion_p9,
 #   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
 #   scale_fill_discrete(type = c("#00becc","#cc5f00","#3f0e00","#cca600",
 #                                "#003f8c","#67ac00","#006b8c","#efa7a7",
-#                                "#8c4100","#00303f","#a7efe8")) +
+#                                "#8c4100","#00303f","#36d8ca")) +
 #   theme_cmap(gridlines = "hv",
 #              panel.grid.major.x = element_line(color = "light gray"))
 #
@@ -874,7 +874,7 @@ finalize_plot(trips_in_motion_p9,
 #   facet_wrap(~mode, nrow = 3) +
 #   scale_fill_discrete(type = c("#00becc","#cc5f00","#3f0e00","#cca600",
 #                                "#003f8c","#67ac00","#006b8c","#efa7a7",
-#                                "#8c4100","#00303f","#a7efe8")) +
+#                                "#8c4100","#00303f","#36d8ca")) +
 #   theme_cmap(gridlines = "hv",
 #              panel.grid.major.x = element_line(color = "light gray"))
 #
