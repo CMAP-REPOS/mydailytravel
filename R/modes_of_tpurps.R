@@ -28,24 +28,21 @@ source("R/data_cleaning.R")
 
 mdt_base_1 <-
   mdt %>%                             # 125463 records
-  # Keep only records for travelers >= 5 or who we can identify as being >= 5
-  # based on age buckets, school enrollment, or manual location identification
-  # of school trips
-  filter(age >= 5 |                   # 125459
-           (age < 0 & aage %in% c(2,3,4,5,6,7)) |
-           (age < 0 & schol %in% c(4,5,6,7,8)) |
-           sampno %in% c(70038312,
-                         70051607)) %>%
+  # Keep only travelers >= 16 years old, either through age, age bucket, or
+  # school enrollment
+  filter(age >= 16 |                   # 108622
+           (age < 0 & aage %in% c(4,5,6,7)) |
+           (age < 0 & schol %in% c(5,6,7,8))) %>%
   # Exclude beginning trips
-  filter(mode_c != "beginning") %>%  # 97374
+  filter(mode_c != "beginning") %>%  # 85022
   # Exclude trips with no travel distance. Note this is a different difference
   # calculation than that used in TT (great circle vs. actual travel distance).
   # We chose to do this since the published graphics do not involve any
   # comparison between TT and MDT. However, if we instead filter out those trips
   # that have a nonzero haversine distance from MDT, the results are similar.
-  filter(hdist_pg > 0) %>%        # 97316
+  filter(distance_pg > 0) %>%        # 84969
   # Exclude trips with no mode
-  filter(mode_c != "missing") %>%    # 97279
+  filter(mode_c != "missing") %>%    # 84932
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
   mutate(mode_c = case_when(
@@ -58,10 +55,10 @@ mdt_base_1 <-
 # # not included in publication.
 # tt_base_1 <-
 #   tt %>%                             # 139769 records
-#   # Keep only records for travelers >= 5 or who we can identify as being >= 5
+#   # Keep only records for travelers >= 16 or who we can identify as being >= 16
 #   # based on age buckets or school enrollment. Note that 99 is DK/RF for AGE.
-#   filter((AGE >= 5 & AGE < 99)|                  # 132680
-#            (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) |
+#   filter((AGE >= 16 & AGE < 99)|                  # 132680
+#            (AGE == 99 & SCHOL %in% c(6,7,8)) |
 #            (AGE == 99 & AGEB == 2)) %>%
 #   # Exclude the first record of the day - this is the beginning record, and does
 #   # not represent a trip.
@@ -115,7 +112,7 @@ modes_of_tpurps_p1 <-
                                 "driver" = "By car",
                                 "passenger" = "By car",
                                 "walk" = "Walking",
-                                "transit" = "Other modes",
+                                "transit" = "Transit",
                                 "other" = "Other modes",
                                 "bike" = "Other modes")) %>%
   
@@ -134,14 +131,15 @@ modes_of_tpurps_p1 <-
   # Add CMAP style
   theme_cmap(gridlines = "v",vline = 0,
              xlab = "Mode share") +
-  scale_fill_discrete(type = c("#00665c","#3f0030","#006b8c")) +
+  scale_fill_discrete(type = c("#00665c","#36d8ca","#6d8692","#006b8c")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent())
 
 finalize_plot(modes_of_tpurps_p1,
               "Mode share of dining trips, 2019.",
-              "Note: 'By car' includes trips as either a driver of a passenger
+              "Note: Excludes travelers younger than 16 years old. 'By car' 
+              includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               'Other modes' includes transit, biking, and all other modes.
               Unlabeled bars have less than 5 percent mode share.
@@ -206,7 +204,7 @@ modes_of_tpurps_p2 <-
   # Add CMAP style
   theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
              xlab = "Mode share") +
-  scale_fill_discrete(type = c("#00665c","#3f0030","#36d8ca","#006b8c")) +
+  scale_fill_discrete(type = c("#00665c","#6d8692","#36d8ca","#006b8c")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent())
@@ -215,9 +213,9 @@ modes_of_tpurps_p2 <-
 finalize_plot(modes_of_tpurps_p2,
               "Although driving is the most common mode, transit plays an 
               important role for personal health care visits.",
-              "Note: 'By car' includes trips as either a driver of a passenger
+              "Note: Excludes travelers younger than 16 years old. 'By car' 
+              includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
-              'Other modes' includes walking, biking, and all other modes. 
               'All health care visit for someone else' includes trips recorded 
               as 'Health care visits for someone else' and the small number
               of trips that were recorded as visiting another person in the 
@@ -334,7 +332,7 @@ health_mode_c_vehs_mdt %>%
 
 detailed_community_mode_c_mdt <-
   pct_calculator(mdt_base_1,
-                 # # Optional filter to compare like trips with like
+                 # Optional filter to compare like trips with like
                  # %>% filter(distance_pg < 1.25 & distance_pg > 0.75),
                  subset = "community",
                  subset_of = "tpurp_c",
@@ -380,7 +378,7 @@ modes_of_tpurps_p3 <-
   # Add CMAP style
   theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
              xlab = "Mode share") +
-  scale_fill_discrete(type = c("#00665c","#3f0030","#36d8ca","#006b8c")) +
+  scale_fill_discrete(type = c("#00665c","#36d8ca","#6d8692","#006b8c")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent())
@@ -388,7 +386,8 @@ modes_of_tpurps_p3 <-
 finalize_plot(modes_of_tpurps_p3,
               "Walking and other non-car modes are significantly more common for 
               trips to socialize with friends than with relatives.",
-              "Note: 'By car' includes trips as either a driver of a passenger
+              "Note: Excludes travelers younger than 16 years old. 'By car' 
+              includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
@@ -396,7 +395,7 @@ finalize_plot(modes_of_tpurps_p3,
               # width = 6.5,
               # height = 4,
               overwrite = T,
-              # mode = "png",
+              mode = "png",
               filename = "modes_of_tpurps_p3")
 
 ################################################################################
