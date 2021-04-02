@@ -275,7 +275,7 @@ finalize_plot(school_trips_p3,
               # height = 6.3,
               # width = 11.3,
               filename = "school_trips_p3",
-              mode = "png",
+              # mode = "png",
               overwrite = T)
 
 ################################################################################
@@ -301,11 +301,14 @@ school_time_race_person_level_mdt <-
 
 school_time_race_mdt <-
   school_time_race_person_level_mdt %>%
-  mutate(race_eth = case_when(
-    k12 == "High school" & race_eth != "white" ~ "Non-white",
-    TRUE ~ race_eth
-  )) %>% 
-  group_by(race_eth,k12) %>% 
+  filter(k12 != "High school") %>% 
+  group_by(race_eth) %>% 
+  # # Commented code allows for graphing of high school
+  # mutate(race_eth = case_when(
+  #   k12 == "High school" & race_eth != "white" ~ "Non-white",
+  #   TRUE ~ race_eth
+  # )) %>% 
+  # group_by(race_eth,k12) %>% 
   # Summarize travel time by race/ethnicity and school enrollment
   summarize(travtime = as.numeric(matrixStats::weightedMedian(travtime_pg_calc, w = wtperfin)),
             distance = matrixStats::weightedMedian(distance_pg, w = wtperfin),
@@ -330,41 +333,40 @@ school_trips_p4 <-
   geom_label(aes(label = scales::label_number(accuracy = 1)(travtime)),
              vjust = 0, label.size = 0, fill = "white") +
   
-  # Facet
-  facet_wrap(~k12,scales = "free_x") +
+  # # Facet for high school (archived)
+  # facet_wrap(~k12,scales = "free_x") +
   
   # Add CMAP style
-  theme_cmap(gridlines = "h",
-             legend.position = "None") +
+  theme_cmap(gridlines = "h",legend.position = "None",
+             xlab = "Median travel time to school (minutes)") +
   scale_fill_discrete(type = c("#84c87e", # Black
                                "#e77272", # Asian
-                               "#77008c", # Non-white
+                               # "#77008c", # Non-white (archived for high school)
                                "#75a5d8", # White
                                "#d8ba39", # Hispanic
                                "#607b88" # Other
-                               ))
+                               )) +
+  scale_y_continuous(limits = c(0,16))
 
 finalize_plot(school_trips_p4,
-              "Median travel time to school by race and ethnicity (minutes).",
-              "Note: Includes school trips for travelers enrolled in K-12 and at 
+              "Black elementary and middle school students have longer trips to school than those of other children.",
+              "Note: Includes school trips for travelers enrolled in K-8 and at 
               least 5 years old. Excludes trips to non-school locations and any 
               trips that did not start or end between 7:00 A.M. and 9:00 A.M. 
               Also excludes highest and lowest 5 percent of weighted records, 
               as well as trips with no travel time. 
               <br><br>
-              Notes on race and ethnicity: 'Hispanic' represents travelers 
+              'Hispanic' represents travelers 
               who identify as Hispanic regardless of racial identity. Other 
-              categories, e.g., 'White', represent non-Hispanic travelers. 
-              High school trips are presented in only two buckets due to low 
-              sample sizes.
+              categories, e.g., 'White', represent non-Hispanic travelers.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
               filename = "school_trips_p4",
-              sidebar_width = 2,
               mode = "png",
-              # # height = 6.3,
-              # width = 11.3,
+              # sidebar_width = 2.6,
+              # height = 4.5,
+              # width = 8,
               overwrite = T)
 
 
