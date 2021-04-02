@@ -456,8 +456,8 @@ all_school_mdt_lm <-
     bike = case_when(
       mode_c == "bike" ~ 1,
       TRUE ~ 0),
-    cook = case_when(
-      home_county == 31 ~ 1,
+    chicago = case_when(
+      home_county_chi == "Chicago" ~ 1,
       TRUE ~ 0),
     k8 = case_when(
       schol == 3 ~ 1,
@@ -466,7 +466,7 @@ all_school_mdt_lm <-
 
 school_trips_regression <-
   lm(travtime_lm ~ white + black + hispa + asian + high_inc +
-       distance_pg + cook + car_trip + school_bus + transit +
+       distance_pg + chicago + car_trip + school_bus + transit +
        walk + bike + k8,
      all_school_mdt_lm,
      weights = wtperfin)
