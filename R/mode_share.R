@@ -347,8 +347,9 @@ mode_share_p2 <-
   guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
 finalize_plot(mode_share_p2,
-              title = "The highest- and lowest-income households rely the most 
-              on non-car modes.",
+              title = "The lowest-income households rely the most on non-car 
+              modes, but high-income households also exceed the regional 
+              average.",
               caption = "Note: Includes trips by residents of the region that 
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
@@ -475,7 +476,7 @@ finalize_plot(mode_share_p3,
               # height = 5.5,
               # width = 11.3,
               filename = "mode_share_p3",
-              # mode = "png",
+              mode = "png",
               overwrite = T)
 
 ################################################################################
