@@ -34,7 +34,6 @@
 library(tidyverse)
 library(lubridate)
 library(RODBC)
-library(RSocrata)
 library(tidycensus)
 library(sf)
 
@@ -321,7 +320,12 @@ mdt <- mdt %>%
          perno_lag = lag(perno,1)) %>%
   # Add lagged out_region flag
   mutate(out_region_lag = lag(out_region,1)) %>%
-  # Check whether the previous trip is a match
+  # Check whether the previous trip is a match. The vast majority of the
+  # non-matches are beginning trips. There are 36 other non-matches, which are
+  # mostly records missing a beginning trip and at least one record in which the
+  # beginning trip has been collapsed into the first placeGroup. If the trip's
+  # destination is in the region, these trips are maintained in the filtering
+  # below for inclusion in analyses where travel time is not a consideration.
   mutate(check = perno == perno_lag & sampno == sampno_lag) %>%
   # If it isn't a match, change start_times_pg, out_region_lag, and
   # county_chi_name_lag to NA, -1, and "NA"
@@ -339,7 +343,8 @@ mdt <- mdt %>%
       ! check ~ "")
     ) %>%
   # Create new out_region flag for trips that neither started nor ended in the
-  # CMAP region
+  # CMAP region. We assign 0 to trips that started and/or ended in the region,
+  # and 1 to other trips.
   mutate(out_region_trip = case_when(
     out_region == 0 | out_region_lag == 0 ~ 0,
     TRUE ~ 1
@@ -349,7 +354,8 @@ mdt <- mdt %>%
   select(-sampno_lag,-perno_lag,-check,-out_region_lag)
 
 mdt <- mdt %>%
-  # Remove trips that both start and end outside the CMAP region
+  # Keep only trips that have an out_region_trip value of 0, implying they start
+  # and/or end in the region
   filter(out_region_trip==0) %>% # 125752 records
   # Remove trips >= 100 miles
   filter(distance<100) %>% # 125463 records
