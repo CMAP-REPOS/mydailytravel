@@ -362,6 +362,33 @@ finalize_plot(mode_share_p2,
               mode = "png",
               overwrite = T)
 
+###### Detailed mode (for prose, not exported)
+
+# Analyze percents by household income
+mdt_mode_income_detailed <-
+  pct_calculator(
+    # Keep all respondents with a reported household income
+    mdt_base_3 %>% filter(hhinc > 0),
+    # Execute the rest of the function
+    breakdown_by = "mode",
+    second_breakdown = "hhinc",
+    weight = "wtperfin") %>% 
+  mutate(hhinc_c = recode_factor(factor(hhinc),
+                               "10" = "$150,000 or more",
+                               "9" = "$100,000 to $149,999",
+                               "8" = "$75,000 to $99,999",
+                               "7" = "$60,000 to $74,999",
+                               "6" = "$50,000 to $59,999",
+                               "5" = "$35,000 to $49,999",
+                               "4" = "$30,000 to $34,999",
+                               "3" = "$25,000 to $29,999",
+                               "2" = "$15,000 to $24,999",
+                               "1" = "Less than $15,000")) %>%
+  mutate(pct = round(pct,2)) %>% 
+  arrange(mode,hhinc)
+
+
+
 ################################################################################
 # Chart of mode share by race
 ################################################################################
