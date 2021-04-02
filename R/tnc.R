@@ -45,9 +45,9 @@ active_travel <-
 # characteristics from other tables
 tnc <-
   mdt_all_respondents %>%
-  # Keep only travelers 18+ (they are the ones that answered TNC survey
+  # Keep only travelers older than 18 (they are the ones that answered TNC survey
   # questions)
-  filter(age >= 18 |
+  filter(age > 18 |
            (age < 0 & aage %in% c(5,6,7)) |
            (age < 0 & age18 == 1)) %>% 
   # Add information on active travel from above
@@ -83,8 +83,8 @@ tnc <-
          ))
 
 # Age bins
-breaks <- c(-1, 9, 17, 29, 39, 49, 59, 69, 150)
-age_labels <- c("5 to 9", "10 to 17", "18 to 29", "30 to 39", "40 to 49",
+breaks <- c(-1, 9, 18, 29, 39, 49, 59, 69, 150)
+age_labels <- c("5 to 9", "10 to 18", "19 to 29", "30 to 39", "40 to 49",
                 "50 to 59", "60 to 69", "70 and above")
 
 # Reshape data to add flags for each county as individual columns
@@ -202,17 +202,17 @@ tnc_p1 <-
   age_cost_and_usage %>% 
   # Reformat
   mutate(name = recode(factor(name,levels = c("tnc_use","tnc_cost")),
-                       "tnc_cost" = "Average cost per TNC trip",
-                       "tnc_use" = "Average monthly TNC trips")) %>% 
+                       "tnc_cost" = "Average cost per trip",
+                       "tnc_use" = "Average monthly trips")) %>% 
   mutate(blank = case_when(
-    name == "Average cost per TNC trip" ~ 20.5,
+    name == "Average cost per trip" ~ 20.5,
     TRUE ~ 4
   )) %>% 
   
   # Create ggplot object
   ggplot(aes(x = value, y = factor(age_bin,levels = rev(levels(age_bin))), fill = name)) +
   geom_col() +
-  geom_label(aes(label = ifelse(name == "Average monthly TNC trips",
+  geom_label(aes(label = ifelse(name == "Average monthly trips",
                                 scales::label_number(accuracy = 0.1)(value),
                                 scales::label_dollar(accuracy = 1)(value))),
              hjust = 0,
@@ -223,19 +223,24 @@ tnc_p1 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v",hline = 0,legend.position = "none",
-             panel.spacing.x = unit(40,"bigpts"))
+             panel.spacing.x = unit(30,"bigpts"),
+             xlab = "TNC usage characteristics by age")
 
 finalize_plot(tnc_p1,
-              "Average usage and cost patterns for Transportation Network 
-              Companies (TNCs) by traveler age, 2019.",
+              "Usage of Transportation Network Companies (TNCs) decreases by age, while the average cost per trip increases with age.",
               "Note: Monthly TNC usage was extrapolated from responses to a 
               question that asked how frequently the respondent used Uber, Lyft, 
               or Via in the prior week. Average values from that question were 
-              multiplied by approximately 4.3 to yield a monthly figure.
+              multiplied by approximately 4.3 to yield a monthly figure. 
+              Excludes travelers 18 and younger, as they were not asked about 
+              TNC usage.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data.",
               filename = "tnc_p1",
+              width = 8,
+              height = 4.5,
+              sidebar_width = 2.3,
               mode = "png",
               overwrite = T)
 
