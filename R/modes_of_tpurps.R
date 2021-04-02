@@ -318,10 +318,15 @@ health_mode_c_vehs_mdt <-
                  subset_of = "tpurp",
                  breakdown_by = "hhveh",
                  second_breakdown = "mode_c",
+                 # # Note that you can instead break down by mode to see more
+                 # # nuanced patterns; sample size is a constraint. Paratransit
+                 # # has a particularly high 0-vehicle household, but the sample
+                 # # is very small. 
+                 # second_breakdown = "mode",
                  weight = "wtperfin",
                  survey = "mdt")
 
-health_mode_c_vehs_mdt %>% 
+health_mode_c_vehs_mdt %>% arrange(hhveh,pct) %>% 
   View()
 
 ################################################################################
