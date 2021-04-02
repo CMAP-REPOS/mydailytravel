@@ -191,7 +191,10 @@ wfh_worktrips_relevant <-
     # Assign all other trips as 0
     TRUE ~ 0)) %>%
   # Add a flag for Cook County residents
-  mutate(cook_county = ifelse(home_county == "31",1,0)) %>%
+  mutate(chicago = case_when(
+    home_county_chi == "Chicago" ~ 2,
+    home_county_chi == "Suburban Cook" ~ 1,
+    TRUE ~ 0)) %>%
   # Remove travelers with homes in multiple counties
   filter(home_county != "999") %>% # 82772 records
   # Remove "beginning" trips
@@ -210,7 +213,7 @@ wfh_worktrips_person_level <-
   # Collapse into traveler-level statistics
   summarize(pertrips = n(),
             income_c = first(income_c),
-            cook_county = first(cook_county),
+            chicago = first(chicago),
             home_county = first(home_county),
             home_tract = first(home_tract),
             home_long = first(home_long),
@@ -225,7 +228,7 @@ wfh_worktrips_person_level <-
 
 wfh_worktrips_general <-
   wfh_worktrips_person_level %>%
-  group_by(combined_tc_wfh,worktrip,cook_county) %>%
+  group_by(combined_tc_wfh,worktrip,chicago) %>%
   summarize(distance_pg = weightedMedian(distance_pg, w = wtperfin),
             n = n()) %>%
   rename(flag = combined_tc_wfh)
@@ -243,64 +246,60 @@ exclusion <- tibble(worktrip = 1, flag = 2)
 wfh_p2 <-
   # Get data
   wfh_worktrips_general %>%
-  # Exclude work trips for almost always wfh/tcers
-  anti_join(exclusion) %>%
-  # Add 0 values for the excluded variables
-  rbind(tibble(worktrip = 1, flag = 2, cook_county = c(0,1),distance_pg = 0,n = 0)) %>%
+  # Filter out other trips
+  filter(worktrip == 1) %>%
+  # Filter out always telecommuters
+  filter(flag != 2) %>% 
   # Reformat and reorder
   mutate(flag = recode_factor(factor(flag),
                        "0" = "Does not regularly telecommute or work from home",
-                       "1" = "Sometimes telecommutes or works from home (1-3 days/week)",
-                       "2" = "Almost always telecommutes or works from home (4+ days/week)"),
-         worktrip = recode_factor(factor(worktrip),
-                                  "1" = "Work trips outside the home",
-                                  "0" = "Other trips"),
-         cook_county = recode_factor(factor(cook_county),
-                                     "1" = "Cook County residents",
-                                     "0" = "Residents of other counties")
+                       "1" = "Sometimes telecommutes or works from home (1-3 days/wk.)"),
+         chicago = recode_factor(factor(chicago, levels = c(0,1,2)),
+                                     "0" = "Other counties",
+                                 "1" = "Suburban Cook",
+                                 "2" = "Chicago")
          ) %>%
   
+  
   # Create ggplot object
-  ggplot(aes(x = distance_pg, y = str_wrap(worktrip,18))) +
+  ggplot(aes(x = distance_pg, y = chicago)) +
   geom_col(aes(fill = flag), position = position_dodge2(reverse = T)) +
-  geom_label(aes(label = ifelse(distance_pg != 0, scales::label_number(accuracy = 0.1)(distance_pg),NA),
+  geom_label(aes(label = scales::label_number(accuracy = 0.1)(distance_pg),
                  group = flag),
              hjust = 0,
              label.size = 0,
              position = position_dodge2(width= 0.9, reverse = T)) +
   
   # Adjust axis
-  scale_x_continuous(limits = c(0,55)) +
-  
-  # Add faceting
-  facet_wrap(~cook_county,ncol = 1) +
+  scale_x_continuous(limits = c(0,60)) +
   
   # Add CMAP style
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
              legend.max.columns = 1,
              vline = 0,
-             xlab = "Median miles traveled",
-             strip.text = element_text(face = "bold", hjust = 0.5)) +
-  cmap_fill_discrete(palette = "mobility")
+             xlab = "Median miles traveled on work trips by home jurisdiction",
+             axis.title.x = element_text(hjust = 1)) +
+  cmap_fill_discrete(palette = "legislation")
 
 finalize_plot(wfh_p2,
-              "Median daily distance traveled by employed individuals in 
-              northeastern Illinois based on work from home and telecommute 
-              status.",
+              "Part-time telecommuters who live outside Chicago have 
+              significantly longer journeys to and from work on days when they 
+              do go into the office.",
               "Note: These estimates are based on on answers given in both the
-              survey and travel diary components of My Daily Travel. 'Work
-              trips outside the home' include all trips associated with a work
-              trip chain that included a work destination outside the home (both
-              fixed and non-fixed) 'Other trips' includes all other trips.
-              Travelers are only counted for the category(ies) in which they had
-              trips. Due to low sample sizes, work trips for travelers that
-              telecommute 4+ days per week or work from home are excluded.
+              survey and travel diary components of My Daily Travel. Median 
+              mileage accounts for all trips associated with a work trip chain 
+              that included a work destination outside the home (both fixed and 
+              non-fixed). Excludes work trips for travelers that
+              telecommute 4+ days per week due to low sample sizes.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
               filename = "wfh_p2",
               mode = "png",
               overwrite = T,
+              # height = 4.5,
+              # width = 8,
+              # sidebar = 2.5
               # height = 6.3,
               # width = 11.3
               )
