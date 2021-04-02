@@ -25,24 +25,33 @@ source("R/helper_fns.R")
 source("R/data_cleaning.R")
 
 # Age bins
-breaks <- c(-1, 9, 17, 24, 29, 49, 69, 150)
-age_labels <- c("5 to 9", "10 to 17", "18 to 24", "25 to 29",
+breaks <- c(-1, 9, 15, 19, 29, 49, 69, 150)
+age_labels <- c("5 to 9", "10 to 15", "16 to 19", "20 to 29",
                 "30 to 49", "50 to 69","70 and above")
+
+# # Breaks for 5-year increments - note that the 20-24 and 25-29 increments are
+# # the only two adult categories with an increasing passenger share.
+# breaks <- c(-1, 9, 14, 17, 19, 24, 29, 34, 39, 44, 49, 54, 59, 64, 69, 150)
+# age_labels <- c("5-9", "10-14","15-17","18-19","20-24","25-29","30-34","34-39",
+#                 "40-44","44-49","50-54","54-59","60-64","65-69","70+")
+
+
+
 
 driver_pax_mdt <-
   mdt %>%                        # 125463 records
-  # Keep those who are 18 or older, OR
-  filter(age >= 18 |             # 105703 records
-           # age buckets that are > 18
-           (age < 0 & aage %in% c(5,6,7)) |
+  # Keep those who are 16 or older, OR
+  filter(age >= 16 |             # 108612 records
+           # age buckets that are >= 16
+           (age < 0 & aage %in% c(4,5,6,7)) |
            # those that said they were over 18
            (age <0 & age18 == 1)) %>%
   # Keep only trips with > 0 distance
-  filter(distance_pg > 0) %>%    # 82805 records
+  filter(distance_pg > 0) %>%    # 84961 records
   # Keep only driver or passenger trips, but exclude motorcycles
   filter(mode_c %in% c("driver", #
                        "passenger"),
-         mode != "motorcycle"    # 60452 records
+         mode != "motorcycle"    # 61997 records
          ) %>%
   # Add age bins
   mutate(age_bin = cut(age, breaks = breaks,
@@ -52,19 +61,18 @@ driver_pax_mdt <-
 
 driver_pax_tt <-
   tt %>%                         # 139769 records
-  # Keep only travelers from age 18 to 98 (this handles DK/RF since that is
-  # coded as 99). Note: we do not include anyone without a specific age from TT
-  # because they can't be put into the bins we want, and since the AGEB variable
-  # only has <16 or 16+, we don't know if they are 18+.
+  # Keep only travelers from age 16 to 98 (this handles DK/RF since that is
+  # coded as 99). Also include travelers with AGEB of 2, which signifies 16+
   filter(AGE < 99) %>%           # 137281 records
-  filter(AGE >= 18) %>%          # 112515 records
+  filter(AGE >= 16 | 
+           (AGE == 99 & AGEB == 2)) %>%          # 115497 records
   # Exclude the first record of the day - this is the beginning record, and does
   # not represent a trip.
-  filter(PLANO != 1) %>%         # 90055 records
+  filter(PLANO != 1) %>%         # 92369 records
   # Keep only trips with > 0 distance
-  filter(DIST > 0) %>%           # 85638 records
+  filter(DIST > 0) %>%           # 87875 records
   # Keep only driver and passenger trips
-  filter(mode_c %in% c("driver", # 71687 records
+  filter(mode_c %in% c("driver", # 73302 records
                        "passenger")) %>%
   # Add age bins
   mutate(age_bin = cut(AGE, breaks = breaks,
@@ -113,15 +121,15 @@ driver_pax_p1 <-
   # MDT with age buckets).
   filter(!is.na(age_bin)) %>% 
   # Remove <18 travelers (since their share is so much higher due to non-drivers)
-  filter(!(age_bin %in% c("5 to 9","10 to 17"))) %>%
-  # Factor age bin into desired order
+  filter(!(age_bin %in% c("5 to 9","10 to 15"))) %>%
+  # # Factor age bin into desired order
   mutate(age_bin = factor(age_bin,
                           levels = c("70 and above","50 to 69","30 to 49",
-                                     "25 to 29","18 to 24"
+                                     "20 to 29","16 to 19"
                                      ))) %>%
   # Create "type" for increasing vs. decreasing
   mutate(type = case_when(
-    age_bin %in% c("18 to 24","25 to 29") ~ "Increasing passenger share",
+    age_bin %in% c("20 to 29") ~ "Increasing passenger share",
     TRUE ~ "Decreasing passenger share"
     )) %>%
   # Factor "type"
@@ -159,7 +167,7 @@ driver_pax_p1 <-
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust x axis labels
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1),limits = c(0,.27)) +
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),limits = c(0,.5)) +
   
   # Adjust legend for formatting
   guides(pattern = guide_legend(override.aes = list(fill = "white", color = "black")),
@@ -167,16 +175,15 @@ driver_pax_p1 <-
 
 # Export plot
 finalize_plot(driver_pax_p1,
-              title = "While most travelers in the region are shifting away from passenger trips, they have become more common for younger travelers.",
-              caption = "Note: Excludes travelers younger than 18 and older than
-              89.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of
-              Travel Tracker and My Daily Travel surveys.",
+              title = "While most travelers in the region are shifting away from 
+              passenger trips, they have become more common for some younger 
+              travelers.",
+              caption = "Source: Chicago Metropolitan Agency for Planning 
+              analysis of Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p1",
               # mode = "png",
               # width = 11.3,
-              # height = 6.3,
+              # height = 8,
               overwrite = T
               )
 
@@ -250,13 +257,12 @@ driver_pax_p2 <-
   
   # Adjust axes
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),
-                     limits = c(0,.25))
+                     limits = c(0,.37))
 
 finalize_plot(driver_pax_p2,
               title = "Share of weekday car trips in the CMAP region where the
               traveler is a passenger and not a driver, over time and by income.",
-              caption = "Note: Excludes travelers younger than 18 and older than
-              89.
+              caption = "Note: Excludes travelers younger than 18.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of
               Travel Tracker and My Daily Travel surveys.",
@@ -317,13 +323,14 @@ driver_pax_p3 <-
   
   # Adjust axes
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),
-                     limits = c(0,.21))
+                     limits = c(0,.22))
 
 finalize_plot(driver_pax_p3,
-              title = "When traveling by car, white residents are the least likely to be passengers.",
-              caption = "Note: Excludes travelers younger than 18 and older than
-              89. \"Hispanic\" includes all travelers who identified as Hispanic.
-              Other groups (e.g., \"White\") are non-Hispanic.
+              title = "When traveling by car, white residents are the least 
+              likely to be passengers.",
+              caption = "Note: Excludes travelers younger than 16. \"Hispanic\" 
+              includes all travelers who identified as Hispanic. Other groups 
+              (e.g., \"White\") are non-Hispanic.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel survey.",
