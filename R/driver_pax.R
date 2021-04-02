@@ -25,26 +25,24 @@ source("R/helper_fns.R")
 source("R/data_cleaning.R")
 
 # Age bins
-breaks <- c(-1, 9, 17, 24, 29, 49, 69, 89)
+breaks <- c(-1, 9, 17, 24, 29, 49, 69, 150)
 age_labels <- c("5 to 9", "10 to 17", "18 to 24", "25 to 29",
-                "30 to 49", "50 to 69","70 to 89")
+                "30 to 49", "50 to 69","70 and above")
 
 driver_pax_mdt <-
   mdt %>%                        # 125463 records
-  # Keep only travelers from age 18 to 89
-  filter(age < 90) %>%           # 125366 records
   # Keep those who are 18 or older, OR
-  filter(age >= 18 |             # 105606 records
+  filter(age >= 18 |             # 105703 records
            # age buckets that are > 18
            (age < 0 & aage %in% c(5,6,7)) |
            # those that said they were over 18
            (age <0 & age18 == 1)) %>%
   # Keep only trips with > 0 distance
-  filter(distance_pg > 0) %>%    # 82749 records
+  filter(distance_pg > 0) %>%    # 82805 records
   # Keep only driver or passenger trips, but exclude motorcycles
   filter(mode_c %in% c("driver", #
                        "passenger"),
-         mode != "motorcycle"    # 60406 records
+         mode != "motorcycle"    # 60452 records
          ) %>%
   # Add age bins
   mutate(age_bin = cut(age, breaks = breaks,
@@ -54,19 +52,19 @@ driver_pax_mdt <-
 
 driver_pax_tt <-
   tt %>%                         # 139769 records
-  # Keep only travelers from age 18 to 89 (this handles DK/RF since that is
+  # Keep only travelers from age 18 to 98 (this handles DK/RF since that is
   # coded as 99). Note: we do not include anyone without a specific age from TT
   # because they can't be put into the bins we want, and since the AGEB variable
   # only has <16 or 16+, we don't know if they are 18+.
-  filter(AGE < 90) %>%           # 136889 records
-  filter(AGE >= 18) %>%          # 112123 records
+  filter(AGE < 99) %>%           # 137281 records
+  filter(AGE >= 18) %>%          # 112515 records
   # Exclude the first record of the day - this is the beginning record, and does
   # not represent a trip.
-  filter(PLANO != 1) %>%         # 89812 records
+  filter(PLANO != 1) %>%         # 90055 records
   # Keep only trips with > 0 distance
-  filter(DIST > 0) %>%           # 85405 records
+  filter(DIST > 0) %>%           # 85638 records
   # Keep only driver and passenger trips
-  filter(mode_c %in% c("driver", # 71487 records
+  filter(mode_c %in% c("driver", # 71687 records
                        "passenger")) %>%
   # Add age bins
   mutate(age_bin = cut(AGE, breaks = breaks,
@@ -118,7 +116,7 @@ driver_pax_p1 <-
   filter(!(age_bin %in% c("5 to 9","10 to 17"))) %>%
   # Factor age bin into desired order
   mutate(age_bin = factor(age_bin,
-                          levels = c("70 to 89","50 to 69","30 to 49",
+                          levels = c("70 and above","50 to 69","30 to 49",
                                      "25 to 29","18 to 24"
                                      ))) %>%
   # Create "type" for increasing vs. decreasing
@@ -176,7 +174,7 @@ finalize_plot(driver_pax_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of
               Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p1",
-              mode = "png",
+              # mode = "png",
               # width = 11.3,
               # height = 6.3,
               overwrite = T
