@@ -211,21 +211,22 @@ modes_of_tpurps_p2 <-
 
 
 finalize_plot(modes_of_tpurps_p2,
-              "Although driving is the most common mode, transit plays an 
+              "Although driving is most common, transit plays an 
               important role for personal health care visits.",
               "Note: Excludes travelers younger than 16 years old. 'By car' 
               includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               'All health care visit for someone else' includes trips recorded 
               as 'Health care visits for someone else' and the small number
-              of trips that were recorded as visiting another person in the 
+              of trips to visit another person in the 
               hospital; both categories had very similar modal splits. Unlabeled 
               bars have less than five percent mode share.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
-              # width = 11.3,
-              # height = 6.3,
+              width = 8,
+              height = 4.5,
+              sidebar_width = 2.3,
               filename = "modes_of_tpurps_p2",
               mode = "png",
               overwrite = TRUE)
