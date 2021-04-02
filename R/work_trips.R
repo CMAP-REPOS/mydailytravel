@@ -102,12 +102,13 @@ work_trips_p1 <-
              vjust = 0, label.size = 0, fill = "white") +
   
   # Add CMAP style
-  theme_cmap(gridlines = "h", legend.position = "None") +
+  theme_cmap(gridlines = "h", legend.position = "None",
+             xlab = "Median travel time to work (minutes)") +
   cmap_fill_race(white = "White", black = "Black", hispanic = "Hispanic", 
                  asian = "Asian", other = "Other")
 
 finalize_plot(work_trips_p1,
-              "Median travel time to work by race and ethnicity (minutes).",
+              "Black residents of the region have significantly longer commutes to work than those of other residents.",
               "Note: 'Hispanic' includes individuals of any racial group that
               identify as Hispanic. All other categories are non-Hispanic.
               Includes trips by employed residents to a fixed work location.
