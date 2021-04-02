@@ -156,7 +156,8 @@ driver_pax_p1 <-
                                   "Decreasing passenger share" = "none")) +
 
   # Call CMAP style and palette
-  theme_cmap(gridlines = "v", vline = 0) +
+  theme_cmap(gridlines = "v", vline = 0,
+             xlab = "Share of car trips where the traveler is a passenger") +
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust x axis labels
@@ -168,8 +169,7 @@ driver_pax_p1 <-
 
 # Export plot
 finalize_plot(driver_pax_p1,
-              title = "Share of weekday car trips in the CMAP region where the
-              traveler is a passenger and not a driver, over time and by age.",
+              title = "While most travelers in the region are shifting away from passenger trips, they have become more common for younger travelers.",
               caption = "Note: Excludes travelers younger than 18 and older than
               89.
               <br><br>
@@ -312,7 +312,8 @@ driver_pax_p3 <-
              hjust = 0) +
   
   # Add CMAP style
-  theme_cmap(gridlines = "v", legend.position = "none", vline = 0) +
+  theme_cmap(gridlines = "v", legend.position = "none", vline = 0,
+             xlab = "Share of car trips where the traveler is a passenger") +
   cmap_fill_race(white = "White",asian = "Asian",hispanic = "Hispanic",
                  other = "Other",black = "Black") +
   
@@ -321,8 +322,7 @@ driver_pax_p3 <-
                      limits = c(0,.21))
 
 finalize_plot(driver_pax_p3,
-              title = "Share of weekday car trips in the CMAP region where the
-              traveler is a passenger and not a driver,  by race and ethnicity.",
+              title = "When traveling by car, white residents are the least likely to be passengers.",
               caption = "Note: Excludes travelers younger than 18 and older than
               89. \"Hispanic\" includes all travelers who identified as Hispanic.
               Other groups (e.g., \"White\") are non-Hispanic.
