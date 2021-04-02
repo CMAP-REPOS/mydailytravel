@@ -117,8 +117,24 @@ finalize_plot(work_trips_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
               filename = "work_trips_p1",
-              mode = "png",
+              # mode = "png",
               # # height = 6.3,
               # width = 11.3,
               overwrite = T)
 
+# Backup - statistics on median travel times by race and mode
+# Filter data
+work_time_race_mode_mdt <-
+  all_work_mdt %>% # 12099 records
+  
+  # Only include trips that are more than 0 minutes and less than 2.5 hours
+  filter(
+    # travtime_pg_calc < 150 & 
+    travtime_pg_calc > 0) %>% # 12044 records
+  
+  # Exclude households with missing race and ethnicity information
+  filter(race_eth != "missing") %>% # 12012 records
+  
+  # Calculate weighted mean of trip times by race and ethnicity
+  group_by(race_eth,mode_c) %>%
+  summarize(travtime = as.numeric(matrixStats::weightedMedian(travtime_pg_calc, w = wtperfin)))
