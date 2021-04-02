@@ -37,6 +37,9 @@ mdt_base_3 <-
   filter(distance_pg > 0) %>%          # 84969
   # Exclude trips with a "missing" mode
   filter(mode_c != "missing") %>%      # 84932
+  # Exlclude trips missing from residents outside the seven counties
+  filter(home_state == 17 &            # 83732
+           home_county %in% cmap_seven_counties) %>% 
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
   mutate(mode_c = case_when(
@@ -88,28 +91,24 @@ mdt_mode_all <-
 # Analyze percents at the county and region-wide level
 mdt_mode_counties <-
   pct_calculator(
-    # Combine data from residents of the seven counties...
-    mdt_base_3 %>% filter(home_state == 17 & home_county %in% cmap_seven_counties) %>%
-      # ...with the same data, replacing county with region-wide
-      rbind(mdt_base_3 %>%
-              filter(home_state == 17 & home_county %in% cmap_seven_counties) %>%
-              mutate(home_county_chi = "CMAP region")),
-    # Execute the rest of the function
+    mdt_base_3,
     breakdown_by = "mode_c",
     second_breakdown = "home_county_chi",
-    weight = "wtperfin") 
+    weight = "wtperfin") %>% 
+  # Add the regional total calculated above
+  rbind(mdt_mode_all %>% mutate(home_county_chi = "CMAP region"))
 
 # Analyze percents by household income
 mdt_mode_income <-
   pct_calculator(
-    # Keep all respondents with a reported household income...
-    mdt_base_3 %>% filter(hhinc > 0) %>%
-      # ...and add the whole set again to enable regional totals
-      rbind(mdt_base_3 %>% filter(hhinc > 0) %>% mutate(hhinc = 99)),
+    # Keep all respondents with a reported household income
+    mdt_base_3 %>% filter(hhinc > 0),
     # Execute the rest of the function
     breakdown_by = "mode_c",
     second_breakdown = "hhinc",
     weight = "wtperfin") %>%
+  # Add baseline totals
+  rbind(mdt_mode_all %>% mutate(hhinc = 99)) %>% 
   # Recode for publication
   mutate(hhinc = recode_factor(factor(hhinc),
                              "10" = "$150,000 or more",
@@ -128,21 +127,21 @@ mdt_mode_income <-
 mdt_mode_race <-
   pct_calculator(
     # Keep all respondents with a reported race and ethnicity...
-    mdt_base_3 %>% filter(race_eth != "missing") %>%
-      # ...and add the whole set again to enable regional totals
-      rbind(mdt_base_3 %>% filter(race_eth != "missing") %>%
-                           mutate(race_eth = "CMAP region")),
+    mdt_base_3 %>% filter(race_eth != "missing"),
     # Execute the rest of the function
     breakdown_by = "mode_c",
     second_breakdown = "race_eth",
     weight = "wtperfin") %>%
+  # Add baseline totals
+  rbind(mdt_mode_all %>% mutate(race_eth = "CMAP region")) %>% 
   # Recode for publication
   mutate(race_eth = recode_factor(factor(race_eth),
                                   "other" = "Other",
                                   "black" = "Black",
                                   "asian" = "Asian",
                                   "hispanic" = "Hispanic",
-                                  "white" = "White"))
+                                  "white" = "White",
+                                  "CMAP region" = "CMAP region"))
 
 # Do the same again, but for age
 
@@ -152,15 +151,16 @@ age_labels <- c("16 to 29", "30 to 49",  "50 to 69", "70 and above")
 
 mdt_mode_age <-
   pct_calculator(
-    # Keep all respondents with a reported age...
-    mdt_base_3 %>% filter(age > 0) %>%
-                   mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels)) %>%
-      # ...and add the whole set again to enable regional totals
-      rbind(mdt_base_3 %>% filter(age > 0) %>% mutate(age_bin = "CMAP region")),
+    # Add age bins
+    mdt_base_3 %>% 
+      filter(age > 0) %>% 
+      mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels)),
     # Execute the rest of the function
     breakdown_by = "mode_c",
     second_breakdown = "age_bin",
     weight = "wtperfin") %>%
+  # Add baseline totals
+  rbind(mdt_mode_all %>% mutate(age_bin = "CMAP region")) %>% 
   # Reorder factors for publication
   mutate(age_bin = fct_relevel(age_bin,"CMAP region")) %>%
   mutate(age_bin = fct_rev(factor(age_bin)))
@@ -176,15 +176,15 @@ mileage_labels <- c("0.50 miles or less","0.51 to 1 mile", "1.01 to 2.50 miles",
 
 mdt_mode_mileage <-
   pct_calculator(
-    # Keep all respondents with a reported age...
-    mdt_base_3 %>% filter(distance_pg > 0) %>%
-      mutate(mileage_bin=cut(distance_pg,breaks=mileage_breaks,labels=mileage_labels)) %>%
-      # ...and add the whole set again to enable regional totals
-      rbind(mdt_base_3 %>% filter(distance_pg > 0) %>% mutate(mileage_bin = "CMAP region")),
+    # Add mileage bins
+    mdt_base_3 %>% 
+      mutate(mileage_bin=cut(distance_pg,breaks=mileage_breaks,labels=mileage_labels)),
     # Execute the rest of the function
     breakdown_by = "mode_c",
     second_breakdown = "mileage_bin",
     weight = "wtperfin") %>%
+  # Add baseline totals
+  rbind(mdt_mode_all %>% mutate(mileage_bin = "CMAP region")) %>% 
   # Reorder factors for publication
   mutate(mileage_bin = fct_relevel(mileage_bin,"CMAP region")) %>%
   mutate(mileage_bin = fct_rev(factor(mileage_bin)))
@@ -254,7 +254,7 @@ mode_share_p1 <-
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
                      labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
-                     limits = c(-1,.58)) +
+                     limits = c(-1,.61)) +
 
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
@@ -270,10 +270,10 @@ finalize_plot(mode_share_p1,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
-              # height = 5.5,
-              # width = 11.3,
+              # height = 4.5,
+              # width = 8,
               filename = "mode_share_p1",
-              # mode = "png",
+              mode = "png",
               overwrite = T)
 
 ################################################################################
@@ -335,20 +335,20 @@ mode_share_p2 <-
              fill = "white") +
 
   # Add CMAP style
-  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6) +
+  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,xlab = "Mode share by household income") +
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
                      labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
-                     limits = c(-1,.6))+
+                     limits = c(-1,.68))+
   
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
 finalize_plot(mode_share_p2,
-              title = "Mode share for trips in northeastern Illinois by household 
-              income, highlighting non-car mode share.",
+              title = "The highest- and lowest-income households rely the most 
+              on non-car modes.",
               caption = "Note: Includes trips by residents of the region that 
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
@@ -356,10 +356,10 @@ finalize_plot(mode_share_p2,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
-              # height = 5.5,
-              # width = 11.3,
+              # height = 4.5,
+              # width = 8,
               filename = "mode_share_p2",
-              # mode = "png",
+              mode = "png",
               overwrite = T)
 
 ################################################################################
@@ -422,7 +422,7 @@ mode_share_p3 <-
              fill = "white") +
   
   # Add CMAP style
-  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6) +
+  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,xlab = "Mode share by race and ethnicity") +
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
@@ -434,8 +434,8 @@ mode_share_p3 <-
   guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
 finalize_plot(mode_share_p3,
-              title = "Mode share for trips in northeastern Illinois by race and 
-              ethnicity, highlighting non-car mode share.",
+              title = "White residents of the region are the likeliest to rely 
+              on personal automobiles for their transportation.",
               caption = "Note: 'Hispanic' includes respondents who identified as 
               Hispanic of any racial category. Other categories are non-Hispanic. 
               Includes trips by residents of the region that  start and/or end 
@@ -511,7 +511,8 @@ mode_share_p4 <-
              fill = "white") +
 
   # Add CMAP style
-  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6) +
+  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,
+             xlab = "Mode share by age") +
   cmap_fill_discrete(palette = "mobility") +
   
   # Adjust axis
@@ -523,8 +524,8 @@ mode_share_p4 <-
   guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
 finalize_plot(mode_share_p4,
-              title = "Mode share for trips in northeastern Illinois by age, 
-              highlighting non-car mode share.",
+              title = "The region's younger travelers disproportionately rely on 
+              non-car modes.",
               caption = "Note: Includes trips by residents of the region that 
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
@@ -535,7 +536,7 @@ finalize_plot(mode_share_p4,
               # # height = 5.5,
               # width = 11.3,
               filename = "mode_share_p4",
-              # mode = "png",
+              mode = "png",
               overwrite = T)
 
 ################################################################################
