@@ -289,24 +289,35 @@ all_tnc_tpurp_c <-
 # Chart of total TNC/taxi trips, MDT vs. TT
 ################################################################################
 
-# Create label for total of MDT
-tpurps_of_modes_p3_total_labels <-
-  tibble(survey = c("My Daily Travel ('19)")) %>%
-  cbind(all_tnc_tpurp_c %>%
-          filter(mode == "tnc (all)") %>%
-          summarize(n = sum(breakdown_total))
-  )
+# Note that the total figures appear to be lower than expected based on actuals
+# from the City of Chicago's TNP data, although are roughly consistent with the
+# proportions of those data. Since the TNP data does not cover the region and
+# only begins in 2013 for taxis, we still want to use MDT data to understand
+# regional trends.Thus, we use these figures to calculate the percentage
+# changes, rather than absolute figures.
 
-# Create chart
+# Extract 2008 total for taxis as a baseline
+taxi_2008_total <- unique(all_tnc_tpurp_c_tt$total)
+  
+# # Create label for total of MDT
+# tpurps_of_modes_p3_total_labels <-
+#   tibble(survey = c("My Daily Travel ('19)")) %>%
+#   cbind(all_tnc_tpurp_c %>%
+#           filter(mode == "tnc (all)") %>%
+#           summarize(n = sum(breakdown_total)/taxi_2008_total)
+#   )
+
+# Create chart. 
 tpurps_of_modes_p3 <-
   # Get data
   all_tnc_tpurp_c %>%
-  # Exclude the MDT totals so that we can make a stacked bar chart
-  filter(mode != "tnc (all)") %>%
+  # Exclude the 2008 taxi levels and the 2019 totals
+  filter(survey == "mdt",
+         mode != "tnc (all)") %>%
   # Group into mode and survey categories to enable summaries (instead of by
   # trip purpose category)
   group_by(survey,mode) %>%
-  summarize(total = sum(breakdown_total)) %>%
+  summarize(total = sum(breakdown_total)/taxi_2008_total) %>%
   
   # Add factor levels and format for chart ordering
   mutate(mode = recode_factor(factor(mode, levels = c("taxi",
@@ -314,45 +325,49 @@ tpurps_of_modes_p3 <-
                                                       "shared rideshare")),
                               "taxi" = "Taxi",
                               "rideshare" = "Rideshare",
-                              "shared rideshare" = "Shared rideshare"),
-         survey = recode_factor(factor(survey, levels = c("tt","mdt")),
-                                "tt" = "Travel Tracker ('08)",
-                                "mdt" = "My Daily Travel ('19)")) %>%
+                              "shared rideshare" = "Shared rideshare")) %>%
   
   # Create ggplot object
-  ggplot(aes(x = survey, y = total)) +
-  geom_col(aes(fill = mode), position = position_stack(reverse = T)) +
-  # Add labels within stacked bars
-  geom_label(aes(label = scales::label_comma(accuracy = 1)(total),
-                 group = mode,
-                 fill = mode),
-             position = position_stack(reverse = T),
+  ggplot(aes(x = mode, y = total)) +
+  geom_col(aes(fill = mode)) +
+  # Add labels above the bars
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(total)),
              hjust = 0.5,
-             vjust = 1,
-             label.size = 0,
-             color = "white",
-             show.legend = FALSE) +
-  # Add total label to MDT column
-  geom_label(data = tpurps_of_modes_p3_total_labels,
-             aes(label = scales::label_comma(accuracy = 1)(n),
-                 x = survey,
-                 y = n),
              vjust = 0,
              label.size = 0,
-             label.padding = unit(.5,"lines")) +
+             fill = "white",
+             show.legend = FALSE) +
   
   # Adjust axis
-  scale_y_continuous(labels = scales::label_comma(scale = 1),
-                     limits = c(0,215000)) +
+  scale_y_continuous(labels = scales::label_percent(accuracy = 1),
+                     limits = c(0,2)) +
+  
+  # Add hline for 100%
+  geom_hline(yintercept = 1,color = "dark gray", size = 2) +
+  annotate(
+    geom = "text",
+    x = 1,y = 1.05,
+    label = "2008 taxi ridership",
+    vjust = 0
+  ) +
   
   # Add CMAP style
-  theme_cmap(hline = 0) +
+  theme_cmap(hline = 0,show.legend = FALSE,
+             xlab = "Taxi and TNC ridership in 2019 as a share of 2008 taxi ridership",
+             axis) +
   # Manually include CMAP colors
   scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c"))
 
 finalize_plot(tpurps_of_modes_p3,
-              "Change in daily TNC and taxi trips, 2008 vs. 2019.",
-              "Source: Chicago Metropolitan Agency for Planning analysis of My
+              "While taxi ridership has fallen significantly since 2008, Transportation Network Company (TNC) trips have more than made up the difference.",
+              "Note: Includes only trips by regional residents and excludes 
+              weekend trips. The reported regional totals for both taxi and TNC 
+              trips in My Daily Travel are similar to but slightly less than 
+              those captured in the City of Chicago's data on TNC and taxi 
+              trips, which may be due to the exclusion of non-resident and 
+              weekend trips and/or other survey design factors.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel and Travel Tracker data.",
               filename = "tpurps_of_modes_p3",
               mode = "png",
