@@ -86,6 +86,8 @@ ppl <- read.csv(unzip(mdt_zip,files = "person.csv")) %>%
          age,        # The age (in years) of the respondent.
          aage,       # Range of ages (only for those without an answer to age).
          age18,      # Either younger than 18 (2) or 18 or older (1)
+         
+         sex,        # Either male (1) or female (2)
 
          schol,      # School enrollment status.
          smode,      # Regular mode used to get to school.

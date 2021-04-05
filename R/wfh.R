@@ -150,6 +150,17 @@ wfh_mdt_all %>% # 17,656 records
   mutate(tcers_pct = tcers / sum(.$tcers)) %>% 
   arrange(tc_pct)
 
+
+# Breakdown of tc behavior by gender
+wfh_mdt_all %>% # 17,656 records
+  filter(sex > 0) %>% # 17,516 records
+  group_by(sex) %>%
+  summarize(tc_pct = weighted.mean(x = tc,w = wtperfin),
+            n = sum(wtperfin)) %>%
+  mutate(tcers = n * tc_pct) %>%
+  mutate(tcers_pct = tcers / sum(.$tcers)) %>% 
+  arrange(tc_pct)
+
 # Breakdown of tc behavior by home county
 wfh_mdt_all %>% # 17,656 records
   filter(home_county %in% cmap_seven_counties) %>% # 17,220 records
