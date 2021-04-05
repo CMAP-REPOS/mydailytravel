@@ -46,12 +46,20 @@ avgtravel_mdt <-
   mutate(hdist_pg_weight = hdist_pg * wtperfin,
          dist_pg_weight = distance_pg * wtperfin)
 
-# Calculate total number of daily travelers who take at least one trip
-daily_travelers_mdt <-
+# Calculate total number of daily travelers who take at least one trip by
+# sex/gender
+daily_travelers_sex_mdt <-
   avgtravel_mdt %>%
-  select(sampno,perno,wtperfin) %>%
+  select(sampno,perno,wtperfin,sex) %>%
   distinct() %>%
+  group_by(sex) %>% 
   summarize(total_travelers = sum(wtperfin))
+
+# Calculate total number
+daily_travelers_mdt <-
+  daily_travelers_sex_mdt %>% 
+  summarize(total_travelers = sum(total_travelers))
+
 # 
 # # ARCHIVED
 # ##### TRAVEL TRACKER - note that due to differences in collection of distances
@@ -159,6 +167,21 @@ avgtravel_mdt %>%
   ) %>%
   left_join(daily_travelers_mdt,
             by = character()) %>%
+  mutate(distance_per_capita = total_distance / total_travelers,
+         trips_per_capita = total_trips / total_travelers) %>%
+  View()
+
+# Calculate summary statistics by gender
+avgtravel_mdt %>%
+  group_by(sex) %>% 
+  summarize(
+    total_distance = sum(dist_pg_weight),
+    total_trips = sum(wtperfin),
+    avg_trip_length = total_distance / total_trips,
+  ) %>%
+  left_join(daily_travelers_sex_mdt,
+            by = "sex") %>%
+  group_by(sex) %>% 
   mutate(distance_per_capita = total_distance / total_travelers,
          trips_per_capita = total_trips / total_travelers) %>%
   View()
