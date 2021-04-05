@@ -49,6 +49,13 @@ mdt_base_1 <-
     mode_c == "schoolbus" ~ "other",
     TRUE ~ mode_c)) %>%
   mutate(mode_c = factor(mode_c,levels = mode_c_levels)) %>%
+  # Create flag for Chicago vs. Suburban Cook vs. Other
+  mutate(geog = case_when(
+    home_county_chi == "Chicago" ~ "Chicago",
+    home_county_chi == "Suburban Cook" ~ "Suburban Cook",
+    home_county_chi == "Homes in multiple counties" ~ "Missing",
+    TRUE ~ "Other suburban counties"
+  )) %>% 
   ungroup()
 
 # # Filter data for TT. Note: this code is included but archived because it was
@@ -167,6 +174,7 @@ detailed_health_mode_c_mdt <-
                  subset_of = "tpurp_c",
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
+                 # third_breakdown = "geog",
                  weight = "wtperfin",
                  survey = "mdt")
 
