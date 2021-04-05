@@ -9,6 +9,7 @@
 library(ggplot2)
 library(tidyverse)
 library(cmapplot)
+library(lubridate)
 library(sf)
 
 #################################################
@@ -424,7 +425,8 @@ all_school_mdt_lm <-
   all_school_mdt %>%
   mutate(travtime_lm = as.double(travtime_pg_calc)) %>%
   filter(travtime_lm < 150,
-         travtime_lm > 0) %>%
+         travtime_lm > 0,
+         schol == 3) %>%
   mutate(
     white = case_when(
       race_eth == "white" ~ 1,
@@ -458,16 +460,14 @@ all_school_mdt_lm <-
       TRUE ~ 0),
     chicago = case_when(
       home_county_chi == "Chicago" ~ 1,
-      TRUE ~ 0),
-    k8 = case_when(
-      schol == 3 ~ 1,
-      TRUE ~ 0)
-  )
+      TRUE ~ 0))
 
 school_trips_regression <-
-  lm(travtime_lm ~ white + black + hispa + asian + high_inc +
+  lm(travtime_lm ~ 
+       white + black + asian + hispa +
+       high_inc +
        distance_pg + chicago + car_trip + school_bus + transit +
-       walk + bike + k8,
+       walk + bike ,
      all_school_mdt_lm,
      weights = wtperfin)
 
