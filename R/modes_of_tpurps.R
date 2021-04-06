@@ -49,13 +49,6 @@ mdt_base_1 <-
     mode_c == "schoolbus" ~ "other",
     TRUE ~ mode_c)) %>%
   mutate(mode_c = factor(mode_c,levels = mode_c_levels)) %>%
-  # Create flag for Chicago vs. Suburban Cook vs. Other
-  mutate(geog = case_when(
-    home_county_chi == "Chicago" ~ "Chicago",
-    home_county_chi == "Suburban Cook" ~ "Suburban Cook",
-    home_county_chi == "Homes in multiple counties" ~ "Missing",
-    TRUE ~ "Other suburban counties"
-  )) %>% 
   ungroup()
 
 # # Filter data for TT. Note: this code is included but archived because it was
@@ -96,11 +89,12 @@ mdt_base_1 <-
 
 ### Calculate proportions for subcategories for dining in MDT
 detailed_dining_mode_c_mdt <-
-  pct_calculator(mdt_base_1,
+  pct_calculator(mdt_base_1 %>% filter(geog != "Other"),
                  subset = "dining",
                  subset_of = "tpurp_c",
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
+                 third_breakdown = "geog",
                  weight = "wtperfin",
                  survey = "mdt")
 
@@ -124,7 +118,7 @@ modes_of_tpurps_p1 <-
                                 "bike" = "Other modes")) %>%
   
   # Calculate summary based on new mode breakdown
-  group_by(mode_c,tpurp) %>%
+  group_by(mode_c,tpurp,geog) %>%
   summarize(pct = sum(pct)) %>%
   
   # Create ggplot object
@@ -141,10 +135,14 @@ modes_of_tpurps_p1 <-
   scale_fill_discrete(type = c("#00665c","#36d8ca","#6d8692","#006b8c")) +
   
   # Adjust axis
-  scale_x_continuous(labels = scales::label_percent())
+  scale_x_continuous(labels = scales::label_percent()) +
+  
+  # Add faceting
+  facet_wrap(~geog, ncol = 1)
 
 finalize_plot(modes_of_tpurps_p1,
-              "Mode share of dining trips, 2019.",
+              "Walking and transit are more important modes for eating in person 
+              than for picking up take-out.",
               "Note: Excludes travelers younger than 16 years old. 'By car' 
               includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
@@ -156,7 +154,7 @@ finalize_plot(modes_of_tpurps_p1,
               # width = 11.3,
               # height = 6.3,
               filename = "modes_of_tpurps_p1",
-              # mode = "png",
+              mode = "png",
               overwrite = T)
 
 ################################################################################
@@ -167,14 +165,16 @@ finalize_plot(modes_of_tpurps_p1,
 ### Calculate proportions for subcategories for dining in MDT
 detailed_health_mode_c_mdt <-
   pct_calculator(mdt_base_1 %>% 
+                   filter(geog != "Other") %>% 
                    mutate(tpurp = recode_factor(tpurp,
-                                                "Health care visit for someone else" = "All health care visits for someone else",
-                                                "Visited a person staying at the hospital" = "All health care visits for someone else")),
+                                                "Health care visit for someone else" = "For someone else",
+                                                "Visited a person staying at the hospital" = "For someone else",
+                                                "Health care visit for self" = "Personal")),
                  subset = "health",
                  subset_of = "tpurp_c",
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
-                 # third_breakdown = "geog",
+                 third_breakdown = "geog",
                  weight = "wtperfin",
                  survey = "mdt")
 
@@ -187,8 +187,10 @@ modes_of_tpurps_p2 <-
   # Get data
   detailed_health_mode_c_mdt %>%
   # Order for graph
-  mutate(tpurp = factor(tpurp,levels = c("All health care visits for someone else",
-                                         "Health care visit for self"))) %>%
+  mutate(tpurp = factor(tpurp,levels = c("For someone else",
+                                         "Personal"))) %>%
+  # Order geographies
+  mutate(geog = fct_rev(geog)) %>% 
   # Categorize low-percentage modes into "Other modes"
   mutate(mode_c = recode_factor(mode_c,
                                 "driver" = "By car",
@@ -198,11 +200,13 @@ modes_of_tpurps_p2 <-
                                 "other" = "Other modes",
                                 "bike" = "Other modes")) %>%
   # Calculate new values based on collapsed groups
-  group_by(mode_c,tpurp) %>%
+  group_by(mode_c,tpurp,geog) %>%
   summarize(pct = sum(pct)) %>%
+  # Filter out to just personal health care
+  filter(tpurp == "Personal") %>% 
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = str_wrap_factor(tpurp,15),
+  ggplot(aes(x = pct, y = str_wrap_factor(geog,18),
              # Only label bars that round to at least 5 percent
              label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
@@ -211,29 +215,27 @@ modes_of_tpurps_p2 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
-             xlab = "Mode share") +
+             xlab = "Mode share for personal health care trips by home jurisdiction") +
   scale_fill_discrete(type = c("#00665c","#6d8692","#36d8ca","#006b8c")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent())
+  
 
 
 finalize_plot(modes_of_tpurps_p2,
               "Although driving is most common, transit plays an 
-              important role for personal health care visits.",
+              important role for personal health care visits, especially for 
+              Chicago residents.",
               "Note: Excludes travelers younger than 16 years old. 'By car' 
               includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
-              'All health care visit for someone else' includes trips recorded 
-              as 'Health care visits for someone else' and the small number
-              of trips to visit another person in the 
-              hospital; both categories had very similar modal splits. Unlabeled 
-              bars have less than five percent mode share.
+              Unlabeled bars have less than five percent mode share.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
-              width = 8,
-              height = 4.5,
+              # width = 8,
+              # height = 4.5,
               sidebar_width = 2.3,
               filename = "modes_of_tpurps_p2",
               mode = "png",
@@ -245,8 +247,9 @@ finalize_plot(modes_of_tpurps_p2,
 detailed_health_race_mode_c_mdt <-
   pct_calculator(mdt_base_1 %>% 
                    mutate(tpurp = recode_factor(tpurp,
-                                                "Health care visit for someone else" = "All health care visits for someone else",
-                                                "Visited a person staying at the hospital" = "All health care visits for someone else")),
+                                                "Health care visit for someone else" = "Someone else",
+                                                "Visited a person staying at the hospital" = "Someone else",
+                                                "Health care visit for self" = "Personal")),
                  subset = "health",
                  subset_of = "tpurp_c",
                  breakdown_by = "mode_c",
@@ -345,13 +348,18 @@ health_mode_c_vehs_mdt %>% arrange(hhveh,pct) %>%
 ### Calculate proportions for subcategories for community in MDT
 
 detailed_community_mode_c_mdt <-
-  pct_calculator(mdt_base_1,
+  pct_calculator(mdt_base_1 %>% 
+                   filter(geog != "Other") %>% 
+                   mutate(tpurp = recode_factor(tpurp,
+                                                "Socialized with friends" = "Friends",
+                                                "Socialized with relatives" = "Relatives")),
                  # Optional filter to compare like trips with like
                  # %>% filter(distance_pg < 1.25 & distance_pg > 0.75),
                  subset = "community",
                  subset_of = "tpurp_c",
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
+                 third_breakdown = "geog",
                  weight = "wtperfin",
                  survey = "mdt")
 
@@ -363,11 +371,11 @@ modes_of_tpurps_p3 <-
   # Get data
   detailed_community_mode_c_mdt %>%
   # Keep only the trip types of interest
-  filter(tpurp %in% c("Socialized with relatives","Socialized with friends")) %>% 
+  filter(tpurp %in% c("Relatives","Friends")) %>% 
   # Order factors
   mutate(tpurp = factor(tpurp,
-                        levels = c("Socialized with relatives",
-                                   "Socialized with friends"
+                        levels = c("Relatives",
+                                   "Friends"
                                    ))) %>%
   # Collapse low-percentage modes
   mutate(mode_c = recode_factor(mode_c,
@@ -378,7 +386,7 @@ modes_of_tpurps_p3 <-
                                 "other" = "Other modes",
                                 "bike" = "Other modes")) %>%
   # Calculate new totals
-  group_by(mode_c,tpurp) %>%
+  group_by(mode_c,tpurp,geog) %>%
   summarize(pct = sum(pct)) %>%
   
   # Create ggplot object
@@ -391,11 +399,14 @@ modes_of_tpurps_p3 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
-             xlab = "Mode share") +
+             xlab = "Mode share for socializing trips by home jurisdiction") +
   scale_fill_discrete(type = c("#00665c","#36d8ca","#6d8692","#006b8c")) +
   
   # Adjust axis
-  scale_x_continuous(labels = scales::label_percent())
+  scale_x_continuous(labels = scales::label_percent()) +
+  
+  # Add faceting
+  facet_wrap(~geog,ncol = 1)
 
 finalize_plot(modes_of_tpurps_p3,
               "Walking and other non-car modes are significantly more common for 
@@ -535,11 +546,12 @@ finalize_plot(modes_of_tpurps_p4,
 ### Calculate proportions for subcategories for recreation/fitness in MDT
 
 detailed_recreation_mode_c_mdt <-
-  pct_calculator(mdt_base_1,
+  pct_calculator(mdt_base_1 %>% filter(geog != "Other"),
                  subset = "recreation/fitness",
                  subset_of = "tpurp_c",
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
+                 third_breakdown = "geog",
                  weight = "wtperfin",
                  survey = "mdt")
 
@@ -565,11 +577,11 @@ modes_of_tpurps_p5 <-
                                 "other" = "Other modes",
                                 "bike" = "Other modes")) %>%
   # Calculate new totals
-  group_by(mode_c,tpurp) %>%
+  group_by(mode_c,tpurp,geog) %>%
   summarize(pct = sum(pct)) %>%
 
   # Create ggplot object
-  ggplot(aes(x = pct, y = str_wrap_factor(tpurp,15),
+  ggplot(aes(x = pct, y = str_wrap_factor(tpurp,18),
              # Only label bars that round to at least 5 percent
              label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
@@ -577,11 +589,15 @@ modes_of_tpurps_p5 <-
             color = "white") +
   
   # Add CMAP style
-  theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0) +
+  theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
+             xlab = "Mode share by home jurisdiction") +
   scale_fill_discrete(type = c("#00665c","#3f0030","#36d8ca","#006b8c")) +
   
   # Adjust axis
-  scale_x_continuous(labels = scales::label_percent())
+  scale_x_continuous(labels = scales::label_percent()) +
+  
+  # Add faceting
+  facet_wrap(~geog,ncol = 1)
 
 finalize_plot(modes_of_tpurps_p5,
               "Mode share of recreation and fitness trips, 2019.",
@@ -606,9 +622,10 @@ finalize_plot(modes_of_tpurps_p5,
 ### Calculate proportions for all trip purposes in MDT
 
 detailed_allpurps_mode_c_mdt <-
-  pct_calculator(mdt_base_1,
+  pct_calculator(mdt_base_1 %>% filter(geog != "Other"),
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
+                 third_breakdown = "geog",
                  weight = "wtperfin",
                  survey = "mdt")
 
@@ -628,10 +645,10 @@ modes_of_tpurps_t1 <-
                                 "other" = "Other modes",
                                 "bike" = "Other modes")) %>%
   # Calculate new totals
-  group_by(mode_c,tpurp) %>%
+  group_by(mode_c,tpurp,geog) %>%
   summarize(pct = sum(pct),
             n = first(total_n)) %>%
-  pivot_wider(id_cols = c(tpurp,n), values_from = pct, names_from = mode_c)
+  pivot_wider(id_cols = c(tpurp,n,geog), values_from = pct, names_from = mode_c)
   
 
 ################################################################################
