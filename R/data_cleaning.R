@@ -263,6 +263,16 @@ home <- home_wip %>%
   mutate(home_county_chi = case_when(
     home_county == 999 ~ "Homes in multiple counties",
     TRUE ~ county_chi_name)) %>% 
+  # Create flag for Chicago vs. Suburban Cook vs. Other
+  mutate(geog = case_when(
+    home_county_chi == "Chicago" ~ "Chicago",
+    home_county_chi == "Suburban Cook" ~ "Suburban Cook",
+    home_county_chi == "Homes in multiple counties" ~ "Other",
+    TRUE ~ "Other suburban counties"
+  )) %>% 
+  mutate(geog = factor(geog, levels = c("Chicago","Suburban Cook",
+                                        "Other suburban counties","Other"))) %>% 
+  # Remove unnecessary variable
   select(-county_chi_name)
 
 # Remove WIP tables and Chicago tracts
