@@ -186,7 +186,7 @@ trips_in_motion_p1 <-
   # Adjust axes
   scale_x_datetime(labels = scales::date_format("%H:%M",
                                                 tz = "America/Chicago"),
-                   breaks = breaks) +
+                   breaks = breaks_less) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
   
   # Manually add colors
@@ -212,9 +212,10 @@ finalize_plot(trips_in_motion_p1,
               Daily Travel trip diaries.",
               filename = "trips_in_motion_p1",
               # mode = "png",
+              # sidebar_width = 2.3,
               overwrite = TRUE,
-              # height = 6.3,
-              # width = 11.3
+              # height = 4.5,
+              # width = 8
               )
 
 # Graph trips in motion by trip chains
