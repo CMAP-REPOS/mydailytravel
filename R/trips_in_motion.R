@@ -617,7 +617,14 @@ finalize_plot(trips_in_motion_p7,
 tim_mdt_bike <-
   tim_mdt_wip %>%
   # Filter to just the purpose in question
-  filter(mode == "personal bike")
+  filter(mode == "personal bike") %>% 
+  # Recode chains to just be work and other
+  mutate(chain = recode_factor(chain,
+                               "Work trip" = "Work trip",
+                               "Return home (work)" = "Work trip",
+                               "Shopping trip" = "Other trip",
+                               "Return home (shopping)" = "Other trip",
+                               "Other trip" = "Other trip"))
 
 trip_times_bike_and_chain_mdt <-
   tim_calculator(data = tim_mdt_bike,
@@ -630,14 +637,14 @@ trips_in_motion_p8 <-
   # Get data
   trip_times_bike_and_chain_mdt %>%
   # Sort chains for ordering
-  mutate(chain = factor(identifier, levels = c("Work trip","Return home (work)",
-                                          "Shopping trip",
-                                          "Return home (shopping)",
-                                          "Other trip"))) %>%
+  # mutate(chain = factor(identifier, levels = c("Work trip","Return home (work)",
+  #                                         "Shopping trip",
+  #                                         "Return home (shopping)",
+  #                                         "Other trip"))) %>%
   
   # Create ggplot object
   ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = chain), position = position_stack(reverse = T)) +
+  geom_area(aes(fill = identifier), position = position_stack(reverse = T)) +
   
   # Adjust axes
   scale_x_datetime(labels = scales::date_format("%H:%M",
@@ -646,29 +653,28 @@ trips_in_motion_p8 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
   
   # Add colors
-  scale_fill_discrete(type = c("#009ccc","#72cae5","#cc8200",
-                               "#e5b172","#3d6600")) +
+  scale_fill_discrete(type = c("#72cae5","#3d6600")) +
   
   # Add CMAP style
   theme_cmap(gridlines = "hv",legend.max.columns = 3,
-             panel.grid.major.x = element_line(color = "light gray"))
+             panel.grid.major.x = element_line(color = "light gray"),
+             xlab = "Personal bike trips in motion by type of trip")
 
 finalize_plot(trips_in_motion_p8,
-              "Bicycling trips in motion in northeastern Illinois by purpose on weekdays, 
-              2019.",
-              "Note: Trips in motion are 55-minute rolling averages. Trips 
-              analyzed include all trips by residents of the region that start 
-              and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
-              Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
-              100 miles or lasting longer than 15 hours are excluded.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries.",
+              "Personal bike usage has a strong morning peak, with PM usage spread more evenly across the afternoon and evening.",
+              # "Note: Trips in motion are 55-minute rolling averages. Trips 
+              # analyzed include all trips by residents of the region that start 
+              # and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
+              # Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
+              # 100 miles or lasting longer than 15 hours are excluded.
+              # <br><br>
+              # Source: Chicago Metropolitan Agency for Planning analysis of My
+              # Daily Travel trip diaries.",
               filename = "trips_in_motion_p8",
-              mode = "png",
+              # mode = "png",
               overwrite = TRUE,
-              # height = 6.3,
-              # width = 11.3
+              # height = 2.25,
+              # width = 8
               )
 
 
