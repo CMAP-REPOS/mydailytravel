@@ -215,7 +215,8 @@ modes_of_tpurps_p2 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
-             xlab = "Mode share for personal health care trips by home jurisdiction") +
+             xlab = "Mode share for personal health care trips by home jurisdiction",
+             axis.title.x.bottom = element_text(hjust = .8 )) +
   scale_fill_discrete(type = c("#00665c","#6d8692","#36d8ca","#006b8c")) +
   
   # Adjust axis
@@ -234,9 +235,9 @@ finalize_plot(modes_of_tpurps_p2,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
-              # width = 8,
-              # height = 4.5,
-              sidebar_width = 2.3,
+              width = 8,
+              height = 4.5,
+              sidebar_width = 2,
               filename = "modes_of_tpurps_p2",
               mode = "png",
               overwrite = TRUE)
