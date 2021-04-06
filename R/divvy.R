@@ -177,7 +177,7 @@ divvy_p1 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
 
   # Add CMAP style
-  cmap_fill_discrete(palette = "legislation") +
+  scale_fill_discrete(type = c("#475c66","#ac8c00")) +
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
              xlab = "Divvy trips in motion on weekdays by customer type")
@@ -186,24 +186,25 @@ divvy_p1 <-
 finalize_plot(divvy_p1,
               title = "Divvy ridership is significantly higher in the afternoon, 
               especially for non-subscribers.",
-              caption = "Note: Trips in motion are 25-minute rolling averages.
-              \"One-time user\" refers to Divvy customers that purchased a 
-              single ride or a day pass. Trips that were in motion as of 2:55 
-              A.M. and ended after 3:00 A.M. are captured on the right-hand-side 
-              of the graph, and are not included in the totals of trips in  
-              motion as of 3:00 A.M. on the left-hand-side of the graph.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of Divvy
-              ridership data for weekdays during the My Daily Travel survey 
-              collection period, between September 4, 2018 and May 9, 2019 
-              (excluding all public holidays and the weeks of November 19th, 
-              December 24th, December 31st, April 15th).",
+              # caption = "Note: Trips in motion are 25-minute rolling averages.
+              # \"One-time user\" refers to Divvy customers that purchased a 
+              # single ride or a day pass. Trips that were in motion as of 2:55 
+              # A.M. and ended after 3:00 A.M. are captured on the right side 
+              # of the graph, and are not included in the totals of trips in 
+              # motion as of 3:00 A.M. on the left side of the graph.
+              # <br><br>
+              # Source: Chicago Metropolitan Agency for Planning analysis of Divvy
+              # ridership data for weekdays during the My Daily Travel survey 
+              # collection period, between September 4, 2018 and May 9, 2019 
+              # (excluding all federal holidays and the weeks of November 19, 
+              # December 24, December 31, and April 15).",
               filename = "divvy_p1",
               # sidebar_width = 0,
               # caption_align = 1,
               # mode = "png",
-              # height = 6.3,
-              # width = 11.3,
+              # height = 2.25,
+              # width = 8,
+              # overrides = list(margin_plot_l = 30),
               overwrite = T)
 
 ####### ARCHIVE OF 2019 HOLIDAYS (FOR FUTURE ANALYSIS
