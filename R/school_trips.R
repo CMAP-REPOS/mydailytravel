@@ -370,7 +370,7 @@ finalize_plot(school_trips_p4,
               # width = 8,
               overwrite = T)
 
-# Backup - median trip times by race and mode (for prose
+# Backup - median trip times by race and mode (for prose)
 
 school_time_race_mode_mdt <-
   school_time_race_person_level_mdt %>%
@@ -413,6 +413,28 @@ school_trips_output <-
 
 write.csv(school_trips_output ,
           "schooltrips.csv")
+
+# Backup - specific trips for Black elementary school children (for prose)
+
+mdt %>% filter(race_eth == "black",
+               tpurp_c == "school", 
+               age %in% c(8,9,10,11),
+               mode_c %in% c("transit","walk","schoolbus")) %>% 
+  select(sampno,
+         perno,race_eth,
+         tpurp_c,
+         mode,
+         age,
+         sex,
+         travtime_pg_calc,
+         county_fips,
+         tract_fips,
+         home_county,
+         home_tract) %>% 
+  View()
+
+# We identified traveler #4 from household #70034002 as an 8-year-old in the
+# Grand Crossing neighborhood with a 15-minute bus ride to school.
 
 ################################################################################
 #
