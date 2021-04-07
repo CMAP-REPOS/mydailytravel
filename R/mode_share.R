@@ -38,7 +38,7 @@ mdt_base_3 <-
   # Exclude trips with a "missing" mode
   filter(mode_c != "missing") %>%      # 84932
   # Exlclude trips missing from residents outside the seven counties
-  filter(home_state == 17 &            # 83732
+  filter(home_state == 17 &            # 82732
            home_county %in% cmap_seven_counties) %>% 
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
