@@ -41,6 +41,11 @@ active_travel <-
   # and zero otherwise
   mutate(takes_active = min(sum(takes_transit,takes_bike,takes_walk),1))
 
+# Age bins
+age_breaks <- c(-1, 9, 18, 29, 39, 49, 59, 69, 150)
+age_labels <- c("5 to 9", "10 to 18", "19 to 29", "30 to 39", "40 to 49",
+                "50 to 59", "60 to 69", "70 and above")
+
 # Create working dataset based on variables pulled above and person/hh
 # characteristics from other tables
 tnc <-
@@ -80,12 +85,9 @@ tnc <-
          high_income = case_when(
            income_c %in% c("high","middle-high") ~ 1,
            TRUE ~ 0
-         ))
-
-# Age bins
-breaks <- c(-1, 9, 18, 29, 39, 49, 59, 69, 150)
-age_labels <- c("5 to 9", "10 to 18", "19 to 29", "30 to 39", "40 to 49",
-                "50 to 59", "60 to 69", "70 and above")
+         )) %>% 
+  mutate(age_bin = cut(age, breaks = age_breaks,
+                       labels = age_labels))
 
 # Reshape data to add flags for each county as individual columns
 tnc_wide <- tnc %>%
@@ -94,9 +96,7 @@ tnc_wide <- tnc %>%
     id_cols = c(sampno:takes_active,white:high_income),
     values_from = n,
     names_prefix = 'county_',
-    values_fill = list(n = 0)) %>%
-  mutate(age_bin = cut(age, breaks = breaks,
-                       labels = age_labels))
+    values_fill = list(n = 0))
 
 #################################################
 #                                               #
@@ -159,11 +159,11 @@ summary(tnc_use_lm)
 
 ################################################################################
 # 
-# Statistics about usage and cost by age, race/ethnicity, and home county
+# Statistics about usage, cost, and purpose by age, race/ethnicity, and home 
 ################################################################################
 
 ################################################################################
-# PLOT OF AGE CHARACTERISTICS
+# PLOT OF AGE CHARACTERISTICS | USAGE AND COST
 ################################################################################
 
 # Helper for month conversions (from weeks)
@@ -243,6 +243,236 @@ finalize_plot(tnc_p1,
               sidebar_width = 2.3,
               mode = "png",
               overwrite = T)
+
+################################################################################
+# PLOT OF AGE AND DEMOGRAPHIC CHARACTERISTICS | PURPOSE
+################################################################################
+
+# Age bins
+age_breaks_large <- c(-1, 9, 18, 39, 59, 150)
+age_labels_large <- c("5 to 9", "10 to 18", "19 to 39", "40 to 59",
+                      "60 and above")
+
+tnc_for_purposes <-
+  tnc %>% 
+  mutate(age_bin = cut(age, breaks = age_breaks_large,
+                       labels = age_labels_large)) %>% 
+  filter(tnc_purp > 0) %>%
+  mutate(tnc_purp = recode(factor(tnc_purp,levels = c(5,4,1,2,3)),
+                           "1" = "Commute (whole or part)",
+                           "2" = "Commute (whole or part)",
+                           "3" = "Daytime (work)",
+                           "4" = "Daytime (non-work)",
+                           "5" = "Late-night (non-work)"))
+
+tnc_purpose_overall <-
+  pct_calculator(tnc_for_purposes,
+                 breakdown_by = "tnc_purp",
+                 weight = "wtperfin")
+
+
+tnc_purpose_age <-
+  pct_calculator(tnc_for_purposes %>% 
+                   filter(!is.na(age_bin)),
+                 breakdown_by = "tnc_purp",
+                 second_breakdown = "age_bin",
+                 weight = "wtperfin") %>% 
+  # Add baseline totals
+  rbind(tnc_purpose_overall %>% mutate(age_bin = "CMAP region")) %>% 
+  # Adjust factors
+  mutate(age_bin = factor(age_bin,levels = c("60 and above","40 to 59","19 to 39","CMAP region")))
+
+tnc_p2 <-
+  # Get data
+  tnc_purpose_age %>% 
+  # Add flag for pattern
+  mutate(type = case_when(age_bin == "CMAP region" ~ "1",
+                          TRUE ~ "0" )) %>% 
+  
+  # Create ggplot object
+  ggplot(aes(x = pct, y = age_bin, fill = tnc_purp,
+             # Only label bars that round to at least 5 percent
+             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+  # Use "geom_col_pattern" to add texture to a subset of columns
+  ggpattern::geom_col_pattern(aes(pattern = type),
+                              pattern_color = "white",
+                              pattern_fill = "white",
+                              pattern_angle = 30,
+                              pattern_density = 0.05,
+                              pattern_spacing = 0.0325,
+                              pattern_key_scale_factor = 0.4,
+                              position = position_stack(reverse = T),
+                              width = 0.8) +  
+  # Re-assign patterns manually
+  scale_pattern_manual(values = c("1" = "stripe",
+                                  "0" = "none"),
+                       guide = "none") +
+  
+  geom_text(position = position_stack(reverse = T,vjust = 0.5),
+            color = "white") +
+  
+  
+  # Adjust axis
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1)) +
+  
+  # Add CMAP themes
+  theme_cmap(gridlines = "v",
+             xlab = "Typical reason for using a Transportation Network Company") +
+  scale_fill_discrete(type = c("#8c0000","#efa7a7","#00093f","#006b8c")) +
+  
+  # Adjust legend for formatting
+  guides(fill = guide_legend(ncol = 3,override.aes = list(pattern = "none")))
+
+
+finalize_plot(tnc_p2,
+              title = "Across age groups, a majority of travelers say they 
+              typically use Transportation Network Companies for non-work trips, 
+              although there are differences by time of day.",
+              caption = "Source: Chicago Metropolitan Agency for Planning 
+              Analysis of My Daily Travel data.",
+              filename = "tnc_p2",
+              # mode = "png",
+              overwrite = T)
+
+
+tnc_purpose_race <-
+  pct_calculator(tnc_for_purposes %>% filter(race_eth != "missing"),
+                 breakdown_by = "tnc_purp",
+                 second_breakdown = "race_eth",
+                 weight = "wtperfin") %>% 
+  # Add baseline totals
+  rbind(tnc_purpose_overall %>% mutate(race_eth = "CMAP region")) %>% 
+  # Adjust factors
+  mutate(race_eth = factor(race_eth,
+                          levels = c("black","asian","other","hispanic","white","CMAP region")))
+
+
+tnc_p3 <-
+  # Get data
+  tnc_purpose_race %>% 
+  # Add flag for pattern
+  mutate(type = case_when(race_eth == "CMAP region" ~ "1",
+                          TRUE ~ "0" )) %>% 
+  # Capitalize
+  mutate(race_eth = recode_factor(race_eth,
+                                  "black" = "Black",
+                                  "asian" = "Asian",
+                                  "other" = "Other",
+                                  "hispanic" = "Hispanic",
+                                  "white" = "White")) %>% 
+  
+  # Create ggplot object
+  ggplot(aes(x = pct, y = race_eth, fill = tnc_purp,
+             # Only label bars that round to at least 5 percent
+             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+  # Use "geom_col_pattern" to add texture to a subset of columns
+  ggpattern::geom_col_pattern(aes(pattern = type),
+                              pattern_color = "white",
+                              pattern_fill = "white",
+                              pattern_angle = 30,
+                              pattern_density = 0.05,
+                              pattern_spacing = 0.0325,
+                              pattern_key_scale_factor = 0.4,
+                              position = position_stack(reverse = T),
+                              width = 0.8) +  
+  # Re-assign patterns manually
+  scale_pattern_manual(values = c("1" = "stripe",
+                                  "0" = "none"),
+                       guide = "none") +
+  
+  geom_text(position = position_stack(reverse = T,vjust = 0.5),
+            color = "white") +
+  
+  
+  # Adjust axis
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1)) +
+  
+  # Add CMAP themes
+  theme_cmap(gridlines = "v",
+             xlab = "Typical reason for using a Transportation Network Company") +
+  scale_fill_discrete(type = c("#8c0000","#efa7a7","#00093f","#006b8c")) +
+  
+  # Adjust legend for formatting
+  guides(fill = guide_legend(ncol = 3,override.aes = list(pattern = "none")))
+
+finalize_plot(tnc_p3,
+              title = "White travelers are much more likely to report using 
+              Transportation Network Companies for non-work trips.",
+              caption = "Source: Chicago Metropolitan Agency for Planning 
+              Analysis of My Daily Travel data.",
+              filename = "tnc_p3",
+              mode = "png",
+              overwrite = T)
+
+
+tnc_purpose_income <-
+  pct_calculator(tnc_for_purposes %>% filter(income_c != "missing"),
+                 breakdown_by = "tnc_purp",
+                 second_breakdown = "income_c",
+                 weight = "wtperfin") %>% 
+  # Add baseline totals
+  rbind(tnc_purpose_overall %>% mutate(income_c = "CMAP region")) %>% 
+  # Adjust factors
+  mutate(income_c = factor(income_c,
+                           levels = c("high","middle-high","middle-low","low","CMAP region")))
+
+
+tnc_p4 <-
+  # Get data
+  tnc_purpose_income %>% 
+  # Add flag for pattern
+  mutate(type = case_when(income_c == "CMAP region" ~ "1",
+                          TRUE ~ "0" )) %>% 
+  # Capitalize
+  mutate(income_c = recode_factor(income_c,
+                                  "high" = "$100K or more",
+                                  "middle-high" = "$60K - $99K",
+                                  "middle-low" = "$35K - $59K",
+                                  "low" = "$35K or less")) %>% 
+  
+  # Create ggplot object
+  ggplot(aes(x = pct, y = income_c, fill = tnc_purp,
+             # Only label bars that round to at least 5 percent
+             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+  # Use "geom_col_pattern" to add texture to a subset of columns
+  ggpattern::geom_col_pattern(aes(pattern = type),
+                              pattern_color = "white",
+                              pattern_fill = "white",
+                              pattern_angle = 30,
+                              pattern_density = 0.05,
+                              pattern_spacing = 0.0325,
+                              pattern_key_scale_factor = 0.4,
+                              position = position_stack(reverse = T),
+                              width = 0.8) +  
+  # Re-assign patterns manually
+  scale_pattern_manual(values = c("1" = "stripe",
+                                  "0" = "none"),
+                       guide = "none") +
+  
+  geom_text(position = position_stack(reverse = T,vjust = 0.5),
+            color = "white") +
+  
+  
+  # Adjust axis
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1)) +
+  
+  # Add CMAP themes
+  theme_cmap(gridlines = "v",
+             xlab = "Typical reason for using a Transportation Network Company") +
+  scale_fill_discrete(type = c("#8c0000","#efa7a7","#00093f","#006b8c")) +
+  
+  # Adjust legend for formatting
+  guides(fill = guide_legend(ncol = 3,override.aes = list(pattern = "none")))
+
+finalize_plot(tnc_p4,
+              title = "Higher-income travelers are much more likely to report using 
+              Transportation Network Companies for non-work trips.",
+              caption = "Source: Chicago Metropolitan Agency for Planning 
+              Analysis of My Daily Travel data.",
+              filename = "tnc_p3",
+              # mode = "png",
+              overwrite = T)
+
 
 ################################################################################
 # OTHER CHARACTERISTICS
