@@ -112,6 +112,7 @@ ppl <- read.csv(unzip(mdt_zip,files = "person.csv")) %>%
          smrtphn,    # Do they own a smartphone?
          tnc_use,    # How often did they use Uber, Lyft, or Via in the last week?
          tnc_cost,   # How much do those trips usually cost?
+         tnc_purp,   # For what type of trip do you use the service most?
          
          
          wtperfin    # The weight for the respondent.
