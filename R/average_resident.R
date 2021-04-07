@@ -329,27 +329,50 @@ travel_summaries <-
                                      "White","Asian","Black","Hispanic","Other",
                                      "5 to 17","18 to 29","30 to 49","50 to 69","70 and above",
                                      "Less than $35K","$35K to $59K","$60K to $99K","$100K or more"
-                                     )))
+                                     ))) %>% 
+  # Pivot longer
+  pivot_longer(cols = c(trips_per_capita,avg_trip_length,distance_per_capita))
+
+travel_summaries_vlines <-
+  travel_summaries %>%
+  filter(type == "Overall" & name != "distance_per_capita") %>% 
+  select(-subtype,-type) %>% 
+  left_join(tibble(type = c("Gender","Race and ethnicity","Household income","Age")),by = character()) %>% 
+  mutate(name = recode_factor(factor(name,levels = c("trips_per_capita","avg_trip_length")),
+                              "trips_per_capita" = "Regional average",
+                              "avg_trip_length" = "Regional average "))
+  
+
 
 # Plot of trips and distances by demographic characteristics
 average_resident_p1 <-
   # Get data
   travel_summaries %>%
-  # Pivot longer
-  pivot_longer(cols = c(trips_per_capita,avg_trip_length,distance_per_capita)) %>% 
   # Exclude total distances
   filter(name != "distance_per_capita") %>% 
   # Reverse factors
   mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>% 
   # Rename variables we are keeping
   mutate(name = recode_factor(factor(name,levels = c("trips_per_capita","avg_trip_length")),
-                       "trips_per_capita" = "Trips per day",
+                       "trips_per_capita" = "Trips per day        ",
                        "avg_trip_length" = "Distance per trip (miles)")) %>% 
+  # # Add regional totals for value lines
+  # mutate(t_trips_per_capita = travel_overall$trips_per_capita,
+  #        t_avg_trip_length = travel_overall$avg_trip_length) %>% 
   # Exclude overall and geography
   filter(!(type %in% c("Overall","Home jurisdiction"))) %>%
   
   # Create ggplot object
   ggplot(aes(x = value, y = subtype, fill = name)) +
+  # Add lines for average trips per day and average distance per trip
+  geom_vline(data = travel_summaries_vlines,
+             mapping = aes(xintercept = value, color = name),
+             linetype = "dashed",
+             size = .65
+             ) +
+  # geom_vline(aes(xintercept = t_avg_trip_length),
+  #            linetype = "dashed", color = "#67ac00") +
+  # Add columns (this goes last so that they are on top of the lines)
   geom_col(position = position_dodge2(width = 1,padding = 0.15,reverse = T),
            width = .8) +
   
@@ -369,6 +392,9 @@ average_resident_p1 <-
              # xlab = "Travel patterns by demographic characteristics",
              strip.text = element_text(hjust = 0.5)) +
   cmap_fill_discrete(palette = "legislation") +
+  cmap_color_discrete(palette = "legislation") +
+  labs(color = "Legend") +
+  guides(color = guide_legend(order = 2),fill = guide_legend(order = 1)) +
   
   # Add faceting
   facet_wrap(~type,ncol = 2,scales = "free_y")
@@ -377,10 +403,14 @@ finalize_plot(average_resident_p1,
               sidebar_width = 0,
               "Average travel patterns vary significantly based on demographic
               characteristics.",
-              caption = "Source: Chicago Metropolitan Agency for Planning analysis of My 
+              caption = "Note: 'Hispanic' includes respondents who identified as 
+              Hispanic of any racial category. Other categories are non-Hispanic.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data.",
               filename = "average_resident_p1",
               mode = "png",
+              height = 6.5,
               overwrite = T)
   
 
