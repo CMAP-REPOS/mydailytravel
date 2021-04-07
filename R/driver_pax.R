@@ -137,8 +137,8 @@ driver_pax_p1 <-
                                         "Decreasing passenger share"))) %>%
   # Rename and factor survey
   mutate(survey = recode_factor(survey,
-                                mdt = "My Daily Travel ('19)",
-                                tt = "Travel Tracker ('08)")) %>%
+                                tt = "Travel Tracker ('08)",
+                                mdt = "My Daily Travel ('19)")) %>%
   # Create ggplot object
   ggplot(aes(y = age_bin, x = pct, pattern = type)) + 
   geom_label(aes(label = scales::label_percent(accuracy = .1)(pct),
@@ -164,14 +164,14 @@ driver_pax_p1 <-
   # Call CMAP style and palette
   theme_cmap(gridlines = "v", vline = 0,
              xlab = "Share of car trips where the traveler is a passenger") +
-  cmap_fill_discrete(palette = "mobility") +
+  cmap_fill_discrete(palette = "mobility",reverse = T) +
   
   # Adjust x axis labels
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),limits = c(0,.5)) +
   
   # Adjust legend for formatting
-  guides(pattern = guide_legend(override.aes = list(fill = "white", color = "black")),
-         fill = guide_legend(override.aes = list(pattern = "none")))
+  guides(pattern = guide_legend(order = 2,override.aes = list(fill = "white", color = "black")),
+         fill = guide_legend(order = 1,override.aes = list(pattern = "none")))
 
 # Export plot
 finalize_plot(driver_pax_p1,
@@ -181,9 +181,10 @@ finalize_plot(driver_pax_p1,
               caption = "Source: Chicago Metropolitan Agency for Planning 
               analysis of Travel Tracker and My Daily Travel surveys.",
               filename = "driver_pax_p1",
-              # mode = "png",
+              mode = "png",
               # width = 11.3,
-              # height = 8,
+              height = 4.5,
+              width = 8,
               overwrite = T
               )
 
