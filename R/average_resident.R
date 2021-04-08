@@ -20,9 +20,6 @@ setwd("~/GitHub/mydailytravel")
 source("R/helper_fns.R")
 source("R/data_cleaning.R")
 
-
-### MY DAILY TRAVEL - closely aligns with Sarah's work, seem to be right
-
 # Age bins
 age_breaks <- c(-1,17,29, 49, 69, 150)
 age_labels <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
@@ -61,88 +58,6 @@ distinct_daily_travelers_mdt <-
   select(sampno,perno,wtperfin,race_eth,sex,income_c,home_county_chi,age_bin) %>%
   distinct() 
 
-# 
-# # ARCHIVED
-# ##### TRAVEL TRACKER - note that due to differences in collection of distances
-# ##### for out-region trips, these numbers are likely not comparable with MDT.
-# 
-# avgtravel_tt <-
-#   tt %>%                    # 139769 records
-#   # Keep only trips by travelers at least 5 years old. Note that 99 is DK/RF for
-#   # AGE.
-#   filter((AGE >= 5 & AGE < 99) | 
-#            (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) |
-#            (AGEB == 2 & AGE == 99)) %>% # 132680 records
-#   # Filter out the first record for each traveler (PLANO == 1)
-#   filter(PLANO != 1) %>%    # 105568 records
-#   # Include only travelers who made at least one trip
-#   filter(pertrips > 0) %>%  # 105568 records
-#   # Exclude zero distance trips (note that TT did not capture distances for
-#   # trips outside the region, so this means that travelers who only traveled to
-#   # or from the region, but not within the region, will be excluded).
-#   filter(DIST > 0) %>%      # 100573 records
-#   # Calculate weighted distances
-#   mutate(dist_weight = DIST * weight)
-# 
-# # Calculate total number of daily travelers who take at least one trip
-# daily_travelers_tt <-
-#   avgtravel_tt %>%
-#   select(SAMPN,PERNO,DAYNO,weight) %>%
-#   distinct() %>%
-#   summarize(total_travelers = sum(weight))
-
-
-# # How many of the travelers are excluded based on the out-of-region travel
-# # identified above? The weights are ~210K. Other differences from Sarah's
-# # analysis appear to be due to her inclusion of weekend travelers in the
-# # overall pie.
-# tt %>%
-#   group_by(SAMPN,PERNO,DAYNO) %>%
-#   summarize(DIST = sum(DIST),
-#             pertrips = first(pertrips),
-#             weight = first(weight)) %>%
-#   filter(DIST == 0 & pertrips > 0) %>%
-#   ungroup() %>%
-#   summarize(total = sum(weight))
-
-
-# Different method - calculate total number of daily travelers who take at
-# least one trip
-# daily_travelers_tt_test <-
-#   tt_ppl %>%
-#   mutate(
-#
-#     age5 = case_when(
-#       (AGE >= 5 & AGE < 99) ~ 1,
-#       AGEB == 2 & AGE == 99 ~ 1,
-#       AGE == 99 & SCHOL %in% c(4,5,6,7,8) ~ 1,
-#       TRUE ~ 0),
-#
-#     notravel = case_when(
-#       SURVEY == 1 & PTRIPS1 == 0 ~ 1,
-#       SURVEY == 2 & PTRIPS1 == 0 & PTRIPS2 == 0 ~ 1,
-#       TRUE ~ 0
-#
-#       )) %>%
-#   filter(age5 == 1,
-#          notravel == 0,
-#          MPO_per == 1)
-#
-# daily_travelers_tt_test %>%
-#   summarize(sum = sum(WGTP))
-
-
-# Identify travelers in one set but not the other
-# missing <-
-#   daily_travelers_tt_test %>%
-#   anti_join(daily_travelers_tt, by = c("SAMPN","PERNO"))
-#
-# sum(missing$WGTP)
-#
-# missing %>%
-#   left_join(tt_place, by = c("SAMPN","PERNO")) %>%
-#   View()
-
 #################################################
 #                                               #
 #            Average resident behavior          #
@@ -158,6 +73,10 @@ distinct_daily_travelers_mdt <-
 # is desired, you should instead use the haversine distance, which will require
 # changing the calls to distance variables to use the hdist variants and
 # modifying the exclusion of nonzero distance trips above.
+
+################################################################################
+# Summary statistics
+################################################################################
 
 # Calculate summary statistics (code reused below for variations by demography)
 travel_overall <-
@@ -235,7 +154,6 @@ travel_race_eth <-
                                  "other" = "Other")) %>%
   select(-race_eth)
 
-
 # Calculate summary statistics by income (reusing overall code)
 travel_income <- 
   avgtravel_mdt %>%
@@ -308,7 +226,9 @@ travel_home <-
   mutate(type = "Home jurisdiction") %>% 
   rename(subtype = home_county_chi)
 
-
+################################################################################
+# Plot summary statistics
+################################################################################
 
 # Combine different travel statistic calculations
 travel_summaries <-
@@ -318,7 +238,9 @@ travel_summaries <-
         travel_income,
         travel_race_eth,
         travel_home) %>% 
+  # Keep relevant variables
   select(type,subtype,trips_per_capita,avg_trip_length,distance_per_capita) %>% 
+  # Round for ease of review
   mutate(across(c(trips_per_capita,avg_trip_length,distance_per_capita),~round(.,2))) %>% 
   # Add levels
   mutate(type = factor(type,
@@ -333,6 +255,7 @@ travel_summaries <-
   # Pivot longer
   pivot_longer(cols = c(trips_per_capita,avg_trip_length,distance_per_capita))
 
+# Extract values for regional averages, which will be graphed as value lines
 travel_summaries_vlines <-
   travel_summaries %>%
   filter(type == "Overall" & name != "distance_per_capita") %>% 
@@ -342,8 +265,6 @@ travel_summaries_vlines <-
                               "trips_per_capita" = "Regional average",
                               "avg_trip_length" = "Regional average "))
   
-
-
 # Plot of trips and distances by demographic characteristics
 average_resident_p1 <-
   # Get data
@@ -370,8 +291,6 @@ average_resident_p1 <-
              linetype = "dashed",
              size = .65
              ) +
-  # geom_vline(aes(xintercept = t_avg_trip_length),
-  #            linetype = "dashed", color = "#67ac00") +
   # Add columns (this goes last so that they are on top of the lines)
   geom_col(position = position_dodge2(width = 1,padding = 0.15,reverse = T),
            width = .8) +
@@ -393,12 +312,13 @@ average_resident_p1 <-
              strip.text = element_text(hjust = 0.5)) +
   cmap_fill_discrete(palette = "legislation") +
   cmap_color_discrete(palette = "legislation") +
-  labs(color = "Legend") +
+  # Reorder legends
   guides(color = guide_legend(order = 2),fill = guide_legend(order = 1)) +
   
   # Add faceting
   facet_wrap(~type,ncol = 2,scales = "free_y")
 
+# Export finalized graphic
 finalize_plot(average_resident_p1,
               sidebar_width = 0,
               "Average travel patterns vary significantly based on demographic
@@ -413,32 +333,93 @@ finalize_plot(average_resident_p1,
               height = 6.5,
               overwrite = T)
   
-
-
-### Individual statistics
-
-# Total distance
-sum(avgtravel_mdt$dist_pg_weight)
-
-# Mileage per traveler
-sum(avgtravel_mdt$dist_pg_weight) / daily_travelers_mdt
-
-# Average trip length
-sum(avgtravel_mdt$dist_pg_weight) / sum(avgtravel_mdt$wtperfin)
-
-# Trips per person
-sum(avgtravel_mdt$wtperfin) / daily_travelers_mdt
-
 ################################################################################
 #
-# Travel Tracker
+# ARCHIVE - Travel Tracker
 ################################################################################
 # 
 # # NOTE: As coded in this file, these statistics are not comparable with MDT
 # # because they use haversine distances. If desired, the MDT calculations can be
 # # modified to use haversine distances (see note above). However, given the
 # # differences in survey methodology, direct comparison is difficult.
+#  
+# avgtravel_tt <-
+#   tt %>%                    # 139769 records
+#   # Keep only trips by travelers at least 5 years old. Note that 99 is DK/RF for
+#   # AGE.
+#   filter((AGE >= 5 & AGE < 99) | 
+#            (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) |
+#            (AGEB == 2 & AGE == 99)) %>% # 132680 records
+#   # Filter out the first record for each traveler (PLANO == 1)
+#   filter(PLANO != 1) %>%    # 105568 records
+#   # Include only travelers who made at least one trip
+#   filter(pertrips > 0) %>%  # 105568 records
+#   # Exclude zero distance trips (note that TT did not capture distances for
+#   # trips outside the region, so this means that travelers who only traveled to
+#   # or from the region, but not within the region, will be excluded).
+#   filter(DIST > 0) %>%      # 100573 records
+#   # Calculate weighted distances
+#   mutate(dist_weight = DIST * weight)
 # 
+# # Calculate total number of daily travelers who take at least one trip
+# daily_travelers_tt <-
+#   avgtravel_tt %>%
+#   select(SAMPN,PERNO,DAYNO,weight) %>%
+#   distinct() %>%
+#   summarize(total_travelers = sum(weight))
+# 
+# 
+# # How many of the travelers are excluded based on the out-of-region travel
+# # identified above? The weights are ~210K. Other differences from Sarah's
+# # analysis appear to be due to her inclusion of weekend travelers in the
+# # overall pie.
+# tt %>%
+#   group_by(SAMPN,PERNO,DAYNO) %>%
+#   summarize(DIST = sum(DIST),
+#             pertrips = first(pertrips),
+#             weight = first(weight)) %>%
+#   filter(DIST == 0 & pertrips > 0) %>%
+#   ungroup() %>%
+#   summarize(total = sum(weight))
+# 
+# 
+# Different method - calculate total number of daily travelers who take at
+# least one trip
+# daily_travelers_tt_test <-
+#   tt_ppl %>%
+#   mutate(
+#
+#     age5 = case_when(
+#       (AGE >= 5 & AGE < 99) ~ 1,
+#       AGEB == 2 & AGE == 99 ~ 1,
+#       AGE == 99 & SCHOL %in% c(4,5,6,7,8) ~ 1,
+#       TRUE ~ 0),
+#
+#     notravel = case_when(
+#       SURVEY == 1 & PTRIPS1 == 0 ~ 1,
+#       SURVEY == 2 & PTRIPS1 == 0 & PTRIPS2 == 0 ~ 1,
+#       TRUE ~ 0
+#
+#       )) %>%
+#   filter(age5 == 1,
+#          notravel == 0,
+#          MPO_per == 1)
+#
+# daily_travelers_tt_test %>%
+#   summarize(sum = sum(WGTP))
+# 
+# 
+# Identify travelers in one set but not the other
+# missing <-
+#   daily_travelers_tt_test %>%
+#   anti_join(daily_travelers_tt, by = c("SAMPN","PERNO"))
+#
+# sum(missing$WGTP)
+#
+# missing %>%
+#   left_join(tt_place, by = c("SAMPN","PERNO")) %>%
+#   View()
+#
 # # Calculate summary statistics
 # avgtravel_tt %>%
 #   summarize(
