@@ -70,6 +70,9 @@ day_value <- 60*60*24
 # to be excluded here as well: the week of Thanksgiving 2018 (November 19th to
 # November 23rd); the period between December 24th, 2018 and January 4th, 2019;
 # and the week of Spring Break (April 15th to 19th, 2019).
+mdt_int <-  interval(ymd_hms("2018-09-04 03:00:00",tz = "America/Chicago"),
+                     ymd_hms("2019-05-10 02:59:59",tz = "America/Chicago"))
+                     
 xgiving <-  interval(ymd_hms("2018-11-19 03:00:00",tz = "America/Chicago"),
                      ymd_hms("2018-11-24 02:59:59",tz = "America/Chicago"))
 xmas <-     interval(ymd_hms("2018-12-24 03:00:00",tz = "America/Chicago"),
@@ -120,6 +123,8 @@ divvy_wip <-
   mutate(wday = wday(start_time - 3 * 60 * 60)) %>%
   # Keep out trips that are either Saturday (7) or Sunday (1)
   filter(!(wday %in% c(1,7))) %>% # 2771405 records
+  # Keep only trips in the MDT interval
+  filter(start_time %within% mdt_int) %>% # 1412399 records
   # Remove holidays (individually - note that %within% does not currently work
   # on a list of time intervals)
   filter(!(start_time %within% mlk |
@@ -128,7 +133,7 @@ divvy_wip <-
            start_time %within% vets |
            start_time %within% xgiving |
            start_time %within% xmas |
-           start_time %within% springb)) %>% # 2644614 records
+           start_time %within% springb)) %>% # 1285608 records
   
   # Make every trip on the same day (for analysis and graphing)
   mutate(trip_start = force_tz(ymd_hms(paste0("2020-01-01 ",
@@ -202,7 +207,7 @@ finalize_plot(divvy_p1,
               filename = "divvy_p1",
               # sidebar_width = 0,
               # caption_align = 1,
-              mode = "png",
+              # mode = "png",
               # height = 2.25,
               # width = 8,
               # overrides = list(margin_plot_l = 30),
