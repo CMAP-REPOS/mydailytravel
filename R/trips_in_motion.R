@@ -1,6 +1,5 @@
 # This script allows for the creation of "trips in motion" analyses of the MDT
-# trip diary survey data. It includes a helper function that is also applied to
-# Divvy data to generate analogous charts.
+# trip diary survey data. 
 
 #################################################
 #                                               #
@@ -8,15 +7,11 @@
 #                                               #
 #################################################
 
-setwd("~/GitHub/mydailytravel")
-
-library(tidyverse) # A package that enables new data manipulation functionality (and a broader "grammar" for R)
-library(ggplot2) # A graphing package
-library(lubridate) # A date handling package
-library(slider) # A package that allows rolling average calculation
-library(cmapplot) # CMAP's custom style package (an extension of ggplot)
-
-source("R/helper_fns.R")
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(slider)
+library(cmapplot)
 
 #################################################
 #                                               #
@@ -24,13 +19,9 @@ source("R/helper_fns.R")
 #                                               #
 #################################################
 
-source("data_cleaning.R")
-
-#################################################
-#                                               #
-#                  Analysis                     #
-#                                               #
-#################################################
+setwd("~/GitHub/mydailytravel")
+source("R/data_cleaning.R")
+source("R/helper_fns.R")
 
 # Create helper values for date identification and modification
 threshold <- as.numeric(ymd_hms("2020-01-01 03:00:00", tz = "America/Chicago"))
@@ -50,7 +41,7 @@ tim_mdt_wip <-
   select(-start_time_calc) %>%
   # Remove trip with departure time in 1900
   filter(start_times_pg > ymd_hms("2017-01-01 00:00:00") # 97373 records
-         ) %>%
+  ) %>%
   # Remove all trips where the arrival time comes before the start time (there
   # are 10 records where this is a problem)
   filter(start_times_pg <= arrtime_pg) %>% # 97363 records
@@ -65,7 +56,7 @@ tim_mdt_wip <-
     # Remove trips with 0 place group distance
     distance_pg > 0              # 97273 records
   ) %>%
-
+  
   # Make every trip on the same day (for analysis and graphing). I used January
   # 1, 2020 (arbitrarily). The code below extracts the time element of the
   # date-time object and replaces the date with 1/1/20.
@@ -79,7 +70,7 @@ tim_mdt_wip <-
     trip_start = force_tz(ymd_hms(paste0("2020-01-01 ",
                                          substr(start_times_pg,12,19))),
                           tzone = "America/Chicago")) %>%
-
+  
   # Since we have made every trip onto the same day, but the survey window was
   # actually from 3am to 3am, we need to make times between midnight and 3am
   # into trips on the next day.
@@ -91,11 +82,18 @@ tim_mdt_wip <-
     trip_start = case_when(
       trip_start < threshold ~ trip_start + day_value,
       TRUE ~ trip_start
-  )) %>%
+    )) %>%
   # Create trip interval - this can be used to identify whether a trip is within
   # a given time interval
   mutate(trip_interval = lubridate::interval(trip_start,trip_end,
                                              tz = "America/Chicago"))
+
+#################################################
+#                                               #
+#                  Analysis                     #
+#                                               #
+#################################################
+
 
 ################################################################################
 # Use the function we loaded to calculate the rolling averages as needed
@@ -106,23 +104,6 @@ trip_times_mode_c_mdt <-
   tim_calculator(data = tim_mdt_wip,
                  criteria = "mode_c",
                  weights = "wtperfin")
-
-# # Trips in motion by detailed mode and trip purpose category (25 minute rolling
-# # average)
-# trip_times_mode_and_purp_c_mdt_25 <-
-#   tim_calculator(data = tim_mdt_wip,
-#                  criteria = "mode",
-#                  criteria2 = "tpurp_c",
-#                  weights = "wtperfin")
-# 
-# # Trips in motion by detailed mode and trip purpose category (55 minute rolling
-# # average)
-# trip_times_mode_and_purp_c_mdt_55 <-
-#   tim_calculator(data = tim_mdt_wip,
-#                  criteria = "mode",
-#                  criteria2 = "tpurp_c",
-#                  rolling_window = 55,
-#                  weights = "wtperfin")
 
 # Trips in motion by trip chain (25 minute rolling average)
 trip_times_chains_mdt <-
@@ -136,14 +117,6 @@ trip_times_mode_c_and_chain_mdt_25 <-
                  criteria = "mode_c",
                  criteria2 = "chain",
                  weights = "wtperfin")
-
-# # Trips in motion by trip chain and mode category (55 minute rolling average)
-# trip_times_mode_and_chain_mdt_55 <-
-#   tim_calculator(data = tim_mdt_wip,
-#                  criteria = "mode",
-#                  criteria2 = "chain",
-#                  rolling_window = 55,
-#                  weights = "wtperfin")
 
 #################################################################
 #                                                               #
@@ -734,100 +707,46 @@ finalize_plot(trips_in_motion_p9,
               # height = 6.3,
               # width = 11.3
 )
-#
-# # Graph output of trips in motion by purpose for bike trips
-# trips_in_motion_p6 <-
-#   trip_times_mode_and_purp_c_mdt_55 %>%
-#   filter(mode == "bike share") %>%
-#   ggplot(aes(x = time_band,y = rolling_count)) +
-#   geom_area(aes(fill = tpurp_c)) +
-#   scale_x_datetime(labels = scales::date_format("%H:%M",
-#                                                 tz = "America/Chicago"),
-#                    breaks = breaks) +
-#   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
-#   cmap_fill_discrete(palette = "mobility") +
-#   theme_cmap(gridlines = "hv",
-#              panel.grid.major.x = element_line(color = "light gray"))
-#
-# finalize_plot(trips_in_motion_p6,
-#               "Bike share trips in motion by travel purpose.",
-#               "Note: Trips in motion are 55-minute rolling averages.
-#               <br><br>
-#               Source: CMAP analysis of My Daily Travel survey.",
-#               filename = "trips_in_motion_p6",
-#               mode = "png",
-#               overwrite = TRUE,
-#               height = 6.3,
-#               width = 11.3)
-#
-# # Split into two groups for comparison
-# tim_mdt_bike <-
-#   tim_mdt_wip %>%
-#   # Filter to just the purpose in question
-#   filter(mode %in% c("personal bike")) %>%
-#   group_by(sampno,perno,placeno,placeGroup) %>%
-#   mutate(n = 1,
-#          random = sample(1:2,size = 1))
-#
-# tim_mdt_bike_set1 <-
-#   tim_mdt_bike %>%
-#   filter(random == 1)
-#
-# tim_mdt_bike_set2 <-
-#   tim_mdt_bike %>%
-#   filter(random == 2)
-#
-# trip_times_bike_chain_mdt_split <-
-#   tim_calculator(possibilities = possible_mode_chain,
-#                  base_weights = tim_mdt_bike_set1$wtperfin,
-#                  criteria1 = tim_mdt_bike_set1$trip_interval,
-#                  criteria2 = tim_mdt_bike_set1$mode_chain,
-#                  rolling_window = 55,
-#                  crosstab = T,crosstab1 = "mode",crosstab2 = "chain") %>%
-#   mutate(set = 1) %>%
-#   rbind(tim_calculator(possibilities = possible_mode_chain,
-#                        base_weights = tim_mdt_bike_set2$wtperfin,
-#                        criteria1 = tim_mdt_bike_set2$trip_interval,
-#                        criteria2 = tim_mdt_bike_set2$mode_chain,
-#                        rolling_window = 55,
-#                        crosstab = T,crosstab1 = "mode",crosstab2 = "chain") %>%
-#           mutate(set = 2))
-#
-#
-# trips_in_motion_p5_split <-
-#   trip_times_bike_chain_mdt_split %>%
-#   mutate(chain = factor(chain, levels = c("Work trip","Return home (work)",
-#                                           "Shopping trip",
-#                                           "Return home (shopping)",
-#                                           "Other trip"))) %>%
-#   filter(mode == "personal bike") %>%
-#   ggplot(aes(x = time_band,y = rolling_count)) +
-#   geom_area(aes(fill = chain), position = position_stack(reverse = T)) +
-#   scale_x_datetime(labels = scales::date_format("%H:%M",
-#                                                 tz = "America/Chicago"),
-#                    breaks = breaks) +
-#   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
-#   facet_wrap(~set) +
-#   scale_fill_discrete(type = c("#009ccc","#72cae5","#cc8200",
-#                                "#e5b172","#3d6600")) +
-#   theme_cmap(gridlines = "hv",
-#              panel.grid.major.x = element_line(color = "light gray"))
-#
-# finalize_plot(trips_in_motion_p5_split,
-#               "Bicycling trips in motion by travel purpose.",
-#               "Note: Excludes bike share due to limited sample size. Trips in
-#               motion are 55-minute rolling averages.
-#               <br><br>
-#               Source: CMAP analysis of My Daily Travel survey.",
-#               filename = "trips_in_motion_p5_split",
-#               mode = "png",
-#               overwrite = TRUE,
-#               height = 6.3,
-#               width = 11.3)
+
+
 
 ################################################################################
-# Archive - Transit
+# ARCHIVE
+#
 ################################################################################
+# 
+# ################################################################################
+# # Prep functions to calculate trips in motion
+# ################################################################################
+# 
+# # Trips in motion by detailed mode and trip purpose category (25 minute rolling
+# # average)
+# trip_times_mode_and_purp_c_mdt_25 <-
+#   tim_calculator(data = tim_mdt_wip,
+#                  criteria = "mode",
+#                  criteria2 = "tpurp_c",
+#                  weights = "wtperfin")
+# 
+# # Trips in motion by detailed mode and trip purpose category (55 minute rolling
+# # average)
+# trip_times_mode_and_purp_c_mdt_55 <-
+#   tim_calculator(data = tim_mdt_wip,
+#                  criteria = "mode",
+#                  criteria2 = "tpurp_c",
+#                  rolling_window = 55,
+#                  weights = "wtperfin")
+# 
+# # Trips in motion by trip chain and mode category (55 minute rolling average)
+# trip_times_mode_and_chain_mdt_55 <-
+#   tim_calculator(data = tim_mdt_wip,
+#                  criteria = "mode",
+#                  criteria2 = "chain",
+#                  rolling_window = 55,
+#                  weights = "wtperfin")
+# 
+# ################################################################################
+# # Archive - Transit
+# ################################################################################
 #
 # # Graph output of trips in motion by purpose for transit trips
 # trips_in_motion_p7 <-
@@ -860,12 +779,12 @@ finalize_plot(trips_in_motion_p9,
 #               overwrite = TRUE,
 #               height = 6.3,
 #               width = 11.3)
-
-################################################################################
-# ARCHIVE - TNC/Taxi
-################################################################################
-
-# This analysis is not robust to weighting changes
+# 
+# ################################################################################
+# # ARCHIVE - TNC/Taxi
+# ################################################################################
+#
+# # NOTE: This analysis is not robust to weighting changes
 #
 # # Graph output of trips in motion by purpose for taxi vs. ride share trips
 # trips_in_motion_p8 <-
@@ -994,5 +913,3 @@ finalize_plot(trips_in_motion_p9,
 #               overwrite = TRUE,
 #               height = 6.3,
 #               width = 8.3)
-
-
