@@ -10,6 +10,8 @@
 library(tidyverse)
 library(ggplot2)
 library(cmapplot)
+# # Run this script once per machine to add the ggpattern package
+# devtools::install_github("coolbutuseless/ggpattern")
 library(ggpattern)
 
 #################################################
