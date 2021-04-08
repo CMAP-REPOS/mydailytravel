@@ -1,5 +1,6 @@
-# This script downloads and analyzes Q3 2019 Divvy ridership data to produce a
-# trips-in-motion chart for Divvy trips over the course of an average weekday.
+# This script downloads and analyzes Divvy ridership data from the same time
+# period as the My Daily Travel survey to produce a trips-in-motion chart for
+# Divvy trips over the course of an average weekday.
 
 #################################################
 #                                               #
@@ -42,10 +43,10 @@ file.remove(divvy_zip,"Divvy_Trips_2019_Q1","Divvy_Trips_2019_Q2",
             "Divvy_Trips_2018_Q3.csv","Divvy_Trips_2018_Q4.csv")
 rm(divvy_zip)
 
-# Fix names of q2, which are broken for unknown reasons on import
+# Fix names of q2 2019, which are broken for unknown reasons on import
 names(divvy_19q2) <- names(divvy_19q1)
 
-# Combine all 2019 data
+# Combine all data
 divvy <- rbind(divvy_18q3,divvy_18q4,divvy_19q1,divvy_19q2)
 
 
@@ -70,11 +71,11 @@ day_value <- 60*60*24
 # November 23rd); the period between December 24th, 2018 and January 4th, 2019;
 # and the week of Spring Break (April 15th to 19th, 2019).
 xgiving <-  interval(ymd_hms("2018-11-19 03:00:00",tz = "America/Chicago"),
-                     ymd_hms("2018-11-23 02:59:59",tz = "America/Chicago"))
+                     ymd_hms("2018-11-24 02:59:59",tz = "America/Chicago"))
 xmas <-     interval(ymd_hms("2018-12-24 03:00:00",tz = "America/Chicago"),
-                     ymd_hms("2019-01-04 02:59:59",tz = "America/Chicago"))
+                     ymd_hms("2019-01-05 02:59:59",tz = "America/Chicago"))
 springb <-  interval(ymd_hms("2019-04-15 03:00:00",tz = "America/Chicago"),
-                     ymd_hms("2019-04-19 02:59:59",tz = "America/Chicago"))
+                     ymd_hms("2019-04-20 02:59:59",tz = "America/Chicago"))
 
 # We also exclude federal public holidays that fall within this time range that
 # were not excluded through the date ranges above: Columbus Day, Veterans Day,
@@ -127,7 +128,7 @@ divvy_wip <-
            start_time %within% vets |
            start_time %within% xgiving |
            start_time %within% xmas |
-           start_time %within% springb)) %>% # 2660889 records
+           start_time %within% springb)) %>% # 2644614 records
   
   # Make every trip on the same day (for analysis and graphing)
   mutate(trip_start = force_tz(ymd_hms(paste0("2020-01-01 ",
@@ -186,28 +187,28 @@ divvy_p1 <-
 finalize_plot(divvy_p1,
               title = "Divvy ridership is significantly higher in the afternoon, 
               especially for non-subscribers.",
-              # caption = "Note: Trips in motion are 25-minute rolling averages.
-              # \"One-time user\" refers to Divvy customers that purchased a 
-              # single ride or a day pass. Trips that were in motion as of 2:55 
-              # A.M. and ended after 3:00 A.M. are captured on the right side 
-              # of the graph, and are not included in the totals of trips in 
-              # motion as of 3:00 A.M. on the left side of the graph.
-              # <br><br>
-              # Source: Chicago Metropolitan Agency for Planning analysis of Divvy
-              # ridership data for weekdays during the My Daily Travel survey 
-              # collection period, between September 4, 2018 and May 9, 2019 
-              # (excluding all federal holidays and the weeks of November 19, 
-              # December 24, December 31, and April 15).",
+              caption = "Note: Trips in motion are 25-minute rolling averages.
+              \"One-time user\" refers to Divvy customers that purchased a
+              single ride or a day pass. Trips that were in motion as of 2:55
+              A.M. and ended after 3:00 A.M. are captured on the right side
+              of the graph, and are not included in the totals of trips in
+              motion as of 3:00 A.M. on the left side of the graph.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of Divvy
+              ridership data for weekdays during the My Daily Travel survey
+              collection period, between September 4, 2018 and May 9, 2019
+              (excluding all federal holidays and the weeks of November 19,
+              December 24, December 31, and April 15).",
               filename = "divvy_p1",
               # sidebar_width = 0,
               # caption_align = 1,
-              # mode = "png",
+              mode = "png",
               # height = 2.25,
               # width = 8,
               # overrides = list(margin_plot_l = 30),
               overwrite = T)
 
-####### ARCHIVE OF 2019 HOLIDAYS (FOR FUTURE ANALYSIS
+####### ARCHIVE OF 2019 HOLIDAYS (FOR FUTURE ANALYSIS)
 
 # mlk <-      interval(ymd_hms("2019-01-21 03:00:00",tz = "America/Chicago"),
 #                      ymd_hms("2019-01-22 02:59:59",tz = "America/Chicago"))
