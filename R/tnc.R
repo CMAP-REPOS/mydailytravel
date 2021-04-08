@@ -246,6 +246,36 @@ finalize_plot(tnc_p1,
               overwrite = T)
 
 ################################################################################
+# OTHER CHARACTERISTICS
+################################################################################
+
+# Usage by race and ethnicity - turned into a monthly figure
+tnc_wide %>%
+  filter(race_eth != "missing",
+         !(tnc_use %in% c(-9,-8,-7,-1))) %>%
+  group_by(race_eth) %>%
+  summarize(tnc_use = w_to_m*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+            n = n())
+
+# Usage by home county - monthly
+tnc_wide %>%
+  filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
+  filter(home_county %in% cmap_seven_counties) %>%
+  group_by(home_county) %>%
+  summarize(tnc_use = w_to_m*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+            n = n()) %>%
+  arrange(-tnc_use)
+
+# Cost by home county
+tnc_wide %>%
+  filter(tnc_cost>0) %>%
+  filter(home_county %in% cmap_seven_counties) %>%
+  group_by(home_county) %>%
+  summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
+            n = n()) %>%
+  arrange(-tnc_cost)
+
+################################################################################
 # PLOT OF AGE AND DEMOGRAPHIC CHARACTERISTICS | PURPOSE
 ################################################################################
 
@@ -483,33 +513,4 @@ finalize_plot(tnc_p4,
               overwrite = T)
 
 
-################################################################################
-# OTHER CHARACTERISTICS
-################################################################################
-
-# Usage by race and ethnicity - turned into a monthly figure
-tnc_wide %>%
-  filter(race_eth != "missing",
-         !(tnc_use %in% c(-9,-8,-7,-1))) %>%
-  group_by(race_eth) %>%
-  summarize(tnc_use = w_to_m*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
-            n = n())
-
-# Usage by home county - monthly
-tnc_wide %>%
-  filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
-  filter(home_county %in% cmap_seven_counties) %>%
-  group_by(home_county) %>%
-  summarize(tnc_use = w_to_m*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
-            n = n()) %>%
-  arrange(-tnc_use)
-
-# Cost by home county
-tnc_wide %>%
-  filter(tnc_cost>0) %>%
-  filter(home_county %in% cmap_seven_counties) %>%
-  group_by(home_county) %>%
-  summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
-            n = n()) %>%
-  arrange(-tnc_cost)
 
