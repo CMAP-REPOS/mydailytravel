@@ -189,6 +189,23 @@ mdt_mode_mileage <-
   mutate(mileage_bin = fct_relevel(mileage_bin,"CMAP region")) %>%
   mutate(mileage_bin = fct_rev(factor(mileage_bin)))
 
+# Do the same for sex
+mdt_mode_sex <-
+  pct_calculator(
+    mdt_base_3,
+    breakdown_by = "mode_c",
+    second_breakdown = "sex",
+    weight = "wtperfin") %>% 
+  # Remove DK/RF
+  filter(sex > 0) %>%
+  # Recode sex
+  mutate(sex = recode(sex,
+                      "1" = "Male",
+                      "2" = "Female")) %>% 
+  # Add the regional total calculated above
+  rbind(mdt_mode_all %>% mutate(sex = "CMAP region"))
+
+
 ################################################################################
 # Chart of mode share by home county
 ################################################################################
