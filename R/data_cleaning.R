@@ -433,6 +433,9 @@ tt_ppl <- sqlFetch(con,"per_public") %>%
 
          SCHOL,      # Status of school enrollment.
          SMODE,      # Mode regularly used to get to school.
+         
+         RACE,       # The race of the respondent (note - only asked for head of household)
+         HISP,       # The Hispanic status of the respondent (note - only asked for head of household)
 
          WGTP        # The weight for the respondent.
   )
@@ -726,6 +729,35 @@ mdt_all_respondents <- mdt_all_respondents %>%
     hisp == 1 ~ "hispanic",
     TRUE ~ race_eth)) %>%
   select(-race,-hisp)
+
+
+
+# Recode into race and ethnicity groups
+tt <- tt %>%
+  mutate(race_eth = recode(RACE,
+                           "1" = "white",
+                           "2" = "black",
+                           "3" = "other",
+                           "4" = "asian",
+                           "7" = "other",
+                           "9" = "missing")) %>%
+  mutate(race_eth = case_when(
+    HISP == 1 ~ "hispanic",
+    TRUE ~ race_eth)) %>%
+  select(-RACE,-HISP)
+
+tt_all_respondents <- tt_all_respondents %>%
+  mutate(race_eth = recode(RACE,
+                           "1" = "white",
+                           "2" = "black",
+                           "3" = "other",
+                           "4" = "asian",
+                           "7" = "other",
+                           "9" = "missing")) %>%
+  mutate(race_eth = case_when(
+    HISP == 1 ~ "hispanic",
+    TRUE ~ race_eth)) %>%
+  select(-RACE,-HISP)
 
 # Recode trip chains in MDT data
 mdt <- mdt %>%
