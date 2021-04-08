@@ -105,12 +105,6 @@ trip_times_mode_c_mdt <-
                  criteria = "mode_c",
                  weights = "wtperfin")
 
-# Trips in motion by trip chain (25 minute rolling average)
-trip_times_chains_mdt <-
-  tim_calculator(data = tim_mdt_wip,
-                 criteria = "chain",
-                 weights = "wtperfin")
-
 # Trips in motion by trip chain and mode category (25 minute rolling average)
 trip_times_mode_c_and_chain_mdt_25 <-
   tim_calculator(data = tim_mdt_wip,
@@ -191,50 +185,11 @@ finalize_plot(trips_in_motion_p1,
               # width = 8
               )
 
-# Graph trips in motion by trip chains
+################################################################################
+# Trips in motion by trip chains and mode
+################################################################################
+
 trips_in_motion_p2 <-
-  # Get data
-  trip_times_chains_mdt %>%
-  
-  # Create ggplot object
-  ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = identifier), position = position_stack(reverse = T)) +
-  
-  # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%H:%M",
-                                                tz = "America/Chicago"),
-                   breaks = breaks) +
-  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
-  
-  # Manually add colors
-  scale_fill_discrete(type = c("#009ccc","#72cae5","#cc8200",
-                               "#e5b172","#3d6600")) +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "hv",
-             panel.grid.major.x = element_line(color = "light gray"),
-             legend.max.columns = 3)
-
-finalize_plot(trips_in_motion_p2,
-              "Trips in motion in northeastern Illinois by trip chain type on weekdays, 
-              2019.",
-              "Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include all trips by residents of the region that start 
-              and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
-              Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
-              100 miles or lasting longer than 15 hours are excluded.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries.",
-              filename = "trips_in_motion_p2",
-              # mode = "png",
-              overwrite = TRUE,
-              # height = 6.3,
-              # width = 11.3
-              )
-
-# Graph trips in motion by mode category, faceting for different chain types
-trips_in_motion_p3 <-
   # Get data
   trip_times_mode_c_and_chain_mdt_25 %>%
   # Factor for ordering
@@ -283,7 +238,7 @@ trips_in_motion_p3 <-
              legend.max.columns = 7,
              xlab = "Weekday trips in motion by time of day and trip chain type")
 
-finalize_plot(trips_in_motion_p3,
+finalize_plot(trips_in_motion_p2,
               "Travelers rely on substantially different modes for trips to and 
               from work vs. other trip purposes.",
               "Note: Trips in motion are 25-minute rolling averages. Trips 
@@ -294,82 +249,12 @@ finalize_plot(trips_in_motion_p3,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries.",
-              filename = "trips_in_motion_p3",
+              filename = "trips_in_motion_p2",
               mode = "png",
               overwrite = TRUE
               # height = 6.3,
               # width = 11.3
               )
-
-################################################################################
-# Drive-thru
-################################################################################
-
-tim_mdt_drivethru <-
-  tim_mdt_wip %>%
-  # Filter to just the purpose in question
-  filter(tpurp == "Drive thru / take-out dining")
-
-trip_times_drivethru_and_mode_mdt <-
-  tim_calculator(tim_mdt_drivethru,
-                 weights = "wtperfin",
-                 criteria = "mode_c",
-                 rolling_window = 55)
-
-trips_in_motion_p4 <-
-  trip_times_drivethru_and_mode_mdt %>%
-  # Collapse school buses into other and sum
-  mutate(mode_c = as.character(identifier)) %>%
-  mutate(mode_c = case_when(
-    identifier == "schoolbus" ~ "other",
-    TRUE ~ mode_c)) %>%
-  mutate(mode_c = recode_factor(factor(mode_c,levels = mode_c_levels),
-                                "driver" = "Driver",
-                                "passenger" = "Passenger",
-                                "transit" = "Transit",
-                                "walk" = "Walk",
-                                "bike" = "Bicycle",
-                                "other" = "Other")) %>%  
-  group_by(mode_c,time_band) %>%
-  summarize(rolling_count = sum(rolling_count)) %>%
-  # Remove missing modes
-  filter(mode_c != "missing") %>%
-  
-  # Create ggplot object
-  ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = mode_c),position = position_stack(reverse = T)) +
-  
-  # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%H:%M",
-                                                tz = "America/Chicago"),
-                   breaks = breaks) +
-  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
-  
-  # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
-                               "#efa7a7","#0084ac")) +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "hv",
-             panel.grid.major.x = element_line(color = "light gray"),
-             legend.max.columns = 6)
-
-finalize_plot(trips_in_motion_p4,
-              "Drive-thru / take-out trips in motion in northeastern Illinois by mode on weekdays, 
-              2019.",
-              "Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include all trips by residents of the region that start 
-              and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
-              Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
-              100 miles or lasting longer than 15 hours are excluded.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries.",
-              # height = 6.3,
-              # width = 11.3,
-              # mode = "png",
-              filename = "trips_in_motion_p4",
-              overwrite = T)
 
 ################################################################################
 # Health
@@ -386,7 +271,7 @@ trip_times_health_and_mode_mdt <-
                  criteria = "mode_c",
                  rolling_window = 55)
 
-trips_in_motion_p5 <-
+trips_in_motion_p3 <-
   trip_times_health_and_mode_mdt %>%
   # Collapse school buses into other and sum
   mutate(mode_c = as.character(identifier)) %>%
@@ -425,7 +310,7 @@ trips_in_motion_p5 <-
              legend.max.columns = 6,
              xlab = "Weekday trips in motion by time of day") 
 
-finalize_plot(trips_in_motion_p5,
+finalize_plot(trips_in_motion_p3,
               "Health care trips also have a morning and afternoon peak, but 
               these are much more concentrated around (but not during) the 
               lunch hour.",
@@ -440,147 +325,7 @@ finalize_plot(trips_in_motion_p5,
               # height = 6.3,
               # width = 11.3,
               # mode = "png",
-              filename = "trips_in_motion_p5",
-              overwrite = T)
-
-################################################################################
-# Friends/family
-################################################################################
-
-tim_mdt_social <-
-  tim_mdt_wip %>%
-  # Filter to just the purpose in question
-  filter(tpurp %in% c("Socialized with friends","Socialized with relatives"))
-
-trip_times_social_and_mode_mdt <-
-  tim_calculator(data = tim_mdt_social,
-                 weights = "wtperfin",
-                 criteria = "mode_c",
-                 criteria2 = "tpurp",
-                 rolling_window = 55)
-
-trips_in_motion_p6 <-
-  trip_times_social_and_mode_mdt %>%
-  # Collapse school buses into other and sum
-  mutate(mode_c = as.character(mode_c)) %>%
-  mutate(mode_c = case_when(
-    mode_c == "schoolbus" ~ "other",
-    TRUE ~ mode_c)) %>%
-  mutate(mode_c = recode_factor(factor(mode_c,levels = mode_c_levels),
-                                "driver" = "Driver",
-                                "passenger" = "Passenger",
-                                "transit" = "Transit",
-                                "walk" = "Walk",
-                                "bike" = "Bike",
-                                "other" = "Other")) %>%
-  group_by(mode_c,tpurp,time_band) %>%
-  summarize(rolling_count = sum(rolling_count)) %>%
-  # Remove missing modes
-  filter(mode_c != "missing") %>%
-  
-  # Create ggplot object
-  ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = mode_c),position = position_stack(reverse = T)) +
-  
-  # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%H:%M",
-                                                tz = "America/Chicago"),
-                   breaks = breaks) +
-  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
-  
-  # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
-                               "#efa7a7","#0084ac")) +
-  
-  # Add faceting
-  facet_wrap(~tpurp,ncol = 1) +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "hv",
-             panel.grid.major.x = element_line(color = "light gray"),
-             legend.max.columns = 5)
-
-finalize_plot(trips_in_motion_p6,
-              "Socializing trips in motion in northeastern Illinois by mode on weekdays, 
-              2019.",
-              "Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include all trips by residents of the region that start 
-              and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
-              Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
-              100 miles or lasting longer than 15 hours are excluded.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries.",
-              # height = 6.3,
-              # width = 11.3,
-              # mode = "png",
-              filename = "trips_in_motion_p6",
-              overwrite = T)
-
-
-################################################################################
-# School
-################################################################################
-
-tim_mdt_school <-
-  tim_mdt_wip %>%
-  # Filter to just the purpose in question
-  filter(tpurp_c == "school")
-
-trip_times_school_and_mode_c_mdt <-
-  tim_calculator(tim_mdt_school,
-                 weights = "wtperfin",
-                 criteria = "mode_c")
-
-trips_in_motion_p7 <-
-  trip_times_school_and_mode_c_mdt %>%
-  rename(mode_c = identifier) %>%
-  # Remove missing modes
-  filter(mode_c != "missing") %>%
-  # Factor for ordering
-  mutate(mode_c = recode_factor(factor(mode_c, levels = mode_c_levels),
-                                "driver" = "Driver",
-                                "passenger" = "Passenger",
-                                "transit" = "Transit",
-                                "walk" = "Walk",
-                                "bike" = "Bike",
-                                "schoolbus" = "School bus",
-                                "other" = "Other")) %>%
-  
-  # Create ggplot object
-  ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = mode_c),position = position_stack(reverse = T)) +
-  
-  # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%H:%M",
-                                                tz = "America/Chicago"),
-                   breaks = breaks) +
-  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
-  
-  # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
-                               "#efa7a7","#0084ac")) +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "hv",
-             panel.grid.major.x = element_line(color = "light gray"),
-             legend.max.columns = 5)
-
-finalize_plot(trips_in_motion_p7,
-              "School trips in motion in northeastern Illinois by mode on weekdays, 
-              2019.",
-              "Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include all trips by residents of the region that start 
-              and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
-              Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
-              100 miles or lasting longer than 15 hours are excluded.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries.",
-              # height = 6.3,
-              # width = 11.3,
-              # mode = "png",
-              filename = "trips_in_motion_p7",
+              filename = "trips_in_motion_p3",
               overwrite = T)
 
 ################################################################################
@@ -606,7 +351,7 @@ trip_times_bike_and_chain_mdt <-
                  rolling_window = 55)
 
 # Graph output of trips in motion by purpose for bike trips (personal bike only)
-trips_in_motion_p8 <-
+trips_in_motion_p4 <-
   # Get data
   trip_times_bike_and_chain_mdt %>%
   # Sort chains for ordering
@@ -633,82 +378,22 @@ trips_in_motion_p8 <-
              panel.grid.major.x = element_line(color = "light gray"),
              xlab = "Personal bike trips in motion by type of trip")
 
-finalize_plot(trips_in_motion_p8,
+finalize_plot(trips_in_motion_p4,
               "Personal bike usage has a strong morning peak, with PM usage spread more evenly across the afternoon and evening.",
-              # "Note: Trips in motion are 55-minute rolling averages. Trips 
-              # analyzed include all trips by residents of the region that start 
-              # and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
-              # Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
-              # 100 miles or lasting longer than 15 hours are excluded.
-              # <br><br>
-              # Source: Chicago Metropolitan Agency for Planning analysis of My
-              # Daily Travel trip diaries.",
-              filename = "trips_in_motion_p8",
+              "Note: Trips in motion are 55-minute rolling averages. Trips
+              analyzed include all trips by residents of the region that start
+              and/or end in the Illinois counties of Cook, DeKalb, DuPage,
+              Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than
+              100 miles or lasting longer than 15 hours are excluded.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel trip diaries.",
+              filename = "trips_in_motion_p4",
               # mode = "png",
               overwrite = TRUE,
               # height = 2.25,
               # width = 8
               )
-
-
-
-################################################################################
-# Walking
-################################################################################
-
-tim_mdt_walking <-
-  tim_mdt_wip %>%
-  # Filter to just the purpose in question
-  filter(mode_c == "walk",
-         tpurp_c != "missing")
-
-trip_times_walking_and_tpurp_mdt <-
-  tim_calculator(data = tim_mdt_walking,
-                 weights = "wtperfin",
-                 criteria = "tpurp_c",
-                 rolling_window = 55)
-
-# Graph output of trips in motion by purpose for walking trips
-trips_in_motion_p9 <-
-  # Get data
-  trip_times_walking_and_tpurp_mdt %>%
-  
-  # Create ggplot object
-  ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = identifier), position = position_stack(reverse = T)) +
-  
-  # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%H:%M",
-                                                tz = "America/Chicago"),
-                   breaks = breaks) +
-  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "hv",legend.max.columns = 3,
-             panel.grid.major.x = element_line(color = "light gray")) +
-  
-  # Add CMAP colors
-  cmap_fill_discrete(palette = "mobility")
-
-finalize_plot(trips_in_motion_p9,
-              "Walking trips in motion in northeastern Illinois by trip purpose on weekdays, 
-              2019.",
-              "Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include all trips by residents of the region that start 
-              and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
-              Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
-              100 miles or lasting longer than 15 hours are excluded.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries.",
-              filename = "trips_in_motion_p9",
-              # mode = "png",
-              overwrite = TRUE,
-              # height = 6.3,
-              # width = 11.3
-)
-
-
 
 ################################################################################
 # ARCHIVE
@@ -719,6 +404,12 @@ finalize_plot(trips_in_motion_p9,
 # # Prep functions to calculate trips in motion
 # ################################################################################
 # 
+# # Trips in motion by trip chain (25 minute rolling average)
+# trip_times_chains_mdt <-
+#   tim_calculator(data = tim_mdt_wip,
+#                  criteria = "chain",
+#                  weights = "wtperfin")
+#
 # # Trips in motion by detailed mode and trip purpose category (25 minute rolling
 # # average)
 # trip_times_mode_and_purp_c_mdt_25 <-
@@ -744,6 +435,317 @@ finalize_plot(trips_in_motion_p9,
 #                  rolling_window = 55,
 #                  weights = "wtperfin")
 # 
+# ################################################################################
+# # Trips in motion by trip chains
+# ################################################################################
+# 
+# trips_in_motion_p2 <-
+#   # Get data
+#   trip_times_chains_mdt %>%
+#   
+#   # Create ggplot object
+#   ggplot(aes(x = time_band,y = rolling_count)) +
+#   geom_area(aes(fill = identifier), position = position_stack(reverse = T)) +
+#   
+#   # Adjust axes
+#   scale_x_datetime(labels = scales::date_format("%H:%M",
+#                                                 tz = "America/Chicago"),
+#                    breaks = breaks) +
+#   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
+#   
+#   # Manually add colors
+#   scale_fill_discrete(type = c("#009ccc","#72cae5","#cc8200",
+#                                "#e5b172","#3d6600")) +
+#   
+#   # Add CMAP style
+#   theme_cmap(gridlines = "hv",
+#              panel.grid.major.x = element_line(color = "light gray"),
+#              legend.max.columns = 3)
+# 
+# finalize_plot(trips_in_motion_p2,
+#               "Trips in motion in northeastern Illinois by trip chain type on weekdays, 
+#               2019.",
+#               "Note: Trips in motion are 25-minute rolling averages. Trips 
+#               analyzed include all trips by residents of the region that start 
+#               and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
+#               Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
+#               100 miles or lasting longer than 15 hours are excluded.
+#               <br><br>
+#               Source: Chicago Metropolitan Agency for Planning analysis of My
+#               Daily Travel trip diaries.",
+#               filename = "trips_in_motion_p2",
+#               # mode = "png",
+#               overwrite = TRUE,
+#               # height = 6.3,
+#               # width = 11.3
+# )
+#
+# ################################################################################
+# # Walking
+# ################################################################################
+# 
+# tim_mdt_walking <-
+#   tim_mdt_wip %>%
+#   # Filter to just the purpose in question
+#   filter(mode_c == "walk",
+#          tpurp_c != "missing")
+# 
+# trip_times_walking_and_tpurp_mdt <-
+#   tim_calculator(data = tim_mdt_walking,
+#                  weights = "wtperfin",
+#                  criteria = "tpurp_c",
+#                  rolling_window = 55)
+# 
+# # Graph output of trips in motion by purpose for walking trips
+# trips_in_motion_p9 <-
+#   # Get data
+#   trip_times_walking_and_tpurp_mdt %>%
+#   
+#   # Create ggplot object
+#   ggplot(aes(x = time_band,y = rolling_count)) +
+#   geom_area(aes(fill = identifier), position = position_stack(reverse = T)) +
+#   
+#   # Adjust axes
+#   scale_x_datetime(labels = scales::date_format("%H:%M",
+#                                                 tz = "America/Chicago"),
+#                    breaks = breaks) +
+#   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
+#   
+#   # Add CMAP style
+#   theme_cmap(gridlines = "hv",legend.max.columns = 3,
+#              panel.grid.major.x = element_line(color = "light gray")) +
+#   
+#   # Add CMAP colors
+#   cmap_fill_discrete(palette = "mobility")
+# 
+# finalize_plot(trips_in_motion_p9,
+#               "Walking trips in motion in northeastern Illinois by trip purpose on weekdays, 
+#               2019.",
+#               "Note: Trips in motion are 25-minute rolling averages. Trips 
+#               analyzed include all trips by residents of the region that start 
+#               and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
+#               Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
+#               100 miles or lasting longer than 15 hours are excluded.
+#               <br><br>
+#               Source: Chicago Metropolitan Agency for Planning analysis of My
+#               Daily Travel trip diaries.",
+#               filename = "trips_in_motion_p9",
+#               # mode = "png",
+#               overwrite = TRUE,
+#               # height = 6.3,
+#               # width = 11.3
+# )
+# 
+# ################################################################################
+# # School
+# ################################################################################
+# 
+# tim_mdt_school <-
+#   tim_mdt_wip %>%
+#   # Filter to just the purpose in question
+#   filter(tpurp_c == "school")
+# 
+# trip_times_school_and_mode_c_mdt <-
+#   tim_calculator(tim_mdt_school,
+#                  weights = "wtperfin",
+#                  criteria = "mode_c")
+# 
+# trips_in_motion_p7 <-
+#   trip_times_school_and_mode_c_mdt %>%
+#   rename(mode_c = identifier) %>%
+#   # Remove missing modes
+#   filter(mode_c != "missing") %>%
+#   # Factor for ordering
+#   mutate(mode_c = recode_factor(factor(mode_c, levels = mode_c_levels),
+#                                 "driver" = "Driver",
+#                                 "passenger" = "Passenger",
+#                                 "transit" = "Transit",
+#                                 "walk" = "Walk",
+#                                 "bike" = "Bike",
+#                                 "schoolbus" = "School bus",
+#                                 "other" = "Other")) %>%
+#   
+#   # Create ggplot object
+#   ggplot(aes(x = time_band,y = rolling_count)) +
+#   geom_area(aes(fill = mode_c),position = position_stack(reverse = T)) +
+#   
+#   # Adjust axes
+#   scale_x_datetime(labels = scales::date_format("%H:%M",
+#                                                 tz = "America/Chicago"),
+#                    breaks = breaks) +
+#   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
+#   
+#   # Manually add colors
+#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+#                                "#efa7a7","#0084ac")) +
+#   
+#   # Add CMAP style
+#   theme_cmap(gridlines = "hv",
+#              panel.grid.major.x = element_line(color = "light gray"),
+#              legend.max.columns = 5)
+# 
+# finalize_plot(trips_in_motion_p7,
+#               "School trips in motion in northeastern Illinois by mode on weekdays, 
+#               2019.",
+#               "Note: Trips in motion are 25-minute rolling averages. Trips 
+#               analyzed include all trips by residents of the region that start 
+#               and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
+#               Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
+#               100 miles or lasting longer than 15 hours are excluded.
+#               <br><br>
+#               Source: Chicago Metropolitan Agency for Planning analysis of My
+#               Daily Travel trip diaries.",
+#               # height = 6.3,
+#               # width = 11.3,
+#               # mode = "png",
+#               filename = "trips_in_motion_p7",
+#               overwrite = T)
+# 
+# ################################################################################
+# # Friends/family
+# ################################################################################
+# 
+# tim_mdt_social <-
+#   tim_mdt_wip %>%
+#   # Filter to just the purpose in question
+#   filter(tpurp %in% c("Socialized with friends","Socialized with relatives"))
+# 
+# trip_times_social_and_mode_mdt <-
+#   tim_calculator(data = tim_mdt_social,
+#                  weights = "wtperfin",
+#                  criteria = "mode_c",
+#                  criteria2 = "tpurp",
+#                  rolling_window = 55)
+# 
+# trips_in_motion_p6 <-
+#   trip_times_social_and_mode_mdt %>%
+#   # Collapse school buses into other and sum
+#   mutate(mode_c = as.character(mode_c)) %>%
+#   mutate(mode_c = case_when(
+#     mode_c == "schoolbus" ~ "other",
+#     TRUE ~ mode_c)) %>%
+#   mutate(mode_c = recode_factor(factor(mode_c,levels = mode_c_levels),
+#                                 "driver" = "Driver",
+#                                 "passenger" = "Passenger",
+#                                 "transit" = "Transit",
+#                                 "walk" = "Walk",
+#                                 "bike" = "Bike",
+#                                 "other" = "Other")) %>%
+#   group_by(mode_c,tpurp,time_band) %>%
+#   summarize(rolling_count = sum(rolling_count)) %>%
+#   # Remove missing modes
+#   filter(mode_c != "missing") %>%
+#   
+#   # Create ggplot object
+#   ggplot(aes(x = time_band,y = rolling_count)) +
+#   geom_area(aes(fill = mode_c),position = position_stack(reverse = T)) +
+#   
+#   # Adjust axes
+#   scale_x_datetime(labels = scales::date_format("%H:%M",
+#                                                 tz = "America/Chicago"),
+#                    breaks = breaks) +
+#   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
+#   
+#   # Manually add colors
+#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+#                                "#efa7a7","#0084ac")) +
+#   
+#   # Add faceting
+#   facet_wrap(~tpurp,ncol = 1) +
+#   
+#   # Add CMAP style
+#   theme_cmap(gridlines = "hv",
+#              panel.grid.major.x = element_line(color = "light gray"),
+#              legend.max.columns = 5)
+# 
+# finalize_plot(trips_in_motion_p6,
+#               "Socializing trips in motion in northeastern Illinois by mode on weekdays, 
+#               2019.",
+#               "Note: Trips in motion are 25-minute rolling averages. Trips 
+#               analyzed include all trips by residents of the region that start 
+#               and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
+#               Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
+#               100 miles or lasting longer than 15 hours are excluded.
+#               <br><br>
+#               Source: Chicago Metropolitan Agency for Planning analysis of My
+#               Daily Travel trip diaries.",
+#               # height = 6.3,
+#               # width = 11.3,
+#               # mode = "png",
+#               filename = "trips_in_motion_p6",
+#               overwrite = T)
+# 
+# 
+# ################################################################################
+# # Drive-thru
+# ################################################################################
+# 
+# tim_mdt_drivethru <-
+#   tim_mdt_wip %>%
+#   # Filter to just the purpose in question
+#   filter(tpurp == "Drive thru / take-out dining")
+# 
+# trip_times_drivethru_and_mode_mdt <-
+#   tim_calculator(tim_mdt_drivethru,
+#                  weights = "wtperfin",
+#                  criteria = "mode_c",
+#                  rolling_window = 55)
+# 
+# trips_in_motion_p4 <-
+#   trip_times_drivethru_and_mode_mdt %>%
+#   # Collapse school buses into other and sum
+#   mutate(mode_c = as.character(identifier)) %>%
+#   mutate(mode_c = case_when(
+#     identifier == "schoolbus" ~ "other",
+#     TRUE ~ mode_c)) %>%
+#   mutate(mode_c = recode_factor(factor(mode_c,levels = mode_c_levels),
+#                                 "driver" = "Driver",
+#                                 "passenger" = "Passenger",
+#                                 "transit" = "Transit",
+#                                 "walk" = "Walk",
+#                                 "bike" = "Bicycle",
+#                                 "other" = "Other")) %>%  
+#   group_by(mode_c,time_band) %>%
+#   summarize(rolling_count = sum(rolling_count)) %>%
+#   # Remove missing modes
+#   filter(mode_c != "missing") %>%
+#   
+#   # Create ggplot object
+#   ggplot(aes(x = time_band,y = rolling_count)) +
+#   geom_area(aes(fill = mode_c),position = position_stack(reverse = T)) +
+#   
+#   # Adjust axes
+#   scale_x_datetime(labels = scales::date_format("%H:%M",
+#                                                 tz = "America/Chicago"),
+#                    breaks = breaks) +
+#   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
+#   
+#   # Manually add colors
+#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+#                                "#efa7a7","#0084ac")) +
+#   
+#   # Add CMAP style
+#   theme_cmap(gridlines = "hv",
+#              panel.grid.major.x = element_line(color = "light gray"),
+#              legend.max.columns = 6)
+# 
+# finalize_plot(trips_in_motion_p4,
+#               "Drive-thru / take-out trips in motion in northeastern Illinois by mode on weekdays, 
+#               2019.",
+#               "Note: Trips in motion are 25-minute rolling averages. Trips 
+#               analyzed include all trips by residents of the region that start 
+#               and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
+#               Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
+#               100 miles or lasting longer than 15 hours are excluded.
+#               <br><br>
+#               Source: Chicago Metropolitan Agency for Planning analysis of My
+#               Daily Travel trip diaries.",
+#               # height = 6.3,
+#               # width = 11.3,
+#               # mode = "png",
+#               filename = "trips_in_motion_p4",
+#               overwrite = T)
+
 # ################################################################################
 # # Archive - Transit
 # ################################################################################
