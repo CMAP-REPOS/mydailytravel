@@ -167,7 +167,7 @@ finalize_plot(modes_of_tpurps_p1,
               width = 8,
               height = 4.5,
               sidebar_width = 2,
-              filename = "modes_of_tpurps_p2",
+              filename = "modes_of_tpurps_p1",
               mode = "png",
               overwrite = TRUE)
 
@@ -246,7 +246,7 @@ finalize_plot(modes_of_tpurps_p1a,
               Daily Travel data. ",
               # width = 11.3,
               # height = 6.3,
-              filename = "modes_of_tpurps_p2a",
+              filename = "modes_of_tpurps_p1a",
               # mode = "png",
               overwrite = TRUE)
 
@@ -345,7 +345,7 @@ finalize_plot(modes_of_tpurps_p2,
               Daily Travel data. ",
               # width = 11.3,
               # height = 6.3,
-              filename = "modes_of_tpurps_p1",
+              filename = "modes_of_tpurps_p2",
               mode = "png",
               overwrite = T)
 
