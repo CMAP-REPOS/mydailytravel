@@ -10,6 +10,7 @@
 library(tidyverse)
 library(ggplot2)
 library(cmapplot)
+library(ggpattern)
 
 #################################################
 #                                               #
@@ -258,7 +259,7 @@ tnc_for_purposes <-
   mutate(age_bin = cut(age, breaks = age_breaks_large,
                        labels = age_labels_large)) %>% 
   filter(tnc_purp > 0) %>%
-  mutate(tnc_purp = recode(factor(tnc_purp,levels = c(5,4,1,2,3)),
+  mutate(tnc_purp = recode(factor(tnc_purp,levels = c(1,2,3,5,4)),
                            "1" = "Commute (whole or part)",
                            "2" = "Commute (whole or part)",
                            "3" = "Daytime (work)",
@@ -353,18 +354,24 @@ tnc_p3 <-
   # Add flag for pattern
   mutate(type = case_when(race_eth == "CMAP region" ~ "1",
                           TRUE ~ "0" )) %>% 
+  # Adjust values for shift around 0 axis
+  mutate(pct = ifelse(!(tnc_purp %in% c("Late-night (non-work)","Daytime (non-work)")),
+                      -1 * pct, pct)) %>% 
   # Capitalize
   mutate(race_eth = recode_factor(race_eth,
-                                  "black" = "Black",
-                                  "asian" = "Asian",
                                   "other" = "Other",
                                   "hispanic" = "Hispanic",
+                                  "black" = "Black",
+                                  "asian" = "Asian",
+                                  "CMAP region" = "CMAP region",
                                   "white" = "White")) %>% 
   
   # Create ggplot object
   ggplot(aes(x = pct, y = race_eth, fill = tnc_purp,
              # Only label bars that round to at least 5 percent
-             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+             label = ifelse(!(tnc_purp %in% c("Late-night (non-work)","Daytime (non-work)")),
+                            scales::label_percent(accuracy = 1)(-1 * pct),
+                            scales::label_percent(accuracy = 1)(pct)))) +
   # Use "geom_col_pattern" to add texture to a subset of columns
   ggpattern::geom_col_pattern(aes(pattern = type),
                               pattern_color = "white",
@@ -385,7 +392,9 @@ tnc_p3 <-
   
   
   # Adjust axis
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1)) +
+  scale_x_continuous(breaks = seq(-.75,.75,by = .25), 
+                     labels = scales::label_percent()(abs(seq(-.75,.75,by = .25))),
+                     limits = c(-.75,.8)) +
   
   # Add CMAP themes
   theme_cmap(gridlines = "v",
@@ -401,7 +410,7 @@ finalize_plot(tnc_p3,
               caption = "Source: Chicago Metropolitan Agency for Planning 
               Analysis of My Daily Travel data.",
               filename = "tnc_p3",
-              mode = "png",
+              # mode = "png",
               overwrite = T)
 
 
