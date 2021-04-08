@@ -173,7 +173,7 @@ finalize_plot(modes_of_tpurps_p1,
 
 
 ################################################################################
-# Backups for text - not exported graphics
+# Backup - health mode share by race and ethnicity
 ################################################################################
 
 # Calculate health mode share by race and ethnicity
@@ -250,6 +250,10 @@ finalize_plot(modes_of_tpurps_p1a,
               # mode = "png",
               overwrite = TRUE)
 
+################################################################################
+# Backup - health mode share by household vehicle ownership
+################################################################################
+
 # Calculations to understand the relationship between transit use for healthcare
 # and household vehicle ownership
 health_mode_c_vehs_mdt <-
@@ -271,6 +275,7 @@ health_mode_c_vehs_mdt <-
                  weight = "wtperfin",
                  survey = "mdt")
 
+# Display outputs
 health_mode_c_vehs_mdt %>% arrange(hhveh,pct) %>% 
   View()
 
@@ -511,10 +516,15 @@ modes_of_tpurps_t1 <-
   pivot_wider(id_cols = c(tpurp,n,geog), values_from = pct, names_from = mode_c)
 
 ################################################################################
+# ARCHIVE
 #
-# ARCHIVE - SHOPPING/ERRANDS
 ################################################################################
 
+# ################################################################################
+# #
+# # ARCHIVE - SHOPPING/ERRANDS
+# ################################################################################
+# 
 # ### Calculate proportions for subcategories for shopping/errands in MDT
 # 
 # detailed_errands_mode_c_mdt <-
@@ -525,10 +535,10 @@ modes_of_tpurps_t1 <-
 #                  second_breakdown = "tpurp",
 #                  weight = "wtperfin",
 #                  survey = "mdt")
-
-################################################################################
-# Chart of shopping/errands trips by mode
-################################################################################
+# 
+# ################################################################################
+# # Chart of shopping/errands trips by mode
+# ################################################################################
 # 
 # modes_of_tpurps_p4 <-
 #   # Get data
@@ -552,7 +562,7 @@ modes_of_tpurps_t1 <-
 #   # Calculate new totals
 #   group_by(mode_c,tpurp) %>%
 #   summarize(pct = sum(pct)) %>%
-#   
+# 
 #   # Create ggplot object
 #   ggplot(aes(x = pct, y = str_wrap_factor(tpurp,20),
 #              # Only label bars that round to at least 5 percent
@@ -560,20 +570,20 @@ modes_of_tpurps_t1 <-
 #   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
 #   geom_text(position = position_stack(vjust = 0.5),
 #             color = "white") +
-#   
+# 
 #   # Add CMAP style
 #   theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0) +
 #   scale_fill_discrete(type = c("#00665c","#3f0030","#36d8ca","#006b8c")) +
-#   
+# 
 #   # Adjust axis
 #   scale_x_continuous(labels = scales::label_percent())
 # 
 # finalize_plot(modes_of_tpurps_p4,
 #               "Mode share of shopping and errands trips, 2019.",
 #               "Note: 'By car' includes trips as either a driver of a passenger
-#               of a personal vehicle (not including services like taxis or 
-#               ride-share). 'Other modes' includes biking, ride-share, and all 
-#               other modes. Unlabeled bars have less than 5 percent mode share. 
+#               of a personal vehicle (not including services like taxis or
+#               ride-share). 'Other modes' includes biking, ride-share, and all
+#               other modes. Unlabeled bars have less than 5 percent mode share.
 #               <br><br>
 #               Source: Chicago Metropolitan Agency for Planning analysis of My
 #               Daily Travel data. ",
@@ -582,13 +592,11 @@ modes_of_tpurps_t1 <-
 #               overwrite = T,
 #               # mode = "png",
 #               filename = "modes_of_tpurps_p4")
-
-
-
-################################################################################
-#
-# ARCHIVE - RECREATION/FITNESS
-################################################################################
+# 
+# ################################################################################
+# #
+# # ARCHIVE - RECREATION/FITNESS
+# ################################################################################
 # 
 # ### Calculate proportions for subcategories for recreation/fitness in MDT
 # 
@@ -601,10 +609,10 @@ modes_of_tpurps_t1 <-
 #                  third_breakdown = "geog",
 #                  weight = "wtperfin",
 #                  survey = "mdt")
-
-################################################################################
-# Chart of recreation/fitness trips by mode
-################################################################################
+# 
+# ################################################################################
+# # Chart of recreation/fitness trips by mode
+# ################################################################################
 # 
 # modes_of_tpurps_p5 <-
 #   # Get data
@@ -634,24 +642,24 @@ modes_of_tpurps_t1 <-
 #   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
 #   geom_text(position = position_stack(vjust = 0.5),
 #             color = "white") +
-#   
+# 
 #   # Add CMAP style
 #   theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
 #              xlab = "Mode share by home jurisdiction") +
 #   scale_fill_discrete(type = c("#00665c","#3f0030","#36d8ca","#006b8c")) +
-#   
+# 
 #   # Adjust axis
 #   scale_x_continuous(labels = scales::label_percent()) +
-#   
+# 
 #   # Add faceting
 #   facet_wrap(~geog,ncol = 1)
 # 
 # finalize_plot(modes_of_tpurps_p5,
 #               "Mode share of recreation and fitness trips, 2019.",
 #               "Note: 'By car' includes trips as either a driver of a passenger
-#               of a personal vehicle (not including services like taxis or 
-#               ride-share). 'Other modes' includes biking, ride-share, and all 
-#               other modes. Unlabeled bars have less than 5 percent mode share. 
+#               of a personal vehicle (not including services like taxis or
+#               ride-share). 'Other modes' includes biking, ride-share, and all
+#               other modes. Unlabeled bars have less than 5 percent mode share.
 #               <br><br>
 #               Source: Chicago Metropolitan Agency for Planning analysis of My
 #               Daily Travel data. ",
@@ -660,19 +668,14 @@ modes_of_tpurps_t1 <-
 #               overwrite = T,
 #               # mode = "png",
 #               filename = "modes_of_tpurps_p5")
-
-
-################################################################################
-# ARCHIVE
-#
-################################################################################
-
-################################################################################
-# Archive - TT vs. MDT comparison of dining sub-purposes by mode
-################################################################################
-
+# 
+# 
+# ################################################################################
+# # Archive - TT vs. MDT comparison of dining sub-purposes by mode
+# ################################################################################
+# 
 # ## Create totals for trips by mode category (within universe of dining trips)
-#
+# 
 # ### Calculate proportions for TT
 # all_dining_mode_c_tt <-
 #   pct_calculator(tt_base_2,
@@ -681,7 +684,7 @@ modes_of_tpurps_t1 <-
 #                  breakdown_by = "mode_c",
 #                  weight = "weight",
 #                  survey = "tt")
-#
+# 
 # ### Calculate proportions for MDT
 # all_dining_mode_c_mdt <-
 #   pct_calculator(mdt_base_2,
@@ -690,18 +693,18 @@ modes_of_tpurps_t1 <-
 #                  breakdown_by = "mode_c",
 #                  weight = "wtperfin",
 #                  survey = "mdt")
-#
+# 
 # ### Join MDT and TT
 # total_dining_mode_c <-
 #   rbind(all_dining_mode_c_tt,
 #         all_dining_mode_c_mdt) %>%
 #   mutate(tpurp = "Dining outside of home (all)") %>%
 #   select(-total)
-#
+# 
 # all_dining_mode_c <-
 #   rbind(total_dining_mode_c,
 #         detailed_dining_mode_c_mdt)
-
+# 
 # modes_of_tpurps_p1a <-
 #   all_dining_mode_c %>%
 #   mutate(tpurp = factor(tpurp,levels = c("Dining outside of home (all)",
@@ -717,7 +720,7 @@ modes_of_tpurps_t1 <-
 #   theme_cmap(gridlines = "v") +
 #   scale_x_continuous(labels = scales::label_percent(),n.breaks = 6) +
 #   cmap_fill_discrete(palette = "friday")
-#
+# 
 # finalize_plot(modes_of_tpurps_p1a,
 #               "Mode share of dining trips, 2008 vs. 2019.",
 #               "Source: CMAP analysis of MDT and TT data.",
@@ -725,13 +728,13 @@ modes_of_tpurps_t1 <-
 #               height = 6.3,
 #               filename = "modes_of_tpurps_p1a",
 #               mode = "png")
-
-################################################################################
-# Archive - TT vs. MDT comparison of healthcare sub-purposes by mode
-################################################################################
-#
+# 
+# ################################################################################
+# # Archive - TT vs. MDT comparison of healthcare sub-purposes by mode
+# ################################################################################
+# 
 # ## Create totals for trips by mode category (within universe of health trips)
-#
+# 
 # ### Calculate proportions for TT
 # all_health_mode_c_tt <-
 #   pct_calculator(tt_base_1,
@@ -740,7 +743,7 @@ modes_of_tpurps_t1 <-
 #                  breakdown_by = "mode_c",
 #                  weight = "weight",
 #                  survey = "tt")
-#
+# 
 # ### Calculate proportions for MDT
 # all_health_mode_c_mdt <-
 #   pct_calculator(mdt_base_1,
@@ -749,18 +752,18 @@ modes_of_tpurps_t1 <-
 #                  breakdown_by = "mode_c",
 #                  weight = "wtperfin",
 #                  survey = "mdt")
-#
+# 
 # ### Join MDT and TT
 # total_health_mode_c <-
 #   rbind(all_health_mode_c_tt,
 #         all_health_mode_c_mdt) %>%
 #   mutate(tpurp = "Healthcare (all)") %>%
 #   select(-total)
-#
+# 
 # all_health_mode_c <-
 #   rbind(total_health_mode_c,
 #         detailed_health_mode_c_mdt)
-
+# 
 # modes_of_tpurps_p2a <-
 #   all_health_mode_c %>%
 #   mutate(tpurp = factor(tpurp,levels = c("Healthcare (all)",
@@ -777,7 +780,7 @@ modes_of_tpurps_t1 <-
 #   theme_cmap(gridlines = "v",legend.max.columns = 3) +
 #   scale_x_continuous(labels = scales::label_percent(),n.breaks = 6) +
 #   cmap_fill_discrete(palette = "governance")
-#
+# 
 # finalize_plot(modes_of_tpurps_p2a,
 #               "Mode share of health trips, 2008 vs. 2019.",
 #               "Source: CMAP analysis of MDT and TT data.",
@@ -786,14 +789,14 @@ modes_of_tpurps_t1 <-
 #               filename = "modes_of_tpurps_p2a",
 #               mode = "png",
 #               overwrite = TRUE)
-
-################################################################################
-# Archive - TT vs. MDT comparison of community sub-purposes by mode
-################################################################################
-#
-
-## Create totals for trips by mode category (within universe of community trips)
-#
+# 
+# ################################################################################
+# # Archive - TT vs. MDT comparison of community sub-purposes by mode
+# ################################################################################
+# 
+# 
+# # Create totals for trips by mode category (within universe of community trips)
+# 
 # ### Calculate proportions for TT
 # all_community_mode_c_tt <-
 #   pct_calculator(tt_base_1,
@@ -802,7 +805,7 @@ modes_of_tpurps_t1 <-
 #                  breakdown_by = "mode_c",
 #                  weight = "weight",
 #                  survey = "tt")
-#
+# 
 # ### Calculate proportions for MDT
 # all_community_mode_c_mdt <-
 #   pct_calculator(mdt_base_1,
@@ -811,15 +814,15 @@ modes_of_tpurps_t1 <-
 #                  breakdown_by = "mode_c",
 #                  weight = "wtperfin",
 #                  survey = "mdt")
-#
+# 
 # ### Join MDT and TT
 # total_community_mode_c <-
 #   rbind(all_community_mode_c_tt,
 #         all_community_mode_c_mdt) %>%
 #   mutate(tpurp = "Community (all)")
-#
+# 
 # ### Calculate proportions for subcategories for community in TT
-#
+# 
 # detailed_community_mode_c_tt <-
 #   pct_calculator(tt_base_1,
 #                  subset = "community",
@@ -828,13 +831,13 @@ modes_of_tpurps_t1 <-
 #                  second_breakdown = "tpurp",
 #                  weight = "weight",
 #                  survey = "tt")
-#
-#
+# 
+# 
 # all_community_mode_c <-
 #   rbind(total_community_mode_c,
 #         detailed_community_mode_c_mdt,
 #         detailed_community_mode_c_tt)
-
+# 
 # modes_of_tpurps_p3a <-
 #   all_community_mode_c %>%
 #   mutate(tpurp = factor(tpurp,levels = c("Community (all)",
@@ -853,7 +856,7 @@ modes_of_tpurps_t1 <-
 #                                   "Civic/religious activities" = "Civic/Religious",
 #                                   "Attended a community event" = "Civic/Religious",
 #                                   "Attended a religious event" = "Civic/Religious"
-#
+# 
 #          )) %>%
 #   mutate(survey = recode_factor(survey,
 #                                 mdt = "My Daily Travel",
@@ -864,7 +867,7 @@ modes_of_tpurps_t1 <-
 #   theme_cmap(gridlines = "v",legend.max.columns = 3) +
 #   scale_x_continuous(labels = scales::label_percent()) +
 #   cmap_fill_discrete(palette = "environment")
-#
+# 
 # finalize_plot(modes_of_tpurps_p3a,
 #               "Mode share of community trips, 2008 vs. 2019.",
 #               "Source: CMAP analysis of MDT and TT data.",
@@ -874,11 +877,11 @@ modes_of_tpurps_t1 <-
 #               overwrite = T,
 #               filename = "modes_of_tpurps_p3a",
 #               mode = "png")
-
-################################################################################
-# Examination of TNC school trips - not enough records for rigorous analysis
-################################################################################
-#
+# 
+# ################################################################################
+# # Examination of TNC school trips - not enough records for rigorous analysis
+# ################################################################################
+# 
 # ### Filter data
 # all_tnc_school_mdt <-
 #   mdt_base_1 %>%                         # 96,821 records
@@ -888,7 +891,7 @@ modes_of_tpurps_t1 <-
 #                      "shared rideshare",
 #                      "taxi"),            # 31 records
 #          tpurp_c == "school")            # 11 records
-#
+# 
 # all_tnc_school_mdt %>%
 #   group_by(income_c, mode) %>%
 #   summarize(trips = sum(wtperfin))

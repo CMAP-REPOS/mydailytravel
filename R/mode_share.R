@@ -276,7 +276,7 @@ mode_share_p1 <-
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
-
+# Export finalized graphic
 finalize_plot(mode_share_p1,
               title = "Residents of Chicago and Cook County have by far the highest non-car 
               mode share in the CMAP region.",
@@ -344,6 +344,7 @@ mode_share_p2 <-
                                   "0" = "none"),
                        guide = "none") +
   
+  # Add labels
   geom_label(data = mode_share_p2_labels,
              aes(label = scales::label_percent(accuracy = 0.1)(label),
                  x = label, y = hhinc),
@@ -363,6 +364,7 @@ mode_share_p2 <-
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
+# Export finalized graphic
 finalize_plot(mode_share_p2,
               title = "The lowest-income households rely the most on non-car 
               modes, but high-income households also exceed the regional 
@@ -380,7 +382,9 @@ finalize_plot(mode_share_p2,
               mode = "png",
               overwrite = T)
 
-###### Detailed mode (for prose, not exported)
+################################################################################
+# Backup - detailed mode by income
+################################################################################
 
 # Analyze percents by household income
 mdt_mode_income_detailed <-
@@ -404,8 +408,6 @@ mdt_mode_income_detailed <-
                                "1" = "Less than $15,000")) %>%
   mutate(pct = round(pct,2)) %>% 
   arrange(mode,hhinc)
-
-
 
 ################################################################################
 # Chart of mode share by race
@@ -478,6 +480,7 @@ mode_share_p3 <-
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
+# Export finalized graphic
 finalize_plot(mode_share_p3,
               title = "White residents of the region are the likeliest to rely 
               on personal automobiles for their transportation.",
@@ -653,6 +656,7 @@ mode_share_p5 <-
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
 
+# Export finalized graphic
 finalize_plot(mode_share_p5,
               title = "Travelers rely most on non-car modes for the shortest and 
               the longest trips.",
@@ -670,15 +674,20 @@ finalize_plot(mode_share_p5,
               overwrite = T)
 
 ################################################################################
-# Archive - Chart of overall mode share
+# 
+# ARCHIVE
 ################################################################################
-#
+# 
+# ################################################################################
+# # Archive - Chart of overall mode share
+# ################################################################################
+# 
 # mode_share_p2 <-
 #   mdt_mode_all %>%
 #   mutate(mode_c = factor(mode_c,levels = c("driver","passenger","walk",
 #                                            "transit","bike","other")),
 #          survey = "mdt") %>%
-#
+# 
 #   ggplot(aes(y = mdt_share, x = survey, fill = mode_c)) +
 #   geom_col(position = position_stack(reverse = T)) +
 #
@@ -698,12 +707,12 @@ finalize_plot(mode_share_p5,
 #               filename = "mode_share_p2",
 #               # mode = "png",
 #               overwrite = T)
-
-################################################################################
-#
-# ARCHIVE - Comparisons of MDT and TT (note data problems)
-################################################################################
-#
+# 
+# ################################################################################
+# #
+# # ARCHIVE - Comparisons of MDT and TT (note data problems)
+# ################################################################################
+# 
 # tt_mode_all <-
 #   tt_base_3 %>%
 #   mutate(total = sum(weight)) %>%
@@ -739,12 +748,12 @@ finalize_plot(mode_share_p5,
 #   left_join(mdt_mode_dist_all, by = "mode_c") %>%
 #   select(-distance) %>%
 #   pivot_longer(cols = c("tt_share":"mdt_share"))
-
-
-################################################################################
-# ARCHIVE - Chart of mode share, MDT vs. TT
-################################################################################
-#
+# 
+# 
+# ################################################################################
+# # ARCHIVE - Chart of mode share, MDT vs. TT
+# ################################################################################
+# 
 # mode_share_p3 <-
 #   mode_all %>%
 #   mutate(name = recode_factor(name,
@@ -770,11 +779,11 @@ finalize_plot(mode_share_p5,
 #               filename = "mode_share_p3",
 #               mode = "png",
 #               overwrite = T)
-
-################################################################################
-# ARCHIVE - Chart of travel distance, MDT vs. TT
-################################################################################
-#
+# 
+# ################################################################################
+# # ARCHIVE - Chart of travel distance, MDT vs. TT
+# ################################################################################
+# 
 # mode_share_p4 <-
 #   mode_dist_all %>%
 #   mutate(name = recode_factor(name,

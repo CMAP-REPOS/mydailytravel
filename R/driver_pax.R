@@ -25,7 +25,7 @@ source("R/helper_fns.R")
 source("R/data_cleaning.R")
 
 # Age bins
-breaks <- c(-1, 9, 15, 19, 29, 49, 69, 150)
+age_breaks <- c(-1, 9, 15, 19, 29, 49, 69, 150)
 age_labels <- c("5 to 9", "10 to 15", "16 to 19", "20 to 29",
                 "30 to 49", "50 to 69","70 and above")
 
@@ -54,7 +54,7 @@ driver_pax_mdt <-
          mode != "motorcycle"    # 61997 records
          ) %>%
   # Add age bins
-  mutate(age_bin = cut(age, breaks = breaks,
+  mutate(age_bin = cut(age, breaks = age_breaks,
                      labels = age_labels)) %>%
   ungroup()
 
@@ -75,7 +75,7 @@ driver_pax_tt <-
   filter(mode_c %in% c("driver", # 73302 records
                        "passenger")) %>%
   # Add age bins
-  mutate(age_bin = cut(AGE, breaks = breaks,
+  mutate(age_bin = cut(AGE, breaks = age_breaks,
                        labels = age_labels)) %>%
   ungroup()
 
@@ -202,226 +202,226 @@ rbind(driver_pax_age_mdt,
               values_from = c("mode_count")) %>%
   mutate(pax_share = passenger/(passenger + driver))
 
-################################################################################
-#
-# PASSENGER BEHAVIOR BY INCOME
-################################################################################
+# ################################################################################
+# #
+# # ARCHIVE - PASSENGER BEHAVIOR BY INCOME
+# ################################################################################
+# 
+# driver_pax_inc_mdt <-
+#   pct_calculator(driver_pax_mdt,
+#                  breakdown_by = "mode_c",
+#                  second_breakdown = "income_c",
+#                  weight = "wtperfin",
+#                  survey = "mdt")
+# 
+# driver_pax_inc_tt <-
+#   pct_calculator(driver_pax_tt,
+#                  breakdown_by = "mode_c",
+#                  second_breakdown = "income_c",
+#                  weight = "weight",
+#                  survey = "tt")
+# 
+# 
+# ################################################################################
+# # Chart of passenger share by income
+# ################################################################################
+# 
+# driver_pax_p2 <- 
+#   # Combine surveys
+#   rbind(driver_pax_inc_mdt %>% select(income_c,mode_c,pct,survey),
+#         driver_pax_inc_tt  %>% select(income_c,mode_c,pct,survey)) %>%
+#   # Keep only pasenger data and exclude those with no household income data
+#   filter(mode_c == "passenger", income_c != "missing") %>%
+#   # Recode for presentation
+#   mutate(survey = recode_factor(survey,
+#                                 mdt = "My Daily Travel ('19)",
+#                                 tt = "Travel Tracker ('08)"),
+#          income_c = recode_factor(income_c,
+#                                   "high" = "$100,000 or more",
+#                                   "middle-high" = "$60,000 to $99,999",
+#                                   "middle-low" = "$35,000 to $59,999",
+#                                   "low" = "$34,999 or less")) %>%
+#   
+#   # Create ggplot object
+#   ggplot(aes(y = income_c, x = pct, fill = survey)) +
+#   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
+#   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(pct),
+#                  group = survey),
+#              position = position_dodge2(0.9,reverse = T),
+#              hjust = 0,
+#              fill = "white",
+#              label.size = 0) +
+#   
+#   # Add CMAP style
+#   theme_cmap(gridlines = "v", vline = 0) +
+#   cmap_fill_discrete(palette = "mobility") +
+#   
+#   # Adjust axes
+#   scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+#                      limits = c(0,.37))
+# 
+# finalize_plot(driver_pax_p2,
+#               title = "Share of weekday car trips in the CMAP region where the
+#               traveler is a passenger and not a driver, over time and by income.",
+#               caption = "Note: Excludes travelers younger than 18.
+#               <br><br>
+#               Source: Chicago Metropolitan Agency for Planning analysis of
+#               Travel Tracker and My Daily Travel surveys.",
+#               filename = "driver_pax_p2",
+#               # mode = "png",
+#               # width = 11.3,
+#               # height = 6.3,
+#               overwrite = T
+# 
+# )
+# 
+# ################################################################################
+# #
+# # ARCHIVE - PASSENGER BEHAVIOR BY RACE
+# ################################################################################
+# 
+# ### Same analysis, looking at race and ethnicity instead - only looking at MDT
+# ### since TT only asked about race and ethnicity for primary household
+# ### responder, which would not be comparable with MDT's individual-level data.
+# 
+# driver_pax_race_mdt <-
+#   pct_calculator(driver_pax_mdt,
+#                  breakdown_by = "mode_c",
+#                  second_breakdown = "race_eth",
+#                  weight = "wtperfin",
+#                  survey = "mdt")
+# 
 
-driver_pax_inc_mdt <-
-  pct_calculator(driver_pax_mdt,
-                 breakdown_by = "mode_c",
-                 second_breakdown = "income_c",
-                 weight = "wtperfin",
-                 survey = "mdt")
-
-driver_pax_inc_tt <-
-  pct_calculator(driver_pax_tt,
-                 breakdown_by = "mode_c",
-                 second_breakdown = "income_c",
-                 weight = "weight",
-                 survey = "tt")
-
-
-################################################################################
-# Chart of passenger share by income
-################################################################################
-
-driver_pax_p2 <- 
-  # Combine surveys
-  rbind(driver_pax_inc_mdt %>% select(income_c,mode_c,pct,survey),
-        driver_pax_inc_tt  %>% select(income_c,mode_c,pct,survey)) %>%
-  # Keep only pasenger data and exclude those with no household income data
-  filter(mode_c == "passenger", income_c != "missing") %>%
-  # Recode for presentation
-  mutate(survey = recode_factor(survey,
-                                mdt = "My Daily Travel ('19)",
-                                tt = "Travel Tracker ('08)"),
-         income_c = recode_factor(income_c,
-                                  "high" = "$100,000 or more",
-                                  "middle-high" = "$60,000 to $99,999",
-                                  "middle-low" = "$35,000 to $59,999",
-                                  "low" = "$34,999 or less")) %>%
-  
-  # Create ggplot object
-  ggplot(aes(y = income_c, x = pct, fill = survey)) +
-  geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(pct),
-                 group = survey),
-             position = position_dodge2(0.9,reverse = T),
-             hjust = 0,
-             fill = "white",
-             label.size = 0) +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "v", vline = 0) +
-  cmap_fill_discrete(palette = "mobility") +
-  
-  # Adjust axes
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
-                     limits = c(0,.37))
-
-finalize_plot(driver_pax_p2,
-              title = "Share of weekday car trips in the CMAP region where the
-              traveler is a passenger and not a driver, over time and by income.",
-              caption = "Note: Excludes travelers younger than 18.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of
-              Travel Tracker and My Daily Travel surveys.",
-              filename = "driver_pax_p2",
-              # mode = "png",
-              # width = 11.3,
-              # height = 6.3,
-              overwrite = T
-
-)
-
-################################################################################
-#
-# PASSENGER BEHAVIOR BY RACE
-################################################################################
-
-### Same analysis, looking at race and ethnicity instead - only looking at MDT
-### since TT only asked about race and ethnicity for primary household
-### responder, which would not be comparable with MDT's individual-level data.
-
-driver_pax_race_mdt <-
-  pct_calculator(driver_pax_mdt,
-                 breakdown_by = "mode_c",
-                 second_breakdown = "race_eth",
-                 weight = "wtperfin",
-                 survey = "mdt")
-
-
-################################################################################
-# Chart of passenger share by race
-################################################################################
-
-driver_pax_p3 <-
-  # Get data
-  driver_pax_race_mdt %>% select(race_eth,mode_c,pct,survey) %>%
-  # Keep only passenger statistics and exclude those missing race/ethnicity data.
-  filter(mode_c == "passenger", race_eth != "missing") %>%
-  # Reformat race/ethnicity for capitalization
-  mutate(race_eth = recode_factor(race_eth,
-                                  "white" = "White",
-                                  "asian" = "Asian",
-                                  "hispanic" = "Hispanic",
-                                  "other" = "Other",
-                                  "black" = "Black")) %>% 
-  
-  # Create ggplot object
-  ggplot(aes(y = reorder(race_eth,desc(pct)), x = pct)) +
-  geom_col(aes(fill = race_eth)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(pct)),
-             label.size = 0,
-             hjust = 0) +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "v", legend.position = "none", vline = 0,
-             xlab = "Share of car trips where the traveler is a passenger") +
-  cmap_fill_race(white = "White",asian = "Asian",hispanic = "Hispanic",
-                 other = "Other",black = "Black") +
-  
-  # Adjust axes
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
-                     limits = c(0,.22))
-
-finalize_plot(driver_pax_p3,
-              title = "When traveling by car, white residents are the least 
-              likely to be passengers.",
-              caption = "Note: Excludes travelers younger than 16. \"Hispanic\" 
-              includes all travelers who identified as Hispanic. Other groups 
-              (e.g., \"White\") are non-Hispanic.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel survey.",
-              filename = "driver_pax_p3",
-              mode = "png",
-              # height = 6.3,
-              # width = 11.3,
-              overwrite = T
-)
-
-################################################################################
-#
-# PASSENGER BEHAVIOR BY RACE AND INCOME
-################################################################################
-
-driver_pax_inc_race_mdt <-
-  driver_pax_mdt %>%
-  # Calculate totals for race and income
-  group_by(income_c,race_eth) %>%
-  mutate(total = sum(wtperfin)) %>%
-  ungroup() %>%
-  # Calculate percentages by race, income, and mode
-  group_by(income_c,race_eth,mode_c) %>%
-  summarise(mode_count = sum(wtperfin),
-            total = median(total)) %>%
-  mutate(mode_share = (mode_count / total)) %>%
-  mutate(survey = "mdt")
-
-################################################################################
-# Chart of passenger share by age and income
-################################################################################
-
-# Chart of drivers and passengers by income and race/ethnicity
-driver_pax_p4 <-
-  # Get data
-  driver_pax_inc_race_mdt %>%
-  # Filter for appropriate data
-  filter(mode_c == "passenger", income_c != "missing", race_eth != "missing") %>%
-  # Reformat
-  mutate(income_c = recode_factor(income_c,
-                                  "high" = "$100,000 or more",
-                                  "middle-high" = "$60,000 to $99,999",
-                                  "middle-low" = "$35,000 to $59,999",
-                                  "low" = "$34,999 or less"),
-         race_eth = recode_factor(race_eth,
-                                  "white" = "White",
-                                  "asian" = "Asian",
-                                  "hispanic" = "Hispanic",
-                                  "other" = "Other",
-                                  "black" = "Black")) %>% 
-  
-  # Create ggplot object
-  ggplot(aes(y = income_c, x = mode_share, fill = race_eth)) +
-  geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_share),
-                 group = race_eth),
-             position = position_dodge2(0.9,reverse = T),
-             hjust = 0,
-             label.size = 0,
-             fill = "white") +
-  
-  # CMAP style
-  theme_cmap(gridlines = "v",
-             axis.text.y = element_blank()) +
-  cmap_fill_race(white = "White",asian = "Asian",hispanic = "Hispanic",
-                 other = "Other",black = "Black") +
-  
-  
-  # Facet
-  facet_wrap(~income_c,scales = "free_y") +
-  
-  # Adjust axis
-  scale_x_continuous(labels = scales::label_percent(),limits = c(0,.3))
-
-
-finalize_plot(driver_pax_p4,
-              title = "Share of weekday car trips in the CMAP region where the
-              traveler is a passenger and not a driver, over time, by race and income.",
-              caption = "Note: Excludes travelers younger than 18 and older than
-              89.\"Hispanic\" includes all travelers who identified as Hispanic.
-              Other groups (e.g., \"White\") are non-Hispanic.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of
-              Travel Tracker and My Daily Travel surveys.",
-              filename = "driver_pax_p4",
-              # # # mode = "png",
-              # # width = 11.3,
-              # height = 6.3,
-              overwrite = T
-)
+# ################################################################################
+# # Chart of passenger share by race
+# ################################################################################
+# 
+# driver_pax_p3 <-
+#   # Get data
+#   driver_pax_race_mdt %>% select(race_eth,mode_c,pct,survey) %>%
+#   # Keep only passenger statistics and exclude those missing race/ethnicity data.
+#   filter(mode_c == "passenger", race_eth != "missing") %>%
+#   # Reformat race/ethnicity for capitalization
+#   mutate(race_eth = recode_factor(race_eth,
+#                                   "white" = "White",
+#                                   "asian" = "Asian",
+#                                   "hispanic" = "Hispanic",
+#                                   "other" = "Other",
+#                                   "black" = "Black")) %>% 
+#   
+#   # Create ggplot object
+#   ggplot(aes(y = reorder(race_eth,desc(pct)), x = pct)) +
+#   geom_col(aes(fill = race_eth)) +
+#   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(pct)),
+#              label.size = 0,
+#              hjust = 0) +
+#   
+#   # Add CMAP style
+#   theme_cmap(gridlines = "v", legend.position = "none", vline = 0,
+#              xlab = "Share of car trips where the traveler is a passenger") +
+#   cmap_fill_race(white = "White",asian = "Asian",hispanic = "Hispanic",
+#                  other = "Other",black = "Black") +
+#   
+#   # Adjust axes
+#   scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+#                      limits = c(0,.22))
+# 
+# finalize_plot(driver_pax_p3,
+#               title = "When traveling by car, white residents are the least 
+#               likely to be passengers.",
+#               caption = "Note: Excludes travelers younger than 16. \"Hispanic\" 
+#               includes all travelers who identified as Hispanic. Other groups 
+#               (e.g., \"White\") are non-Hispanic.
+#               <br><br>
+#               Source: Chicago Metropolitan Agency for Planning analysis of My
+#               Daily Travel survey.",
+#               filename = "driver_pax_p3",
+#               mode = "png",
+#               # height = 6.3,
+#               # width = 11.3,
+#               overwrite = T
+# )
+# 
+# ################################################################################
+# #
+# # ARCHIVE - PASSENGER BEHAVIOR BY RACE AND INCOME
+# ################################################################################
+# 
+# driver_pax_inc_race_mdt <-
+#   driver_pax_mdt %>%
+#   # Calculate totals for race and income
+#   group_by(income_c,race_eth) %>%
+#   mutate(total = sum(wtperfin)) %>%
+#   ungroup() %>%
+#   # Calculate percentages by race, income, and mode
+#   group_by(income_c,race_eth,mode_c) %>%
+#   summarise(mode_count = sum(wtperfin),
+#             total = median(total)) %>%
+#   mutate(mode_share = (mode_count / total)) %>%
+#   mutate(survey = "mdt")
+# 
+# ################################################################################
+# # Chart of passenger share by age and income
+# ################################################################################
+# 
+# # Chart of drivers and passengers by income and race/ethnicity
+# driver_pax_p4 <-
+#   # Get data
+#   driver_pax_inc_race_mdt %>%
+#   # Filter for appropriate data
+#   filter(mode_c == "passenger", income_c != "missing", race_eth != "missing") %>%
+#   # Reformat
+#   mutate(income_c = recode_factor(income_c,
+#                                   "high" = "$100,000 or more",
+#                                   "middle-high" = "$60,000 to $99,999",
+#                                   "middle-low" = "$35,000 to $59,999",
+#                                   "low" = "$34,999 or less"),
+#          race_eth = recode_factor(race_eth,
+#                                   "white" = "White",
+#                                   "asian" = "Asian",
+#                                   "hispanic" = "Hispanic",
+#                                   "other" = "Other",
+#                                   "black" = "Black")) %>% 
+#   
+#   # Create ggplot object
+#   ggplot(aes(y = income_c, x = mode_share, fill = race_eth)) +
+#   geom_bar(stat = "identity", position = position_dodge2(reverse = TRUE)) +
+#   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(mode_share),
+#                  group = race_eth),
+#              position = position_dodge2(0.9,reverse = T),
+#              hjust = 0,
+#              label.size = 0,
+#              fill = "white") +
+#   
+#   # CMAP style
+#   theme_cmap(gridlines = "v",
+#              axis.text.y = element_blank()) +
+#   cmap_fill_race(white = "White",asian = "Asian",hispanic = "Hispanic",
+#                  other = "Other",black = "Black") +
+#   
+#   
+#   # Facet
+#   facet_wrap(~income_c,scales = "free_y") +
+#   
+#   # Adjust axis
+#   scale_x_continuous(labels = scales::label_percent(),limits = c(0,.3))
+# 
+# 
+# finalize_plot(driver_pax_p4,
+#               title = "Share of weekday car trips in the CMAP region where the
+#               traveler is a passenger and not a driver, over time, by race and income.",
+#               caption = "Note: Excludes travelers younger than 18 and older than
+#               89.\"Hispanic\" includes all travelers who identified as Hispanic.
+#               Other groups (e.g., \"White\") are non-Hispanic.
+#               <br><br>
+#               Source: Chicago Metropolitan Agency for Planning analysis of
+#               Travel Tracker and My Daily Travel surveys.",
+#               filename = "driver_pax_p4",
+#               # # # mode = "png",
+#               # # width = 11.3,
+#               # height = 6.3,
+#               overwrite = T
+# )
 
 ################################################################################
 # ARCHIVE - Explaration of "Other" category
