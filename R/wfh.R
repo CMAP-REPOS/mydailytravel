@@ -73,7 +73,8 @@ wfh_mdt_all <-
            case_when(
              tc_frequency == 1 ~ 1, # Flag all 1-3 day/week telecommuters
              tc_frequency == 2 ~ 2, # Then flag all 4-5 day/week telecommuters
-             wfh == 1 ~ 2,          # Add any WFHers that are not reporting themselves in either of the first two categories
+             wfh == 1 ~ 2,          # Add any WFHers that are not reporting 
+                                    #   themselves in either of the first two categories
              tc_frequency == 0 ~ 0  # Finally add any remaining to the "none" category
            )) %>%
   ungroup() %>% 
@@ -119,21 +120,11 @@ wfh_person_level <-
             travtime_pg = sum(travtime_pg, na.rm = TRUE)) %>%
   ungroup()
 
-# # Archive - additional data set with non-travelers.
-# 
-# wfh_person_level_plus_no_trips <-
-#   wfh_mdt_all %>%
-#   left_join(wfh_person_level, by = c("sampno","perno")) %>%
-#   mutate(across(all_of(c("wfh_today","wfo_today","travtime_pg","distance_pg")),
-#                 ~replace_na(.,0)))
-
 #################################################
 #                                               #
 #                 Analysis                      #
 #                                               #
 #################################################
-
-
 
 ################################################################################
 # Summary statistics about TC and WFH
@@ -238,8 +229,6 @@ tcwfh_age <-
   mutate(type = "Age") %>% 
   rename(subtype = age_bin)
 
-
-
 # Combine different travel statistic calculations
 tcwfh_summaries <-
   rbind(tcwfh_overall,
@@ -252,15 +241,20 @@ tcwfh_summaries <-
   select(type,subtype,pct,uw_pct,n,tcwfhers) %>% 
   # Add levels
   mutate(type = factor(type,
-                       levels = c("Sex","Race and ethnicity","Household income","Age","Home jurisdiction","Overall"))) %>% 
-  mutate(subtype = factor(subtype,
-                          levels = c("Overall",
-                                     "Male","Female",
-                                     "Asian","White","Other","Hispanic","Black",
-                                     "5 to 17","18 to 29","30 to 49","50 to 69","70 and above",
-                                     "Less than $35K","$35K to $59K","$60K to $99K","$100K or more",
-                                     "Chicago","Suburban Cook","DuPage","Kane","Kendall","McHenry","Lake","Will"
-                          ))) %>% 
+                       levels = c("Sex","Race and ethnicity","Household income",
+                                  "Age","Home jurisdiction","Overall"))) %>% 
+  mutate(subtype = 
+           factor(subtype,
+                  levels = c("Overall",
+                             "Male","Female",
+                             "Asian","White","Other","Hispanic","Black",
+                             "5 to 17","18 to 29","30 to 49","50 to 69",
+                                "70 and above",
+                             "Less than $35K","$35K to $59K","$60K to $99K",
+                                "$100K or more",
+                             "Chicago","Suburban Cook","DuPage","Kane","Kendall",
+                                "McHenry","Lake","Will"
+                  ))) %>% 
   # Pivot longer
   pivot_longer(cols = c(pct,n,tcwfhers,uw_pct))
 
@@ -318,13 +312,14 @@ wfh_p1 <-
 # Export finalized graphic
 finalize_plot(wfh_p1,
               # sidebar_width = 0,
-              "Lower-income, Black, and Hispanic residents are the least likely to telecommute or work from home.",
+              "Lower-income, Black, and Hispanic residents are the least likely 
+              to telecommute or work from home.",
               caption = "Note: Includes only employed residents. 'Hispanic' 
-              includes respondents who identified as 
-              Hispanic of any racial category. Other categories are non-Hispanic. 
-              For the categorization by sex, the survey asked respondents 
-              whether they were male or female. A small number of respondents 
-              chose not to answer and are excluded based on small sample sizes.
+              includes respondents who identified as Hispanic of any racial 
+              category. Other categories are non-Hispanic. For the 
+              categorization by sex, the survey asked respondents whether they 
+              were male or female. A small number of respondents chose not to 
+              answer and are excluded based on small sample sizes.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data.",
@@ -335,8 +330,7 @@ finalize_plot(wfh_p1,
 
 
 ################################################################################
-#
-# WFH/TC WORK TRIPS
+# Data prep for charts of WFH/TC travel characteristics
 ################################################################################
 
 # Specific analysis of work trips vs. non-work trips for individuals who report
@@ -365,6 +359,7 @@ wfh_worktrips_relevant <-
   # mutate(bothtrips = ifelse(min(worktrip) == 0 & max(worktrip) == 1,1,0)) %>%
   # filter(bothtrips == 1)
 
+# Collapse trips into total distances traveled per traveler
 wfh_worktrips_person_level <-
   wfh_worktrips_relevant %>% 
   # Group by traveler and work trip status
@@ -385,20 +380,14 @@ wfh_worktrips_person_level <-
             wtperfin = first(wtperfin)) %>%
   ungroup()
 
+# Calculate summary statistics for work trips
 wfh_worktrips_general <-
   wfh_worktrips_person_level %>%
+  # Calculate based on TC/WFH status, work trip status, and geography
   group_by(combined_tc_wfh,worktrip,geog) %>%
   summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
             n = n()) %>%
   rename(flag = combined_tc_wfh)
-
-wfh_worktrips_person_level %>%
-  filter(geog == "Chicago") %>% 
-  ggplot(aes(x = distance_pg)) +
-  geom_histogram(bins = 50) +
-  scale_x_continuous(n.breaks = 20)
-
-
 
 ################################################################################
 # Chart of work trips for individuals who report working from home sometimes but
@@ -406,16 +395,13 @@ wfh_worktrips_person_level %>%
 # the office today
 ################################################################################
 
-# Due to low sample size, exclude work trips for those that almost always work
-# from home/telecommute
-exclusion <- tibble(worktrip = 1, flag = 2)
-
 wfh_p2 <-
   # Get data
   wfh_worktrips_general %>%
   # Filter out other trips
   filter(worktrip == 1) %>%
-  # Filter out always telecommuters
+  # Due to low sample size, exclude work trips for those that almost always work
+  # from home/telecommute
   filter(flag != 2) %>% 
   # Reformat and reorder
   mutate(flag = recode_factor(factor(flag),
@@ -443,10 +429,12 @@ wfh_p2 <-
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
              legend.max.columns = 1,
              vline = 0,
-             xlab = "Mean total miles traveled on work trips by home jurisdiction\n(excluding travelers with no trips to a work location)",
+             xlab = "Mean total miles traveled on work trips by home jurisdiction
+             \n(excluding travelers with no trips to a work location)",
              axis.title.x = element_text(hjust = 0.5)) +
   cmap_fill_discrete(palette = "legislation")
 
+# Export finalized graphic
 finalize_plot(wfh_p2,
               "Part-time telecommuters who live outside Chicago have 
               significantly longer journeys to and from work on days when they 
@@ -475,25 +463,28 @@ finalize_plot(wfh_p2,
 # Chart of all mileage for trips for individuals by TC status
 ################################################################################
 
+# Calculate averages for all trips
 wfh_alltraveler_trips_general <-
   wfh_mdt_all %>% 
-  # Add non-work trips for everyone who didn't travel today
+  # Add non-work trips for everyone who didn't travel today (these are included
+  # in the averages as 0 distance)
   left_join(wfh_worktrips_person_level %>% 
-              group_by(sampno,perno,wfh_today,wfo_today) %>% 
+              group_by(sampno,perno) %>% 
               summarize(distance_pg = sum(distance_pg)) %>% 
               ungroup(),
             by = c("sampno","perno")) %>% 
-  # Mutate NAs for distance and wfo/wfh flags for non-travelers to be 0
-  replace_na(list(wfh_today = 0, wfo_today = 0,distance_pg = 0)) %>% 
+  # Mutate NAs for distance for non-travelers to be 0
+  replace_na(list(distance_pg = 0)) %>% 
   # Remove travelers with homes in multiple counties
   filter(home_county != "999") %>% # 82772 records
-  # Calculate median distances
+  # Calculate average distances
   group_by(combined_tc_wfh,geog) %>%
   summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
             n = n()) %>%
   rename(flag = combined_tc_wfh) %>% 
   ungroup()
 
+# Create chart
 wfh_p3 <-
   # Get data
   wfh_alltraveler_trips_general %>%
@@ -534,6 +525,7 @@ wfh_p3 <-
              ) +
   scale_fill_discrete(type = c("#00becc","#67ac00","#cc5f00"))
 
+# Export finalized graphic
 finalize_plot(wfh_p3,
               "On average, part-time telecommuters who live outside Chicago 
               travel the greatest distances every day.",
@@ -556,8 +548,12 @@ finalize_plot(wfh_p3,
               # width = 11.3
 )
 
-### Backup - non-work trip stats
+################################################################################
+# Backup - summary of non-work chain trips (for prose)
+################################################################################
 
+# Calculate the average length of non-work travel by TC/WFH status and home
+# jurisdiction
 wfh_mdt_all %>% 
   # Add non-work trips for everyone who didn't travel today
   left_join(wfh_worktrips_person_level %>% 
@@ -576,30 +572,9 @@ wfh_mdt_all %>%
   ungroup() %>% 
   arrange(geog)
 
-# # Code to generate boxplot
-#
-# wfh_p2_bp <-
-#   wfh_worktrips_person_level %>%
-#   mutate(flag = recode_factor(factor(combined_tc_wfh),
-#                               "2" = "Almost always telecommutes or works from home (4+ days/week)",
-#                               "1" = "Sometimes telecommutes or works from home (1-3 days/week)",
-#                               "0" = "Does not telecommute or work from home"),
-#          worktrip = recode_factor(factor(worktrip),
-#                                   "1" = "Work trips outside the home",
-#                                   "0" = "Other trips"),
-#          cook_county = recode_factor(factor(cook_county),
-#                                      "1" = "Cook County residents",
-#                                      "0" = "Residents of other counties")
-#          ) %>%
-#   ggplot(aes(x = distance_pg, y = str_wrap_factor(flag,20))) +
-#   geom_boxplot() +
-#   facet_wrap(worktrip~cook_county) +
-#   theme_cmap(gridlines = "v",
-#              legend.position = "none")
-#
-# wfh_p2_bp
-
-####### Location
+################################################################################
+# Backup - individual trips explored for stories
+################################################################################
 
 # Understand the distribution of 1-3 day/week tc/wfh-ers by county
 
@@ -643,23 +618,30 @@ df <-
 # Export to csv for mapping
 write.csv(df,"average_suburban_tc13_trips.csv")
 
+################################################################################
+#
+# ARCHIVE
+################################################################################
+# 
+# ################################################################################
+# # Plot trip locations
+# ################################################################################
 # # Plot points in R (less useful without ability to select points)
 # 
 # chicago_map <- get_map("chicago, illinois", zoom = 9)
 # 
 # ggmap(chicago_map) +
 #   geom_point(data = df, aes(x = longitude, y = latitude, color = id))
-
-#
+# 
 # # Map the 1-3 day/week tc/wfh-ers by tract
 # tract_sf <- sf::read_sf("V:/Demographic_and_Forecast/Census/2010/Geography/CMAP_Region_Projected/Tracts_CMAP_TIGER2010.shp")
-#
+# 
 # tract_wfh_count <-
 #   wfh_worktrips_person_level %>%
 #   group_by(home_county,home_tract) %>%
 #   summarize(n = n(),
 #             weighted_n = sum(wtperfin))
-#
+# 
 # tract_tc13 <-
 #   tract_sf %>%
 #   mutate(TRACTCE10 = as.integer(TRACTCE10),
@@ -667,8 +649,8 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #   left_join(tract_wfh_count, by = c("TRACTCE10" = "home_tract",
 #                                          "COUNTYFP10" = "home_county")) %>%
 #   select(TRACTCE10,COUNTYFP10,n,weighted_n,geometry)
-#
-#
+# 
+# 
 # wfh_tracts_map1 <-
 #   tract_tc13 %>%
 #   ggplot(aes(fill = weighted_n)) +
@@ -678,8 +660,8 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #              legend.direction = "vertical",
 #              legend.key.height = grid::unit(20,"bigpts")) +
 #   cmap_fill_continuous(palette = "seq_blues")
-#
-#
+# 
+# 
 # finalize_plot(wfh_tracts_map1,
 #               title = "Number of tc/wfh 1-3 days/week per tract (weighted).",
 #               caption = "Source: CMAP analysis of MDT data.",
@@ -689,10 +671,9 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #               # mode = "png",
 #               overwrite = T
 # )
-#
-#
+# 
 # map <- get_map("Chicago, Illinois")
-#
+# 
 # coords_map <-
 #   ggplot() +
 #   geom_point(data = wfh_worktrips_person_level %>% filter(combined_tc_wfh == 1) %>% filter(home_county %in% cmap_seven_counties),
@@ -701,18 +682,20 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #              shape=23,
 #              alpha = 0.8)
 #   # geom_sf(data = tract_sf)
-#
+# 
 # coords_map
-
-
-################################################################################
-#
-# WFH/TC ALL TRIPS
-################################################################################
-
-### Create chart with travel characteristics for those who report working from
-### home on days when they do and do not work from home
-#
+# 
+# 
+# ################################################################################
+# #
+# # WFH/TC ALL TRIPS
+# ################################################################################
+# 
+# ################################################################################
+# # Create chart with travel characteristics for those who report working from
+# # home on days when they do and do not work from home
+# ################################################################################
+# 
 # wfh_with_today_status <-
 #   wfh_person_level_plus_no_trips %>%
 #   mutate(
@@ -732,12 +715,12 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #             n = n()) %>%
 #   pivot_longer(cols = distance_pg:travtime_pg) %>%
 #   mutate(type = "tc_with_today_status")
-
-################################################################################
-# Chart of trip distances for individuals depending on their WFH/TC status and
-# today's travel behavior
-################################################################################
-#
+# 
+# ################################################################################
+# # Chart of trip distances for individuals depending on their WFH/TC status and
+# # today's travel behavior
+# ################################################################################
+# 
 # wfh_p1 <-
 #   wfh_with_today_status %>%
 #   filter(name != "travtime_pg") %>%
@@ -774,7 +757,7 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #              fill = "white") +
 #   geom_blank(aes(x = xmax)) +
 #   cmap_fill_discrete(palette = "legislation")
-#
+# 
 # finalize_plot(wfh_p1,
 #               "Travel characteristics individuals who telecommute or work from
 #               home vs. those who do not, on days when they are and are not
@@ -789,12 +772,36 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #               filename = "wfh_p1",
 #               mode = "png",
 #               overwrite = T)
-
-
-################################################################################
-# Archive - old analysis
-################################################################################
-#
+# 
+# ################################################################################
+# # Boxplot of work trips
+# ################################################################################
+# 
+# wfh_p2_bp <-
+#   wfh_worktrips_person_level %>%
+#   mutate(flag = recode_factor(factor(combined_tc_wfh),
+#                               "2" = "Almost always telecommutes or works from home (4+ days/week)",
+#                               "1" = "Sometimes telecommutes or works from home (1-3 days/week)",
+#                               "0" = "Does not telecommute or work from home"),
+#          worktrip = recode_factor(factor(worktrip),
+#                                   "1" = "Work trips outside the home",
+#                                   "0" = "Other trips"),
+#          cook_county = recode_factor(factor(cook_county),
+#                                      "1" = "Cook County residents",
+#                                      "0" = "Residents of other counties")
+#   ) %>%
+#   ggplot(aes(x = distance_pg, y = str_wrap_factor(flag,20))) +
+#   geom_boxplot() +
+#   facet_wrap(worktrip~cook_county) +
+#   theme_cmap(gridlines = "v",
+#              legend.position = "none")
+# 
+# wfh_p2_bp
+# 
+# ################################################################################
+# # Miscellaneous analysis
+# ################################################################################
+# 
 # # Create averages comparing those who report telecommuting vs. not
 # wfh_general <-
 #   wfh_person_level_plus_no_trips %>%
@@ -806,7 +813,7 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #   pivot_longer(cols = distance_pg:travtime_pg) %>%
 #   mutate(type = "tc_general") %>%
 #   rename(flag = tc)
-#
+# 
 # # Create averages comparing those who worked from home today vs. those who did not
 # wfh_today <-
 #   wfh_person_level_plus_no_trips %>%
@@ -818,7 +825,7 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #   pivot_longer(cols = distance_pg:travtime_pg) %>%
 #   mutate(type = "wfh_today") %>%
 #   rename(flag = wfh_today)
-#
+# 
 # # Create averages comparing those who worked from outside the home today vs. not
 # wfo_today <-
 #   wfh_person_level_plus_no_trips %>%
@@ -830,7 +837,7 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #   pivot_longer(cols = distance_pg:travtime_pg) %>%
 #   mutate(type = "wfo_today") %>%
 #   rename(flag = wfo_today)
-#
+# 
 # # Create averages comparing those who worked from outside the home today vs.
 # # not, including only individuals with at least one work-related trip
 # wfh_vs_wfo <-
@@ -844,14 +851,14 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #   pivot_longer(cols = distance_pg:travtime_pg) %>%
 #   mutate(type = "wfh_vs_wfo") %>%
 #   rename(flag = wfh_today)
-#
+# 
 # # Combine into one dataset
 # wfh_chart_inputs <-
 #   rbind(wfh_general,
 #         wfh_today,
 #         wfo_today,
 #         wfh_vs_wfo)
-#
+# 
 # # Chart of travel characteristics and work from home behavior
 # wfh_p3 <-
 #   wfh_chart_inputs %>%
@@ -875,7 +882,7 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #   scale_y_discrete(labels = c("Worked outside\nof home (today)",
 #                               "Worked from\nhome (today)",
 #                               "Worked from\nhome (survey)"))
-#
+# 
 # finalize_plot(wfh_p3,
 #               "Travel characteristics and work from home behavior.",
 #               "Note: \"Worked from home (survey)\" is based on answers given in
@@ -884,11 +891,9 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #               <br><br>
 #               Source: CMAP analysis of MDT data.",
 #               title_width = 2)
-#
-#
-#
+# 
 # #### REPEAT BUT COUNTY-LEVEL
-#
+# 
 # # Create averages comparing those who report working from home vs. not
 # wfh_general_counties <-
 #   wfh_person_level_plus_no_trips %>%
@@ -904,7 +909,7 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #   pivot_longer(cols = distance_pg:travtime_pg) %>%
 #   mutate(type = "tc_general") %>%
 #   rename(flag = tc)
-#
+# 
 # # Repeat for those who worked from home today vs. those who did not
 # wfh_today_counties <-
 #   wfh_person_level_plus_no_trips %>%
@@ -919,12 +924,12 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #   pivot_longer(cols = distance_pg:travtime_pg) %>%
 #   mutate(type = "wfh_today") %>%
 #   rename(flag = wfh_today)
-#
+# 
 # # Combine data
 # wfh_chart_counties_inputs <-
 #   rbind(wfh_general_counties,
 #         wfh_today_counties)
-#
+# 
 # # Chart of travel characteristics and work from home behavior by home location
 # wfh_p4 <-
 #   wfh_chart_counties_inputs %>%
@@ -947,7 +952,7 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #   facet_wrap(~name,scales = "free_x") +
 #   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts")) +
 #   cmap_fill_discrete(palette = "legislation")
-#
+# 
 # finalize_plot(wfh_p4,
 #               "Travel characteristics and work from home behavior by home location.",
 #               "Note: These estimates are based on on answers given in
@@ -955,4 +960,3 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #               <br><br>
 #               Source: CMAP analysis of MDT data.",
 #               title_width = 2)
-
