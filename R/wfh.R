@@ -354,11 +354,6 @@ wfh_worktrips_relevant <-
     chain %in% c("Work trip","Return home (work)") ~ 1,
     # Assign all other trips as 0
     TRUE ~ 0)) %>%
-  # Add a flag for Cook County residents
-  mutate(chicago = case_when(
-    home_county_chi == "Chicago" ~ 2,
-    home_county_chi == "Suburban Cook" ~ 1,
-    TRUE ~ 0)) %>%
   # Remove travelers with homes in multiple counties
   filter(home_county != "999") %>% # 82772 records
   # Remove "beginning" trips
@@ -377,7 +372,7 @@ wfh_worktrips_person_level <-
   # Collapse into traveler-level statistics
   summarize(pertrips = n(),
             income_c = first(income_c),
-            chicago = first(chicago),
+            geog = first(geog),
             home_county = first(home_county),
             home_tract = first(home_tract),
             home_long = first(home_long),
@@ -392,10 +387,18 @@ wfh_worktrips_person_level <-
 
 wfh_worktrips_general <-
   wfh_worktrips_person_level %>%
-  group_by(combined_tc_wfh,worktrip,chicago) %>%
-  summarize(distance_pg = weightedMedian(distance_pg, w = wtperfin),
+  group_by(combined_tc_wfh,worktrip,geog) %>%
+  summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
             n = n()) %>%
   rename(flag = combined_tc_wfh)
+
+wfh_worktrips_person_level %>%
+  filter(geog == "Chicago") %>% 
+  ggplot(aes(x = distance_pg)) +
+  geom_histogram(bins = 50) +
+  scale_x_continuous(n.breaks = 20)
+
+
 
 ################################################################################
 # Chart of work trips for individuals who report working from home sometimes but
@@ -417,16 +420,15 @@ wfh_p2 <-
   # Reformat and reorder
   mutate(flag = recode_factor(factor(flag),
                        "0" = "Does not regularly telecommute or work from home",
-                       "1" = "Sometimes telecommutes or works from home (1-3 days/wk.)"),
-         chicago = recode_factor(factor(chicago, levels = c(0,1,2)),
-                                     "0" = "Other counties",
-                                 "1" = "Suburban Cook",
-                                 "2" = "Chicago")
-         ) %>%
+                       "1" = "Sometimes telecommutes or works from home (1-3 days/week)"),
+         geog = recode_factor(geog,
+                              "Other suburban counties" = "Other counties",
+                              "Suburban Cook" = "Suburban Cook",
+                              "Chicago" = "Chicago")) %>%
   
   
   # Create ggplot object
-  ggplot(aes(x = distance_pg, y = chicago)) +
+  ggplot(aes(x = distance_pg, y = geog)) +
   geom_col(aes(fill = flag), position = position_dodge2(reverse = T)) +
   geom_label(aes(label = scales::label_number(accuracy = 0.1)(distance_pg),
                  group = flag),
@@ -441,8 +443,8 @@ wfh_p2 <-
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
              legend.max.columns = 1,
              vline = 0,
-             xlab = "Median miles traveled on work trips by home jurisdiction",
-             axis.title.x = element_text(hjust = 1)) +
+             xlab = "Mean total miles traveled on work trips by home jurisdiction\n(excluding travelers with no trips to a work location)",
+             axis.title.x = element_text(hjust = 0.5)) +
   cmap_fill_discrete(palette = "legislation")
 
 finalize_plot(wfh_p2,
@@ -450,7 +452,7 @@ finalize_plot(wfh_p2,
               significantly longer journeys to and from work on days when they 
               do go into the office.",
               "Note: These estimates are based on on answers given in both the
-              survey and travel diary components of My Daily Travel. Median 
+              survey and travel diary components of My Daily Travel. Mean 
               mileage accounts for all trips associated with a work trip chain 
               that included a work destination outside the home (both fixed and 
               non-fixed). Excludes work trips for travelers that
@@ -468,6 +470,111 @@ finalize_plot(wfh_p2,
               # width = 11.3
               )
 
+
+################################################################################
+# Chart of all mileage for trips for individuals by TC status
+################################################################################
+
+wfh_alltraveler_trips_general <-
+  wfh_mdt_all %>% 
+  # Add non-work trips for everyone who didn't travel today
+  left_join(wfh_worktrips_person_level %>% 
+              group_by(sampno,perno,wfh_today,wfo_today) %>% 
+              summarize(distance_pg = sum(distance_pg)) %>% 
+              ungroup(),
+            by = c("sampno","perno")) %>% 
+  # Mutate NAs for distance and wfo/wfh flags for non-travelers to be 0
+  replace_na(list(wfh_today = 0, wfo_today = 0,distance_pg = 0)) %>% 
+  # Remove travelers with homes in multiple counties
+  filter(home_county != "999") %>% # 82772 records
+  # Calculate median distances
+  group_by(combined_tc_wfh,geog) %>%
+  summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
+            n = n()) %>%
+  rename(flag = combined_tc_wfh) %>% 
+  ungroup()
+
+wfh_p3 <-
+  # Get data
+  wfh_alltraveler_trips_general %>%
+  # Reformat and reorder
+  mutate(flag = recode_factor(factor(flag,levels = c(0,1,2)),
+                              "0" = "Does not regularly telecommute or work from home",
+                              "1" = "Sometimes telecommutes or works from home (1-3 days/week)",
+                              "2" = "Almost always telecommutes or works from home (4+ days/week)"),
+         
+         geog = recode_factor(geog,
+                              "Other suburban counties" = "Other counties",
+                              "Suburban Cook" = "Suburban Cook",
+                              "Chicago" = "Chicago")) %>%
+  
+  
+  # Create ggplot object
+  ggplot(aes(x = distance_pg, y = geog, 
+             label = scales::label_number(accuracy = .1)(distance_pg))) +
+  geom_col(aes(fill = flag),
+           position = position_dodge2(reverse = T,width = 0.9)) +
+
+  # Add labels
+  geom_label(aes(label = scales::label_number(accuracy = .1)(distance_pg),
+                 group = flag),
+             position = position_dodge2(reverse = T,width = 0.9),
+             label.size = 0,
+             hjust = 0) +
+  
+  # Adjust axis
+  scale_x_continuous(limits = c(0,48)) +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
+             vline = 0,legend.max.columns = 1,
+             axis.title.x = element_text(hjust = .5),
+             strip.text = element_text(hjust = 0.5),
+             xlab = "Mean total miles traveled by home jurisdiction",
+             ) +
+  scale_fill_discrete(type = c("#00becc","#67ac00","#cc5f00"))
+
+finalize_plot(wfh_p3,
+              "On average, part-time telecommuters who live outside Chicago 
+              travel the greatest distances every day.",
+              "Note: These estimates are based on on answers given in both the
+              survey and travel diary components of My Daily Travel. These 
+              averages also account for employed individuals who did not travel 
+              in the region on their assigned travel day (i.e., individuals who 
+              work from home and did not travel outside the home on that day). 
+              Those individuals are included as having zero travel distance.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel data.",
+              filename = "wfh_p3",
+              mode = "png",
+              overwrite = T,
+              # height = 4.5,
+              # width = 8,
+              # sidebar = 2.5
+              # height = 6.3,
+              # width = 11.3
+)
+
+### Backup - non-work trip stats
+
+wfh_mdt_all %>% 
+  # Add non-work trips for everyone who didn't travel today
+  left_join(wfh_worktrips_person_level %>% 
+              filter(worktrip == 0) %>% 
+              select(sampno,perno,wfh_today,wfo_today,distance_pg),
+            by = c("sampno","perno")) %>% 
+  # Mutate NAs for distance and wfo/wfh flags for non-travelers to be 0
+  replace_na(list(wfh_today = 0, wfo_today = 0,distance_pg = 0)) %>% 
+  # Remove travelers with homes in multiple counties
+  filter(home_county != "999") %>% # 82772 records
+  # Calculate median distances
+  group_by(combined_tc_wfh,geog) %>%
+  summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
+            n = n()) %>%
+  rename(flag = combined_tc_wfh) %>% 
+  ungroup() %>% 
+  arrange(geog)
 
 # # Code to generate boxplot
 #
@@ -518,14 +625,13 @@ tc_od <-
          home_county != 31,
          worktrip == 1)
 
-# Identify the work trip chains closest to the median length for 1-3 day
+# Identify the work trip chains closest to the mean length for 1-3 day
 # tc/wfh-ers that live outside of Cook County
 tc_od_average <-
   tc_od %>% 
-  arrange(distance_pg) %>% 
-  mutate(cumsum = cumsum(wtperfin)) %>% 
-  mutate(ranking = cumsum / max(cumsum)) %>% 
-  filter(ranking > .49 & ranking < .51) %>% 
+  mutate(average = weighted.mean(distance_pg,wtperfin)) %>% 
+  mutate(variance = distance_pg / average) %>% 
+  filter(variance > .99 & variance < 1.01) %>% 
   mutate(id = paste(sampno,perno,sep = "_"))
 
 # Extract the work trips with lat/long for locations
