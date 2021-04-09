@@ -100,7 +100,7 @@ travel_overall <-
          subtype = "Overall")
 
 # Calculate summary statistics by gender (reusing overall code)
-travel_gender <-
+travel_sex <-
   avgtravel_mdt %>%
   group_by(sex) %>% 
   summarize(
@@ -116,7 +116,7 @@ travel_gender <-
   mutate(distance_per_capita = total_distance / total_travelers,
          trips_per_capita = total_trips / total_travelers) %>% 
   ungroup() %>% 
-  mutate(type = "Gender") %>% 
+  mutate(type = "Sex") %>% 
   # Remove individuals without a response
   filter(sex > 0) %>% 
   # Recode for ease of understanding
@@ -233,7 +233,7 @@ travel_home <-
 # Combine different travel statistic calculations
 travel_summaries <-
   rbind(travel_overall,
-        travel_gender,
+        travel_sex,
         travel_age,
         travel_income,
         travel_race_eth,
@@ -244,7 +244,7 @@ travel_summaries <-
   mutate(across(c(trips_per_capita,avg_trip_length,distance_per_capita),~round(.,2))) %>% 
   # Add levels
   mutate(type = factor(type,
-                       levels = c("Gender","Race and ethnicity","Household income","Age","Overall","Home jurisdiction"))) %>% 
+                       levels = c("Sex","Race and ethnicity","Household income","Age","Overall","Home jurisdiction"))) %>% 
   mutate(subtype = factor(subtype,
                           levels = c("Overall",
                                      "Male","Female",
@@ -260,7 +260,7 @@ travel_summaries_vlines <-
   travel_summaries %>%
   filter(type == "Overall" & name != "distance_per_capita") %>% 
   select(-subtype,-type) %>% 
-  left_join(tibble(type = c("Gender","Race and ethnicity","Household income","Age")),by = character()) %>% 
+  left_join(tibble(type = c("Sex","Race and ethnicity","Household income","Age")),by = character()) %>% 
   mutate(name = recode_factor(factor(name,levels = c("trips_per_capita","avg_trip_length")),
                               "trips_per_capita" = "Regional average",
                               "avg_trip_length" = "Regional average "))
@@ -277,9 +277,6 @@ average_resident_p1 <-
   mutate(name = recode_factor(factor(name,levels = c("trips_per_capita","avg_trip_length")),
                        "trips_per_capita" = "Trips per day        ",
                        "avg_trip_length" = "Distance per trip (miles)")) %>% 
-  # # Add regional totals for value lines
-  # mutate(t_trips_per_capita = travel_overall$trips_per_capita,
-  #        t_avg_trip_length = travel_overall$avg_trip_length) %>% 
   # Exclude overall and geography
   filter(!(type %in% c("Overall","Home jurisdiction"))) %>%
   
@@ -324,7 +321,10 @@ finalize_plot(average_resident_p1,
               "Average travel patterns vary significantly based on demographic
               characteristics.",
               caption = "Note: 'Hispanic' includes respondents who identified as 
-              Hispanic of any racial category. Other categories are non-Hispanic.
+              Hispanic of any racial category. Other categories are non-Hispanic. 
+              For the categorization by sex, the survey asked respondents 
+              whether they were male or female. A small number of respondents 
+              chose not to answer and are excluded based on small sample sizes.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data.",
