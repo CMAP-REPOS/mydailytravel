@@ -33,6 +33,10 @@ extra_wfhers <- mdt %>%
   mutate(identifier = paste(sampno,perno,sep = "_")) %>%
   select(identifier)
 
+# Age bins
+age_breaks <- c(-1,17,29, 49, 69, 150)
+age_labels <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
+
 # Summary statistics (includes individuals with no trips)
 wfh_mdt_all <-
   mdt_all_respondents %>% # 30,683 records
@@ -56,7 +60,13 @@ wfh_mdt_all <-
              tcdays < 1 ~ 0,
              tcdays >= 1 & tcdays <= 3 ~ 1,
              tcdays >= 4 ~ 2,
-             TRUE ~ 0)
+             TRUE ~ 0),
+         
+         tc_or_wfh =
+           case_when(
+             tc == 1 | wfh == 1 ~ 1,
+             TRUE ~ 0
+           )
          ) %>%
   # Create a consolidated flag for wfh and tc behavior
   mutate(combined_tc_wfh =
@@ -66,7 +76,9 @@ wfh_mdt_all <-
              wfh == 1 ~ 2,          # Add any WFHers that are not reporting themselves in either of the first two categories
              tc_frequency == 0 ~ 0  # Finally add any remaining to the "none" category
            )) %>%
-  ungroup()
+  ungroup() %>% 
+  # And add age bins
+  mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels))
 
 # Create working dataset for charts (relies on individuals with trips)
 wfh_mdt <-
@@ -94,7 +106,7 @@ wfh_mdt <-
   # employed individuals above. For those that are in the list, add the flags we
   # developed on telecommuting and working from home.
   inner_join(wfh_mdt_all %>% # 83291 records
-               select(sampno,perno,tc,wfh,tc_frequency,combined_tc_wfh),
+               select(sampno,perno,tc,wfh,tc_frequency,combined_tc_wfh,age_bin),
              by = c("sampno","perno"))
 
 # Summarize data at the traveler level
@@ -129,57 +141,198 @@ wfh_person_level <-
 
 # Overview of telecommuting
 wfh_mdt_all %>%
-  mutate(tc_or_wfh = case_when(
-    tc == 1 ~ 1,
-    wfh == 1 ~ 1,
-    TRUE ~ 0
-  )) %>%
   summarize(tc_pct = weighted.mean(x=tc,w=wtperfin),
             wfh_pct = weighted.mean(x=wfh,w=wtperfin),
             tc_or_wfh_pct = weighted.mean(x=tc_or_wfh,w=wtperfin),
             tc = sum(wtperfin*tc),
-            wfh = sum(wtperfin*wfh))
+            wfh = sum(wtperfin*wfh),
+            tc_or_wfh = format(sum(wtperfin*tc_or_wfh),scientific = F))
 
-# Breakdown of tc behavior by household income
-wfh_mdt_all %>% # 17,656 records
+# Overall baseline statistics for plot
+tcwfh_overall <-
+  wfh_mdt_all %>% 
+  summarize(pct = weighted.mean(tc_or_wfh,wtperfin),
+            uw_pct = mean(tc_or_wfh),
+            n = sum(wtperfin),
+            tcwfhers = n * pct) %>% 
+  mutate(type = "Overall",
+         subtype = "Overall")
+
+# Breakdown of tc/wfh behavior by household income
+tcwfh_income <-
+  wfh_mdt_all %>% # 17,656 records
   filter(income_c != "missing") %>% # 17,516 records
   group_by(income_c) %>%
-  summarize(tc_pct = weighted.mean(x = tc,w = wtperfin),
-            n = sum(wtperfin)) %>%
-  mutate(tcers = n * tc_pct) %>%
-  mutate(tcers_pct = tcers / sum(.$tcers)) %>% 
-  arrange(tc_pct)
+  summarize(pct = weighted.mean(tc_or_wfh,wtperfin),
+            uw_pct = mean(tc_or_wfh),
+            n = sum(wtperfin),
+            tcwfhers = n * pct) %>% 
+  # Recode for ease of understanding
+  mutate(type = "Household income",
+         subtype = recode_factor(income_c,
+                                 "low" = "Less than $35K",
+                                 "middle-low" = "$35K to $59K",
+                                 "middle-high" = "$60K to $99K",
+                                 "high" = "$100K or more")) %>%
+  select(-income_c)
 
-
-# Breakdown of tc behavior by gender
-wfh_mdt_all %>% # 17,656 records
-  filter(sex > 0) %>% # 17,516 records
+# Breakdown of tc/wfh behavior by sex
+tcwfh_sex <-
+  wfh_mdt_all %>% # 17,656 records
+  filter(sex >0) %>% # 17,516 records
   group_by(sex) %>%
-  summarize(tc_pct = weighted.mean(x = tc,w = wtperfin),
-            n = sum(wtperfin)) %>%
-  mutate(tcers = n * tc_pct) %>%
-  mutate(tcers_pct = tcers / sum(.$tcers)) %>% 
-  arrange(tc_pct)
+  summarize(pct = weighted.mean(tc_or_wfh,wtperfin),
+            uw_pct = mean(tc_or_wfh),
+            n = sum(wtperfin),
+            tcwfhers = n * pct) %>% 
+  # Recode for ease of understanding
+  mutate(type = "Sex",
+         subtype = recode_factor(sex,
+                                 "1" = "Male",
+                                 "2" = "Female")) %>%
+  select(-sex)
 
-# Breakdown of tc behavior by home county
-wfh_mdt_all %>% # 17,656 records
-  filter(home_county %in% cmap_seven_counties) %>% # 17,220 records
-  group_by(home_county) %>%
-  summarize(tc_pct = weighted.mean(x = tc,w = wtperfin),
-            n = sum(wtperfin)) %>%
-  mutate(tcers = n * tc_pct) %>%
-  mutate(tcers_pct = tcers / sum(.$tcers)) %>% 
-  arrange(tc_pct)
+# Breakdown of tc/wfh behavior by home jurisdiction
+tcwfh_home <-
+  wfh_mdt_all %>% # 17,656 records
+  group_by(home_county_chi) %>%
+  summarize(pct = weighted.mean(tc_or_wfh,wtperfin),
+            uw_pct = mean(tc_or_wfh),
+            n = sum(wtperfin),
+            tcwfhers = n * pct) %>% 
+  # Remove individuals in DeKalb, Grundy, or those with 2+ homes
+  filter(!(home_county_chi %in% c("DeKalb","Grundy","Homes in multiple counties"))) %>% 
+  mutate(type = "Home jurisdiction") %>% 
+  rename(subtype = home_county_chi)
 
 # Breakdown of tc behavior by race and ethnicity
-wfh_mdt_all %>% # 17,656 records
-  filter(race_eth != "missing") %>% # 17,599 records
+tcwfh_race_eth <-
+  wfh_mdt_all %>% # 17,656 records
   group_by(race_eth) %>%
-  summarize(tc_pct = weighted.mean(x = tc,w = wtperfin),
-            n = sum(wtperfin)) %>%
-  mutate(tcers = n * tc_pct) %>%
-  mutate(tcers_pct = tcers / sum(.$tcers)) %>% 
-  arrange(tc_pct)
+  summarize(pct = weighted.mean(tc_or_wfh,wtperfin),
+            uw_pct = mean(tc_or_wfh),
+            n = sum(wtperfin),
+            tcwfhers = n * pct) %>% 
+  filter(race_eth != "missing") %>% 
+  # Recode for ease of understanding
+  mutate(type = "Race and ethnicity",
+         subtype = recode_factor(race_eth,
+                                 "white" = "White",
+                                 "hispanic" = "Hispanic",
+                                 "black" = "Black",
+                                 "asian" = "Asian",
+                                 "other" = "Other")) %>%
+  select(-race_eth)
+
+# Breakdown of tc behavior by race and ethnicity
+tcwfh_age <-
+  wfh_mdt_all %>% # 17,656 records
+  group_by(age_bin) %>%
+  summarize(pct = weighted.mean(tc_or_wfh,wtperfin),
+            uw_pct = mean(tc_or_wfh),
+            n = sum(wtperfin),
+            tcwfhers = n * pct) %>% 
+  # Remove individuals without a response
+  filter(!is.na(age_bin),
+         age_bin != "5 to 17") %>% 
+  mutate(type = "Age") %>% 
+  rename(subtype = age_bin)
+
+
+
+# Combine different travel statistic calculations
+tcwfh_summaries <-
+  rbind(tcwfh_overall,
+        tcwfh_sex,
+        tcwfh_age,
+        tcwfh_income,
+        tcwfh_race_eth,
+        tcwfh_home) %>% 
+  # Keep relevant variables
+  select(type,subtype,pct,uw_pct,n,tcwfhers) %>% 
+  # Add levels
+  mutate(type = factor(type,
+                       levels = c("Sex","Race and ethnicity","Household income","Age","Home jurisdiction","Overall"))) %>% 
+  mutate(subtype = factor(subtype,
+                          levels = c("Overall",
+                                     "Male","Female",
+                                     "Asian","White","Other","Hispanic","Black",
+                                     "5 to 17","18 to 29","30 to 49","50 to 69","70 and above",
+                                     "Less than $35K","$35K to $59K","$60K to $99K","$100K or more",
+                                     "Chicago","Suburban Cook","DuPage","Kane","Kendall","McHenry","Lake","Will"
+                          ))) %>% 
+  # Pivot longer
+  pivot_longer(cols = c(pct,n,tcwfhers,uw_pct))
+
+# Extract values for regional averages, which will be graphed as value lines
+tcwfh_summaries_vlines <-
+  tcwfh_summaries %>%
+  filter(type == "Overall" & name == "uw_pct") %>% 
+  select(-subtype,-type) %>% 
+  left_join(tibble(type = c("Sex","Race and ethnicity","Household income",
+                            "Age")),by = character())
+
+
+# Plot of trips and distances by demographic characteristics
+wfh_p1 <-
+  # Get data
+  tcwfh_summaries %>%
+  # Reverse factors
+  mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>% 
+  # Exclude overall
+  filter(!(type %in% c("Overall","Home jurisdiction"))) %>%
+  # Keep only percents
+  filter(name == "pct") %>% 
+  
+  # Create ggplot object
+  ggplot(aes(x = value, y = subtype, fill = type)) +
+  # Add columns
+  geom_col(width = .8,show.legend = FALSE) +
+  # Add lines for average trips per day and average distance per trip
+  geom_vline(data = tcwfh_summaries_vlines,
+             mapping = aes(xintercept = value, color = "Dashed lines represent regional share (18.9%)"),
+             linetype = "dashed",
+             size = .65
+  ) +
+  
+  # Add labels
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(value),
+                 group = name),
+             fill = "white",
+             label.size = 0,label.padding = unit(1.5,"bigpts"),
+             hjust = 0) +
+  
+  # Adjust axes
+  scale_x_continuous(limits = c(0,.32),labels = scales::label_percent(accuracy = 1)) +
+  
+  # Add CMAP theme
+  theme_cmap(gridlines = "v",vline = 0,
+             xlab = "Share of residents who telecommute and/or work from home",
+             strip.text = element_text(hjust = 0.5)) +
+  cmap_fill_discrete(palette = "legislation") +
+  scale_color_discrete(type = "#181f22") +
+  
+  # Add faceting
+  facet_wrap(~type,ncol = 2,scales = "free_y")
+
+# Export finalized graphic
+finalize_plot(wfh_p1,
+              # sidebar_width = 0,
+              "Lower-income, Black, and Hispanic residents are the least likely to telecommute or work from home.",
+              caption = "Note: Includes only employed residents. 'Hispanic' 
+              includes respondents who identified as 
+              Hispanic of any racial category. Other categories are non-Hispanic. 
+              For the categorization by sex, the survey asked respondents 
+              whether they were male or female. A small number of respondents 
+              chose not to answer and are excluded based on small sample sizes.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My 
+              Daily Travel data.",
+              filename = "wfh_p1",
+              mode = "png",
+              # height = 6.5,
+              overwrite = T)
+
 
 ################################################################################
 #
