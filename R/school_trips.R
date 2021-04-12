@@ -11,6 +11,7 @@ library(tidyverse)
 library(cmapplot)
 library(lubridate)
 library(sf)
+library(MetricsWeighted)
 
 #################################################
 #                                               #
@@ -120,7 +121,7 @@ all_school_tt <-
 
 ### Calculate proportions for TT
 all_school_mode_c_tt <-
-  pct_calculator(all_school_tt,
+  pct_calculator(all_school_tt %>% filter(SCHOL == 3),
                  breakdown_by = "mode_c",
                  weight = "weight",
                  survey = "tt")
@@ -128,7 +129,7 @@ all_school_mode_c_tt <-
 
 ### Calculate proportions for MDT
 all_school_mode_c_mdt <-
-  pct_calculator(all_school_mdt,
+  pct_calculator(all_school_mdt %>% filter(schol == 3),
                  breakdown_by = "mode_c",
                  weight = "wtperfin",
                  survey = "mdt")
@@ -138,7 +139,7 @@ total_school_mode_c <-
   rbind(all_school_mode_c_tt,
         all_school_mode_c_mdt)
 
-# Chart of mode share for K-12 trips, MDT vs TT
+# Chart of mode share for K-8 trips, MDT vs TT
 school_trips_p2 <-
   # Get data
   total_school_mode_c %>%
@@ -166,7 +167,7 @@ school_trips_p2 <-
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(school_trips_p2,
-              "Mode share of K-12 school trips, 2008 vs. 2019.",
+              "Mode share of K-8 school trips, 2008 vs. 2019.",
               "Note: Includes school trips for travelers enrolled in K-12 and at 
               least 5 years old. Excludes trips to non-school locations and any 
               trips that did not start or end between 7:00 A.M. and 9:00 A.M. 
@@ -202,8 +203,9 @@ all_school_mode_c_race_mdt <-
 
 all_school_inc_mode_c_tt <-
   pct_calculator(all_school_tt %>%
-                   # Exclude missing incomes
-                   filter(income_c != "missing"),
+                   # Exclude missing incomes and keep only K-8
+                   filter(income_c != "missing",
+                          SCHOL == 3),
                  breakdown_by = "mode_c",
                  second_breakdown = "income_c",
                  weight = "weight",
@@ -213,8 +215,9 @@ all_school_inc_mode_c_tt <-
 
 all_school_inc_mode_c_mdt <-
   pct_calculator(all_school_mdt %>%
-                   # Exclude missing incomes
-                   filter(income_c != "missing"),
+                   # Exclude missing incomes and keep only K-8
+                   filter(income_c != "missing",
+                          schol == 3),
                  breakdown_by = "mode_c",
                  second_breakdown = "income_c",
                  weight = "wtperfin",
@@ -233,13 +236,15 @@ school_trips_p3 <-
   filter(mode_c == "walk") %>%
   # Rename surveys and income categories
   mutate(survey = recode_factor(survey,
-                                mdt = "My Daily Travel (2019)",
-                                tt = "Travel Tracker (2008)"),
+                                mdt = "My Daily Travel ('19)",
+                                tt = "Travel Tracker ('08)"),
          income_c = recode_factor(income_c,
-                                  "low" = "$34,999 or less",
-                                  "middle-low" = "$35,000 to $59,999",
-                                  "middle-high" = "$60,000 to $99,999",
-                                  "high" = "$100,000 or more")) %>%
+                                  "low" = "Less than $35K",
+                                  "middle-low" = "$35K to $59K",
+                                  "middle-high" = "$60K to $99K",
+                                  "high" = "$100K or more")
+
+         ) %>%
   
   # Create ggplot object
   ggplot(aes(y = factor(income_c,levels=rev(levels(income_c))), x = pct, fill = survey)) +
@@ -251,17 +256,20 @@ school_trips_p3 <-
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),n.breaks = 6,
-                     limits = c(0,.44)
+                     limits = c(0,.52)
   ) +
   
   # Add CMAP style
-  theme_cmap(gridlines = "v") +
+  theme_cmap(gridlines = "v",
+             xlab = "Walk mode-share of K-8 school trips by household income",
+             hline = 0) +
   cmap_fill_discrete(palette = "friday")
 
 finalize_plot(school_trips_p3,
-              "Walk mode-share of K-12 school trips by household income
-              category, 2008 vs. 2019.",
-              "Note: Includes school trips for travelers enrolled in K-12 and at 
+              "Walking to school has become less common for children in 
+              low-income households and more common for children from the 
+              highest-income households.",
+              "Note: Includes school trips for travelers enrolled in K-8 and at 
               least 5 years old. Excludes trips to non-school locations and any 
               trips that did not start or end between 7:00 A.M. and 9:00 A.M. 
               Also excludes highest and lowest 5 percent of weighted records for 
@@ -275,8 +283,9 @@ finalize_plot(school_trips_p3,
               Daily Travel and Travel Tracker survey data.",
               # height = 6.3,
               # width = 11.3,
+              sidebar_width = 2.5,
               filename = "school_trips_p3",
-              # mode = "png",
+              mode = "png",
               overwrite = T)
 
 ################################################################################
@@ -311,14 +320,19 @@ school_time_race_mdt <-
   # )) %>% 
   # group_by(race_eth,k12) %>% 
   # Summarize travel time by race/ethnicity and school enrollment
-  summarize(travtime = as.numeric(matrixStats::weightedMedian(travtime_pg_calc, w = wtperfin)),
-            distance = matrixStats::weightedMedian(distance_pg, w = wtperfin),
+  summarize(travtime25 = MetricsWeighted::weighted_quantile(x = travtime_pg_calc, probs = .25, w = wtperfin),
+            travtime50 = MetricsWeighted::weighted_median(x = travtime_pg_calc, w = wtperfin),
+            travtime75 = MetricsWeighted::weighted_quantile(x = travtime_pg_calc, probs = .75, w = wtperfin),
+            travtime90 = MetricsWeighted::weighted_quantile(x = travtime_pg_calc, probs = .9, w = wtperfin),
+            distance = MetricsWeighted::weighted_median(distance_pg, w = wtperfin),
             n = n()) 
 
 # Chart of travel time to school by household income
 school_trips_p4 <-
   # Get data
   school_time_race_mdt %>%
+  # Rename desired travel time
+  rename(travtime = distance) %>% 
   # Capitalize
   mutate(race_eth = recode_factor(factor(race_eth,
                                          levels = c("black","asian","Non-white",
@@ -339,15 +353,15 @@ school_trips_p4 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "h",legend.position = "None",
-             xlab = "Median travel time to school (minutes)") +
+             xlab = "75th percentile travel time to school (minutes)") +
   scale_fill_discrete(type = c("#84c87e", # Black
                                "#e77272", # Asian
                                # "#77008c", # Non-white (archived for high school)
                                "#75a5d8", # White
                                "#d8ba39", # Hispanic
                                "#607b88" # Other
-                               )) +
-  scale_y_continuous(limits = c(0,16))
+                               )) 
+  # scale_y_continuous(limits = c(0,16))
 
 finalize_plot(school_trips_p4,
               "Black elementary and middle school students have longer trips to school than those of other children.",
@@ -435,6 +449,117 @@ mdt %>% filter(race_eth == "black",
 
 # We identified traveler #4 from household #70034002 as an 8-year-old in the
 # Grand Crossing neighborhood with a 15-minute bus ride to school.
+
+################################################################################
+#
+# Travel distances by income
+################################################################################
+
+# Filter data for MDT
+school_distance_income_person_level_mdt <-
+  all_school_mdt %>%                # 3179 records
+  # Only include trips that are more than 0 miles
+  filter(distance_pg > 0) %>%  # 3177 records
+  # Exclude households with missing income information
+  filter(income_c != "missing") %>% # 3167 records
+  # Add breakdown between K-8 and 9-12
+  mutate(k12 = ifelse(schol == 3,
+                      "Elementary and middle school",
+                      "High school")) 
+
+# Filter data for MDT
+school_distance_income_person_level_tt <-
+  all_school_tt %>%                # 3179 records
+  # Only include trips that are more than 0 miles
+  filter(DIST > 0) %>%  # 3177 records
+  # Exclude households with missing income information
+  filter(income_c != "missing") %>% # 3167 records
+  # Add breakdown between K-8 and 9-12
+  mutate(k12 = ifelse(SCHOL == 3,
+                      "Elementary and middle school",
+                      "High school")) 
+
+
+school_distance_income_mdt <-
+  school_distance_income_person_level_mdt %>%
+  filter(k12 != "High school") %>% 
+  group_by(income_c) %>% 
+  summarize(distance25 = MetricsWeighted::weighted_quantile(x = hdist_pg, probs = .25, w = wtperfin),
+            distance50 = MetricsWeighted::weighted_median(x = hdist_pg, w = wtperfin),
+            distance75 = MetricsWeighted::weighted_quantile(x = hdist_pg, probs = .75, w = wtperfin),
+            distance90 = MetricsWeighted::weighted_quantile(x = hdist_pg, probs = .9, w = wtperfin),
+            n = n(),
+            survey = "mdt") 
+
+school_distance_income_tt <-
+  school_distance_income_person_level_tt %>%
+  filter(k12 != "High school") %>% 
+  group_by(income_c) %>% 
+  summarize(distance25 = MetricsWeighted::weighted_quantile(x = DIST, probs = .25, w = weight),
+            distance50 = MetricsWeighted::weighted_median(x = DIST, w = weight),
+            distance75 = MetricsWeighted::weighted_quantile(x = DIST, probs = .75, w = weight),
+            distance90 = MetricsWeighted::weighted_quantile(x = DIST, probs = .9, w = weight),
+            n = n(),
+            survey = "tt") 
+
+
+# Chart of walking mode share by income
+school_trips_p5 <-
+  # Get data
+  rbind(school_distance_income_mdt,
+        school_distance_income_tt) %>% 
+  # Flag interesting variable
+  rename(value = distance50) %>% 
+  # Rename surveys and income categories
+  mutate(survey = recode_factor(survey,
+                                mdt = "My Daily Travel ('19)",
+                                tt = "Travel Tracker ('08)"),
+         income_c = recode_factor(income_c,
+                                  "low" = "Less than $35K",
+                                  "middle-low" = "$35K to $59K",
+                                  "middle-high" = "$60K to $99K",
+                                  "high" = "$100K or more")
+         
+  ) %>%
+  
+  # Create ggplot object
+  ggplot(aes(y = factor(income_c,levels=rev(levels(income_c))), x = value, fill = survey)) +
+  geom_col(position = position_dodge2(reverse = TRUE)) +
+  geom_label(aes(label = scales::label_number(accuracy = .01)(value),
+                 group = survey),
+             position = position_dodge2(0.9,reverse = T),
+             hjust = 0, label.size = 0, fill = "white") +
+
+  # Adjust axis
+  scale_x_continuous(limits = c(0,1)
+  ) +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v",
+             xlab = "Median distance (miles) of K-8 school trips by household income",
+             hline = 0) +
+  cmap_fill_discrete(palette = "friday")
+
+finalize_plot(school_trips_p5,
+              "Distance by income over time.",
+              "Note: Includes school trips for travelers enrolled in K-8 and at 
+              least 5 years old. Excludes trips to non-school locations and any 
+              trips that did not start or end between 7:00 A.M. and 9:00 A.M. 
+              Also excludes highest and lowest 5 percent of weighted records for 
+              My Daily Travel. Finally, note that household incomes are not 
+              adjusted for inflation, and so there may be some households from 
+              Travel Tracker that should be compared to the next-highest 
+              household income category (but cannot be due to survey 
+              methodology).
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My 
+              Daily Travel and Travel Tracker survey data.",
+              # height = 6.3,
+              # width = 11.3,
+              sidebar_width = 2.5,
+              filename = "school_trips_p5",
+              # mode = "png",
+              overwrite = T)
 
 ################################################################################
 #
