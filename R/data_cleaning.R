@@ -151,32 +151,32 @@ rm(mdt_zip)
 # Add status in City of Chicago to location file
 
 # Add geometry to latitude and longitude for locations
-location_xy <- st_as_sf(location,
+location_xy_mdt <- st_as_sf(location,
                         coords = c(x = "longitude", y = "latitude"),
                         crs = 4269)
 
 # Download shapefiles of municipalities in Illinois
 municipality_sf <- 
-  get_acs(state = "IL",geography = "place",variables = "B19013_001",geometry = TRUE) %>% 
-  select(GEOID,NAME,geometry)
-
-# Join municipalities with the location file to determine which locations fall
-# within municipal borders
-municipality_locations <- 
-  st_join(x = location_xy,
-          y = municipality_sf,
-          join = st_within) %>% 
-  # Remove geometry
-  as_tibble() %>% 
-  # Keep relevant variables
-  select(sampno,locno,place_id = GEOID,place_name = NAME) %>% 
+  get_acs(state = 17,geography = "place",variables = "B19013_001",geometry = TRUE) %>% 
+  select(place_id = GEOID,place_name = NAME,geometry) %>% 
   # Eliminate unnecessary endings to place names
   mutate(place_name = gsub(" city, Illinois","",place_name)) %>% 
   mutate(place_name = gsub(" village, Illinois","",place_name)) %>% 
   mutate(place_name = gsub(" town, Illinois","",place_name)) %>% 
   mutate(place_name = gsub(" CDP, Illinois","",place_name))
 
-# Add municipality flags to locations
+# Join municipalities with the location file to determine which locations fall
+# within municipal borders
+municipality_locations <- 
+  st_join(x = location_xy_mdt,
+          y = municipality_sf,
+          join = st_within) %>% 
+  # Remove geometry
+  as_tibble() %>% 
+  # Keep relevant variables
+  select(sampno,locno,place_id,place_name)
+
+# Add flags to locations
 location <- 
   left_join(
     location,
@@ -193,9 +193,16 @@ location <-
     state_fips == 17 & county_fips == 89 ~ "Kane",
     state_fips == 17 & county_fips == 93 ~ "Kendall",
     state_fips == 17 & county_fips == 111 ~ "McHenry",
-    state_fips == 17 & county_fips == 197 ~ "Will"))
+    state_fips == 17 & county_fips == 197 ~ "Will")) %>% 
+  # And add a flag for whether the location is in the set of locations that were
+  # coded in TT (and thus have distances associated with them)
+  mutate(outside_tt = case_when(
+    state_fips == 17 & county_fips %in% c(cmap_seven_counties,63) ~ 0,
+    state_fips == 18 & county_fips %in% c(89,91,127) ~ 0,
+    TRUE ~ 1
+    ))
 
-rm(municipality_locations,municipality_sf,location_xy)
+rm(municipality_locations,location_xy_mdt)
 
 # Trip chains (provided by CMAP R&A staff). These provide sampno, perno, and
 # placeno as identifiers, as well as identify the trip as part of a chain to
@@ -293,6 +300,10 @@ placeGroupStats <- trips %>%
   # Now group by placeGroup and identifiers to collapse artificially separated
   # trips.
   group_by(sampno,perno,placeGroup) %>%
+  # First, we need to know where the trip is going to
+  arrange(placeno) %>% 
+  # Flag the last location
+  mutate(locno_last = tail(locno,1)) %>% 
   # Create new totals
   summarize(
     # For distance and time, sum all trips within a placeGroup.
@@ -304,13 +315,16 @@ placeGroupStats <- trips %>%
     arrtime_pg = max(arrtime),
     # Identify the latest departure time within the placeGroup. This represents
     # the beginning of the next trip.
-    deptime_pg = max(deptime))
+    deptime_pg = max(deptime),
+    # And keep the location of the last trip
+    locno_pg = first(locno_last)
+    )
 
-# merge datasets
+# Merge datasets (except location, which has to be added after accounting for
+# placegroup trips)
 mdt <- trips %>% # 128,229 records
   inner_join(ppl, by = c("sampno", "perno")) %>% # 128,229 records
   inner_join(hh, by = "sampno") %>% # 128,229 records
-  inner_join(location, by = c("sampno", "locno")) %>% # 128,229 records
   inner_join(home, by = c("sampno")) %>% # 128,229 records
   inner_join(chains, by = c("sampno", "perno", "placeno")) # 128,229 records
 
@@ -324,10 +338,18 @@ mdt <- mdt %>%
   # missing one or more records)
   left_join(placeGroupStats, by = c("sampno","perno","placeGroup")) %>% # 127333 records
   arrange(desc(sampno),perno,placeGroup) %>%
+  # Fill NAs in locno_pg
+  mutate(locno_pg = case_when(
+    is.na(locno_pg) ~ locno,
+    TRUE ~ locno_pg
+  )) %>% 
+  # Add location information
+  inner_join(location, by = c("sampno", "locno_pg" = "locno")) %>% # 128,229 records
   # Add lagged trip start time
   mutate(start_times_pg = lag(deptime_pg,1)) %>%
-  # Add lagged trip origin location
-  mutate(county_chi_name_lag = lag(county_chi_name,1)) %>% 
+  # Add lagged trip origin location and TT inclusion
+  mutate(county_chi_name_lag = lag(county_chi_name,1),
+         outside_tt_lag = lag(outside_tt,1)) %>% 
   # Add lagged identifiers
   mutate(sampno_lag = lag(sampno,1),
          perno_lag = lag(perno,1)) %>%
@@ -353,7 +375,10 @@ mdt <- mdt %>%
       TRUE ~ -1),
     county_chi_name_lag = case_when(
       check ~ county_chi_name_lag,
-      ! check ~ "")
+      !check ~ ""),
+    outside_tt_lag = case_when(
+      check ~ outside_tt_lag,
+      !check ~ -1)
     ) %>%
   # Create new out_region flag for trips that neither started nor ended in the
   # CMAP region. We assign 0 to trips that started and/or ended in the region,
@@ -362,9 +387,16 @@ mdt <- mdt %>%
     out_region == 0 | out_region_lag == 0 ~ 0,
     TRUE ~ 1
   )) %>%
+  # Create a similar flag for trips that are in the TT travel region
+  mutate(out_tt_trip = case_when(
+    # If both the origin and destination are inside the TT region, it is 0
+    outside_tt == 0 | outside_tt_lag == 0 ~ 0,
+    # Otherwise, it is 1 (outside the TT region)
+    TRUE ~ 1
+  )) %>% 
   # Calculate travel time based on actual departure and arrival
   mutate(travtime_pg_calc = as.numeric((arrtime_pg - start_times_pg)/60)) %>%
-  select(-sampno_lag,-perno_lag,-check,-out_region_lag)
+  select(-c(sampno_lag,perno_lag,check,out_region_lag,outside_tt,outside_tt_lag))
 
 mdt <- mdt %>%
   # Keep only trips that have an out_region_trip value of 0, implying they start
@@ -378,6 +410,8 @@ mdt <- mdt %>%
     out_region_trip,home,
     # Original arrival and departures (superseded by pg)
     deptime,arrtime,
+    # Original location number (superseded by pg)
+    locno,
     # Deptime_pg - incorporated into new start_times_pg column
     deptime_pg,
     # Distances and durations (superseded by pg)
@@ -430,6 +464,8 @@ tt_ppl <- sqlFetch(con,"per_public") %>%
 
          AGE,        # Age (in years). 99 is "Don't know/refused."
          AGEB,       # Range of ages (for those who did not provide an age).
+         
+         GEND,       # Gender (1 is Male, 2 is Female, 9 is Refused)
 
          SCHOL,      # Status of school enrollment.
          SMODE,      # Mode regularly used to get to school.
@@ -466,23 +502,68 @@ tt_place <- sqlFetch(con,"place_public") %>%
 tt_location <- sqlFetch(con,"loc_public") %>%
   select(LOCNO,      # The location identifier.
          FIPS,       # The state and county FIPS code of the location.
-         TRACT       # The tract number of the location.
+         TRACT,      # The tract number of the location.
+         X_PUBLIC,   # The centroid of the census tract of location
+         Y_PUBLIC    # The centroid of the census tract of location
   )
 
 # Close the database connection
 odbcClose(con)
 
 
+# Add status in City of Chicago to location file
+
+# Add geometry to latitude and longitude for locations
+location_xy_tt <- st_as_sf(tt_location %>% filter(!is.na(X_PUBLIC)),
+                           coords = c(x = "X_PUBLIC", y = "Y_PUBLIC"),
+                           crs = 4269)
+
+# Join municipalities with the location file to determine which locations fall
+# within municipal borders
+municipality_locations_tt <- 
+  st_join(x = location_xy_tt,
+          y = municipality_sf,
+          join = st_within) %>% 
+  # Remove geometry
+  as_tibble() %>% 
+  # Keep relevant variables
+  select(LOCNO,place_id,place_name)
+
+# Add municipality flags to locations
+tt_location <- 
+  left_join(
+    tt_location,
+    municipality_locations_tt,
+    by = "LOCNO"
+  ) %>% 
+  mutate(county_chi_name = case_when(
+    place_name == "Chicago" & FIPS == 17031  ~ "Chicago",
+    FIPS == 17031 ~ "Suburban Cook",
+    FIPS == 17063 ~ "Grundy",
+    FIPS == 17097 ~ "Lake",
+    FIPS == 17043 ~ "DuPage",
+    FIPS == 17089 ~ "Kane",
+    FIPS == 17093 ~ "Kendall",
+    FIPS == 17111 ~ "McHenry",
+    FIPS == 17197 ~ "Will"))
+
+rm(municipality_locations_tt,municipality_sf,location_xy_tt)
 
 # home location
 tt_home <- tt_location %>%
-  select(LOCNO, FIPS) %>%
+  select(LOCNO, FIPS,home_county_chi = county_chi_name) %>%
   # Home locations have a 9 as their first number. Identify them.
   mutate(home = case_when(
     substr(LOCNO,1,1) == "9" ~ 1,
     TRUE ~ 0)) %>%
   # Keep only home locations.
   filter(home == 1) %>%
+  # Create a flag for Chicago vs Suburban Cook vs other
+  mutate(geog = case_when(
+    home_county_chi == "Chicago" ~ "Chicago",
+    home_county_chi == "Suburban Cook" ~ "Suburban Cook",
+    is.na(home_county_chi) ~ "Other - NA",
+    TRUE ~ "Other counties")) %>% 
   # Extract FIPS for state from larger FIPS code
   mutate(home_state = as.integer(substr(FIPS,1,2))) %>%
   # Extract FIPS for county from larger FIPS code
@@ -520,7 +601,7 @@ tt_home <- tt_location %>%
 
 # Create flag for home county location
 tt_home <- tt_home %>% # 105,554 records
-  select(SAMPN,home_county,home_state) %>%
+  select(SAMPN,home_county,home_state,home_county_chi,geog) %>%
   distinct() # 14,376 records
 
 
