@@ -39,24 +39,92 @@ avgtravel_mdt <-
   filter(mode != "beginning") %>% # 97374 records
   # Keep only people who traveled
   filter(pertrips > 0) %>%   # 97373 records
+  
+  
+  ### MDT ONLY
   # Eliminate 0 distance trips (network - use for MDT-specific analyses)
-  filter(distance_pg > 0) %>%   # 97316 records
+  # filter(distance_pg > 0) %>%   # 97316 records
+  
+  ### MDT VS TT
   # Eliminate 0 distance trips (haversine - only use for comparisons with TT)
-  # filter(hdist_pg > 0) %>%   # 96383 records
+  filter(hdist_pg > 0) %>%   # 96383 records
+  # Filter out trips that were not within the TT travel region (only for
+  # comparisons with TT - see explanation in TT data prep below)
+  filter(out_tt_trip == 0) %>% # 95272 records
+  
+  
   # Add calculation for weighted distance
   mutate(hdist_pg_weight = hdist_pg * wtperfin,
          dist_pg_weight = distance_pg * wtperfin) %>% 
   # And add age bins
-  mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels))
+  mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels)) %>% 
+  # Keep only variables of interest
+  select(
+    # First, select which distance will be used
+    chosen_distance = hdist_pg_weight,
+    # Keep others
+    sampno,perno,age_bin,sex,income_c,race_eth,home_county_chi,wtperfin) %>% 
+  mutate(survey = "mdt")
   
 
 # Identify distinct list of travelers that took at least one trip to enable
 # summing by different demographic characteristics
 distinct_daily_travelers_mdt <-
   avgtravel_mdt %>%
-  mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels)) %>% 
-  select(sampno,perno,wtperfin,race_eth,sex,income_c,home_county_chi,age_bin) %>%
+  select(sampno,perno,wtperfin,race_eth,sex,income_c,home_county_chi,age_bin,survey) %>%
+  distinct()
+
+# NOTE: As coded in this file, these statistics are not comparable with MDT
+# because they use haversine distances. If desired, the MDT calculations can be
+# modified to use haversine distances (see note above). However, given the
+# differences in survey methodology, direct comparison is difficult.
+
+avgtravel_tt <-
+  tt %>%                    # 139769 records
+  # Keep only trips by travelers at least 5 years old. Note that 99 is DK/RF for
+  # AGE. We also keep travelers with unknown age based on school enrollment or
+  # AGEB of 2, which indicates 16+
+  filter((AGE >= 5 & AGE < 99) |
+           (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) |
+           (AGEB == 2 & AGE == 99)) %>% # 132680 records
+  # Filter out the first record for each traveler (PLANO == 1)
+  filter(PLANO != 1) %>%    # 105568 records
+  # Include only travelers who made at least one trip
+  filter(pertrips > 0) %>%  # 105568 records
+  # Exclude zero distance trips (note that TT did not capture distances for
+  # trips outside the seven counties, Illinois' Grundy County, and Lake,
+  # LaPorte, and Porter Counties in Indiana, so this means that travelers who
+  # only traveled to or from those counties, but not within them, will be
+  # excluded, in addition to any travelers who only traveled outside the
+  # region).
+  filter(DIST > 0) %>%      # 100573 records
+  # Calculate weighted distances
+  mutate(dist_weight = DIST * weight) %>% 
+  # Add age bins
+  mutate(age_bin=cut(AGE,breaks=age_breaks,labels=age_labels)) %>% 
+  # Keep only variables of interest and rename to match MDT variables
+  select(chosen_distance = dist_weight,
+         sampno = SAMPN,
+         perno = PERNO,
+         sex = GEND,
+         age_bin,income_c,race_eth,home_county_chi,wtperfin = weight,
+         DAYNO) %>% 
+  mutate(survey = "tt")
+
+# Calculate total number of daily travelers who take at least one trip
+distinct_daily_travelers_tt <-
+  avgtravel_tt %>%
+  select(sampno,perno,wtperfin,race_eth,sex,income_c,home_county_chi,age_bin,survey,DAYNO) %>%
   distinct() 
+
+# Combine TT and MDT data
+avgtravel <-
+  rbind(avgtravel_mdt,
+        avgtravel_tt %>% select(-DAYNO))
+
+distinct_daily_travelers <-
+  rbind(distinct_daily_travelers_mdt,
+        distinct_daily_travelers_tt %>% select(-DAYNO))
 
 #################################################
 #                                               #
@@ -81,17 +149,20 @@ distinct_daily_travelers_mdt <-
 # Calculate summary statistics (code reused below for variations by demography)
 travel_overall <-
   # Get data
-  avgtravel_mdt %>%
+  avgtravel %>%
+  # Group by survey
+  group_by(survey) %>% 
   # Calculate summaries of distance, trips, and trip lengths
   summarize(
-    total_distance = sum(dist_pg_weight),
+    total_distance = sum(chosen_distance),
     total_trips = sum(wtperfin),
     avg_trip_length = total_distance / total_trips,
   ) %>%
   # Add total number of travelers
-  left_join(distinct_daily_travelers_mdt %>% 
+  left_join(distinct_daily_travelers %>%
+              group_by(survey) %>% 
               summarize(total_travelers = sum(wtperfin)),
-            by = character()) %>%
+            by = c("survey")) %>%
   # Calculate distance and trips per capita using total travelers
   mutate(distance_per_capita = total_distance / total_travelers,
          trips_per_capita = total_trips / total_travelers) %>% 
@@ -101,36 +172,114 @@ travel_overall <-
 
 # Calculate summary statistics by gender (reusing overall code)
 travel_sex <-
-  avgtravel_mdt %>%
-  group_by(sex) %>% 
+  avgtravel %>%
+  group_by(survey,sex) %>% 
   summarize(
-    total_distance = sum(dist_pg_weight),
+    total_distance = sum(chosen_distance),
     total_trips = sum(wtperfin),
     avg_trip_length = total_distance / total_trips,
   ) %>%
-  left_join(distinct_daily_travelers_mdt %>% 
-              group_by(sex) %>% 
+  # Add total number of travelers
+  left_join(distinct_daily_travelers %>%
+              group_by(sex,survey) %>% 
               summarize(total_travelers = sum(wtperfin)),
-            by = "sex") %>%
-  group_by(sex) %>% 
+            by = c("sex","survey")) %>%
+  group_by(sex,survey) %>% 
   mutate(distance_per_capita = total_distance / total_travelers,
          trips_per_capita = total_trips / total_travelers) %>% 
   ungroup() %>% 
   mutate(type = "Sex") %>% 
   # Remove individuals without a response
-  filter(sex > 0) %>% 
+  filter(sex %in% c(1,2)) %>% 
   # Recode for ease of understanding
   mutate(subtype = recode(sex,
                           "1" = "Male",
                           "2" = "Female")) %>% 
   select(-sex)
 
-# Calculate summary statistics by race and ethnicity (reusing overall code)
+# Calculate summary statistics by income (reusing overall code)
+travel_income <- 
+  avgtravel %>%
+  group_by(survey,income_c) %>% 
+  summarize(
+    total_distance = sum(chosen_distance),
+    total_trips = sum(wtperfin),
+    avg_trip_length = total_distance / total_trips,
+  ) %>%
+  # Add total number of travelers
+  left_join(distinct_daily_travelers %>%
+              group_by(income_c,survey) %>% 
+              summarize(total_travelers = sum(wtperfin)),
+            by = c("income_c","survey")) %>%
+  group_by(survey,income_c) %>% 
+  mutate(distance_per_capita = total_distance / total_travelers,
+         trips_per_capita = total_trips / total_travelers) %>% 
+  ungroup() %>% 
+  # Remove individuals without a response
+  filter(income_c != "missing") %>% 
+  # Recode for ease of understanding
+  mutate(type = "Household income",
+         subtype = recode_factor(income_c,
+                                 "low" = "Less than $35K",
+                                 "middle-low" = "$35K to $59K",
+                                 "middle-high" = "$60K to $99K",
+                                 "high" = "$100K or more")) %>%
+  select(-income_c)
+
+# Calculate summary statistics by age (reusing overall code)
+travel_age <-
+  avgtravel %>%
+  group_by(survey,age_bin) %>% 
+  summarize(
+    total_distance = sum(chosen_distance),
+    total_trips = sum(wtperfin),
+    avg_trip_length = total_distance / total_trips,
+  ) %>%
+  # Add total number of travelers
+  left_join(distinct_daily_travelers %>%
+              group_by(age_bin,survey) %>% 
+              summarize(total_travelers = sum(wtperfin)),
+            by = c("age_bin","survey")) %>%
+  group_by(survey,age_bin) %>% 
+  mutate(distance_per_capita = total_distance / total_travelers,
+         trips_per_capita = total_trips / total_travelers) %>% 
+  ungroup() %>% 
+  # Remove individuals without a response
+  filter(!is.na(age_bin)) %>% 
+  mutate(type = "Age") %>% 
+  rename(subtype = age_bin)
+
+# Calculate summary statistics by home jurisdiction (reusing overall code)
+travel_home <-
+  avgtravel %>%
+  group_by(survey,home_county_chi) %>% 
+  summarize(
+    total_distance = sum(chosen_distance),
+    total_trips = sum(wtperfin),
+    avg_trip_length = total_distance / total_trips,
+  ) %>%
+  # Add total number of travelers
+  left_join(distinct_daily_travelers %>%
+              group_by(home_county_chi,survey) %>% 
+              summarize(total_travelers = sum(wtperfin)),
+            by = c("home_county_chi","survey")) %>%
+  group_by(survey,home_county_chi) %>% 
+  mutate(distance_per_capita = total_distance / total_travelers,
+         trips_per_capita = total_trips / total_travelers) %>% 
+  ungroup() %>% 
+  # Remove individuals in DeKalb, Grundy, or those with 2+ homes
+  filter(!(home_county_chi %in% c("DeKalb","Grundy","Homes in multiple counties","Other - NA"))) %>% 
+  mutate(type = "Home jurisdiction") %>% 
+  rename(subtype = home_county_chi)
+
+# Calculate summary statistics by race and ethnicity (reusing overall code) -
+# this analysis only uses MDT since TT did not have race/ethnicity for all
+# household members
 travel_race_eth <- 
   avgtravel_mdt %>%
-  group_by(race_eth) %>% 
+  group_by(race_eth,survey) %>% 
   summarize(
-    total_distance = sum(dist_pg_weight),
+    total_distance = sum(chosen_distance),
     total_trips = sum(wtperfin),
     avg_trip_length = total_distance / total_trips,
   ) %>%
@@ -154,78 +303,6 @@ travel_race_eth <-
                                  "other" = "Other")) %>%
   select(-race_eth)
 
-# Calculate summary statistics by income (reusing overall code)
-travel_income <- 
-  avgtravel_mdt %>%
-  group_by(income_c) %>% 
-  summarize(
-    total_distance = sum(dist_pg_weight),
-    total_trips = sum(wtperfin),
-    avg_trip_length = total_distance / total_trips,
-  ) %>%
-  left_join(distinct_daily_travelers_mdt %>% 
-              group_by(income_c) %>% 
-              summarize(total_travelers = sum(wtperfin)),
-            by = "income_c") %>%
-  group_by(income_c) %>% 
-  mutate(distance_per_capita = total_distance / total_travelers,
-         trips_per_capita = total_trips / total_travelers) %>% 
-  ungroup() %>% 
-  # Remove individuals without a response
-  filter(income_c != "missing") %>% 
-  # Recode for ease of understanding
-  mutate(type = "Household income",
-         subtype = recode_factor(income_c,
-                                 "low" = "Less than $35K",
-                                 "middle-low" = "$35K to $59K",
-                                 "middle-high" = "$60K to $99K",
-                                 "high" = "$100K or more")) %>%
-  select(-income_c)
-
-# Calculate summary statistics by age (reusing overall code)
-travel_age <-
-  avgtravel_mdt %>%
-  group_by(age_bin) %>% 
-  summarize(
-    total_distance = sum(dist_pg_weight),
-    total_trips = sum(wtperfin),
-    avg_trip_length = total_distance / total_trips,
-  ) %>%
-  left_join(distinct_daily_travelers_mdt %>% 
-              group_by(age_bin) %>% 
-              summarize(total_travelers = sum(wtperfin)),
-            by = "age_bin") %>%
-  group_by(age_bin) %>% 
-  mutate(distance_per_capita = total_distance / total_travelers,
-         trips_per_capita = total_trips / total_travelers) %>% 
-  ungroup() %>% 
-  # Remove individuals without a response
-  filter(!is.na(age_bin)) %>% 
-  mutate(type = "Age") %>% 
-  rename(subtype = age_bin)
-
-# Calculate summary statistics by home jurisdiction (reusing overall code)
-travel_home <-
-  avgtravel_mdt %>%
-  group_by(home_county_chi) %>% 
-  summarize(
-    total_distance = sum(dist_pg_weight),
-    total_trips = sum(wtperfin),
-    avg_trip_length = total_distance / total_trips,
-  ) %>%
-  left_join(distinct_daily_travelers_mdt %>% 
-              group_by(home_county_chi) %>% 
-              summarize(total_travelers = sum(wtperfin)),
-            by = "home_county_chi") %>%
-  group_by(home_county_chi) %>% 
-  mutate(distance_per_capita = total_distance / total_travelers,
-         trips_per_capita = total_trips / total_travelers) %>% 
-  ungroup() %>% 
-  # Remove individuals in DeKalb, Grundy, or those with 2+ homes
-  filter(!(home_county_chi %in% c("DeKalb","Grundy","Homes in multiple counties"))) %>% 
-  mutate(type = "Home jurisdiction") %>% 
-  rename(subtype = home_county_chi)
-
 ################################################################################
 # Plot summary statistics
 ################################################################################
@@ -239,7 +316,7 @@ travel_summaries <-
         travel_race_eth,
         travel_home) %>% 
   # Keep relevant variables
-  select(type,subtype,trips_per_capita,avg_trip_length,distance_per_capita) %>% 
+  select(type,subtype,trips_per_capita,avg_trip_length,distance_per_capita,survey) %>% 
   # Round for ease of review
   mutate(across(c(trips_per_capita,avg_trip_length,distance_per_capita),~round(.,2))) %>% 
   # Add levels
@@ -258,17 +335,24 @@ travel_summaries <-
 # Extract values for regional averages, which will be graphed as value lines
 travel_summaries_vlines <-
   travel_summaries %>%
+  group_by(survey) %>% 
   filter(type == "Overall" & name != "distance_per_capita") %>% 
   select(-subtype,-type) %>% 
   left_join(tibble(type = c("Sex","Race and ethnicity","Household income","Age")),by = character()) %>% 
   mutate(name = recode_factor(factor(name,levels = c("trips_per_capita","avg_trip_length")),
                               "trips_per_capita" = "Regional average",
                               "avg_trip_length" = "Regional average "))
-  
-# Plot of trips and distances by demographic characteristics
+
+################################################################################
+# Plot of trips and distances by demographic characteristics for MDT
+################################################################################
+
+# Plot
 average_resident_p1 <-
   # Get data
   travel_summaries %>%
+  # Keep MDT
+  filter(survey == "mdt") %>% 
   # Exclude total distances
   filter(name != "distance_per_capita") %>% 
   # Reverse factors
@@ -283,7 +367,7 @@ average_resident_p1 <-
   # Create ggplot object
   ggplot(aes(x = value, y = subtype, fill = name)) +
   # Add lines for average trips per day and average distance per trip
-  geom_vline(data = travel_summaries_vlines,
+  geom_vline(data = travel_summaries_vlines %>% filter(survey == "mdt"),
              mapping = aes(xintercept = value, color = name),
              linetype = "dashed",
              size = .65
@@ -313,7 +397,9 @@ average_resident_p1 <-
   guides(color = guide_legend(order = 2),fill = guide_legend(order = 1)) +
   
   # Add faceting
-  facet_wrap(~type,ncol = 2,scales = "free_y")
+  facet_wrap(~type,
+             ncol = 2,
+             scales = "free_y")
 
 # Export finalized graphic
 finalize_plot(average_resident_p1,
@@ -329,118 +415,212 @@ finalize_plot(average_resident_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data.",
               filename = "average_resident_p1",
-              mode = "png",
+              # mode = "png",
               height = 6.5,
               overwrite = T)
   
+
+
+################################################################################
+# Plot of trips and distances for MDT vs. TT
+################################################################################
+
+# Plot
+average_resident_p2 <-
+  # Get data
+  travel_summaries %>%
+  # Exclude total distances
+  filter(name != "distance_per_capita") %>% 
+  # Keep only overall
+  filter(type == "Overall") %>% 
+  # Rename variables we are keeping
+  mutate(name = recode_factor(factor(name,levels = c("trips_per_capita","avg_trip_length")),
+                              "trips_per_capita" = "Trips per day        ",
+                              "avg_trip_length" = "Distance per trip (miles)"),
+         survey = recode_factor(factor(survey),
+                         "tt" = "Travel Tracker ('08)",
+                         "mdt" = "My Daily Travel ('19)")) %>% 
+  
+  # Create ggplot object
+  ggplot(aes(x = name, y = value, fill = survey)) +
+  geom_col(position = position_dodge2(width = 1,padding = 0.15,reverse = F),
+           width = .8) +
+  
+  # Add labels
+  geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
+                 group = survey),
+             position = position_dodge2(width = .8,reverse = F),
+             fill = "white",
+             label.size = 0,label.padding = unit(1.5,"bigpts"),
+             vjust = 0) +
+  
+  # Adjust axes
+  # scale_x_continuous(limits = c(0,8)) +
+  
+  # Add CMAP theme
+  theme_cmap(gridlines = "h",hline = 0,
+             xlab = "Travel characteristics over time",
+             strip.text = element_text(hjust = 0.5)) +
+  cmap_fill_discrete(palette = "friday")
+
+# Export finalized graphic
+finalize_plot(average_resident_p2,
+              "Travelers in the region in 2019 were taking slightly fewer, and 
+              slightly shorter, trips than they were in 2008.",
+              caption = "Note: Includes trips that started and ended in the 
+              Illinois counties of Cook, DuPage, Grundy, Kane, Kendall, Lake, 
+              McHenry, and Will, as well as the Indiana counties of Lake, 
+              LaPorte, and Porter. Distances are calculated as point-to-point 
+              from origin to destination ('Haversine') and do not account for 
+              additional distance traveled along the route.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My 
+              Daily Travel and Travel Tracker data.",
+              filename = "average_resident_p2",
+              # mode = "png",
+              # height = 6.5,
+              overwrite = T)
+
+
+
+################################################################################
+# Plot of trips and distances for MDT vs. TT, comparing demographics
+################################################################################
+
+# Plot
+average_resident_p3 <-
+  # Get data
+  travel_summaries %>%
+  # Exclude total distances
+  filter(name != "distance_per_capita") %>% 
+  # Keep overall, sex, age, and income
+  filter(type %in% c("Household income","Age","Sex")) %>% 
+  # Rename variables we are keeping
+  mutate(name = recode_factor(factor(name,levels = c("trips_per_capita","avg_trip_length")),
+                              "trips_per_capita" = "Trips/day        ",
+                              "avg_trip_length" = "Distance/trip (mi.)"),
+         survey = recode_factor(factor(survey),
+                                "tt" = "Travel Tracker ('08)",
+                                "mdt" = "My Daily Travel ('19)")) %>%
+  # Fix ordering
+  mutate(subtype = factor(subtype, levels = rev(levels(subtype)))) %>% 
+  
+  # Create ggplot object
+  ggplot(aes(x = value, y = subtype, fill = survey)) +
+  geom_col(position = position_dodge2(width = 1,padding = 0.15,reverse = T),
+           width = .8) +
+  
+  # Add labels
+  # geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
+  #                group = survey),
+  #            position = position_dodge2(width = .8,reverse = T),
+  #            fill = "white",
+  #            label.size = 0,label.padding = unit(1.5,"bigpts"),
+  #            vjust = 0) +
+  
+  facet_wrap(type~name,ncol = 4,scales = "free_y",dir = "v") +
+  
+  # Adjust axes
+  # scale_x_continuous(limits = c(0,8)) +
+  
+  # Add CMAP theme
+  theme_cmap(gridlines = "v",vline = 0,
+             xlab = "Travel characteristics over time",
+             strip.text = element_text(hjust = 0.5)) +
+  cmap_fill_discrete(palette = "friday")
+
+# Export finalized graphic
+finalize_plot(average_resident_p3,
+              "Lower-income and older travelers report increased travel in 2019 compared to 2008.",
+              caption = "Note: Includes trips that started and ended in the 
+              Illinois counties of Cook, DuPage, Grundy, Kane, Kendall, Lake, 
+              McHenry, and Will, as well as the Indiana counties of Lake, 
+              LaPorte, and Porter. Distances are calculated as point-to-point 
+              from origin to destination ('haversine') and do not account for 
+              additional distance traveled along the route. For the 
+              categorization by sex, the survey asked respondents 
+              whether they were male or female. A small number of respondents 
+              chose not to answer and are excluded based on small sample sizes.
+              Finally, note that household incomes are not 
+              adjusted for inflation, and so there may be some households from 
+              Travel Tracker that should be compared to the next-highest 
+              household income category (but cannot be due to survey 
+              methodology).
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My 
+              Daily Travel and Travel Tracker data.",
+              filename = "average_resident_p3",
+              sidebar_width = 0,
+              mode = "png",
+              # height = 6.5,
+              overwrite = T)
+
 ################################################################################
 #
-# ARCHIVE - Travel Tracker
+# Travel Tracker
 ################################################################################
+
+
+
+# How many of the travelers are excluded based on the out-of-region travel
+# identified above? The weights are ~210K. Other differences from Sarah's
+# analysis appear to be due to her inclusion of weekend travelers in the
+# overall pie.
+tt %>%
+  group_by(SAMPN,PERNO,DAYNO) %>%
+  summarize(DIST = sum(DIST),
+            pertrips = first(pertrips),
+            weight = first(weight)) %>%
+  filter(DIST == 0 & pertrips > 0) %>%
+  ungroup() %>%
+  summarize(total = sum(weight))
+
 # 
-# # NOTE: As coded in this file, these statistics are not comparable with MDT
-# # because they use haversine distances. If desired, the MDT calculations can be
-# # modified to use haversine distances (see note above). However, given the
-# # differences in survey methodology, direct comparison is difficult.
-#  
-# avgtravel_tt <-
-#   tt %>%                    # 139769 records
-#   # Keep only trips by travelers at least 5 years old. Note that 99 is DK/RF for
-#   # AGE.
-#   filter((AGE >= 5 & AGE < 99) | 
-#            (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) |
-#            (AGEB == 2 & AGE == 99)) %>% # 132680 records
-#   # Filter out the first record for each traveler (PLANO == 1)
-#   filter(PLANO != 1) %>%    # 105568 records
-#   # Include only travelers who made at least one trip
-#   filter(pertrips > 0) %>%  # 105568 records
-#   # Exclude zero distance trips (note that TT did not capture distances for
-#   # trips outside the region, so this means that travelers who only traveled to
-#   # or from the region, but not within the region, will be excluded).
-#   filter(DIST > 0) %>%      # 100573 records
-#   # Calculate weighted distances
-#   mutate(dist_weight = DIST * weight)
-# 
-# # Calculate total number of daily travelers who take at least one trip
-# daily_travelers_tt <-
-#   avgtravel_tt %>%
-#   select(SAMPN,PERNO,DAYNO,weight) %>%
-#   distinct() %>%
-#   summarize(total_travelers = sum(weight))
-# 
-# 
-# # How many of the travelers are excluded based on the out-of-region travel
-# # identified above? The weights are ~210K. Other differences from Sarah's
-# # analysis appear to be due to her inclusion of weekend travelers in the
-# # overall pie.
-# tt %>%
-#   group_by(SAMPN,PERNO,DAYNO) %>%
-#   summarize(DIST = sum(DIST),
-#             pertrips = first(pertrips),
-#             weight = first(weight)) %>%
-#   filter(DIST == 0 & pertrips > 0) %>%
-#   ungroup() %>%
-#   summarize(total = sum(weight))
-# 
-# 
-# Different method - calculate total number of daily travelers who take at
-# least one trip
+# # Different method - calculate total number of daily travelers who take at
+# # least one trip
 # daily_travelers_tt_test <-
 #   tt_ppl %>%
 #   mutate(
-#
+# 
 #     age5 = case_when(
 #       (AGE >= 5 & AGE < 99) ~ 1,
 #       AGEB == 2 & AGE == 99 ~ 1,
 #       AGE == 99 & SCHOL %in% c(4,5,6,7,8) ~ 1,
 #       TRUE ~ 0),
-#
+# 
 #     notravel = case_when(
 #       SURVEY == 1 & PTRIPS1 == 0 ~ 1,
 #       SURVEY == 2 & PTRIPS1 == 0 & PTRIPS2 == 0 ~ 1,
 #       TRUE ~ 0
-#
+# 
 #       )) %>%
 #   filter(age5 == 1,
 #          notravel == 0,
 #          MPO_per == 1)
-#
+# 
 # daily_travelers_tt_test %>%
 #   summarize(sum = sum(WGTP))
 # 
 # 
-# Identify travelers in one set but not the other
+# # Identify travelers in one set but not the other
 # missing <-
 #   daily_travelers_tt_test %>%
 #   anti_join(daily_travelers_tt, by = c("SAMPN","PERNO"))
-#
+# 
 # sum(missing$WGTP)
-#
+# 
 # missing %>%
 #   left_join(tt_place, by = c("SAMPN","PERNO")) %>%
 #   View()
-#
-# # Calculate summary statistics
-# avgtravel_tt %>%
-#   summarize(
-#     total_distance = sum(dist_weight),
-#     total_trips = sum(weight),
-#     avg_trip_length = total_distance / total_trips,
-#   ) %>%
-#   cbind(daily_travelers_tt) %>%
-#   mutate(distance_per_capita = total_distance / total_travelers,
-#          trips_per_capita = total_trips / total_travelers) %>%
-#   View()
-# 
-# 
-# # Total distance
-# sum(avgtravel_tt$dist_weight)
-# 
-# # Mileage per traveler
-# sum(avgtravel_tt$dist_weight) / daily_travelers_tt
-# 
-# # Average trip length
-# sum(avgtravel_tt$dist_weight) / sum(avgtravel_tt$weight)
-# 
-# # Trips per person
-# sum(avgtravel_tt$weight) / daily_travelers_tt
+
+# Calculate summary statistics
+avgtravel_tt %>%
+  summarize(
+    total_distance = sum(dist_weight),
+    total_trips = sum(weight),
+    avg_trip_length = total_distance / total_trips,
+  ) %>%
+  cbind(daily_travelers_tt) %>%
+  mutate(distance_per_capita = total_distance / total_travelers,
+         trips_per_capita = total_trips / total_travelers) %>%
+  View()
