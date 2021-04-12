@@ -107,7 +107,14 @@ wfh_mdt <-
   # developed on telecommuting and working from home.
   inner_join(wfh_mdt_all %>% # 83291 records
                select(sampno,perno,tc,wfh,tc_frequency,combined_tc_wfh,age_bin),
-             by = c("sampno","perno"))
+             by = c("sampno","perno")) %>% 
+  # Recode school bus trips as other trips (there are a small but nonzero number)
+  mutate(mode_c = as.character(mode_c)) %>%
+  mutate(mode_c = case_when(
+    mode_c == "schoolbus" ~ "other",
+    TRUE ~ mode_c)) %>%
+  mutate(mode_c = factor(mode_c,levels = mode_c_levels)) %>%
+  ungroup()
 
 # Summarize data at the traveler level
 wfh_person_level <-
@@ -334,7 +341,7 @@ finalize_plot(wfh_p1,
 
 # Specific analysis of work trips vs. non-work trips for individuals who report
 # telecommuting or working from home (survey)
-wfh_worktrips_relevant <-
+wfh_worktrip_status <-
   wfh_mdt %>% # 83291 records
   # Flag trips that were part of a work trip chain
   mutate(worktrip = case_when(
@@ -360,7 +367,7 @@ wfh_worktrips_relevant <-
 
 # Collapse trips into total distances traveled per traveler
 wfh_worktrips_person_level <-
-  wfh_worktrips_relevant %>% 
+  wfh_worktrip_status %>% 
   # Group by traveler and work trip status
   group_by(sampno,perno,worktrip) %>%
   # Collapse into traveler-level statistics
@@ -380,7 +387,7 @@ wfh_worktrips_person_level <-
   ungroup()
 
 # Calculate summary statistics for work trips
-wfh_worktrips_general <-
+wfh_worktrips_summary <-
   wfh_worktrips_person_level %>%
   # Calculate based on TC/WFH status, work trip status, and geography
   group_by(combined_tc_wfh,worktrip,geog) %>%
@@ -396,7 +403,7 @@ wfh_worktrips_general <-
 
 wfh_p2 <-
   # Get data
-  wfh_worktrips_general %>%
+  wfh_worktrips_summary %>%
   # Filter out other trips
   filter(worktrip == 1) %>%
   # Due to low sample size, exclude work trips for those that almost always work
@@ -459,6 +466,96 @@ finalize_plot(wfh_p2,
 
 
 ################################################################################
+# Chart of mode share comparing the habits of commuters by TC status
+################################################################################
+
+wfh_mode_share <-
+  pct_calculator(
+    wfh_worktrip_status %>%
+      # Keep only work trips
+      filter(worktrip == 1) %>%
+      # Exclude missing modes
+      filter(mode_c != "missing") %>% 
+      # Due to low sample size, exclude work trips for those that almost always work
+      # from home/telecommute
+      filter(combined_tc_wfh != 2),
+    breakdown_by = "mode_c",
+    second_breakdown = "combined_tc_wfh",
+    third_breakdown = "geog",
+    weight = "wtperfin")
+
+wfh_p3 <-
+  wfh_mode_share %>% 
+  # Reformat and reorder
+  mutate(combined_tc_wfh = recode_factor(factor(combined_tc_wfh,levels = c(0,1)),
+                              "1" = "1-3 days/wk",
+                              "0" = "0 days/wk"),
+         geog = recode_factor(geog,
+                              "Chicago" = "Chicago",
+                              "Suburban Cook" = "Suburban Cook",
+                              "Other suburban counties" = "Other counties"),
+         mode_c = recode_factor(factor(mode_c,levels = mode_c_levels),
+                                "driver" = "Driver",
+                                "passenger" = "Passenger",
+                                "transit" = "Transit",
+                                "walk" = "Walk",
+                                "bike" = "Bicycle",
+                                "other" = "Other")) %>%
+  
+  
+  
+  # Create ggplot object
+  ggplot(aes(x = pct, y = combined_tc_wfh,
+         # Only label bars that round to at least 5 percent
+         label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+  geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
+  geom_text(position = position_stack(vjust = 0.5),
+            color = "white") +
+  
+  # Adjust axis
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1)) +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
+             legend.max.columns = 7,
+             vline = 0,
+             xlab = "Mode share for work trips by home jurisdiction and telecommute status \n(excluding travelers with no trips to a work location)",
+             axis.title.x = element_text(hjust = 0.5),
+             strip.text = element_text(hjust = 0.5)) +
+  # Manually add colors
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+                               "#efa7a7","#0084ac")) +
+  
+  
+  # Add faceting
+  facet_wrap(~geog,ncol = 1)
+
+# Export finalized graphic
+finalize_plot(wfh_p3,
+              "Part-time telecommuters who live outside Chicago are much more 
+              likely to use transit on days when they 
+              do go into the office.",
+              "Note: These estimates are based on on answers given in both the
+              survey and travel diary components of My Daily Travel. Mean 
+              mileage accounts for all trips associated with a work trip chain 
+              that included a work destination outside the home (both fixed and 
+              non-fixed). Excludes work trips for travelers that
+              telecommute 4+ days per week due to low sample sizes. Unlabeled 
+              bars have less than 5% mode share.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel data.",
+              filename = "wfh_p3",
+              mode = "png",
+              overwrite = T,
+              # height = 4.5,
+              # width = 8,
+              # sidebar = 2.5
+              # height = 6.3,
+              # width = 11.3
+)
+
+################################################################################
 # Chart of all mileage for trips for individuals by TC status
 ################################################################################
 
@@ -484,7 +581,7 @@ wfh_alltraveler_trips_general <-
   ungroup()
 
 # Create chart
-wfh_p3 <-
+wfh_p4 <-
   # Get data
   wfh_alltraveler_trips_general %>%
   # Reformat and reorder
@@ -525,7 +622,7 @@ wfh_p3 <-
   scale_fill_discrete(type = c("#00becc","#67ac00","#cc5f00"))
 
 # Export finalized graphic
-finalize_plot(wfh_p3,
+finalize_plot(wfh_p4,
               "On average, part-time telecommuters who live outside Chicago 
               travel the greatest distances every day.",
               "Note: These estimates are based on on answers given in both the
@@ -537,7 +634,7 @@ finalize_plot(wfh_p3,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
-              filename = "wfh_p3",
+              filename = "wfh_p4",
               mode = "png",
               overwrite = T,
               # height = 4.5,
