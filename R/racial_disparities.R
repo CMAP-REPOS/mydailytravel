@@ -10,6 +10,7 @@
 library(ggplot2)
 library(tidyverse)
 library(cmapplot)
+library(MetricsWeighted)
 
 #################################################
 #                                               #
@@ -83,8 +84,8 @@ work_time_race_mdt <-
   
   # Calculate weighted mean of trip times by race and ethnicity
   group_by(race_eth,tpurp) %>%
-  summarize(travtime = as.numeric(matrixStats::weightedMedian(travtime_pg_calc, 
-                                                              w = wtperfin)))
+  summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, 
+                                                                   w = wtperfin)))
 
 
 # Filter data
@@ -104,8 +105,8 @@ other_time_race_mdt <-
   
   # Calculate weighted mean of trip times by race and ethnicity
   group_by(race_eth,tpurp) %>%
-  summarize(travtime = as.numeric(matrixStats::weightedMedian(travtime_pg_calc, 
-                                                              w = wtperfin)))
+  summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, 
+                                                                   w = wtperfin)))
 
 # Combine results
 all_time_race_mdt <-
@@ -164,7 +165,7 @@ finalize_plot(racial_disparities_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
               filename = "racial_disparities_p1",
-              mode = "png",
+              # mode = "png",
               # # height = 6.3,
               # width = 11.3,
               overwrite = T)
@@ -187,10 +188,10 @@ all_time_race_mdt <-
  
   # Calculate weighted mean of trip times by race and ethnicity
   group_by(race_eth,tpurp) %>%
-  summarize(travtime = as.numeric(matrixStats::weightedMedian(travtime_pg_calc, 
-                                                              w = wtperfin)),
-            distance = as.numeric(matrixStats::weightedMedian(distance_pg, 
-                                                              w = wtperfin)))
+  summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, 
+                                                                   w = wtperfin)),
+            distance = as.numeric(MetricsWeighted::weighted_median(distance_pg, 
+                                                                   w = wtperfin)))
 
 # Chart of travel time to school by household income
 racial_disparities_p2 <-
@@ -240,6 +241,7 @@ all_time_race_mode_mdt <-
   
   # Calculate weighted mean of trip times by race and ethnicity
   group_by(race_eth,mode_c,tpurp) %>%
-  summarize(travtime = as.numeric(matrixStats::weightedMedian(travtime_pg_calc, 
-                                                              w = wtperfin))) %>% 
+  summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, 
+                                                                   w = wtperfin))) %>% 
   arrange(tpurp,mode_c)
+
