@@ -397,8 +397,8 @@ school_time_race_mode_mdt <-
   # )) %>% 
   # group_by(race_eth,k12) %>% 
   # Summarize travel time by race/ethnicity and school enrollment
-  summarize(travtime = as.numeric(matrixStats::weightedMedian(travtime_pg_calc, w = wtperfin)),
-            distance = matrixStats::weightedMedian(distance_pg, w = wtperfin),
+  summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, w = wtperfin)),
+            distance = MetricsWeighted::weighted_median(distance_pg, w = wtperfin),
             n = n())
 
 # Export school trips for examination in ArcGIS

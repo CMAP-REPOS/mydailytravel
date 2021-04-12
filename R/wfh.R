@@ -8,7 +8,6 @@
 #################################################
 
 library(ggplot2)
-library(matrixStats)
 library(tidyverse)
 library(cmapplot)
 library(sf)
