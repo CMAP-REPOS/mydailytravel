@@ -7,7 +7,7 @@
 #                                               #
 #################################################
 
-library(matrixStats)
+library(MetricsWeighted)
 library(ggplot2)
 library(tidyverse)
 library(slider)
@@ -101,12 +101,11 @@ detailed_health_mode_c_mdt <-
                      "Health care visit for self" = "Personal")),
                  subset = "health",
                  subset_of = "tpurp_c",
-                 breakdown_by = "mode_c",
+                 breakdown_by = "mode",
                  second_breakdown = "tpurp",
                  third_breakdown = "geog",
-                 weight = "wtperfin",
+                 # weight = "wtperfin",
                  survey = "mdt")
-
 
 ################################################################################
 # Chart of healthcare sub-purposes by mode
@@ -158,15 +157,17 @@ finalize_plot(modes_of_tpurps_p1,
               important role for personal health care visits, especially for 
               Chicago residents.",
               "Note: Excludes travelers younger than 16 years old. 'By car' 
-              includes trips as either a driver of a passenger
-              of a personal vehicle (not including services like taxis or TNCs).
-              Unlabeled bars have less than five percent mode share.
+              includes trips as either a driver of a passenger of a personal 
+              vehicle (not including services like taxis or TNCs). 'Other modes' 
+              includes all other modes, but is predominantly composed of 
+              paratransit, private shuttles, and personal bicycles. Unlabeled 
+              bars have less than five percent mode share.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
-              width = 8,
-              height = 4.5,
-              sidebar_width = 2,
+              # width = 8,
+              # height = 4.5,
+              # sidebar_width = 2.25,
               filename = "modes_of_tpurps_p1",
               mode = "png",
               overwrite = TRUE)
@@ -278,6 +279,26 @@ health_mode_c_vehs_mdt <-
 # Display outputs
 health_mode_c_vehs_mdt %>% arrange(hhveh,pct) %>% 
   View()
+
+
+################################################################################
+# Backup - detail on "other" mode share for Chicago healthcare
+################################################################################
+
+pct_calculator(mdt_base_1 %>% 
+                 filter(geog %in% c("Chicago","Suburban Cook"),
+                        tpurp == "Health care visit for self"),
+               breakdown_by = "mode",
+               second_breakdown = "geog",
+               weight = "wtperfin",
+               survey = "mdt") %>% 
+  filter(mode %in% c("paratransit", "private shuttle",
+                     "taxi", "private limo", "private car", "rideshare",
+                     "shared rideshare", "airplane", "other",
+                     "school bus",
+                     "personal bike", "bike share")) %>%
+  arrange(geog,-pct)
+
 
 ################################################################################
 #
@@ -446,7 +467,7 @@ finalize_plot(modes_of_tpurps_p3,
 mdt_base_1 %>%
   filter(tpurp_c == "community") %>%
   group_by(tpurp) %>%
-  summarize(distance = weightedMedian(distance_pg,wtperfin))
+  summarize(distance = MetricsWeighted::weighted_median(distance_pg,wtperfin))
 
 ################################################################################
 # Understanding number of fellow travelers for community trips
