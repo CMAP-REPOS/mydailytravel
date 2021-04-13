@@ -557,70 +557,165 @@ finalize_plot(average_resident_p3,
 
 ################################################################################
 #
-# Travel Tracker
+# Travel Tracker validity tests
 ################################################################################
 
+# Sarah's original method - calculate total number of daily travelers who take
+# at least one trip
+daily_travelers_tt_baseline <-
+  tt_ppl %>%
+  left_join(tt_hh, by = c("SAMPN")) %>% 
+  mutate(
+    
+    age5 = case_when(
+      (AGE >= 5 & AGE < 99) ~ 1,
+      AGEB == 2 ~ 1,
+      TRUE ~ 0),
+    
+    notravel = case_when(
+      SURVEY == 1 & PTRIPS1 == 0 ~ 1,
+      SURVEY == 2 & PTRIPS1 == 0 & PTRIPS2 == 0 ~ 1,
+      TRUE ~ 0
+      
+    )) %>%
+  filter(age5 == 1,
+         notravel == 0,
+         MPO == 1)
 
+# This method identifies 7,076,812 travelers in the region
+daily_travelers_tt_baseline %>%
+  summarize(sum = sum(WGTP))
 
-# How many of the travelers are excluded based on the out-of-region travel
-# identified above? The weights are ~210K. Other differences from Sarah's
-# analysis appear to be due to her inclusion of weekend travelers in the
-# overall pie.
-tt %>%
-  group_by(SAMPN,PERNO,DAYNO) %>%
-  summarize(DIST = sum(DIST),
-            pertrips = first(pertrips),
-            weight = first(weight)) %>%
-  filter(DIST == 0 & pertrips > 0) %>%
-  ungroup() %>%
+# Note that the method used in the charts and analyses above identifies only
+# 6,694,147 travelers. Below, we account for the difference, which is 382,665
+# travelers.
+distinct_daily_travelers_tt %>% 
+  summarize(sum = sum(wtperfin))
+
+# First, we add additional travelers that are included in tt above
+daily_travelers_tt_test <-
+  tt_ppl %>%
+  left_join(tt_hh, by = c("SAMPN")) %>% 
+  mutate(
+    
+    age5 = case_when(
+      (AGE >= 5 & AGE < 99) ~ 1,
+      AGEB == 2 ~ 1,
+      (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) ~ 1,
+      TRUE ~ 0),
+    
+    notravel = case_when(
+      SURVEY == 1 & PTRIPS1 == 0 ~ 1,
+      SURVEY == 2 & PTRIPS1 == 0 & PTRIPS2 == 0 ~ 1,
+      TRUE ~ 0
+      
+    )) %>%
+  filter(age5 == 1,
+         notravel == 0,
+         MPO == 1)
+
+# The new baseline is 7,080,209 travelers
+daily_travelers_tt_test %>% 
+  summarize(sum = sum(WGTP))
+
+# How many of the travelers are excluded based on status as only weekend
+# travelers?
+tt_weekenders <-
+  daily_travelers_tt_test %>%
+  group_by(SAMPN,PERNO) %>%
+  summarize(PTRIPS1 = first(PTRIPS1),
+            PTRIPS2 = first(PTRIPS2),
+            weight = first(WGTP),
+            DAY = first(DAY),
+            SURVEY = first(SURVEY)) %>%
+  # Keep travelers who are recorded as having trips but have no travel on their
+  # weekday travel day
+  filter((SURVEY==2 & DAY==5 & PTRIPS1 == 0) | 
+           (SURVEY==2 & DAY==7 & PTRIPS2 == 0)) %>%
+  ungroup()
+
+# This accounts for 104,371 travelers.
+tt_weekenders %>% 
   summarize(total = sum(weight))
 
-# 
-# # Different method - calculate total number of daily travelers who take at
-# # least one trip
-# daily_travelers_tt_test <-
-#   tt_ppl %>%
-#   mutate(
-# 
-#     age5 = case_when(
-#       (AGE >= 5 & AGE < 99) ~ 1,
-#       AGEB == 2 & AGE == 99 ~ 1,
-#       AGE == 99 & SCHOL %in% c(4,5,6,7,8) ~ 1,
-#       TRUE ~ 0),
-# 
-#     notravel = case_when(
-#       SURVEY == 1 & PTRIPS1 == 0 ~ 1,
-#       SURVEY == 2 & PTRIPS1 == 0 & PTRIPS2 == 0 ~ 1,
-#       TRUE ~ 0
-# 
-#       )) %>%
-#   filter(age5 == 1,
-#          notravel == 0,
-#          MPO_per == 1)
-# 
-# daily_travelers_tt_test %>%
-#   summarize(sum = sum(WGTP))
-# 
-# 
-# # Identify travelers in one set but not the other
-# missing <-
-#   daily_travelers_tt_test %>%
-#   anti_join(daily_travelers_tt, by = c("SAMPN","PERNO"))
-# 
-# sum(missing$WGTP)
-# 
-# missing %>%
-#   left_join(tt_place, by = c("SAMPN","PERNO")) %>%
-#   View()
+# How many of the travelers are excluded based on the out-of-region travel
+# identified above (and are not weekenders)?
+tt_out_of_region <-
+  daily_travelers_tt_test %>%
+  # Remove all travelers accounted for as only weekend travelers
+  anti_join(tt_weekenders, by = c("SAMPN","PERNO")) %>% 
+  # Add trip information. We want to find all travelers that only traveled
+  # outside the region (and thus have zero distance) on their travel days. 
+  left_join(tt_place, by = c("SAMPN","PERNO")) %>% 
+  # Keep only weekday travel
+  filter(!((DAYNO == 2 & DAY == 5) | (DAYNO == 1 & DAY == 7))) %>% 
+  group_by(SAMPN,PERNO) %>%
+  summarize(DIST = sum(DIST),
+            weight = first(WGTP)) %>%
+  filter(DIST == 0) %>%
+  ungroup()
 
-# Calculate summary statistics
-avgtravel_tt %>%
-  summarize(
-    total_distance = sum(dist_weight),
-    total_trips = sum(weight),
-    avg_trip_length = total_distance / total_trips,
-  ) %>%
-  cbind(daily_travelers_tt) %>%
-  mutate(distance_per_capita = total_distance / total_travelers,
-         trips_per_capita = total_trips / total_travelers) %>%
-  View()
+# This accounts for 182,123 travelers.
+tt_out_of_region %>% 
+  summarize(total = sum(weight))
+
+# Identify travelers in one set but not the other
+missing <-
+  daily_travelers_tt_test %>%
+  anti_join(distinct_daily_travelers_tt, by = c("SAMPN" = "sampno","PERNO" = "perno"))
+
+# These add to 286,494 travelers (649 weighted records)
+sum(missing$WGTP)
+
+# This accounts for all missing travelers
+missing_unaccounted <-
+  missing %>% 
+  anti_join(tt_weekenders, by = c("SAMPN","PERNO")) %>% 
+  anti_join(tt_out_of_region, by = c("SAMPN","PERNO"))
+
+missing_unaccounted %>% 
+  summarize(total = sum(WGTP))
+
+# The remaining discrepancy is primarily based on the adjustment to weights for
+# travelers in 2-day surveys that only traveled on one of their two travel days.
+tt_one_of_two_weekdays <-
+  daily_travelers_tt_test %>%
+  # Remove all travelers accounted for as only weekend travelers
+  anti_join(tt_weekenders, by = c("SAMPN","PERNO")) %>%   
+  # And out of region travelers
+  anti_join(tt_out_of_region, by = c("SAMPN","PERNO")) %>% 
+  # Keep those with 2 weekdays
+  filter(SURVEY == 2 & DAY %in% c(1,2,3,4)) %>% 
+  # Add trip information. We want to find all travelers with zero trips and/or
+  # travel distance on one (but not both) of their two days.
+  left_join(tt_place, by = c("SAMPN","PERNO")) %>% 
+  group_by(SAMPN,PERNO,DAYNO,PTRIPS1,PTRIPS2) %>%
+  summarize(DIST = sum(DIST),
+            weight = first(WGTP)) %>%
+  filter(DIST == 0 | (PTRIPS1 == 0 & PTRIPS2 >0) | (PTRIPS1 > 0 & PTRIPS2 == 0)) %>% 
+  ungroup() %>% 
+  distinct(SAMPN,PERNO,weight) 
+
+# This accounts for 99,568 travelers that have been double-weighted in Sarah's
+# but single-weighted in mine.
+tt_one_of_two_weekdays %>% 
+  summarize(total = sum(weight) / 2)
+
+# This exactly accounts for the difference between the two figures
+
+# The updated baseline
+(daily_travelers_tt_test %>% summarize(sum = sum(WGTP))) -
+  # Less the weekday double weighting
+  (tt_one_of_two_weekdays %>% summarize(total = sum(weight) / 2)) -
+  # Less the weekend-only travelers
+  (tt_weekenders %>% summarize(total = sum(weight))) -
+  # Less the out of region only travelers
+  (tt_out_of_region %>% summarize(total = sum(weight))) ==
+  # Equals the total travelers above
+  (distinct_daily_travelers_tt %>% summarize(sum = sum(wtperfin)))
+
+# Confirm there are no travelers included above not captured in the test
+distinct_daily_travelers_tt %>% 
+  anti_join(daily_travelers_tt_test, by = c("sampno" = "SAMPN","perno"="PERNO"))
+
+   
