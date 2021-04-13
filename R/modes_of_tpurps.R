@@ -101,10 +101,10 @@ detailed_health_mode_c_mdt <-
                      "Health care visit for self" = "Personal")),
                  subset = "health",
                  subset_of = "tpurp_c",
-                 breakdown_by = "mode",
+                 breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
                  third_breakdown = "geog",
-                 # weight = "wtperfin",
+                 weight = "wtperfin",
                  survey = "mdt")
 
 ################################################################################
@@ -464,10 +464,27 @@ finalize_plot(modes_of_tpurps_p3,
 # Median distances for community trips
 ################################################################################
 
+# Median distance overall
 mdt_base_1 %>%
-  filter(tpurp_c == "community") %>%
+  filter(tpurp %in% c("Socialized with friends","Socialized with relatives"),
+         geog != "Other") %>%
   group_by(tpurp) %>%
-  summarize(distance = MetricsWeighted::weighted_median(distance_pg,wtperfin))
+  summarize(distance = MetricsWeighted::weighted_median(distance_pg,wtperfin),
+            n = n(),
+            wt = sum(wtperfin)) 
+
+# Median distance and proportion by geography
+mdt_base_1 %>%
+  filter(tpurp %in% c("Socialized with friends","Socialized with relatives"),
+         geog != "Other") %>%
+  group_by(tpurp,geog) %>%
+  summarize(distance = MetricsWeighted::weighted_median(distance_pg,wtperfin),
+            n = n(),
+            wt = sum(wtperfin)) %>% 
+  ungroup() %>% 
+  group_by(tpurp) %>% 
+  mutate(total = sum(wt),
+         share = wt/total)
 
 ################################################################################
 # Understanding number of fellow travelers for community trips
