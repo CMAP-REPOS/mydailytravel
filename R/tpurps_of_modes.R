@@ -183,7 +183,7 @@ total_tnc_tpurp_c <-
 ### "second_breakdown" argument of pct_calculator)
 detailed_tnc_tpurp_c_mdt <-
   pct_calculator(mdt_base_2 %>%
-                   # Collapse low-perecentage modes into "all other" for chart
+                   # Collapse low-percentage modes into "all other" for chart
                    mutate(tpurp_c =
                             fct_collapse(tpurp_c,
                                          "all other" = c("health","recreation/fitness",
@@ -231,8 +231,8 @@ tpurps_of_modes_p2 <-
                                                       "rideshare",
                                                       "shared rideshare")),
                               "taxi" = "Taxi",
-                              "rideshare" = "Rideshare",
-                              "shared rideshare" = "Shared rideshare")) %>%
+                              "rideshare" = "TNC (regular)",
+                              "shared rideshare" = "TNC (shared)")) %>%
   
   # Create ggplot object
   ggplot(aes(x = mode, y = total)) +
@@ -260,8 +260,7 @@ tpurps_of_modes_p2 <-
   
   # Add CMAP style
   theme_cmap(hline = 0,show.legend = FALSE,
-             xlab = "Taxi and TNC ridership in 2019 as a share of 2008 taxi ridership",
-             axis) +
+             xlab = "Taxi and TNC ridership in 2019 as a share of 2008 taxi ridership") +
   # Manually include CMAP colors
   scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c"))
 
@@ -298,8 +297,8 @@ tpurps_of_modes_p3 <-
                                                       "rideshare",
                                                       "shared rideshare")),
                               "taxi" = "Taxi",
-                              "rideshare" = "Rideshare",
-                              "shared rideshare" = "Shared rideshare"),
+                              "rideshare" = "TNC (regular)",
+                              "shared rideshare" = "TNC (shared)"),
          tpurp_c = recode_factor(factor(tpurp_c,
                                         c("all other","dining","community",
                                           "shopping/errands","work","home")),
@@ -308,7 +307,8 @@ tpurps_of_modes_p3 <-
                                  "community" = "Community",
                                  "shopping/errands" = "Shopping/errands",
                                  "work" = "Work",
-                                 "home" = "Home")) %>%
+                                 "home" = "Home")
+         ) %>%
   
   # Create ggplot object
   ggplot(aes(y = tpurp_c, x = pct, fill = mode)) +
@@ -344,6 +344,22 @@ finalize_plot(tpurps_of_modes_p3,
               filename = "tpurps_of_modes_p4",
               # mode = "png",
               overwrite = T)
+
+################################################################################
+# Backup - breakdown of trips by origin and destination
+################################################################################
+
+pct_calculator(
+  mdt_base_2 %>% 
+    mutate(chicago_tnc = case_when(
+      county_chi_name == "Chicago" | county_chi_name_lag == "Chicago" ~ 1,
+      TRUE ~ 0)),
+  subset = c("rideshare","shared rideshare"),
+  subset_of = "mode",
+  breakdown_by = "chicago_tnc",
+  # second_breakdown = "mode",
+  weight = "wtperfin")
+  
 
 ################################################################################
 # ARCHIVE
