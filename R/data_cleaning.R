@@ -148,6 +148,18 @@ location <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
 file.remove(mdt_zip,"place.csv","person.csv","household.csv","location.csv")
 rm(mdt_zip)
 
+# Travel zones (provided by CMAP R&A staff).
+zones <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/zones.csv") %>%
+  select(sampno,     # The household identifier.
+         cluster)    # Designates the household's inclusion in one of 11 travel
+                     # zones, used for weighting the overall survey.
+
+# Trip chains (provided by CMAP R&A staff). These provide sampno, perno, and
+# placeno as identifiers, as well as identify the trip as part of a chain to
+# work or a shopping trip.
+chains <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/chains.csv")
+
+
 # Add status in City of Chicago to location file
 
 # Add geometry to latitude and longitude for locations
@@ -178,14 +190,25 @@ municipality_locations <-
 
 # Add flags to locations
 location <- 
+  # Add municipality locations
   left_join(
     location,
     municipality_locations,
     by = c("sampno","locno")
   ) %>% 
+  # Add travel zones
+  left_join(zones, by = "sampno") %>% 
   mutate(county_chi_name = case_when(
-    place_name == "Chicago" & state_fips == 17 & county_fips == 31 ~ "Chicago",
+    # Use the three Chicago travel zones to ID Chicago locations (note this
+    # appears to excludes portions of the Far Northwest Side (portions of
+    # Norwood Park and Edison Park) that fall within the Chicago city limits -
+    # however, given the assignment of XY coordinates to the centroids of
+    # tracts, neither method allows for perfect sorting. We thus use travel
+    # zones, since they were used in the weighting of the survey.
+    cluster %in% c(1,2,3) ~ "Chicago", 
+    # Everything else in Cook County belongs to Suburban Cook
     state_fips == 17 & county_fips == 31 ~ "Suburban Cook",
+    # And everything else is assigned using state and county FIPS with no issue.
     state_fips == 17 & county_fips == 37 ~ "DeKalb",
     state_fips == 17 & county_fips == 63 ~ "Grundy",
     state_fips == 17 & county_fips == 97 ~ "Lake",
@@ -200,20 +223,12 @@ location <-
     state_fips == 17 & county_fips %in% c(cmap_seven_counties,63) ~ 0,
     state_fips == 18 & county_fips %in% c(89,91,127) ~ 0,
     TRUE ~ 1
-    ))
+    )) %>% 
+  # Also add the subzones for identification of Chicago residents (note this is
+  # more accurate than the centroid based assignment used for municipality IDs)
+  left_join(zones, by = "sampno")
 
 rm(municipality_locations,location_xy_mdt)
-
-# Trip chains (provided by CMAP R&A staff). These provide sampno, perno, and
-# placeno as identifiers, as well as identify the trip as part of a chain to
-# work or a shopping trip.
-chains <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/chains.csv")
-
-# Travel zones (provided by CMAP R&A staff).
-zones <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/zones.csv") %>%
-  select(sampno,     # The household identifier.
-         cluster)    # Designates the household's inclusion in one of 11 travel
-                     # zones, used for weighting the overall survey.
 
 # Home location flag
 home_wip <- location %>%
@@ -266,7 +281,7 @@ home <- home_wip %>%
       TRUE ~ as.double(home_tract)
     )) %>%
   # Select distinct rows to eliminate double counting of two-home households.
-  distinct(sampno,home_county,.keep_all = TRUE) %>% 
+  distinct(sampno,home_county,.keep_all = TRUE) %>%
   # Create flag for home county with Chicago and suburban Cook
   mutate(home_county_chi = case_when(
     home_county == 999 ~ "Homes in multiple counties",
