@@ -444,7 +444,7 @@ wfh_p2 <-
 finalize_plot(wfh_p2,
               "Part-time telecommuters who live outside Chicago have 
               significantly longer journeys to and from work on days when they 
-              do go into the office.",
+              work outside the home.",
               "Note: These estimates are based on on answers given in both the
               survey and travel diary components of My Daily Travel. Mean 
               mileage accounts for all trips associated with a work trip chain 
@@ -495,14 +495,15 @@ wfh_p3 <-
                               "Suburban Cook" = "Suburban Cook",
                               "Other suburban counties" = "Other counties"),
          mode_c = recode_factor(factor(mode_c,levels = mode_c_levels),
-                                "driver" = "Driver",
-                                "passenger" = "Passenger",
+                                "driver" = "By car",
+                                "passenger" = "By car",
                                 "transit" = "Transit",
                                 "walk" = "Walk",
                                 "bike" = "Bicycle",
                                 "other" = "Other")) %>%
   
-  
+  group_by(mode_c,combined_tc_wfh,geog) %>% 
+  summarize(pct = sum(pct)) %>% 
   
   # Create ggplot object
   ggplot(aes(x = pct, y = combined_tc_wfh,
@@ -523,7 +524,7 @@ wfh_p3 <-
              axis.title.x = element_text(hjust = 0.5),
              strip.text = element_text(hjust = 0.5)) +
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+  scale_fill_discrete(type = c("#00665c","#6d8692","#36d8ca",
                                "#efa7a7","#0084ac")) +
   
   
@@ -533,11 +534,11 @@ wfh_p3 <-
 # Export finalized graphic
 finalize_plot(wfh_p3,
               "Part-time telecommuters who live outside Chicago are much more 
-              likely to use transit on days when they 
-              do go into the office.",
+              likely to use transit on days when they work outside the home, 
+              while those in Chicago are more likely to walk to work.",
               "Note: These estimates are based on on answers given in both the
-              survey and travel diary components of My Daily Travel. Mean 
-              mileage accounts for all trips associated with a work trip chain 
+              survey and travel diary components of My Daily Travel. Mode share
+              accounts for all trips associated with a work trip chain 
               that included a work destination outside the home (both fixed and 
               non-fixed). Excludes work trips for travelers that
               telecommute 4+ days per week due to low sample sizes. Unlabeled 
