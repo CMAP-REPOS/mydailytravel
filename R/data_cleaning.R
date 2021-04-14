@@ -31,10 +31,15 @@
 #                                               #
 #################################################
 
+# # Run code once per machine to install GitHub-based packages
+# devtools::install_github("CMAP-REPOS/cmapplot")
+# devtools::install_github("CMAP-REPOS/cmapgeo")
+# devtools::install_github("coolbutuseless/ggpattern")
+
 library(tidyverse)
 library(lubridate)
 library(RODBC)
-library(tidycensus)
+library(cmapgeo)
 library(sf)
 
 #################################################
@@ -64,6 +69,9 @@ trips <- read.csv(unzip(mdt_zip,files = "place.csv")) %>%
 
          tpurp,      # The purpose of the trip.
          mode,       # The mode of the trip.
+         
+         hhparty,    # The number of travelers (including the respondent) on the 
+         party,      # trip, both household and non-household.
 
          arrtime,    # The arrival time to the place identified above. This
                      # represents the end time of the trip to the identified
@@ -163,37 +171,28 @@ chains <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/T
 # Add status in City of Chicago to location file
 
 # Add geometry to latitude and longitude for locations
-location_xy_mdt <- st_as_sf(location,
-                        coords = c(x = "longitude", y = "latitude"),
-                        crs = 4269)
-
-# Download shapefiles of municipalities in Illinois
-municipality_sf <- 
-  get_acs(state = 17,geography = "place",variables = "B19013_001",geometry = TRUE) %>% 
-  select(place_id = GEOID,place_name = NAME,geometry) %>% 
-  # Eliminate unnecessary endings to place names
-  mutate(place_name = gsub(" city, Illinois","",place_name)) %>% 
-  mutate(place_name = gsub(" village, Illinois","",place_name)) %>% 
-  mutate(place_name = gsub(" town, Illinois","",place_name)) %>% 
-  mutate(place_name = gsub(" CDP, Illinois","",place_name))
+location_xy_mdt <- 
+      sf::st_as_sf(location, 
+                   coords = c(x = "longitude", y = "latitude"),
+                   crs = cmapgeo::cmap_crs)
 
 # Join municipalities with the location file to determine which locations fall
 # within municipal borders
-municipality_locations <- 
-  st_join(x = location_xy_mdt,
-          y = municipality_sf,
-          join = st_within) %>% 
+municipality_locations_mdt <- 
+  sf::st_join(x = location_xy_mdt,
+              y = cmapgeo::municipality_sf,
+              join = st_within) %>% 
   # Remove geometry
   as_tibble() %>% 
   # Keep relevant variables
-  select(sampno,locno,place_id,place_name)
+  select(sampno,locno,municipality)
 
 # Add flags to locations
 location <- 
   # Add municipality locations
   left_join(
     location,
-    municipality_locations,
+    municipality_locations_mdt,
     by = c("sampno","locno")
   ) %>% 
   # Add travel zones
@@ -228,7 +227,7 @@ location <-
   # more accurate than the centroid based assignment used for municipality IDs)
   left_join(zones, by = "sampno")
 
-rm(municipality_locations,location_xy_mdt)
+rm(municipality_locations_mdt,location_xy_mdt)
 
 # Home location flag
 home_wip <- location %>%
@@ -504,6 +503,9 @@ tt_place <- sqlFetch(con,"place_public") %>%
                      # the location of the previous record) to the end of the
                      # trip at this location.
          TRPDUR,     # The duration of the trip in minutes.
+         
+         TOTTR,      # Total number of travelers
+         HHMEM,      # Total number of household members traveling
 
          ARR_HR, ARR_MIN, # The arrival hour and minute at the place in this
                      # record. This represents the end of the trip identified by
@@ -531,18 +533,18 @@ odbcClose(con)
 # Add geometry to latitude and longitude for locations
 location_xy_tt <- st_as_sf(tt_location %>% filter(!is.na(X_PUBLIC)),
                            coords = c(x = "X_PUBLIC", y = "Y_PUBLIC"),
-                           crs = 4269)
+                           crs = cmapgeo::cmap_crs)
 
 # Join municipalities with the location file to determine which locations fall
 # within municipal borders
 municipality_locations_tt <- 
   st_join(x = location_xy_tt,
-          y = municipality_sf,
+          y = cmapgeo::municipality_sf,
           join = st_within) %>% 
   # Remove geometry
   as_tibble() %>% 
   # Keep relevant variables
-  select(LOCNO,place_id,place_name)
+  select(LOCNO,municipality)
 
 # Add municipality flags to locations
 tt_location <- 
@@ -552,7 +554,7 @@ tt_location <-
     by = "LOCNO"
   ) %>% 
   mutate(county_chi_name = case_when(
-    place_name == "Chicago" & FIPS == 17031  ~ "Chicago",
+    municipality == "Chicago" & FIPS == 17031  ~ "Chicago",
     FIPS == 17031 ~ "Suburban Cook",
     FIPS == 17063 ~ "Grundy",
     FIPS == 17097 ~ "Lake",
@@ -562,7 +564,7 @@ tt_location <-
     FIPS == 17111 ~ "McHenry",
     FIPS == 17197 ~ "Will"))
 
-rm(municipality_locations_tt,municipality_sf,location_xy_tt)
+rm(municipality_locations_tt,location_xy_tt)
 
 # home location
 tt_home <- tt_location %>%
