@@ -370,87 +370,73 @@ pct_calculator(
 # #
 # # CARPOOL VS PASSENGER
 # ################################################################################
-# 
-# ### Calculate proportions for subcategories for driver/passenger in MDT and TT
-# detailed_passenger_totals_under18_mdt <-
-#   pct_calculator(mdt_base_2,
-#                  subset = "passenger",
-#                  subset_of = "mode_c",
-#                  breakdown_by = "mode",
-#                  second_breakdown = "under18",
-#                  weight = "wtperfin",
-#                  survey = "mdt")
-# 
-# passenger_totals_under18_tt <-
-#   pct_calculator(tt_base_2,
-#                  subset = "passenger",
-#                  subset_of = "mode_c",
-#                  breakdown_by = "mode",
-#                  second_breakdown = "under18",
-#                  weight = "weight",
-#                  survey = "tt") %>%
-#   mutate(mode = "Passenger (all)")
-# 
-# all_passenger_under18 <-
-#   rbind(passenger_totals_under18_tt,
-#         detailed_passenger_totals_under18_mdt)
-# 
+
+### Calculate proportions for subcategories for driver/passenger in MDT and TT
+car_totals_mdt <-
+  pct_calculator(mdt_base_2,
+                 subset = c("driver","passenger"),
+                 subset_of = "mode_c",
+                 breakdown_by = "mode_c",
+                 weight = "wtperfin",
+                 survey = "mdt")
+
+car_totals_tt <-
+  pct_calculator(tt_base_2,
+                 subset = c("driver","passenger"),
+                 subset_of = "mode_c",
+                 breakdown_by = "mode_c",
+                 weight = "weight",
+                 survey = "tt")
+
+all_car <-
+  rbind(car_totals_mdt,
+        car_totals_tt)
+
 # ################################################################################
-# # Chart of total passenger trips, MDT vs TT
+# # Chart of total car trips, MDT vs TT
 # ################################################################################
 # 
-# tpurps_of_modes_p1 <-
+# tpurps_of_modes_p4 <-
 #   # Get data
-#   all_passenger_under18 %>%
-#   # Filter out NAs
-#   filter(!is.na(under18)) %>% 
-#   # Group by age flag and survey flag
-#   group_by(under18,survey) %>%
-#   # Calculate totals by the chosen groups
-#   mutate(total = sum(breakdown_total)) %>%
-#   ungroup() %>%
+#   all_car %>%
 #   # Add factor levels for chart ordering
-#   mutate(mode = factor(mode, levels = c("Passenger (all)",
-#                                         "personal auto (passenger)",
-#                                         "carpool")),
+#   mutate(mode_c = recode_factor(mode_c,
+#                                 "driver" = "Driver",
+#                                 "passenger" = "Passenger"),
 #          survey = recode_factor(factor(survey),
 #                                 "tt" = "Travel Tracker ('08)",
 #                                 "mdt" = "My Daily Travel ('19)")) %>%
-#   
+# 
 #   # Create ggplot object
-#   ggplot(aes(x = survey, y = breakdown_total, fill = mode)) +
+#   ggplot(aes(x = survey, y = breakdown_total, fill = mode_c)) +
 #   geom_col(position = position_stack(reverse = T)) +
 #   geom_label(aes(label = scales::label_comma(accuracy = 1)(total),
 #                  y = total),
 #              fill = "white",
 #              vjust = 0,
 #              label.size = 0) +
-#   
-#   # Facet formatting
-#   facet_wrap(~under18, ncol = 1) +
-#   
+# 
 #   # Add CMAP style
 #   theme_cmap() +
 #   cmap_fill_discrete(palette = "friday",reverse = F) +
-#   
-#   # Adjust axis
-#   scale_y_continuous(labels = scales::label_comma(scale = 1),
-#                      limits = c(0,3200000))
 # 
-# finalize_plot(tpurps_of_modes_p1,
+#   # Adjust axis
+#   scale_y_continuous(labels = scales::label_comma(scale = 1))
+# 
+# finalize_plot(tpurps_of_modes_p4,
 #               "Change in daily automobile passenger trips, 2008 vs. 2019, by age.",
 #               "Note: Travel Tracker did not have a 'Carpool' category, and so
 #               'Passenger (all)' includes both types of trips.
 #               <br><br>
 #               Source: Chicago Metropolitan Agency for Planning analysis of My
 #               Daily Travel and Travel Tracker data.",
-#               filename = "tpurps_of_modes_p1",
+#               filename = "tpurps_of_modes_p4",
 #               # height = 6.3,
 #               # width = 11.3,
 #               # mode = "png",
 #               overwrite = T
 # )
-# 
+
 # 
 # ################################################################################
 # # ARCHIVE - old bike analyses (unusable due to data collection issues)
