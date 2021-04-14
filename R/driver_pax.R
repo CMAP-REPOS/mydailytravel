@@ -1,5 +1,10 @@
 # This script produces analyses and charts on the share of car trips taken as
-# passengers by travelers in the CMAP region.
+# passengers by travelers in the CMAP region. It was excluded from final
+# publication because of concerns about the validity of comparisons between
+# Travel Tracker and My Daily Travel on the topic: there were distinctions in
+# the question wordings on accompanying passengers, and an unexplained (and
+# potentially problematic) variation between the two surveys in the number of
+# outside-of-household travelers.
 
 
 #################################################
@@ -10,8 +15,6 @@
 
 library(tidyverse)
 library(cmapplot)
-# # Run this script once per machine to add the ggpattern package
-# devtools::install_github("coolbutuseless/ggpattern")
 library(ggpattern)
 
 #################################################
@@ -201,6 +204,61 @@ rbind(driver_pax_age_mdt,
               names_from = "mode_c",
               values_from = c("mode_count")) %>%
   mutate(pax_share = passenger/(passenger + driver))
+
+################################################################################
+#
+# VEHICLE OCCUPANCY
+################################################################################
+
+# It appears that average vehicle occupancy for car trips captured in MDT
+# actually increased slightly vs. TT. Relatedly, the share of car trips
+# completed as SOV trips declined slightly. While this initially seems
+# inconsistent with the passenger figures identified above, it is a result of an
+# unexpected variation in household vs. non-household travelers in the vehicle.
+# In MDT, more travelers are non-household members than in TT.
+
+
+occupancy_mdt <-
+  driver_pax_mdt %>% # 61977 records
+  # Filter out passenger trips that have a party of one (since this indicates
+  # inaccurate entry)
+  filter(!(mode_c == "passenger" & party == 1)) %>% # 61588 records
+  # Keep distinct trips based on household, location, and start/end time
+  distinct(sampno,locno_pg,start_times_pg,
+           travtime_pg_calc,.keep_all = TRUE) %>% # 58180 records
+  # Calculate summary statistics
+  summarize(occupancy = weighted.mean(party,wtperfin),
+            total = sum(wtperfin),
+            sov_total = sum(wtperfin * (party == 1)),
+            sov_pct = sov_total/total,
+            survey = "mdt")
+
+occupancy_tt <-
+  driver_pax_tt %>% # 73302 records
+  # Filter out passenger trips that have a party of one (since this indicates
+  # inaccurate entry)
+  filter(!(mode_c == "passenger" & TOTTR == 1)) %>% # 73302 records
+  # Keep distinct trips based on household, location, and start/end time
+  distinct(SAMPN,locno,start_hr,start_min,
+           TRPDUR,.keep_all = TRUE) %>% # 65904 records
+  # Calculate summary statistics
+  summarize(occupancy = weighted.mean(TOTTR,weight),
+            total = sum(weight),
+            sov_total = sum(weight * (TOTTR == 1)),
+            sov_pct = sov_total/total,
+            survey = "tt")
+
+occupancy <-
+  rbind(occupancy_mdt,occupancy_tt)
+
+
+
+pct_calculator(
+  driver_pax_mdt %>% mutate(out_of_hh = party > hhparty),
+  breakdown_by = "tpurp_c",
+  second_breakdown = "out_of_hh",
+  weight = "wtperfin"
+) %>% View()
 
 # ################################################################################
 # #
