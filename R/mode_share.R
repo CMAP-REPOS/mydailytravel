@@ -62,6 +62,8 @@ mdt_base_3 <-
 #            (AGE == 99 & AGEB == 2)) %>%
 #   # Keep only trips with nonzero distance
 #   filter(DIST > 0) %>%                 # 89463
+#   # Exclude all first records
+#   filter(PLANO > 1) %>%                # 89463
 #   # Exclude missing modes
 #   filter(mode_c != "missing") %>%      # 89463
 #   # Put school bus back into "other" category
@@ -677,6 +679,41 @@ finalize_plot(mode_share_p5,
 # 
 # ARCHIVE
 ################################################################################
+# # 
+# ################################################################################
+# #
+# # TT-only analyses
+# ################################################################################
+# 
+# # Create baseline totals for percentage calculations
+# tt_mode_all <-
+#   pct_calculator(tt_base_3,
+#                  breakdown_by = "mode_c",
+#                  weight = "weight")
+# 
+# # Do the same again, but for age
+# 
+# # Age bins
+# age_breaks <- c(-1,29, 49, 69, 150)
+# age_labels <- c("16 to 29", "30 to 49",  "50 to 69", "70 and above")
+# 
+# tt_mode_age <-
+#   pct_calculator(
+#     # Add age bins
+#     tt_base_3 %>% 
+#       filter(AGE != 99) %>% 
+#       mutate(age_bin=cut(AGE,breaks=age_breaks,labels=age_labels)),
+#     # Execute the rest of the function
+#     breakdown_by = "mode_c",
+#     second_breakdown = "age_bin",
+#     weight = "weight") %>%
+#   # Add baseline totals
+#   rbind(tt_mode_all %>% mutate(age_bin = "CMAP region")) %>% 
+#   # Reorder factors for publication
+#   mutate(age_bin = fct_relevel(age_bin,"CMAP region")) %>%
+#   mutate(age_bin = fct_rev(factor(age_bin)))
+# 
+# 
 # 
 # ################################################################################
 # # Archive - Chart of overall mode share
@@ -714,19 +751,17 @@ finalize_plot(mode_share_p5,
 # ################################################################################
 # 
 # tt_mode_all <-
-#   tt_base_3 %>%
-#   mutate(total = sum(weight)) %>%
-#   group_by(mode_c) %>%
-#   summarize(count = sum(weight),
-#             tt_share = round((count/median(total))*100, digits = 2)) %>%
-#   select(mode_c, tt_share, count)
-#
+#   pct_calculator(
+#     tt_base_3,
+#     breakdown_by = "mode",
+#     weight = "weight")
+# 
 # mode_all <- tt_mode_all %>%
 #   select(-count) %>%
 #   left_join(mdt_mode_all, by = "mode_c") %>%
 #   select(-count) %>%
 #   pivot_longer(cols = c("tt_share":"mdt_share"))
-#
+# 
 # mdt_mode_dist_all <-
 #   mdt_base_3 %>%
 #   mutate(total = sum(wthhfin*hdist_pg)) %>%
@@ -734,7 +769,7 @@ finalize_plot(mode_share_p5,
 #   summarise(distance = sum(wthhfin*hdist_pg),
 #             mdt_share = round((distance/median(total))*100, digits = 2)) %>%
 #   select(mode_c, mdt_share, distance)
-#
+# 
 # tt_mode_dist_all <-
 #   tt_base_3 %>%
 #   mutate(total = sum(weight*DIST)) %>%
@@ -742,7 +777,7 @@ finalize_plot(mode_share_p5,
 #   summarize(distance = sum(weight*DIST),
 #             tt_share = round((distance/median(total))*100, digits = 2)) %>%
 #   select(mode_c, tt_share, distance)
-#
+# 
 # mode_dist_all <- tt_mode_dist_all %>%
 #   select(-distance) %>%
 #   left_join(mdt_mode_dist_all, by = "mode_c") %>%
