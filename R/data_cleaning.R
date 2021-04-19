@@ -126,10 +126,20 @@ ppl <- read.csv(unzip(mdt_zip,files = "person.csv")) %>%
          wtperfin    # The weight for the respondent.
          )
 
+veh <- read.csv(unzip(mdt_zip,files = "vehicle.csv")) %>% 
+  select(sampno,     # Household and vehicle identifiers
+         vehno,      
+         
+         fuel,       # Fuel type of vehicle
+         
+         parkd       # Location of vehicle parking
+         )
+
 # household info
 hh <- read.csv(unzip(mdt_zip,files = "household.csv")) %>%
   select(sampno,     # Identifier for the household.
          hhinc,      # Household income (in dollars).
+         hhsize,     # Household size.
          hhveh,      # Number of vehicles in the household.
          travday     # The day of the week for the household's travel diary.
   )
@@ -646,6 +656,15 @@ tt <- tt %>%
     # take original weight.
     weight = if_else(weekdays2==1, WGTP/2, WGTP))
 
+# Create a TT dataset of all respondents (regardless of trip behavior)
+tt_all_respondents <- tt_ppl %>% # 32,366 records
+  inner_join(tt_hh, by = c("SAMPN")) %>% # 32,366 records
+  left_join(tt_home, by = "SAMPN") %>%  # 32,366 records (22 records lack a home
+                                        # county; they are kept for analyses
+                                        # that do not rely on home location)
+  # Keep only CMAP survey respondents
+  filter(MPO==1) 
+
 # Identify trips that either start or end within the CMAP region
 tt <- tt %>%
   arrange(SAMPN,PERNO) %>%
@@ -727,11 +746,6 @@ tt <- tt %>%
     MPO,weekend,out_region_trip))
 
 
-# Create a TT dataset of all respondents (regardless of trip behavior)
-tt_all_respondents <- tt_ppl %>% # 32,366 records
-  inner_join(tt_hh, by = c("SAMPN")) %>% # 32,366 records
-  left_join(tt_home, by = "SAMPN") # 32,366 records (22 records lack a home
-    # county; they are kept for analyses that do not rely on home location)
 
 
 #################################################
