@@ -41,6 +41,8 @@ avgtravel_mdt <-
   filter(pertrips > 0) %>%   # 97373 records
   
   
+  ###### RUN ONE OF THE TWO BELOW (MDT-only vs. MDT + TT comparison)
+  
   ### MDT ONLY
   # Eliminate 0 distance trips (network - use for MDT-specific analyses)
   # filter(distance_pg > 0) %>%   # 97316 records
@@ -65,19 +67,32 @@ avgtravel_mdt <-
     # Keep others
     sampno,perno,age_bin,sex,income_c,race_eth,home_county_chi,wtperfin) %>% 
   mutate(survey = "mdt")
-  
 
-# Identify distinct list of travelers that took at least one trip to enable
-# summing by different demographic characteristics
+#### RUN ONE OF THE TWO BELOW (all travelers vs. all residents)
+
+# ONLY TRAVELERS: Identify distinct list of travelers that took at least one
+# trip to enable summing by different demographic characteristics
 distinct_daily_travelers_mdt <-
   avgtravel_mdt %>%
   select(sampno,perno,wtperfin,race_eth,sex,income_c,home_county_chi,age_bin,survey) %>%
   distinct()
 
-# NOTE: As coded in this file, these statistics are not comparable with MDT
-# because they use haversine distances. If desired, the MDT calculations can be
-# modified to use haversine distances (see note above). However, given the
-# differences in survey methodology, direct comparison is difficult.
+# # ALL RESIDENTS: Identify list of residents 
+# distinct_daily_travelers_mdt <-
+#   mdt_all_respondents %>% 
+#   filter(
+#     # Keep only trips with travelers at least 5 years old.
+#     # - note the "sampno" selections have no information but are school-aged
+#     # based on place. age < 0 are all respondents without a numeric age value.
+#     age >= 5 |               # 125459 records
+#       (age <0 & aage %in% c(2,3,4,5,6,7)) |
+#       (age < 0 & schol %in% c(4,5,6,7,8)) |
+#       sampno %in% c(70038312, 70051607)) %>%
+#   # And add age bins
+#   mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels)) %>% 
+#   mutate(survey = "mdt") %>% 
+#   select(sampno,perno,wtperfin,race_eth,sex,income_c,home_county_chi,age_bin,survey) 
+  
 
 avgtravel_tt <-
   tt %>%                    # 139769 records
@@ -111,11 +126,30 @@ avgtravel_tt <-
          DAYNO) %>% 
   mutate(survey = "tt")
 
-# Calculate total number of daily travelers who take at least one trip
+#### RUN ONE OF THE TWO BELOW (do same as MDT option above, total travelers vs.
+#### residents)
+
+# ONLY TRAVELERS: Identify distinct list of travelers that took at least one
+# trip to enable summing by different demographic characteristics
 distinct_daily_travelers_tt <-
   avgtravel_tt %>%
   select(sampno,perno,wtperfin,race_eth,sex,income_c,home_county_chi,age_bin,survey,DAYNO) %>%
-  distinct() 
+  distinct() %>%
+  select(-DAYNO)
+
+# # ALL RESIDENTS
+# distinct_daily_travelers_tt <-
+#   tt_all_respondents %>% 
+#   filter((AGE >= 5 & AGE < 99) |
+#            (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) |
+#            (AGEB == 2 & AGE == 99)) %>%
+#   # Add age bins
+#   mutate(age_bin=cut(AGE,breaks=age_breaks,labels=age_labels)) %>% 
+#   mutate(survey = "tt") %>% 
+#   select(sampno = SAMPN,perno = PERNO,wtperfin = WGTP,
+#          race_eth,sex = GEND,income_c,home_county_chi,age_bin,survey)
+  
+
 
 # Combine TT and MDT data
 avgtravel <-
@@ -124,7 +158,7 @@ avgtravel <-
 
 distinct_daily_travelers <-
   rbind(distinct_daily_travelers_mdt,
-        distinct_daily_travelers_tt %>% select(-DAYNO))
+        distinct_daily_travelers_tt)
 
 #################################################
 #                                               #
@@ -554,6 +588,141 @@ finalize_plot(average_resident_p3,
               mode = "png",
               # height = 6.5,
               overwrite = T)
+
+
+
+################################################################################
+#
+# Understand non-travelers in MDT
+################################################################################
+
+# Create universe of all possible travelers, excluding the ones also excluded
+# above (note this requires the "DAILY TRAVELERS" option in the code)
+
+mdt_avg_excluded <-
+  mdt %>% 
+  filter(pertrips > 0) %>% 
+  anti_join(distinct_daily_travelers_mdt %>% select(sampno,perno),
+            by = c("sampno","perno")) %>% 
+  distinct(sampno,perno)
+
+mdt_all_respondents_excl <-
+  mdt_all_respondents %>% 
+  anti_join(mdt_avg_excluded, by = c("sampno","perno")) %>% 
+  # filter by age
+  filter(
+    # Keep only trips with travelers at least 5 years old.
+    # - note the "sampno" selections have no information but are school-aged
+    # based on place. age < 0 are all respondents without a numeric age value.
+    age >= 5 |               # 125459 records
+      (age <0 & aage %in% c(2,3,4,5,6,7)) |
+      (age < 0 & schol %in% c(4,5,6,7,8)) |
+      sampno %in% c(70038312, 70051607)) %>%
+  # And add age bins
+  mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels))
+  
+
+# Generate variation from population totals for non-travelers (in percentage
+# points)
+
+# First, household income
+mdt_notravel_income_c <-
+  mdt_all_respondents_excl %>% 
+  # Calculate baseline totals
+  group_by(income_c) %>% 
+  mutate(totalpop = sum(wtperfin)) %>% 
+  ungroup() %>% 
+  # Identify travelers vs. non-travelers (keeping only those with an entry for
+  # `pertrips`)
+  filter(pertrips >= 0) %>% 
+  mutate(traveled = ifelse(pertrips == 0,"No","Yes")) %>% 
+  # Calculate totals by category, removing missing
+  filter(income_c != "missing") %>% 
+  group_by(income_c,traveled) %>% 
+  summarize(pop = sum(wtperfin),
+            totalpop = median(totalpop)) %>% 
+  # Now calculate proportions
+  group_by(traveled) %>% 
+  mutate(pct = pop/sum(pop),
+         totalpoppct = totalpop/sum(totalpop),
+         variation = pct - totalpoppct) %>% 
+  # Keep only non-travelers
+  filter(traveled == "No")
+
+
+# Next, race and ethnicity
+mdt_notravel_race_eth <-
+  mdt_all_respondents_excl %>% 
+  # Calculate baseline totals
+  group_by(race_eth) %>% 
+  mutate(totalpop = sum(wtperfin)) %>% 
+  ungroup() %>% 
+  # Identify travelers vs. non-travelers (keeping only those with an entry for
+  # `pertrips`)
+  filter(pertrips >= 0) %>% 
+  mutate(traveled = ifelse(pertrips == 0,"No","Yes")) %>% 
+  # Calculate totals by category, removing missing
+  filter(race_eth != "missing") %>% 
+  group_by(race_eth,traveled) %>% 
+  summarize(pop = sum(wtperfin),
+            totalpop = median(totalpop)) %>% 
+  # Now calculate proportions
+  group_by(traveled) %>% 
+  mutate(pct = pop/sum(pop),
+         totalpoppct = totalpop/sum(totalpop),
+         variation = pct - totalpoppct) %>% 
+  # Keep only non-travelers
+  filter(traveled == "No")
+
+# Next, sex
+mdt_notravel_sex <-
+  mdt_all_respondents_excl %>% 
+  # Calculate baseline totals
+  group_by(sex) %>% 
+  mutate(totalpop = sum(wtperfin)) %>% 
+  ungroup() %>% 
+  # Identify travelers vs. non-travelers (keeping only those with an entry for
+  # `pertrips`)
+  filter(pertrips >= 0) %>% 
+  mutate(traveled = ifelse(pertrips == 0,"No","Yes")) %>% 
+  # Calculate totals by category, removing missing
+  filter(sex >0) %>% 
+  group_by(sex,traveled) %>% 
+  summarize(pop = sum(wtperfin),
+            totalpop = median(totalpop)) %>% 
+  # Now calculate proportions
+  group_by(traveled) %>% 
+  mutate(pct = pop/sum(pop),
+         totalpoppct = totalpop/sum(totalpop),
+         variation = pct - totalpoppct) %>% 
+  # Keep only non-travelers
+  filter(traveled == "No")
+
+
+# Finally, age
+mdt_notravel_age <-
+  mdt_all_respondents_excl %>% 
+  # Calculate baseline totals
+  group_by(age_bin) %>% 
+  mutate(totalpop = sum(wtperfin)) %>% 
+  ungroup() %>% 
+  # Identify travelers vs. non-travelers (keeping only those with an entry for
+  # `pertrips`)
+  filter(pertrips >= 0) %>% 
+  mutate(traveled = ifelse(pertrips == 0,"No","Yes")) %>% 
+  # Calculate totals by category, removing missing
+  filter(!is.na(age_bin)) %>% 
+  group_by(age_bin,traveled) %>% 
+  summarize(pop = sum(wtperfin),
+            totalpop = median(totalpop)) %>% 
+  # Now calculate proportions
+  group_by(traveled) %>% 
+  mutate(pct = pop/sum(pop),
+         totalpoppct = totalpop/sum(totalpop),
+         variation = pct - totalpoppct) %>% 
+  # Keep only non-travelers
+  filter(traveled == "No")
+
 
 ################################################################################
 #
