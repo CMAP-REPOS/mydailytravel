@@ -178,33 +178,36 @@ zones <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Tr
 chains <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/chains.csv")
 
 
-# Add status in City of Chicago to location file
-
-# Add geometry to latitude and longitude for locations
-location_xy_mdt <- 
-      sf::st_as_sf(location, 
-                   coords = c(x = "longitude", y = "latitude"),
-                   crs = cmapgeo::cmap_crs)
-
-# Join municipalities with the location file to determine which locations fall
-# within municipal borders
-municipality_locations_mdt <- 
-  sf::st_join(x = location_xy_mdt,
-              y = cmapgeo::municipality_sf,
-              join = st_within) %>% 
-  # Remove geometry
-  as_tibble() %>% 
-  # Keep relevant variables
-  select(sampno,locno,municipality)
+# # Archived - add municipality location (keeping for reference, using travel
+# # zones instead)
+# 
+# # Add geometry to latitude and longitude for locations
+# location_xy_mdt <- 
+#       sf::st_as_sf(location, 
+#                    coords = c(x = "longitude", y = "latitude"),
+#                    crs = 4326)
+# 
+# location_xy_mdt <- sf::st_transform(location_xy_mdt,crs = cmapgeo::cmap_crs)
+# 
+# # Join municipalities with the location file to determine which locations fall
+# # within municipal borders
+# municipality_locations_mdt <- 
+#   sf::st_join(x = location_xy_mdt,
+#               y = cmapgeo::municipality_sf,
+#               join = st_within) %>% 
+#   # Remove geometry
+#   as_tibble() %>% 
+#   # Keep relevant variables
+#   select(sampno,locno,municipality)
 
 # Add flags to locations
 location <- 
-  # Add municipality locations
-  left_join(
-    location,
-    municipality_locations_mdt,
-    by = c("sampno","locno")
-  ) %>% 
+  location %>% 
+  # # Add municipality locations (ARCHIVED)
+  # left_join(
+  #   municipality_locations_mdt,
+  #   by = c("sampno","locno")
+  # ) %>% 
   # Add travel zones
   left_join(zones, by = "sampno") %>% 
   mutate(county_chi_name = case_when(
@@ -237,7 +240,8 @@ location <-
   # more accurate than the centroid based assignment used for municipality IDs)
   left_join(zones, by = "sampno")
 
-rm(municipality_locations_mdt,location_xy_mdt)
+# # ARCHIVE - add back if using location assignment of centroids
+# rm(municipality_locations_mdt,location_xy_mdt)
 
 # Home location flag
 home_wip <- location %>%
@@ -543,7 +547,9 @@ odbcClose(con)
 # Add geometry to latitude and longitude for locations
 location_xy_tt <- st_as_sf(tt_location %>% filter(!is.na(X_PUBLIC)),
                            coords = c(x = "X_PUBLIC", y = "Y_PUBLIC"),
-                           crs = cmapgeo::cmap_crs)
+                           crs = 4326)
+
+location_xy_tt <- sf::st_transform(location_xy_tt,crs = cmapgeo::cmap_crs)
 
 # Join municipalities with the location file to determine which locations fall
 # within municipal borders
