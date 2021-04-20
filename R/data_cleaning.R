@@ -769,7 +769,8 @@ tt <- tt %>%
 
 # Recode mode factors and group into buckets
 mdt <- mdt %>%
-  mutate(mode = factor(recode(mode,
+  mutate(mode_n = mode,
+         mode = factor(recode(mode,
                               !!!recode_mode_detailed_mdt))) %>%
   mutate(mode_c = fct_collapse(mode,
                                !!!recode_mode_buckets_mdt)) %>%
