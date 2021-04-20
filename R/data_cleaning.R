@@ -498,6 +498,12 @@ tt_ppl <- sqlFetch(con,"per_public") %>%
          SCHOL,      # Status of school enrollment.
          SMODE,      # Mode regularly used to get to school.
          
+         EMPLY,      # Is this person employed? 1 is full-time, 2 is part-time
+         WLOC,       # Work location?
+         JOBS,       # How many jobs?
+         TELEW,      # Telecommute to work (only for respondents who work outside the home)
+         WHOME,      # How often does the respondent telecommute? 1 is almost every day, 2 is once a week or more
+         
          RACE,       # The race of the respondent (note - only asked for head of household)
          HISP,       # The Hispanic status of the respondent (note - only asked for head of household)
 
