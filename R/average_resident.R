@@ -449,7 +449,7 @@ finalize_plot(average_resident_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data.",
               filename = "average_resident_p1",
-              # mode = "png",
+              mode = "png",
               height = 6.5,
               overwrite = T)
   
@@ -525,14 +525,15 @@ finalize_plot(average_resident_p2,
 average_resident_p3 <-
   # Get data
   travel_summaries %>%
-  # Exclude total distances
-  filter(name != "distance_per_capita") %>% 
+  # Keep only total distances
+  filter(name == "distance_per_capita") %>% 
   # Keep overall, sex, age, and income
   filter(type %in% c("Household income","Age","Sex")) %>% 
   # Rename variables we are keeping
-  mutate(name = recode_factor(factor(name,levels = c("trips_per_capita","avg_trip_length")),
-                              "trips_per_capita" = "Trips/day        ",
-                              "avg_trip_length" = "Distance/trip (mi.)"),
+  mutate(
+    # name = recode_factor(factor(name,levels = c("trips_per_capita","avg_trip_length")),
+    #                           "trips_per_capita" = "Trips/day        ",
+    #                           "avg_trip_length" = "Distance/trip (mi.)"),
          survey = recode_factor(factor(survey),
                                 "tt" = "Travel Tracker ('08)",
                                 "mdt" = "My Daily Travel ('19)")) %>%
@@ -543,29 +544,30 @@ average_resident_p3 <-
   ggplot(aes(x = value, y = subtype, fill = survey)) +
   geom_col(position = position_dodge2(width = 1,padding = 0.15,reverse = T),
            width = .8) +
-  
+
   # Add labels
-  # geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
-  #                group = survey),
-  #            position = position_dodge2(width = .8,reverse = T),
-  #            fill = "white",
-  #            label.size = 0,label.padding = unit(1.5,"bigpts"),
-  #            vjust = 0) +
+  geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
+                 group = survey),
+             position = position_dodge2(width = .8,reverse = T),
+             fill = "white",
+             label.size = 0,label.padding = unit(1.5,"bigpts"),
+             hjust = 0) +
   
-  facet_wrap(type~name,ncol = 4,scales = "free_y",dir = "v") +
+  facet_wrap(~type,ncol = 3,scales = "free_y",dir = "v") +
   
   # Adjust axes
-  # scale_x_continuous(limits = c(0,8)) +
+  scale_x_continuous(limits = c(0,30)) +
   
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
-             xlab = "Travel characteristics over time",
+             xlab = "Distance per day for residents who traveled (in miles)",
              strip.text = element_text(hjust = 0.5)) +
-  cmap_fill_discrete(palette = "friday")
+  cmap_fill_discrete(palette = "friday",reverse = T)
 
 # Export finalized graphic
 finalize_plot(average_resident_p3,
-              "Lower-income and older travelers report increased travel in 2019 compared to 2008.",
+              "In contrast to the overall regional decline, lower-income and 
+              older travelers reported increased travel in 2019 compared to 2008.",
               caption = "Note: Includes trips that started and ended in the 
               Illinois counties of Cook, DuPage, Grundy, Kane, Kendall, Lake, 
               McHenry, and Will, as well as the Indiana counties of Lake, 
