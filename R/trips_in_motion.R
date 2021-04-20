@@ -342,7 +342,7 @@ tim_mdt_bike <-
                                "Return home (work)" = "Work trip",
                                "Shopping trip" = "Other trip",
                                "Return home (shopping)" = "Other trip",
-                               "Other trip" = "Other trip"))
+                               "Other trip" = "Other trip")) 
 
 trip_times_bike_and_chain_mdt <-
   tim_calculator(data = tim_mdt_bike,
@@ -376,7 +376,7 @@ trips_in_motion_p4 <-
   # Add CMAP style
   theme_cmap(gridlines = "hv",legend.max.columns = 3,
              panel.grid.major.x = element_line(color = "light gray"),
-             xlab = "Personal bike trips in motion by type of trip")
+             xlab = "Personal bike trips")
 
 finalize_plot(trips_in_motion_p4,
               "Personal bike usage has a strong morning peak, with PM usage spread more evenly across the afternoon and evening.",
