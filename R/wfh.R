@@ -64,8 +64,12 @@ wfh_mdt_all <-
          tc_or_wfh =
            case_when(
              tc == 1 | wfh == 1 ~ 1,
-             TRUE ~ 0
-           )
+             TRUE ~ 0),
+         
+         tc_not_wfh = 
+           case_when(
+             tc == 1 | wfh != 1 ~ 1,
+             TRUE ~ 0)
          ) %>%
   # Create a consolidated flag for wfh and tc behavior
   mutate(combined_tc_wfh =
@@ -126,6 +130,43 @@ wfh_person_level <-
             travtime_pg = sum(travtime_pg, na.rm = TRUE)) %>%
   ungroup()
 
+
+## Travel Tracker - only for comparison of overall trends due to differing
+## survey questions - individuals who reported their workplace as home were not
+## asked whether they telecommuted.
+
+
+# Summary statistics (includes individuals with no trips)
+wfh_tt_all <-
+  tt_all_respondents %>% # 30,683 records
+  # Keep only employed respondents (either those who report having 1+ jobs or
+  # those who report being employed)
+  filter(EMPLY == 1 | EMPLY == 2 | (JOBS > 0 & JOBS < 97)) %>% # 17,656 records
+  # Create a flag for people who telecommute and/or work from home
+  mutate(tc =
+           case_when(
+             WHOME %in% c(1,2) ~ 1,
+             TRUE ~ 0),
+         
+         wfh = 
+           case_when(
+             WLOC == 1 ~ 1,
+             TRUE ~ 0),
+         
+         tc_or_wfh =
+           case_when(
+             tc == 1 | wfh == 1 ~ 1,
+             TRUE ~ 0),
+         
+         tc_not_wfh = 
+           case_when(
+             tc == 1 | wfh != 1 ~ 1,
+             TRUE ~ 0)
+  ) %>%
+  ungroup() %>% 
+  # And add age bins
+  mutate(age_bin=cut(AGE,breaks=age_breaks,labels=age_labels))
+
 #################################################
 #                                               #
 #                 Analysis                      #
@@ -144,6 +185,24 @@ wfh_mdt_all %>%
             tc = sum(wtperfin*tc),
             wfh = sum(wtperfin*wfh),
             tc_or_wfh = format(sum(wtperfin*tc_or_wfh),scientific = F))
+
+wfh_tt_all %>%
+  summarize(tc_pct = weighted.mean(x=tc,w=WGTP),
+            wfh_pct = weighted.mean(x=wfh,w=WGTP),
+            tc_or_wfh_pct = weighted.mean(x=tc_or_wfh,w=WGTP),
+            tc = sum(WGTP*tc),
+            wfh = sum(WGTP*wfh),
+            tc_or_wfh = format(sum(WGTP*tc_or_wfh),scientific = F))
+
+# Backup for prose - Summarize TC without working from home
+wfh_mdt_all %>% 
+  filter(wfh == 0) %>% 
+  summarize(tc = weighted.mean(tc,wtperfin))
+
+wfh_tt_all %>% 
+  filter(wfh == 0) %>% 
+  summarize(tc = weighted.mean(tc,WGTP))
+
 
 # Overall baseline statistics for plot
 tcwfh_overall <-
