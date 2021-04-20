@@ -665,7 +665,9 @@ finalize_plot(mode_share_p5,
               caption = "Note: Includes trips by residents of the region that 
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
-              travelers younger than 16.
+              travelers younger than 16. Distances are 'network distances' and 
+              capture the total distance traveled along the route, not just the 
+              distance from origin to destination.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
@@ -674,6 +676,39 @@ finalize_plot(mode_share_p5,
               filename = "mode_share_p5",
               mode = "png",
               overwrite = T)
+
+################################################################################
+# Backup - bike and bike share mode share by geography
+################################################################################
+
+# Create baseline totals for percentage calculations
+pct_calculator(mdt_base_3,
+               breakdown_by = "mode",
+               weight = "wtperfin") %>% 
+  mutate(pct = round(pct,5),
+         breakdown_total = round(breakdown_total,2)) %>% 
+  filter(mode %in% c("bike share","personal bike"))
+
+# Create baseline totals for percentage calculations
+pct_calculator(mdt_base_3,
+               breakdown_by = "mode",
+               second_breakdown = "geog",
+               weight = "wtperfin") %>% 
+  mutate(pct = round(pct,5),
+         breakdown_total = round(breakdown_total,2)) %>% 
+  filter(mode %in% c("bike share","personal bike"))
+
+
+# Create baseline totals for percentage calculations
+pct_calculator(mdt_base_3,
+               subset = "bike",
+               subset_of = "mode_c",
+               breakdown_by = "race_eth",
+               second_breakdown = "mode",
+               weight = "wtperfin") %>% 
+  mutate(pct = round(pct,5),
+         breakdown_total = round(breakdown_total,2)) %>% 
+  filter(mode %in% c("bike share","personal bike"))
 
 ################################################################################
 # 
