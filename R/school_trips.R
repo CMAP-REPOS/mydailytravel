@@ -145,8 +145,8 @@ school_trips_p2 <-
   total_school_mode_c %>%
   # Rename surveys
   mutate(survey = recode_factor(survey,
-                                mdt = "My Daily Travel (2019)",
-                                tt = "Travel Tracker (2008)")) %>%
+                                tt = "Travel Tracker ('08)",
+                                mdt = "My Daily Travel ('19)")) %>%
   
   # Create ggplot object
   ggplot(aes(y = reorder(mode_c,desc(-pct)), x = pct, fill = survey)) +
@@ -164,7 +164,7 @@ school_trips_p2 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v") +
-  cmap_fill_discrete(palette = "friday")
+  cmap_fill_discrete(palette = "friday", reverse = T)
 
 finalize_plot(school_trips_p2,
               "Mode share of K-8 school trips, 2008 vs. 2019.",
@@ -208,8 +208,9 @@ all_school_inc_mode_c_tt <-
                           SCHOL == 3),
                  breakdown_by = "mode_c",
                  second_breakdown = "income_c",
+                 third_breakdown = "geog",
                  weight = "weight",
-                 survey = "tt")
+                 survey = "tt") %>% filter(mode_c == "walk")
 
 ### Calculate proportions for MDT
 
@@ -220,8 +221,9 @@ all_school_inc_mode_c_mdt <-
                           schol == 3),
                  breakdown_by = "mode_c",
                  second_breakdown = "income_c",
+                 third_breakdown = "geog",
                  weight = "wtperfin",
-                 survey = "mdt")
+                 survey = "mdt") %>% filter(mode_c == "walk")
 
 ### Join MDT and TT
 total_school_inc_mode_c <-
@@ -236,9 +238,9 @@ school_trips_p3 <-
   filter(mode_c == "walk") %>%
   # Rename surveys and income categories
   mutate(survey = recode_factor(survey,
-                                mdt = "My Daily Travel ('19)",
-                                tt = "Travel Tracker ('08)"),
-         income_c = recode_factor(income_c,
+                                tt = "Travel Tracker ('08)",
+                                mdt = "My Daily Travel ('19)"),
+  income_c = recode_factor(income_c,
                                   "low" = "Less than $35K",
                                   "middle-low" = "$35K to $59K",
                                   "middle-high" = "$60K to $99K",
@@ -263,7 +265,7 @@ school_trips_p3 <-
   theme_cmap(gridlines = "v",
              xlab = "Walk mode-share of K-8 school trips by household income",
              hline = 0) +
-  cmap_fill_discrete(palette = "friday")
+  cmap_fill_discrete(palette = "friday", reverse = T)
 
 finalize_plot(school_trips_p3,
               "Walking to school has become less common for children in 
