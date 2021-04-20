@@ -26,16 +26,16 @@ source("R/helper_fns.R")
 # Download 2018-2019 data (split into four quarters across the survey collection period)
 divvy_zip <- tempfile()
 
-download.file("https://divvy-tripdata.s3.amazonaws.com/Divvy_Trips_2018_Q3.zip",divvy_zip)
+download.file("https://divvy-tripdata.s3.amazonaws.com/Divvy_Trips_2018_Q3.zip",divvy_zip,quiet = TRUE)
 divvy_18q3 <-read.csv(unzip(divvy_zip,files = "Divvy_Trips_2018_Q3.csv"))
 
-download.file("https://divvy-tripdata.s3.amazonaws.com/Divvy_Trips_2018_Q4.zip",divvy_zip)
+download.file("https://divvy-tripdata.s3.amazonaws.com/Divvy_Trips_2018_Q4.zip",divvy_zip,quiet = TRUE)
 divvy_18q4 <-read.csv(unzip(divvy_zip,files = "Divvy_Trips_2018_Q4.csv"))
 
-download.file("https://divvy-tripdata.s3.amazonaws.com/Divvy_Trips_2019_Q1.zip",divvy_zip)
+download.file("https://divvy-tripdata.s3.amazonaws.com/Divvy_Trips_2019_Q1.zip",divvy_zip,quiet = TRUE)
 divvy_19q1 <-read.csv(unzip(divvy_zip,files = "Divvy_Trips_2019_Q1"))
 
-download.file("https://divvy-tripdata.s3.amazonaws.com/Divvy_Trips_2019_Q2.zip",divvy_zip)
+download.file("https://divvy-tripdata.s3.amazonaws.com/Divvy_Trips_2019_Q2.zip",divvy_zip,quiet = TRUE)
 divvy_19q2 <-read.csv(unzip(divvy_zip,files = "Divvy_Trips_2019_Q2"))
 
 
@@ -161,9 +161,9 @@ trip_times_divvy_counts <-
     criteria = "usertype")
 
 # Define breaks
-breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 03:00:00"),
+breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 06:00:00"),
                      to = as.POSIXct("2020-01-02 03:00:00"),
-                     by = "3 hours")
+                     by = "6 hours")
 # Create chart
 divvy_p1 <-
   # Get data
@@ -180,13 +180,13 @@ divvy_p1 <-
   # Reformat axes
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
                     breaks = breaks) +
-  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
+  scale_y_continuous(limits = c(0,500),expand = expansion(mult = c(.05,.01))) +
 
   # Add CMAP style
   scale_fill_discrete(type = c("#475c66","#ac8c00")) +
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
-             xlab = "Divvy trips in motion on weekdays by customer type")
+             xlab = "Divvy trips")
 
 # Export plot
 finalize_plot(divvy_p1,
@@ -212,6 +212,46 @@ finalize_plot(divvy_p1,
               # width = 8,
               # overrides = list(margin_plot_l = 30),
               overwrite = T)
+
+# Combined plot of Divvy ridership and MDT bike ridership
+bike_p1 <- ggpubr::ggarrange(trips_in_motion_p4,divvy_p1,
+                     ncol = 2,nrow = 1)
+
+finalize_plot(bike_p1,
+              sidebar_width = 0,
+              title = "Personal bike trips peak in the morning, while Divvy 
+              trips peak in the afternoon.",
+              "Note: Trips in motion are 55-minute rolling averages for personal 
+              bikes and 25-minute rolling averages for Divvy.
+              'One-time user' refers to Divvy customers that purchased a
+              single ride or a day pass. Personal bike trips anlyzed include all 
+              trips by residents of the region that start and/or end in the I
+              llinois counties of Cook, DeKalb, DuPage, Grundy, Kane, Kendall, 
+              Lake, McHenry, and Will. Trips that were in motion as of 2:55
+              A.M. and ended after 3:00 A.M. are captured on the right side
+              of the graph, and are not included in the totals of trips in
+              motion as of 3:00 A.M. on the left side of the graph.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My 
+              Daily Travel survey data and Divvy ridership data for weekdays 
+              between September 4, 2018 and May 9, 2019 (excluding all federal 
+              holidays and the weeks of November 19, December 24, December 31, 
+              and April 15).",
+              filename = "bike_p1",
+              mode = "png"
+              )
+
+# Count of ridership by day
+divvy_wip %>% 
+  mutate(day = floor_date(start_time - 3* 60*60, unit = "day")) %>% 
+  count(day) %>% 
+  summarize(average = mean(n))
+
+# Count of trips by subscriber gender
+divvy_wip %>% 
+  filter(gender != "") %>% 
+  count(gender) %>% 
+  mutate(pct = n/sum(n))
 
 ####### ARCHIVE OF 2019 HOLIDAYS (FOR FUTURE ANALYSIS)
 
