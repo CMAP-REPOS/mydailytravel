@@ -326,7 +326,7 @@ tcwfh_summaries <-
 # Extract values for regional averages, which will be graphed as value lines
 tcwfh_summaries_vlines <-
   tcwfh_summaries %>%
-  filter(type == "Overall" & name == "uw_pct") %>% 
+  filter(type == "Overall" & name == "pct") %>% 
   select(-subtype,-type) %>% 
   left_join(tibble(type = c("Sex","Race and ethnicity","Household income",
                             "Age")),by = character())
@@ -495,7 +495,7 @@ wfh_p2 <-
              legend.max.columns = 1,
              vline = 0,
              xlab = "Mean total miles traveled on work trips by home jurisdiction
-             \n(excluding travelers with no trips to a work location)",
+             (excluding travelers with no trips to a work location)",
              axis.title.x = element_text(hjust = 0.5)) +
   cmap_fill_discrete(palette = "legislation")
 
