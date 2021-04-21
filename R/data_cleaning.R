@@ -423,7 +423,9 @@ mdt <- mdt %>%
     TRUE ~ 1
   )) %>% 
   # Calculate travel time based on actual departure and arrival
-  mutate(travtime_pg_calc = as.numeric((arrtime_pg - start_times_pg)/60)) %>%
+  mutate(travtime_pg_calc = case_when(
+    is.na(start_times_pg) ~ travtime_pg,
+    TRUE ~ as.numeric((arrtime_pg - start_times_pg)/60))) %>%
   select(-c(sampno_lag,perno_lag,check,out_region_lag,outside_tt,outside_tt_lag))
 
 mdt <- mdt %>%
