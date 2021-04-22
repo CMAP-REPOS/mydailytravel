@@ -179,17 +179,11 @@ finalize_plot(modes_of_tpurps_p1,
 
 # Calculate health mode share by race and ethnicity
 detailed_health_race_mode_c_mdt <-
-  pct_calculator(mdt_base_1 %>% 
-                   mutate(tpurp = recode_factor(
-                     tpurp,
-                     "Health care visit for someone else" = "Someone else",
-                     "Visited a person staying at the hospital" = "Someone else",
-                     "Health care visit for self" = "Personal")),
-                 subset = "health",
-                 subset_of = "tpurp_c",
+  pct_calculator(mdt_base_1,
+                 subset = "Health care visit for self",
+                 subset_of = "tpurp",
                  breakdown_by = "mode_c",
-                 second_breakdown = "tpurp",
-                 third_breakdown = "race_eth",
+                 second_breakdown = "race_eth",
                  weight = "wtperfin",
                  survey = "mdt")
 
@@ -199,9 +193,6 @@ modes_of_tpurps_p1a <-
   detailed_health_race_mode_c_mdt %>%
   # Exclude those without race and ethnicity
   filter(race_eth != "missing") %>%
-  # Order for graph
-  mutate(tpurp = factor(tpurp,levels = c("All health care visits for someone else",
-                                         "Health care visit for self"))) %>%
   # Categorize low-percentage modes into "Other modes"
   mutate(mode_c = recode_factor(mode_c,
                                 "driver" = "By car",
@@ -211,11 +202,11 @@ modes_of_tpurps_p1a <-
                                 "other" = "Other modes",
                                 "bike" = "Other modes")) %>%
   # Calculate new values based on collapsed groups
-  group_by(mode_c,tpurp,race_eth) %>%
+  group_by(mode_c,race_eth) %>%
   summarize(pct = sum(pct)) %>%
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = str_wrap_factor(tpurp,15),
+  ggplot(aes(x = pct, y = race_eth,
              # Only label bars that round to at least 5 percent
              label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
@@ -226,9 +217,6 @@ modes_of_tpurps_p1a <-
   theme_cmap(gridlines = "v",legend.max.columns = 3, vline = 0,
              xlab = "Mode share") +
   scale_fill_discrete(type = c("#00665c","#36d8ca","#006b8c")) +
-  
-  # Add facet
-  facet_wrap(~race_eth) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent())
