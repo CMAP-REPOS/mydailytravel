@@ -145,7 +145,7 @@ hh <- read.csv(unzip(mdt_zip,files = "household.csv")) %>%
   )
 
 # location file w/region flag
-location <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
+location_raw <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
   select(sampno,locno, # Identifier for the household (sampno) and location
                      # (locno)
 
@@ -166,24 +166,31 @@ location <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
 file.remove(mdt_zip,"place.csv","person.csv","household.csv","location.csv")
 rm(mdt_zip)
 
-# Travel zones (provided by CMAP R&A staff).
+# Travel zones (provided by CMAP RAP staff).
 zones <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/zones.csv") %>%
   select(sampno,     # The household identifier.
          cluster)    # Designates the household's inclusion in one of 11 travel
                      # zones, used for weighting the overall survey.
+
+
+# Municipalities of location IDs (provided by CMAP RAP staff).
+munis <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/loc_city.csv") %>%
+  select(sampno,
+         locno,
+         city)
 
 # Trip chains (provided by CMAP R&A staff). These provide sampno, perno, and
 # placeno as identifiers, as well as identify the trip as part of a chain to
 # work or a shopping trip.
 chains <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/chains.csv")
 
-
+# 
 # # Archived - add municipality location (keeping for reference, using travel
 # # zones instead)
 # 
 # # Add geometry to latitude and longitude for locations
-# location_xy_mdt <- 
-#       sf::st_as_sf(location, 
+# location_xy_mdt <-
+#       sf::st_as_sf(location,
 #                    coords = c(x = "longitude", y = "latitude"),
 #                    crs = 4326)
 # 
@@ -191,25 +198,29 @@ chains <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/T
 # 
 # # Join municipalities with the location file to determine which locations fall
 # # within municipal borders
-# municipality_locations_mdt <- 
+# municipality_locations_mdt <-
 #   sf::st_join(x = location_xy_mdt,
 #               y = cmapgeo::municipality_sf,
-#               join = st_within) %>% 
+#               join = st_within) %>%
 #   # Remove geometry
-#   as_tibble() %>% 
+#   as_tibble() %>%
 #   # Keep relevant variables
 #   select(sampno,locno,municipality)
 
 # Add flags to locations
 location <- 
-  location %>% 
+  location_raw %>% 
   # # Add municipality locations (ARCHIVED)
   # left_join(
   #   municipality_locations_mdt,
   #   by = c("sampno","locno")
-  # ) %>% 
-  # Add travel zones
+  # ) %>%
+  # Add travel zones - note these correspond to the home location of the
+  # household, and not the location
   left_join(zones, by = "sampno") %>% 
+  # Add municipality names
+  left_join(munis, by = c("sampno","locno")) %>% 
+  
   mutate(county_chi_name = case_when(
     # Use the three Chicago travel zones to ID Chicago locations (note this
     # appears to excludes portions of the Far Northwest Side (portions of
@@ -217,7 +228,7 @@ location <-
     # however, given the assignment of XY coordinates to the centroids of
     # tracts, neither method allows for perfect sorting. We thus use travel
     # zones, since they were used in the weighting of the survey.
-    cluster %in% c(1,2,3) ~ "Chicago", 
+    city == "CHICAGO" ~ "Chicago", 
     # Everything else in Cook County belongs to Suburban Cook
     state_fips == 17 & county_fips == 31 ~ "Suburban Cook",
     # And everything else is assigned using state and county FIPS with no issue.
@@ -235,10 +246,7 @@ location <-
     state_fips == 17 & county_fips %in% c(cmap_seven_counties,63) ~ 0,
     state_fips == 18 & county_fips %in% c(89,91,127) ~ 0,
     TRUE ~ 1
-    )) %>% 
-  # Also add the subzones for identification of Chicago residents (note this is
-  # more accurate than the centroid based assignment used for municipality IDs)
-  left_join(zones, by = "sampno")
+    ))
 
 # # ARCHIVE - add back if using location assignment of centroids
 # rm(municipality_locations_mdt,location_xy_mdt)
@@ -270,7 +278,8 @@ home_wip <- location %>%
 #   filter(sampno %in% out_of_state$sampno) %>%
 
 
-# There are <100 households coded as having home locations in multiple counties. Identify them.
+# There are <100 households coded as having home locations in multiple counties.
+# Identify them.
 two_homes <- (home_wip %>%
                 group_by(sampno) %>%
                 summarize(n = n()) %>%
@@ -312,7 +321,7 @@ home <- home_wip %>%
   select(-county_chi_name)
 
 # Remove WIP tables and Chicago tracts
-rm(home_wip, two_homes)
+rm(home_wip, two_homes, location_raw)
 
 # Add combined duration and distance for placeGroup trips
 placeGroupStats <- trips %>%
