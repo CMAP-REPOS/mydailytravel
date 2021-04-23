@@ -163,6 +163,9 @@ finalize_plot(modes_of_tpurps_p1,
               paratransit, private shuttles, and personal bicycles. Unlabeled 
               bars have less than five percent mode share.
               <br><br>
+              Sample size: Chicago (436); Suburban Cook (259); Other suburban 
+              counties (636)
+              <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
               # width = 8,
@@ -337,7 +340,8 @@ modes_of_tpurps_p2 <-
 
   # Add CMAP style
   theme_cmap(gridlines = "v",vline = 0,
-             xlab = "Mode share") +
+             xlab = "Mode share",
+             strip.text = element_text(hjust = 0.5,face = "bold")) +
   scale_fill_discrete(type = c("#00665c","#36d8ca","#6d8692","#006b8c")) +
   
   # Adjust axis
@@ -354,6 +358,9 @@ finalize_plot(modes_of_tpurps_p2,
               of a personal vehicle (not including services like taxis or TNCs).
               'Other modes' includes transit, biking, and all other modes.
               Unlabeled bars have less than 5 percent mode share.
+              <br><br>
+              Sample size (Chicago/Suburban Cook/Other suburban counties): Ate / 
+              dined out (1482/672/1778); Drive thru / take-out dining (611/398/1126).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
@@ -423,7 +430,8 @@ modes_of_tpurps_p3 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
-             xlab = "Mode share for socializing trips by home jurisdiction") +
+             xlab = "Mode share for socializing trips by home jurisdiction",
+             strip.text = element_text(hjust = 0.5,face = "bold")) +
   scale_fill_discrete(type = c("#00665c","#36d8ca","#6d8692","#006b8c")) +
   
   # Adjust axis
@@ -439,6 +447,9 @@ finalize_plot(modes_of_tpurps_p3,
               "Note: Excludes travelers younger than 16 years old. 'By car' 
               includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
+              <br><br>
+              Sample size (Chicago/Suburban Cook/Other suburban counties): 
+              Friends (840/297/682); Relatives (238/166/427).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
