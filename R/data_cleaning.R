@@ -31,7 +31,7 @@
 #                                               #
 #################################################
 
-# # Run code once per machine to install GitHub-based packages
+# # Run code once per machine to install GitHub-based packages (not on CRAN)
 # devtools::install_github("CMAP-REPOS/cmapplot")
 # devtools::install_github("CMAP-REPOS/cmapgeo")
 # devtools::install_github("coolbutuseless/ggpattern")
