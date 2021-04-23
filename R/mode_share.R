@@ -173,7 +173,7 @@ mdt_mode_age <-
 
 # Mileage bins
 mileage_breaks <- c(-1,.5,1,2.5,5,25,100)
-mileage_labels <- c("0.50 miles or less","0.51 to 1 mile", "1.01 to 2.50 miles", 
+mileage_labels <- c("0.50 miles or less","0.51 to 1.0 miles", "1.01 to 2.50 miles", 
                  "2.51 to 5.00 miles","5.01 to 25.00 miles","More than 25 miles")
 
 mdt_mode_mileage <-
@@ -287,6 +287,9 @@ finalize_plot(mode_share_p1,
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
               travelers younger than 16.
               <br><br>
+              Sample size: Figures are based on a total of 82,732 recorded trips. 
+              McHenry County has the lowest sample size, with 2,266 records.
+              <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
               # height = 4.5,
@@ -368,13 +371,17 @@ mode_share_p2 <-
 
 # Export finalized graphic
 finalize_plot(mode_share_p2,
-              title = "The lowest-income households rely the most on non-car 
-              modes, but high-income households also exceed the regional 
-              average.",
+              title = "Households with less than $30,000 in income are the most
+              reliant  on non-car modes, but the highest-income households also
+              exceed the regional average.",
               caption = "Note: Includes trips by residents of the region that 
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
               travelers younger than 16.
+              <br><br>
+              Sample size: Figures are based on a total of 82,732 recorded trips. 
+              Travelers with household incomes from $25,000 to $25,999 have the 
+              lowest sample size, with 1,943 records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
@@ -493,6 +500,9 @@ finalize_plot(mode_share_p3,
               Kendall, Lake, McHenry, and Will. Excludes trips by travelers 
               younger than 16.
               <br><br>
+              Sample size: Figures are based on a total of 82,732 recorded trips. 
+              'Other' travelers have the lowest sample size, with 1,783 records.
+              <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
               # height = 5.5,
@@ -580,6 +590,10 @@ finalize_plot(mode_share_p4,
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
               travelers younger than 16.
+              <br><br>
+              Sample size: Figures are based on a total of 82,732 recorded trips. 
+              Travelers 70 and older have the lowest sample size, with 4,219
+              records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
@@ -669,6 +683,10 @@ finalize_plot(mode_share_p5,
               capture the total distance traveled along the route, not just the 
               distance from origin to destination.
               <br><br>
+              Sample size: Figures are based on a total of 82,732 recorded trips. 
+              Trips of 25 miles or more have the lowest sample size, with 5,489 
+              records.
+              <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
               # # height = 5.5,
@@ -678,43 +696,43 @@ finalize_plot(mode_share_p5,
               overwrite = T)
 
 ################################################################################
-# Backup - bike and bike share mode share by geography
-################################################################################
-
-# Create baseline totals for percentage calculations
-pct_calculator(mdt_base_3,
-               breakdown_by = "mode",
-               weight = "wtperfin") %>% 
-  mutate(pct = round(pct,5),
-         breakdown_total = round(breakdown_total,2)) %>% 
-  filter(mode %in% c("bike share","personal bike"))
-
-# Create baseline totals for percentage calculations
-pct_calculator(mdt_base_3,
-               breakdown_by = "mode",
-               second_breakdown = "geog",
-               weight = "wtperfin") %>% 
-  mutate(pct = round(pct,5),
-         breakdown_total = round(breakdown_total,2)) %>% 
-  filter(mode %in% c("bike share","personal bike"))
-
-
-# Create baseline totals for percentage calculations
-pct_calculator(mdt_base_3,
-               subset = "bike",
-               subset_of = "mode_c",
-               breakdown_by = "race_eth",
-               second_breakdown = "mode",
-               weight = "wtperfin") %>% 
-  mutate(pct = round(pct,5),
-         breakdown_total = round(breakdown_total,2)) %>% 
-  filter(mode %in% c("bike share","personal bike"))
-
-################################################################################
 # 
 # ARCHIVE
 ################################################################################
-# # 
+#
+# ################################################################################
+# # Backup - bike and bike share mode share by geography
+# ################################################################################
+# 
+# # Create baseline totals for percentage calculations
+# pct_calculator(mdt_base_3,
+#                breakdown_by = "mode",
+#                weight = "wtperfin") %>% 
+#   mutate(pct = round(pct,5),
+#          breakdown_total = round(breakdown_total,2)) %>% 
+#   filter(mode %in% c("bike share","personal bike"))
+# 
+# # Create baseline totals for percentage calculations
+# pct_calculator(mdt_base_3,
+#                breakdown_by = "mode",
+#                second_breakdown = "geog",
+#                weight = "wtperfin") %>% 
+#   mutate(pct = round(pct,5),
+#          breakdown_total = round(breakdown_total,2)) %>% 
+#   filter(mode %in% c("bike share","personal bike"))
+# 
+# 
+# # Create baseline totals for percentage calculations
+# pct_calculator(mdt_base_3,
+#                subset = "bike",
+#                subset_of = "mode_c",
+#                breakdown_by = "race_eth",
+#                second_breakdown = "mode",
+#                weight = "wtperfin") %>% 
+#   mutate(pct = round(pct,5),
+#          breakdown_total = round(breakdown_total,2)) %>% 
+#   filter(mode %in% c("bike share","personal bike"))
+# 
 # ################################################################################
 # #
 # # TT-only analyses
