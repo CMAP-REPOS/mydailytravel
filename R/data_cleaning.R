@@ -167,24 +167,39 @@ file.remove(mdt_zip,"place.csv","person.csv","household.csv","location.csv")
 rm(mdt_zip)
 
 # Travel zones (provided by CMAP RAP staff).
-zones <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/zones.csv") %>%
+zones <- read_csv("source/zones.csv") %>%
   select(sampno,     # The household identifier.
          cluster)    # Designates the household's inclusion in one of 11 travel
                      # zones, used for weighting the overall survey.
 
 
 # Municipalities of location IDs (provided by CMAP RAP staff).
-munis <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/loc_city.csv") %>%
-  select(sampno,
-         locno,
-         city)
+munis <- read_csv("source/loc_city.csv") %>%
+  select(sampno,     # The household identifier
+         locno,      # The location identifier (unique with HH identifier)
+         city)       # The municipality of the location (if in an incorporated area)
 
-# Trip chains (provided by CMAP R&A staff). These provide sampno, perno, and
-# placeno as identifiers, as well as identify the trip as part of a chain to
-# work or a shopping trip.
-chains <- read_csv("C:/Users/dcomeaux/Chicago Metropolitan Agency for Planning/Transportation Focus Area - Documents/My Daily Travel 2020/2018 survey/Data/chains.csv")
-
-# 
+# Trip chains (provided by CMAP RAP staff). Chains represent continuous journeys
+# that may have more than one destination along a larger circuit (i.e., a
+# commute to work with a stop at a coffee shop in the morning, lunch at mid-day,
+# and a visit to the grocery store in the evening).
+chains <- read_csv("source/chains.csv") %>% 
+  select(sampno,    # The household identifier
+         perno,     # The person identifier
+         placeno,   # The place number
+         
+         work_chain,   # Whether the trip is part of a chain to work
+         
+         home_to_work, # For work trip chains, is this trip part of the journey 
+         work_to_work, # from home to work, a trip while at work, or a trip part
+         work_to_home, # of the journey home from work?
+         
+         shop_chain,   # Whether the trip is part of a chain to shop
+         
+         home_to_shop, # Similar for shopping chains
+         shop_to_shop,
+         shop_to_home)
+         
 # # Archived - add municipality location (keeping for reference, using travel
 # # zones instead)
 # 
