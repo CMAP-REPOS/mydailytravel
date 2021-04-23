@@ -52,9 +52,13 @@ library(sf)
 setwd("~/GitHub/mydailytravel")
 source("R/recoding.R")
 
-# Load My Daily Travel
-mdt_zip <- tempfile()
-download.file("https://datahub.cmap.illinois.gov/dataset/02a047a1-e7b8-4ca7-b754-54f2b9bfeab6/resource/c9e82b87-0b4c-45ea-9c06-9cdebdb7071f/download/MyDailyTravelData.zip",mdt_zip,quiet = TRUE)
+# # Load My Daily Travel (download from internet)
+# mdt_zip <- tempfile()
+# download.file("https://datahub.cmap.illinois.gov/dataset/02a047a1-e7b8-4ca7-b754-54f2b9bfeab6/resource/c9e82b87-0b4c-45ea-9c06-9cdebdb7071f/download/MyDailyTravelData.zip",mdt_zip,quiet = T)
+
+# Load My Daily Travel (from source)
+mdt_zip <- "./source/MyDailyTravelData.zip"
+
 
 # trips
 trips <- read.csv(unzip(mdt_zip,files = "place.csv")) %>%
@@ -860,8 +864,7 @@ mdt_all_respondents <- mdt_all_respondents %>%
                            "-7" = "missing")) %>%
   mutate(race_eth = case_when(
     hisp == 1 ~ "hispanic",
-    TRUE ~ race_eth)) %>%
-  select(-race,-hisp)
+    TRUE ~ race_eth)) 
 
 
 
@@ -889,8 +892,7 @@ tt_all_respondents <- tt_all_respondents %>%
                            "9" = "missing")) %>%
   mutate(race_eth = case_when(
     HISP == 1 ~ "hispanic",
-    TRUE ~ race_eth)) %>%
-  select(-RACE,-HISP)
+    TRUE ~ race_eth))
 
 # Recode trip chains in MDT data
 mdt <- mdt %>%
