@@ -200,28 +200,6 @@ chains <- read_csv("source/chains.csv") %>%
          shop_to_shop,
          shop_to_home)
          
-# # Archived - add municipality location (keeping for reference, using travel
-# # zones instead)
-# 
-# # Add geometry to latitude and longitude for locations
-# location_xy_mdt <-
-#       sf::st_as_sf(location,
-#                    coords = c(x = "longitude", y = "latitude"),
-#                    crs = 4326)
-# 
-# location_xy_mdt <- sf::st_transform(location_xy_mdt,crs = cmapgeo::cmap_crs)
-# 
-# # Join municipalities with the location file to determine which locations fall
-# # within municipal borders
-# municipality_locations_mdt <-
-#   sf::st_join(x = location_xy_mdt,
-#               y = cmapgeo::municipality_sf,
-#               join = st_within) %>%
-#   # Remove geometry
-#   as_tibble() %>%
-#   # Keep relevant variables
-#   select(sampno,locno,municipality)
-
 # Add flags to locations
 location <- 
   location_raw %>% 
@@ -338,7 +316,11 @@ home <- home_wip %>%
 # Remove WIP tables and Chicago tracts
 rm(home_wip, two_homes, location_raw)
 
-# Add combined duration and distance for placeGroup trips
+# Add combined duration and distance for placeGroup trips. These trips are
+# single trips that were split across multiple records. We merge them, keeping
+# the trip with the longest distance as the primary record for mode and purpose,
+# but extracting the total distance, travel time, and start/end times and
+# locations.
 placeGroupStats <- trips %>%
   mutate(
     # Replace negative hdist, distance, and time values (indicating no data)
