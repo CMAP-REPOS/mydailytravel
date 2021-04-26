@@ -611,6 +611,26 @@ finalize_plot(mode_share_p4,
               mode = "png",
               overwrite = T)
 
+
+################################################################################
+# Backup - detailed mode by age
+################################################################################
+
+
+mdt_mode_age_detailed <-
+  pct_calculator(
+    # Add age bins
+    mdt_base_3 %>% 
+      filter(age > 0) %>% 
+      mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels)),
+    # Execute the rest of the function
+    breakdown_by = "mode",
+    second_breakdown = "age_bin",
+    weight = "wtperfin") %>% 
+  mutate(pct = round(pct,4)) %>% 
+  arrange(age_bin,-pct)
+
+
 ################################################################################
 # Chart of mode share by mileage
 ################################################################################
