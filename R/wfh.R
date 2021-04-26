@@ -401,10 +401,11 @@ finalize_plot(wfh_p1,
               were male or female. A small number of respondents chose not to 
               answer and are excluded based on small sample sizes.
               <br><br>
-              Sample size: 18-29 (3624); 30-49 (8525); 50-69 (5056); 70+ (257); 
-              <$35K (1715); $35-59K (2211); $60-99K (4631); $100K+ (8959); 
-              Asian (815); White (13461); Other (399); Black (1366); Hispanic (1588); 
-              Male (8441); Female (9214).
+              Sample size:
+              <br>- 18-29 (3624); 30-49 (8525); 50-69 (5056); 70+ (257); 
+              <br>- <$35K (1715); $35-59K (2211); $60-99K (4631); $100K+ (8959); 
+              <br>- Asian (815); White (13461); Other (399); Black (1366); Hispanic (1588); 
+              <br>- Male (8441); Female (9214).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data.",
@@ -533,8 +534,9 @@ finalize_plot(wfh_p2,
               non-fixed). Excludes work trips for travelers that
               telecommute 4+ days per week due to low sample sizes.
               <br><br>
-              Sample size (Chicago/Suburban Cook/Other): Does not regularly 
-              telecommute (3645/1965/5072); Sometimes telecommutes (583/ 278/727)
+              Sample size (Chicago/Suburban Cook/Other):
+              <br>- Does not regularly telecommute (3645/1965/5072);
+              <br>- Sometimes telecommutes (583/ 278/727)
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
@@ -628,7 +630,9 @@ finalize_plot(wfh_p3,
               telecommute 4+ days per week due to low sample sizes. Unlabeled 
               bars have less than 5% mode share.
               <br><br>
-              Sample size (Chicago/Suburban Cook/Other): 0 days/wk. (11661/ 6349/16145); 1-3 days/wk. (1988/865/2402).
+              Sample size (Chicago/Suburban Cook/Other):
+              <br>- 0 days/wk. (11661/ 6349/16145);
+              <br>- 1-3 days/wk. (1988/865/2402).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
@@ -719,8 +723,10 @@ finalize_plot(wfh_p4,
               work from home and did not travel outside the home on that day). 
               Those individuals are included as having zero travel distance.
               <br><br>
-              Sample size (Chicago/Suburban Cook/Other): Not regular (4752/2518/6588); 
-              Sometimes (838/423/1089); Almost always (383/270/685).
+              Sample size (Chicago/Suburban Cook/Other):
+              <br>- Not regular (4752/2518/6588); 
+              <br>- Sometimes (838/423/1089);
+              <br>- Almost always (383/270/685).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
