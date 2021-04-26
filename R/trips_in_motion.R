@@ -249,7 +249,10 @@ finalize_plot(trips_in_motion_p2,
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
               100 miles or lasting longer than 15 hours are excluded.
               <br><br>
-              Sample size: Work (42,607); Shopping (15,057); Other (39,609).
+              Sample size: 
+              <br>- Work (42,607); 
+              <br>- Shopping (15,057); 
+              <br>- Other (39,609).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries.",

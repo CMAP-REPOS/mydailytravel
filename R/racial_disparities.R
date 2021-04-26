@@ -172,14 +172,15 @@ finalize_plot(racial_disparities_p1,
               non-Hispanic.
               <br><br>
               Sample size (Black/Other/Asian/ Hispanic/White): 
-              <br>Work 
-              (687/233/567/990/9557); Health care (214/41/46/131/1473); Shopping 
-              (713/153/198/452/ 4880).
+              <br>- Work (687/233/567/990/9557); 
+              <br>- Health (214/41/46/131/1473); 
+              <br>- Shopping (713/153/198/452/4880).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
               filename = "racial_disparities_p1",
               mode = "png",
+              sidebar_width = 2.5,
               # # height = 6.3,
               # width = 11.3,
               overwrite = T)

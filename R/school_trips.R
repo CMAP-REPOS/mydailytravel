@@ -374,14 +374,18 @@ finalize_plot(school_trips_p4,
               who identify as Hispanic regardless of racial identity. Other 
               categories, e.g., 'White', represent non-Hispanic travelers.
               <br><br>
-              Sample size: Black (187); Asian (102); White (1643); Hispanic 
-              (300); Other (146)
+              Sample size: 
+              <br>- Black (187);
+              <br>- Asian (102);
+              <br>- White (1643);
+              <br>- Hispanic (300);
+              <br>- Other (146)
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
               filename = "school_trips_p4",
               mode = "png",
-              # sidebar_width = 2.6,
+              sidebar_width = 2.5,
               # height = 4.5,
               # width = 8,
               overwrite = T)

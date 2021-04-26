@@ -163,8 +163,10 @@ finalize_plot(modes_of_tpurps_p1,
               paratransit, private shuttles, and personal bicycles. Unlabeled 
               bars have less than five percent mode share.
               <br><br>
-              Sample size: Chicago (436); Suburban Cook (259); Other suburban 
-              counties (636)
+              Sample size:
+              <br>- Chicago (436); 
+              <br>- Suburban Cook (259); 
+              <br>- Other suburban counties (636).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
@@ -362,8 +364,9 @@ finalize_plot(modes_of_tpurps_p2,
               'Other modes' includes transit, biking, and all other modes.
               Unlabeled bars have less than 5 percent mode share.
               <br><br>
-              Sample size (Chicago/Suburban Cook/Other suburban counties): Ate or 
-              dined out (1482/672/1778); Drive-thru or take-out (611/398/1126).
+              Sample size (Chicago/Suburban Cook/Other suburban counties): 
+              <br>- Ate or dined out (1482/672/1778); 
+              <br>- Drive-thru or take-out (611/398/1126).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
@@ -452,7 +455,8 @@ finalize_plot(modes_of_tpurps_p3,
               of a personal vehicle (not including services like taxis or TNCs).
               <br><br>
               Sample size (Chicago/Suburban Cook/Other suburban counties): 
-              Friends (840/297/682); Relatives (238/166/427).
+              <br>- Friends (840/297/682); 
+              <br>- Relatives (238/166/427).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
