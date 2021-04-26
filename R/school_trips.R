@@ -65,7 +65,6 @@ all_school_mdt <-
   # that allows the user to understand the distribution of these school trips.
   # Results are similar to the unadjusted weights when excluding Kendall County
   # and when dropping high and low weight households.
-  left_join(zones, by = "sampno") %>%
   arrange(wtperfin) %>%
   group_by(cluster) %>%
   mutate(rank = row_number()) %>%
@@ -208,7 +207,6 @@ all_school_inc_mode_c_tt <-
                           SCHOL == 3),
                  breakdown_by = "mode_c",
                  second_breakdown = "income_c",
-                 third_breakdown = "geog",
                  weight = "weight",
                  survey = "tt") %>% filter(mode_c == "walk")
 
@@ -221,7 +219,6 @@ all_school_inc_mode_c_mdt <-
                           schol == 3),
                  breakdown_by = "mode_c",
                  second_breakdown = "income_c",
-                 third_breakdown = "geog",
                  weight = "wtperfin",
                  survey = "mdt") %>% filter(mode_c == "walk")
 
@@ -287,7 +284,7 @@ finalize_plot(school_trips_p3,
               # width = 11.3,
               sidebar_width = 2.5,
               filename = "school_trips_p3",
-              mode = "png",
+              # mode = "png",
               overwrite = T)
 
 ################################################################################
@@ -333,8 +330,8 @@ school_time_race_mdt <-
 school_trips_p4 <-
   # Get data
   school_time_race_mdt %>%
-  # Rename desired travel time
-  rename(travtime = distance) %>% 
+  # Rename desired statistic
+  rename(stat = travtime50) %>% 
   # Capitalize
   mutate(race_eth = recode_factor(factor(race_eth,
                                          levels = c("black","asian","Non-white",
@@ -345,9 +342,9 @@ school_trips_p4 <-
                            )) %>%
   
   # Create ggplot object
-  ggplot(aes(x = race_eth, y = travtime, fill = race_eth)) +
+  ggplot(aes(x = race_eth, y = stat, fill = race_eth)) +
   geom_col() +
-  geom_label(aes(label = scales::label_number(accuracy = 1)(travtime)),
+  geom_label(aes(label = scales::label_number(accuracy = 1)(stat)),
              vjust = 0, label.size = 0, fill = "white") +
   
   # # Facet for high school (archived)
@@ -355,7 +352,7 @@ school_trips_p4 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "h",legend.position = "None",
-             xlab = "75th percentile travel time to school (minutes)") +
+             xlab = "Median travel time to school (minutes)") +
   scale_fill_discrete(type = c("#84c87e", # Black
                                "#e77272", # Asian
                                # "#77008c", # Non-white (archived for high school)
@@ -376,6 +373,9 @@ finalize_plot(school_trips_p4,
               'Hispanic' represents travelers 
               who identify as Hispanic regardless of racial identity. Other 
               categories, e.g., 'White', represent non-Hispanic travelers.
+              <br><br>
+              Sample size: Black (187); Asian (102); White (1643); Hispanic 
+              (300); Other (146)
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",

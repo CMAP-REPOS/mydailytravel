@@ -85,15 +85,23 @@ work_time_race_mdt <-
   # Calculate weighted mean of trip times by race and ethnicity
   group_by(race_eth,tpurp) %>%
   summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, 
-                                                                   w = wtperfin)))
+                                                                   w = wtperfin)),
+            n = n())
 
 
 # Filter data
 other_time_race_mdt <-
   all_trips_mdt %>%                  # 84294 records
   filter(tpurp %in% c("Health care visit for self",
-                      "Shopped (routine like grocery, clothing)",
-                      "Went to the gym")) %>%  # 9417
+                      "Health care visit for someone else",
+                      "Visited a person staying at the hospital",
+                      "Shopped (routine like grocery, clothing)"
+                      )) %>%  # 9417
+  # Recode healthcare
+  mutate(tpurp = recode_factor(tpurp,
+                               "Health care visit for someone else" = "Health care",
+                               "Visited a person staying at the hospital" = "Health care",
+                               "Health care visit for self" = "Health care")) %>% 
   ungroup() %>% 
   # Only include trips that are more than 0 minutes and less than 2.5 hours
   filter(
@@ -106,7 +114,8 @@ other_time_race_mdt <-
   # Calculate weighted mean of trip times by race and ethnicity
   group_by(race_eth,tpurp) %>%
   summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, 
-                                                                   w = wtperfin)))
+                                                                   w = wtperfin)),
+            n = n())
 
 # Combine results
 all_time_race_mdt <-
@@ -124,12 +133,11 @@ racial_disparities_p1 <-
   mutate(tpurp_disp = as.character(tpurp)) %>% 
   mutate(tpurp_disp = recode(factor(tpurp_disp, 
                                     levels = c("Worked at fixed work location",
-                                               "Health care visit for self",
-                                               "Shopped (routine like grocery, clothing)",
-                                               "Went to the gym")),
+                                               "Health care",
+                                               "Shopped (routine like grocery, clothing)")),
                              "Worked at fixed work location" = "Work (fixed location)",
                              "Health care visit for self" = "Health care (personal)",
-                             "Shopped (routine like grocery, clothing)" = "Routine shopping",
+                             "Shopped (routine like grocery, clothing)" = "Routine shopping (e.g., groceries or clothing)",
                              "Went to the gym" = "Gym")) %>% 
   
   # Create ggplot object
@@ -140,20 +148,21 @@ racial_disparities_p1 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "h", legend.position = "None",
-             xlab = "Median travel times for various trip purposes (minutes)") +
+             xlab = "Median travel times for various trip purposes (minutes)",
+             strip.text = element_text(face = "bold",hjust = 0.5)) +
   cmap_fill_race(white = "White", black = "Black", hispanic = "Hispanic", 
                  asian = "Asian", other = "Other") +
   
   # Adjust axes
-  scale_y_continuous(limits = c(0,32)) +
+  scale_y_continuous(limits = c(0,35)) +
   
   # Add faceting by trip purpose
-  facet_wrap(~tpurp_disp)
+  facet_wrap(~tpurp_disp,ncol = 1)
 
 # Export finalized graphic
 finalize_plot(racial_disparities_p1,
               "Black residents of the region have significantly longer trips to 
-              work, health care, routine shopping, and the gym than those of 
+              work, health care, and routine shopping than those of 
               other residents.",
               "Note: Excludes travelers younger than 16. Trips to 'Work (fixed 
               location)' only include trips made to fixed workplace locations by 
@@ -162,10 +171,15 @@ finalize_plot(racial_disparities_p1,
               group that identify as Hispanic. All other categories are 
               non-Hispanic.
               <br><br>
+              Sample size (Black/Other/Asian/ Hispanic/White): 
+              <br>Work 
+              (687/233/567/990/9557); Health care (214/41/46/131/1473); Shopping 
+              (713/153/198/452/ 4880).
+              <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
               filename = "racial_disparities_p1",
-              # mode = "png",
+              mode = "png",
               # # height = 6.3,
               # width = 11.3,
               overwrite = T)
