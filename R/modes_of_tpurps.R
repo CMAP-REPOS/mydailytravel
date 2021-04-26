@@ -136,7 +136,7 @@ modes_of_tpurps_p1 <-
   # Create ggplot object
   ggplot(aes(x = pct, y = str_wrap_factor(geog,18),
              # Only label bars that round to at least 5 percent
-             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+             label = ifelse(pct >.05,scales::label_percent(accuracy = 1)(pct),""))) +
   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
   geom_text(position = position_stack(vjust = 0.5),
             color = "white") +
@@ -211,7 +211,7 @@ modes_of_tpurps_p1a <-
   # Create ggplot object
   ggplot(aes(x = pct, y = race_eth,
              # Only label bars that round to at least 5 percent
-             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+             label = ifelse(pct >.05,scales::label_percent(accuracy = 1)(pct),""))) +
   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
   geom_text(position = position_stack(vjust = 0.5),
             color = "white") +
@@ -298,7 +298,10 @@ pct_calculator(mdt_base_1 %>%
 
 ### Calculate proportions for subcategories for dining in MDT
 detailed_dining_mode_c_mdt <-
-  pct_calculator(mdt_base_1 %>% filter(geog != "Other"),
+  pct_calculator(mdt_base_1 %>% filter(geog != "Other") %>% 
+                   mutate(tpurp = recode_factor(tpurp,
+                                                "Ate / dined out" = "Ate or dined out",
+                                                "Drive thru / take-out dining" = "Drive-thru or take-out")),
                  subset = "dining",
                  subset_of = "tpurp_c",
                  breakdown_by = "mode_c",
@@ -315,8 +318,8 @@ modes_of_tpurps_p2 <-
   # Get data
   detailed_dining_mode_c_mdt %>%
   # Reformat for publication
-  mutate(tpurp = factor(tpurp,levels = c("Drive thru / take-out dining",
-                                         "Ate / dined out"))) %>%
+  mutate(tpurp = factor(tpurp,levels = c("Drive-thru or take-out",
+                                         "Ate or dined out"))) %>%
   # Categorize low-percentage modes into "Other modes"
   mutate(mode_c = recode_factor(mode_c,
                                 "driver" = "By car",
@@ -331,9 +334,9 @@ modes_of_tpurps_p2 <-
   summarize(pct = sum(pct)) %>%
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = str_wrap_factor(tpurp,15),
+  ggplot(aes(x = pct, y = str_wrap_factor(tpurp,17),
              # Only label bars that round to at least 5 percent
-             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+             label = ifelse(pct >.05,scales::label_percent(accuracy = 1)(pct),""))) +
   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
   geom_text(position = position_stack(vjust = 0.5),
             color = "white") +
@@ -359,8 +362,8 @@ finalize_plot(modes_of_tpurps_p2,
               'Other modes' includes transit, biking, and all other modes.
               Unlabeled bars have less than 5 percent mode share.
               <br><br>
-              Sample size (Chicago/Suburban Cook/Other suburban counties): Ate / 
-              dined out (1482/672/1778); Drive thru / take-out dining (611/398/1126).
+              Sample size (Chicago/Suburban Cook/Other suburban counties): Ate or 
+              dined out (1482/672/1778); Drive-thru or take-out (611/398/1126).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. ",
@@ -423,7 +426,7 @@ modes_of_tpurps_p3 <-
   # Create ggplot object
   ggplot(aes(x = pct, y = str_wrap_factor(tpurp,15),
              # Only label bars that round to at least 5 percent
-             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+             label = ifelse(pct >.05,scales::label_percent(accuracy = 1)(pct),""))) +
   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
   geom_text(position = position_stack(vjust = 0.5),
             color = "white") +
@@ -603,7 +606,7 @@ modes_of_tpurps_t1 <-
 #   # Create ggplot object
 #   ggplot(aes(x = pct, y = str_wrap_factor(tpurp,20),
 #              # Only label bars that round to at least 5 percent
-#              label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+#              label = ifelse(pct >.05,scales::label_percent(accuracy = 1)(pct),""))) +
 #   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
 #   geom_text(position = position_stack(vjust = 0.5),
 #             color = "white") +
@@ -675,7 +678,7 @@ modes_of_tpurps_t1 <-
 #   # Create ggplot object
 #   ggplot(aes(x = pct, y = str_wrap_factor(tpurp,18),
 #              # Only label bars that round to at least 5 percent
-#              label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+#              label = ifelse(pct >.05,scales::label_percent(accuracy = 1)(pct),""))) +
 #   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
 #   geom_text(position = position_stack(vjust = 0.5),
 #             color = "white") +

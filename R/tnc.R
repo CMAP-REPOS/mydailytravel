@@ -394,7 +394,7 @@ tnc_p3 <-
   # Create ggplot object
   ggplot(aes(x = pct, y = age_bin, fill = tnc_purp,
              # Only label bars that round to at least 5 percent
-             label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+             label = ifelse(pct >.05,scales::label_percent(accuracy = 1)(pct),""))) +
   # Use "geom_col_pattern" to add texture to a subset of columns
   ggpattern::geom_col_pattern(aes(pattern = type),
                               pattern_color = "white",
@@ -550,7 +550,7 @@ finalize_plot(tnc_p4,
 #   # Create ggplot object
 #   ggplot(aes(x = pct, y = income_c, fill = tnc_purp,
 #              # Only label bars that round to at least 5 percent
-#              label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+#              label = ifelse(pct >.05,scales::label_percent(accuracy = 1)(pct),""))) +
 #   # Use "geom_col_pattern" to add texture to a subset of columns
 #   ggpattern::geom_col_pattern(aes(pattern = type),
 #                               pattern_color = "white",

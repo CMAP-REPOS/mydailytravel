@@ -567,7 +567,7 @@ wfh_p3 <-
   # Create ggplot object
   ggplot(aes(x = pct, y = combined_tc_wfh,
          # Only label bars that round to at least 5 percent
-         label = ifelse(pct >.045,scales::label_percent(accuracy = 1)(pct),""))) +
+         label = ifelse(pct >.05,scales::label_percent(accuracy = 1)(pct),""))) +
   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
   geom_text(position = position_stack(vjust = 0.5),
             color = "white") +
