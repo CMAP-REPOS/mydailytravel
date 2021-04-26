@@ -232,13 +232,17 @@ finalize_plot(bike_p1,
               of the graph, and are not included in the totals of trips in
               motion as of 3:00 A.M. on the left side of the graph.
               <br><br>
+              Sample size: Personal bike trips are based on 1,513 records. Divvy 
+              trips are actual ridership numbers.
+              <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel survey data and Divvy ridership data for weekdays 
               between September 4, 2018 and May 9, 2019 (excluding all federal 
               holidays and the weeks of November 19, December 24, December 31, 
               and April 15).",
               filename = "bike_p1",
-              mode = "png"
+              mode = "png",
+              overwrite = T
               )
 
 # Count of ridership by day
