@@ -97,7 +97,10 @@ tt_base_2 <-
 detailed_bike_tpurp_c_mdt <-
   pct_calculator(mdt_base_2,subset = "bike",
                  subset_of = "mode_c",
-                 breakdown_by = "tpurp_c",
+                 breakdown_by = "chain",
+                 # # Alternative - breakdown by trip purpose (reveals connection
+                 # # to other modes)
+                 # breakdown_by = "tpurp_c",
                  second_breakdown = "mode",
                  weight = "wtperfin",
                  survey = "mdt")
@@ -109,9 +112,17 @@ detailed_bike_tpurp_c_mdt <-
 tpurps_of_modes_p1 <-
   # Get data
   detailed_bike_tpurp_c_mdt %>%
+  mutate(chain = recode_factor(chain,
+                               "Work trip" = "Work",
+                               "Return home (work)" = "Work",
+                               "Shopping trip" = "Shopping",
+                               "Return home (shopping)" = "Shopping",
+                               "Other trip" = "Other")) %>% 
+  group_by(chain,mode) %>% 
+  summarize(pct = sum(pct)) %>% 
 
   # Create ggplot object
-  ggplot(aes(y = reorder(tpurp_c,desc(-pct)), x = pct, fill = mode)) +
+  ggplot(aes(y = reorder(chain,desc(-pct)), x = pct, fill = mode)) +
   geom_col(position = position_dodge2(reverse = TRUE)) +
   geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
                  group = mode),
@@ -122,7 +133,7 @@ tpurps_of_modes_p1 <-
              label.padding = unit(1,"bigpts")) +
   
   # Adjust axis
-  scale_x_continuous(labels = scales::label_percent(), limits = c(0,.38)) +
+  scale_x_continuous(labels = scales::label_percent(), limits = c(0,.7)) +
   
   # Add CMAP style
   theme_cmap(gridlines = "v",vline = 0) +
@@ -273,6 +284,12 @@ finalize_plot(tpurps_of_modes_p2,
               those captured in the City of Chicago's data on TNC and taxi 
               trips, which may be due to the exclusion of non-resident and 
               weekend trips and/or other survey design factors.
+              <br><br>
+              Sample size:
+              <br>- Taxis 2008 (342);
+              <br>- Taxis 2019 (125);
+              <br>- Regular TNC (633);
+              <br>- Shared TNC (246).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel and Travel Tracker data.",
