@@ -140,8 +140,8 @@ trips_in_motion_p1 <-
   mutate(identifier = recode_factor(identifier,
                                     "driver" = "Driver",
                                     "passenger" = "Passenger",
-                                    "transit" = "Transit",
                                     "walk" = "Walk",
+                                    "transit" = "Transit",
                                     "bike" = "Bike",
                                     "schoolbus" = "School bus",
                                     "other" = "Other")) %>% 
@@ -157,7 +157,7 @@ trips_in_motion_p1 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
   
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
                                "#efa7a7","#3d6600","#0084ac")) +
   
   # Add CMAP style
@@ -197,8 +197,8 @@ trips_in_motion_p2 <-
   mutate(mode_c = recode_factor(factor(mode_c, levels = mode_c_levels),
                                 "driver" = "Driver",
                                 "passenger" = "Passenger",
-                                "transit" = "Transit",
                                 "walk" = "Walk",
+                                "transit" = "Transit",
                                 "bike" = "Bike",
                                 "schoolbus" = "School bus",
                                 "other" = "Other")) %>%
@@ -230,7 +230,7 @@ trips_in_motion_p2 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
   
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
                                "#efa7a7","#3d6600","#0084ac")) +
   
   # Add CMAP style
@@ -507,7 +507,7 @@ finalize_plot(trips_in_motion_p4,
 #   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
 #   
 #   # Manually add colors
-#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
 #                                "#efa7a7","#0084ac")) +
 #   
 #   # Add CMAP style
@@ -630,7 +630,7 @@ finalize_plot(trips_in_motion_p4,
 #   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
 # 
 #   # Manually add colors
-#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
 #                                "#efa7a7","#3d6600","#0084ac")) +
 #   
 #   # Add CMAP style
@@ -695,7 +695,7 @@ finalize_plot(trips_in_motion_p4,
 #   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
 # 
 #   # Manually add colors
-#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
 #                                "#efa7a7","#3d6600","#0084ac")) +
 # 
 #   # Add CMAP style
@@ -766,7 +766,7 @@ finalize_plot(trips_in_motion_p4,
 #   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
 #   
 #   # Manually add colors
-#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
 #                                "#efa7a7","#0084ac")) +
 #   
 #   # Add faceting
@@ -840,7 +840,7 @@ finalize_plot(trips_in_motion_p4,
 #   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
 #   
 #   # Manually add colors
-#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+#   scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
 #                                "#efa7a7","#0084ac")) +
 #   
 #   # Add CMAP style

@@ -268,7 +268,9 @@ mode_share_p1 <-
 
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, xlab = "Mode share by home jurisdiction") +
-  cmap_fill_discrete(palette = "mobility") +
+  # Manually add colors
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
+                               "#efa7a7","#0084ac")) +
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
@@ -359,7 +361,9 @@ mode_share_p2 <-
 
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,xlab = "Mode share by household income") +
-  cmap_fill_discrete(palette = "mobility") +
+  # Manually add colors
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
+                               "#efa7a7","#0084ac")) +
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
@@ -479,7 +483,9 @@ mode_share_p3 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,xlab = "Mode share by race and ethnicity") +
-  cmap_fill_discrete(palette = "mobility") +
+  # Manually add colors
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
+                               "#efa7a7","#0084ac")) +
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
@@ -573,7 +579,9 @@ mode_share_p4 <-
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,
              xlab = "Mode share by age") +
-  cmap_fill_discrete(palette = "mobility") +
+  # Manually add colors
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
+                               "#efa7a7","#0084ac")) +
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
@@ -662,7 +670,9 @@ mode_share_p5 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6) +
-  cmap_fill_discrete(palette = "mobility") +
+  # Manually add colors
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
+                               "#efa7a7","#0084ac")) +
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.75,by = .25), 
