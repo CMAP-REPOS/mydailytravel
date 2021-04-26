@@ -61,6 +61,13 @@ wfh_mdt_all <-
              tcdays >= 4 ~ 2,
              TRUE ~ 0),
          
+         tc_freq_or_wfh =
+           case_when(
+             tc_frequency > 0 ~ tc_frequency,
+             wfh == 1 ~ 3,
+             TRUE ~ 0
+           ),
+         
          tc_or_wfh =
            case_when(
              tc == 1 | wfh == 1 ~ 1,
@@ -205,24 +212,26 @@ wfh_tt_all %>%
 
 
 # Overall baseline statistics for plot
-tcwfh_overall <-
+tc_overall <-
   wfh_mdt_all %>% 
-  summarize(pct = weighted.mean(tc_or_wfh,wtperfin),
-            uw_pct = mean(tc_or_wfh),
-            n = sum(wtperfin),
-            tcwfhers = n * pct) %>% 
+  summarize(pct = weighted.mean(tc,wtperfin),
+            uw_pct = mean(tc),
+            n = n(),
+            w_n = sum(wtperfin),
+            tcwfhers = w_n * pct) %>% 
   mutate(type = "Overall",
          subtype = "Overall")
 
-# Breakdown of tc/wfh behavior by household income
-tcwfh_income <-
+# Breakdown of tc behavior by household income
+tc_income <-
   wfh_mdt_all %>% # 17,656 records
   filter(income_c != "missing") %>% # 17,516 records
   group_by(income_c) %>%
-  summarize(pct = weighted.mean(tc_or_wfh,wtperfin),
-            uw_pct = mean(tc_or_wfh),
-            n = sum(wtperfin),
-            tcwfhers = n * pct) %>% 
+  summarize(pct = weighted.mean(tc,wtperfin),
+            uw_pct = mean(tc),
+            n = n(),
+            w_n = sum(wtperfin),
+            tcwfhers = w_n * pct) %>% 
   # Recode for ease of understanding
   mutate(type = "Household income",
          subtype = recode_factor(income_c,
@@ -232,15 +241,16 @@ tcwfh_income <-
                                  "high" = "$100K or more")) %>%
   select(-income_c)
 
-# Breakdown of tc/wfh behavior by sex
-tcwfh_sex <-
+# Breakdown of tc behavior by sex
+tc_sex <-
   wfh_mdt_all %>% # 17,656 records
   filter(sex >0) %>% # 17,516 records
   group_by(sex) %>%
-  summarize(pct = weighted.mean(tc_or_wfh,wtperfin),
-            uw_pct = mean(tc_or_wfh),
-            n = sum(wtperfin),
-            tcwfhers = n * pct) %>% 
+  summarize(pct = weighted.mean(tc,wtperfin),
+            uw_pct = mean(tc),
+            n = n(),
+            w_n = sum(wtperfin),
+            tcwfhers = w_n * pct) %>% 
   # Recode for ease of understanding
   mutate(type = "Sex",
          subtype = recode_factor(sex,
@@ -248,27 +258,29 @@ tcwfh_sex <-
                                  "2" = "Female")) %>%
   select(-sex)
 
-# Breakdown of tc/wfh behavior by home jurisdiction
-tcwfh_home <-
+# Breakdown of tc behavior by home jurisdiction
+tc_home <-
   wfh_mdt_all %>% # 17,656 records
   group_by(home_county_chi) %>%
-  summarize(pct = weighted.mean(tc_or_wfh,wtperfin),
-            uw_pct = mean(tc_or_wfh),
-            n = sum(wtperfin),
-            tcwfhers = n * pct) %>% 
+  summarize(pct = weighted.mean(tc,wtperfin),
+            uw_pct = mean(tc),
+            n = n(),
+            w_n = sum(wtperfin),
+            tcwfhers = w_n * pct) %>% 
   # Remove individuals in DeKalb, Grundy, or those with 2+ homes
   filter(!(home_county_chi %in% c("DeKalb","Grundy","Homes in multiple counties"))) %>% 
   mutate(type = "Home jurisdiction") %>% 
   rename(subtype = home_county_chi)
 
 # Breakdown of tc behavior by race and ethnicity
-tcwfh_race_eth <-
+tc_race_eth <-
   wfh_mdt_all %>% # 17,656 records
   group_by(race_eth) %>%
-  summarize(pct = weighted.mean(tc_or_wfh,wtperfin),
-            uw_pct = mean(tc_or_wfh),
-            n = sum(wtperfin),
-            tcwfhers = n * pct) %>% 
+  summarize(pct = weighted.mean(tc,wtperfin),
+            uw_pct = mean(tc),
+            n = n(),
+            w_n = sum(wtperfin),
+            tcwfhers = w_n * pct) %>% 
   filter(race_eth != "missing") %>% 
   # Recode for ease of understanding
   mutate(type = "Race and ethnicity",
@@ -281,13 +293,14 @@ tcwfh_race_eth <-
   select(-race_eth)
 
 # Breakdown of tc behavior by race and ethnicity
-tcwfh_age <-
+tc_age <-
   wfh_mdt_all %>% # 17,656 records
   group_by(age_bin) %>%
-  summarize(pct = weighted.mean(tc_or_wfh,wtperfin),
-            uw_pct = mean(tc_or_wfh),
-            n = sum(wtperfin),
-            tcwfhers = n * pct) %>% 
+  summarize(pct = weighted.mean(tc,wtperfin),
+            uw_pct = mean(tc),
+            n = n(),
+            w_n = sum(wtperfin),
+            tcwfhers = w_n * pct) %>% 
   # Remove individuals without a response
   filter(!is.na(age_bin),
          age_bin != "5 to 17") %>% 
@@ -295,13 +308,13 @@ tcwfh_age <-
   rename(subtype = age_bin)
 
 # Combine different travel statistic calculations
-tcwfh_summaries <-
-  rbind(tcwfh_overall,
-        tcwfh_sex,
-        tcwfh_age,
-        tcwfh_income,
-        tcwfh_race_eth,
-        tcwfh_home) %>% 
+tc_summaries <-
+  rbind(tc_overall,
+        tc_sex,
+        tc_age,
+        tc_income,
+        tc_race_eth,
+        tc_home) %>% 
   # Keep relevant variables
   select(type,subtype,pct,uw_pct,n,tcwfhers) %>% 
   # Add levels
@@ -312,7 +325,7 @@ tcwfh_summaries <-
            factor(subtype,
                   levels = c("Overall",
                              "Male","Female",
-                             "Asian","White","Other","Hispanic","Black",
+                             "Asian","White","Other","Black","Hispanic",
                              "5 to 17","18 to 29","30 to 49","50 to 69",
                                 "70 and above",
                              "Less than $35K","$35K to $59K","$60K to $99K",
@@ -324,8 +337,8 @@ tcwfh_summaries <-
   pivot_longer(cols = c(pct,n,tcwfhers,uw_pct))
 
 # Extract values for regional averages, which will be graphed as value lines
-tcwfh_summaries_vlines <-
-  tcwfh_summaries %>%
+tc_summaries_vlines <-
+  tc_summaries %>%
   filter(type == "Overall" & name == "pct") %>% 
   select(-subtype,-type) %>% 
   left_join(tibble(type = c("Sex","Race and ethnicity","Household income",
@@ -335,7 +348,7 @@ tcwfh_summaries_vlines <-
 # Plot of trips and distances by demographic characteristics
 wfh_p1 <-
   # Get data
-  tcwfh_summaries %>%
+  tc_summaries %>%
   # Reverse factors
   mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>% 
   # Exclude overall
@@ -348,8 +361,10 @@ wfh_p1 <-
   # Add columns
   geom_col(width = .8,show.legend = FALSE) +
   # Add lines for average trips per day and average distance per trip
-  geom_vline(data = tcwfh_summaries_vlines,
-             mapping = aes(xintercept = value, color = "Dashed lines represent regional share (18.9%)"),
+  geom_vline(data = tc_summaries_vlines,
+             mapping = aes(xintercept = value, 
+                           color = paste0("Dashed lines represent regional share (",
+                           round(100*value[1],1),"%)")),
              linetype = "dashed",
              size = .65
   ) +
@@ -366,7 +381,7 @@ wfh_p1 <-
   
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
-             xlab = "Share of residents who telecommute and/or work from home",
+             xlab = "Share of residents who telecommute at least once a week",
              strip.text = element_text(hjust = 0.5)) +
   cmap_fill_discrete(palette = "legislation") +
   scale_color_discrete(type = "#181f22") +
@@ -378,13 +393,18 @@ wfh_p1 <-
 finalize_plot(wfh_p1,
               # sidebar_width = 0,
               "Lower-income, Black, and Hispanic residents are the least likely 
-              to telecommute or work from home.",
+              to telecommute.",
               caption = "Note: Includes only employed residents. 'Hispanic' 
               includes respondents who identified as Hispanic of any racial 
               category. Other categories are non-Hispanic. For the 
               categorization by sex, the survey asked respondents whether they 
               were male or female. A small number of respondents chose not to 
               answer and are excluded based on small sample sizes.
+              <br><br>
+              Sample size: 18-29 (3624); 30-49 (8525); 50-69 (5056); 70+ (257); 
+              <$35K (1715); $35-59K (2211); $60-99K (4631); $100K+ (8959); 
+              Asian (815); White (13461); Other (399); Black (1366); Hispanic (1588); 
+              Male (8441); Female (9214).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data.",
@@ -437,6 +457,8 @@ wfh_worktrips_person_level <-
             home_tract = first(home_tract),
             home_long = first(home_long),
             home_lat = first(home_lat),
+            tc_frequency = first(tc_frequency),
+            wfh = first(wfh),
             combined_tc_wfh = first(combined_tc_wfh),
             wfh_today = first(wfh_today),
             wfo_today = first(wfo_today),
@@ -448,11 +470,11 @@ wfh_worktrips_person_level <-
 # Calculate summary statistics for work trips
 wfh_worktrips_summary <-
   wfh_worktrips_person_level %>%
-  # Calculate based on TC/WFH status, work trip status, and geography
-  group_by(combined_tc_wfh,worktrip,geog) %>%
+  # Calculate based on TC status, work trip status, and geography
+  group_by(tc_frequency,worktrip,geog) %>%
   summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
             n = n()) %>%
-  rename(flag = combined_tc_wfh)
+  rename(flag = tc_frequency)
 
 ################################################################################
 # Chart of work trips for individuals who report working from home sometimes but
@@ -465,13 +487,13 @@ wfh_p2 <-
   wfh_worktrips_summary %>%
   # Filter out other trips
   filter(worktrip == 1) %>%
-  # Due to low sample size, exclude work trips for those that almost always work
-  # from home/telecommute
+  # Due to low sample size, exclude work trips for those that almost always 
+  # telecommute
   filter(flag != 2) %>% 
   # Reformat and reorder
   mutate(flag = recode_factor(factor(flag),
-                       "0" = "Does not regularly telecommute or work from home",
-                       "1" = "Sometimes telecommutes or works from home (1-3 days/week)"),
+                       "0" = "Does not regularly telecommute",
+                       "1" = "Sometimes telecommutes (1-3 days/week)"),
          geog = recode_factor(geog,
                               "Other suburban counties" = "Other counties",
                               "Suburban Cook" = "Suburban Cook",
@@ -511,6 +533,9 @@ finalize_plot(wfh_p2,
               non-fixed). Excludes work trips for travelers that
               telecommute 4+ days per week due to low sample sizes.
               <br><br>
+              Sample size (Chicago/Suburban Cook/Other): Does not regularly 
+              telecommute (3645/1965/5072); Sometimes telecommutes (583/ 278/727)
+              <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
               filename = "wfh_p2",
@@ -539,14 +564,14 @@ wfh_mode_share <-
       # from home/telecommute
       filter(combined_tc_wfh != 2),
     breakdown_by = "mode_c",
-    second_breakdown = "combined_tc_wfh",
+    second_breakdown = "tc_frequency",
     third_breakdown = "geog",
     weight = "wtperfin")
 
 wfh_p3 <-
   wfh_mode_share %>% 
   # Reformat and reorder
-  mutate(combined_tc_wfh = recode_factor(factor(combined_tc_wfh,levels = c(0,1)),
+  mutate(tc_frequency = recode_factor(factor(tc_frequency,levels = c(0,1)),
                               "1" = "1-3 days/wk",
                               "0" = "0 days/wk"),
          geog = recode_factor(geog,
@@ -561,13 +586,13 @@ wfh_p3 <-
                                 "bike" = "Bicycle",
                                 "other" = "Other")) %>%
   
-  group_by(mode_c,combined_tc_wfh,geog) %>% 
+  group_by(mode_c,tc_frequency,geog) %>% 
   summarize(pct = sum(pct)) %>% 
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = combined_tc_wfh,
+  ggplot(aes(x = pct, y = tc_frequency,
          # Only label bars that round to at least 5 percent
-         label = ifelse(pct >.05,scales::label_percent(accuracy = 1)(pct),""))) +
+         label = ifelse(pct >=.05,scales::label_percent(accuracy = 1)(pct),""))) +
   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
   geom_text(position = position_stack(vjust = 0.5),
             color = "white") +
@@ -592,7 +617,7 @@ wfh_p3 <-
 
 # Export finalized graphic
 finalize_plot(wfh_p3,
-              "Part-time telecommuters who live outside Chicago are much more 
+              "Suburban part-time telecommuters are much more 
               likely to use transit on days when they work outside the home, 
               while those in Chicago are more likely to walk to work.",
               "Note: These estimates are based on on answers given in both the
@@ -602,6 +627,8 @@ finalize_plot(wfh_p3,
               non-fixed). Excludes work trips for travelers that
               telecommute 4+ days per week due to low sample sizes. Unlabeled 
               bars have less than 5% mode share.
+              <br><br>
+              Sample size (Chicago/Suburban Cook/Other): 0 days/wk. (11661/ 6349/16145); 1-3 days/wk. (1988/865/2402).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
@@ -647,8 +674,8 @@ wfh_p4 <-
   # Reformat and reorder
   mutate(flag = recode_factor(factor(flag,levels = c(0,1,2)),
                               "0" = "Does not regularly telecommute or work from home",
-                              "1" = "Sometimes telecommutes or works from home (1-3 days/week)",
-                              "2" = "Almost always telecommutes or works from home (4+ days/week)"),
+                              "1" = "Sometimes telecommutes (1-3 days/week)",
+                              "2" = "Almost always telecommutes (4+ days/week) or only works from home "),
          
          geog = recode_factor(geog,
                               "Other suburban counties" = "Other counties",
@@ -691,6 +718,9 @@ finalize_plot(wfh_p4,
               in the region on their assigned travel day (i.e., individuals who 
               work from home and did not travel outside the home on that day). 
               Those individuals are included as having zero travel distance.
+              <br><br>
+              Sample size (Chicago/Suburban Cook/Other): Not regular (4752/2518/6588); 
+              Sometimes (838/423/1089); Almost always (383/270/685).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data.",
