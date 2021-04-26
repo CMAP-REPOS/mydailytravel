@@ -9,6 +9,7 @@
 library(tidyverse)
 library(cmapplot)
 library(forcats)
+library(ggpattern)
 
 #################################################
 #                                               #
@@ -21,8 +22,8 @@ source("R/helper_fns.R")
 source("R/data_cleaning.R")
 
 # Age bins
-age_breaks <- c(-1,17,29, 49, 69, 150)
-age_labels <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
+age_breaks <- c(-1,15,29, 49, 69, 150)
+age_labels <- c("5 to 15","16 to 29", "30 to 49",  "50 to 69", "70 and above")
 
 # filter out trips we don't want to evaluate
 avgtravel_mdt <-
@@ -203,6 +204,7 @@ travel_overall <-
     total_trips = sum(wtperfin),
     avg_trip_length = total_distance / total_trips,
     avg_trip_time = total_time / total_trips,
+    n = n()
   ) %>%
   # Add total number of travelers
   left_join(distinct_daily_travelers %>%
@@ -227,6 +229,7 @@ travel_sex <-
     total_trips = sum(wtperfin),
     avg_trip_length = total_distance / total_trips,
     avg_trip_time = total_time / total_trips,
+    n = n()
   ) %>%
   # Add total number of travelers
   left_join(distinct_daily_travelers %>%
@@ -257,6 +260,7 @@ travel_income <-
     total_trips = sum(wtperfin),
     avg_trip_length = total_distance / total_trips,
     avg_trip_time = total_time / total_trips,
+    n = n()
   ) %>%
   # Add total number of travelers
   left_join(distinct_daily_travelers %>%
@@ -289,6 +293,7 @@ travel_age <-
     total_trips = sum(wtperfin),
     avg_trip_length = total_distance / total_trips,
     avg_trip_time = total_time / total_trips,
+    n = n()
   ) %>%
   # Add total number of travelers
   left_join(distinct_daily_travelers %>%
@@ -315,6 +320,7 @@ travel_home <-
     total_trips = sum(wtperfin),
     avg_trip_length = total_distance / total_trips,
     avg_trip_time = total_time / total_trips,
+    n = n()
   ) %>%
   # Add total number of travelers
   left_join(distinct_daily_travelers %>%
@@ -343,6 +349,7 @@ travel_race_eth <-
     total_trips = sum(wtperfin),
     avg_trip_length = total_distance / total_trips,
     avg_trip_time = total_time / total_trips,
+    n = n()
   ) %>%
   left_join(distinct_daily_travelers_mdt %>% 
               group_by(race_eth) %>% 
@@ -378,7 +385,7 @@ travel_summaries <-
         travel_race_eth) %>% 
   # Keep relevant variables
   select(type,subtype,trips_per_capita,avg_trip_length,avg_trip_time,
-         distance_per_capita,time_per_capita,survey) %>% 
+         distance_per_capita,time_per_capita,n,survey) %>% 
   # Round for ease of review
   mutate(across(c(trips_per_capita,avg_trip_length,avg_trip_time,
                   distance_per_capita,time_per_capita),~round(.,2))) %>% 
@@ -389,12 +396,12 @@ travel_summaries <-
                           levels = c("Overall",
                                      "Male","Female",
                                      "White","Asian","Black","Hispanic","Other",
-                                     "5 to 17","18 to 29","30 to 49","50 to 69","70 and above",
+                                     "5 to 15","16 to 29","30 to 49","50 to 69","70 and above",
                                      "Less than $35K","$35K to $59K","$60K to $99K","$100K or more"
                                      ))) %>% 
   # Pivot longer
   pivot_longer(cols = c(trips_per_capita,avg_trip_length,avg_trip_time,
-                        distance_per_capita,time_per_capita))
+                        distance_per_capita,time_per_capita,n))
 
 # Extract values for regional averages, which will be graphed as value lines
 travel_summaries_vlines <-
@@ -510,11 +517,15 @@ finalize_plot(average_resident_p1,
               whether they were male or female. A small number of respondents 
               chose not to answer and are excluded based on small sample sizes.
               <br><br>
+              Sample size: Figures are based on a total of 95,233 records. 
+              Across all categories, travelers with an 'Other' race and 
+              ethnicity have the lowest sample size, with 2,527 records.
+              <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data.",
               filename = "average_resident_p1",
               mode = "png",
-              height = 7.5,
+              height = 7.75,
               overwrite = T)
   
 
@@ -528,7 +539,7 @@ average_resident_p2 <-
   # Get data
   travel_summaries %>%
   # Exclude total distances
-  filter(name != "distance_per_capita") %>% 
+  filter(name %in% c("trips_per_capita","avg_trip_length")) %>% 
   # Keep only overall
   filter(type == "Overall") %>% 
   # Rename variables we are keeping
@@ -593,6 +604,14 @@ average_resident_p3 <-
   filter(name == "distance_per_capita") %>% 
   # Keep overall, sex, age, and income
   filter(type %in% c("Household income","Age","Sex")) %>% 
+  # Identify entries where MDT has a higher value than TT
+  mutate(helper = ifelse(survey == "mdt", value,-1*value)) %>% 
+  group_by(type,subtype,name) %>% 
+  mutate(increasing = sum(helper)) %>% 
+  mutate(increasing = case_when(
+    increasing > 0 ~ "Increased travel",
+    TRUE ~ "Decreased travel"
+  )) %>% 
   # Rename variables we are keeping
   mutate(
     # name = recode_factor(factor(name,levels = c("trips_per_capita","avg_trip_length")),
@@ -605,10 +624,25 @@ average_resident_p3 <-
   mutate(subtype = factor(subtype, levels = rev(levels(subtype)))) %>% 
   
   # Create ggplot object
-  ggplot(aes(x = value, y = subtype, fill = survey)) +
-  geom_col(position = position_dodge2(width = 1,padding = 0.15,reverse = T),
-           width = .8) +
-
+  ggplot(aes(x = value, y = subtype,pattern = increasing)) +
+  
+  # Use "geom_col_pattern" to add texture to a subset of columns
+  ggpattern::geom_col_pattern(aes(fill = survey),
+                              color = "white",
+                              pattern_fill = "white",
+                              pattern_angle = 45,
+                              pattern_density = 0.3,
+                              pattern_spacing = 0.05,
+                              pattern_key_scale_factor = 0.15,
+                              position = position_dodge2(width = 1,
+                                                         padding = 0.15,
+                                                         reverse = T),
+                              width = 0.8) +
+  
+  # Re-assign patterns manually
+  scale_pattern_manual(values = c("Increased travel" = "stripe",
+                                  "Decreased travel" = "none")) +
+  
   # Add labels
   geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
                  group = survey),
@@ -626,7 +660,11 @@ average_resident_p3 <-
   theme_cmap(gridlines = "v",vline = 0,
              xlab = "Distance per day for residents who traveled (in miles)",
              strip.text = element_text(hjust = 0.5)) +
-  cmap_fill_discrete(palette = "friday",reverse = T)
+  cmap_fill_discrete(palette = "friday",reverse = T) +
+  
+  # Adjust legend for formatting
+  guides(pattern = guide_legend(order = 2,override.aes = list(fill = "white", color = "black")),
+         fill = guide_legend(order = 1,override.aes = list(pattern = "none")))
 
 # Export finalized graphic
 finalize_plot(average_resident_p3,
@@ -647,12 +685,17 @@ finalize_plot(average_resident_p3,
               household income category (but cannot be due to survey 
               methodology).
               <br><br>
+              Sample size: Figures are based on a total of 95,233 records for My 
+              Daily Travel and 100,573 for Travel Tracker. Across all categories 
+              and both surveys, travelers aged 70 and above in My Daily Travel 
+              have the lowest sample size, with 4,212 records.
+              <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel and Travel Tracker data.",
               filename = "average_resident_p3",
               sidebar_width = 0,
               mode = "png",
-              # height = 6.5,
+              height = 6.5,
               overwrite = T)
 
 
