@@ -43,9 +43,9 @@ active_travel <-
   mutate(takes_active = min(sum(takes_transit,takes_bike,takes_walk),1))
 
 # Age bins
-age_breaks <- c(-1, 9, 18, 29, 39, 49, 59, 69, 150)
+age_breaks <- c(-1, 9, 18, 29, 39, 49, 59, 150)
 age_labels <- c("5 to 9", "10 to 18", "19 to 29", "30 to 39", "40 to 49",
-                "50 to 59", "60 to 69", "70 and above")
+                "50 to 59", "60 and above")
 
 # Create working dataset based on variables pulled above and person/hh
 # characteristics from other tables
@@ -162,11 +162,13 @@ summary(tnc_use_lm)
 # 
 # Statistics about usage, cost, and purpose by age, race/ethnicity, and home 
 ################################################################################
+# 
+# # Helper for month conversions (from weeks)
+# w_to_m <- 
+#   (365/7) / # Number of weeks in a year
+#   12 # Divided by the number of months in a year
 
-# Helper for month conversions (from weeks)
-w_to_m <- 
-  (365/7) / # Number of weeks in a year
-  12 # Divided by the number of months in a year
+w_to_m <- 1
 
 overall_usage <-
   tnc_wide %>%
@@ -222,17 +224,17 @@ tnc_p1 <-
   # Reformat
   mutate(name = recode(factor(name,levels = c("tnc_use","tnc_cost")),
                        "tnc_cost" = "Average cost per trip",
-                       "tnc_use" = "Average monthly trips")) %>% 
+                       "tnc_use" = "Average weekly trips")) %>% 
   mutate(blank = case_when(
     name == "Average cost per trip" ~ 20.5,
-    TRUE ~ 4
+    TRUE ~ 1
   )) %>% 
   
   # Create ggplot object
   ggplot(aes(x = value, y = factor(age_bin,levels = rev(levels(age_bin))), fill = age_bin)) +
   geom_col() +
-  geom_label(aes(label = ifelse(name == "Average monthly trips",
-                                scales::label_number(accuracy = 0.1)(value),
+  geom_label(aes(label = ifelse(name == "Average weekly trips",
+                                scales::label_number(accuracy = 0.01)(value),
                                 scales::label_dollar(accuracy = 1)(value))),
              hjust = 0,
              label.size = 0,
@@ -249,12 +251,15 @@ tnc_p1 <-
 finalize_plot(tnc_p1,
               "Usage of Transportation Network Companies (TNCs) decreases by age, 
               while the average cost per trip increases with age.",
-              "Note: Monthly TNC usage was extrapolated from responses to a 
-              question that asked how frequently the respondent used Uber, Lyft, 
-              or Via in the prior week. Average values from that question were 
-              multiplied by approximately 4.3 to yield a monthly figure. 
-              Excludes travelers 18 and younger, as they were not asked about 
+              "Note: Excludes travelers 18 and younger, as they were not asked about 
               TNC usage.
+              <br><br>
+              Sample size (Usage/Cost): 
+              <br>- 19-29 (4398/2132); 
+              <br>- 30-39 (5324/1891); 
+              <br>- 40-49 (4129/903); 
+              <br>- 50-59 (3853/602); 
+              <br>- 60+ (4366/455).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data.",
@@ -287,28 +292,34 @@ tnc_p2 <-
   # Create ggplot object
   ggplot(aes(x = tnc_use, y = reorder(home_county_chi,tnc_use), fill = home_county_chi)) +
   geom_col() +
-  geom_label(aes(label = scales::label_number(accuracy = 0.1)(tnc_use)),
+  geom_label(aes(label = scales::label_number(accuracy = 0.01)(tnc_use)),
              hjust = 0,
              label.size = 0,
              fill = "white") +
   
   # Add CMAP style
   theme_cmap(gridlines = "v",vline = 0,legend.position = "none",
-             xlab = "TNC usage per month by home jurisdiction") +
+             xlab = "TNC usage per week by home jurisdiction") +
   cmap_fill_highlight(home_usage$home_county_chi,"CMAP region") +
 
   # Adjust axes
-  scale_x_continuous(limits = c(0,3.5))
+  scale_x_continuous(limits = c(0,0.8))
 
 finalize_plot(tnc_p2,
               "Usage of Transportation Network Companies (TNCs) is greatest in 
               Chicago and Suburban Cook County.",
-              "Note: Monthly TNC usage was extrapolated from responses to a 
-              question that asked how frequently the respondent used Uber, Lyft, 
-              or Via in the prior week. Average values from that question were 
-              multiplied by approximately 4.3 to yield a monthly figure. 
-              Excludes travelers 18 and younger, as they were not asked about 
+              "Note: Excludes travelers 18 and younger, as they were not asked about 
               TNC usage.
+              <br><br>
+              Sample size:
+              <br>- Chicago (7337);
+              <br>- Suburban Cook (4067);
+              <br>- DuPage (3248);
+              <br>- Lake (1710);
+              <br>- Kane (1218);
+              <br>- Will (2616); 
+              <br>- McHenry (605);
+              <br>- Kendall (758).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data.",
@@ -452,6 +463,12 @@ tnc_purpose_race <-
                            levels = c("black","asian","other","hispanic","white","CMAP region")))
 
 
+tnc_p4_labels <-
+  tnc_purpose_race %>% 
+  filter(tnc_purp %in% c("Late-night (non-work)","Daytime (non-work)")) %>% 
+  group_by(race_eth) %>% 
+  summarize(label = sum(pct))
+
 tnc_p4 <-
   # Get data
   tnc_purpose_race %>% 
@@ -461,6 +478,8 @@ tnc_p4 <-
   # Adjust values for shift around 0 axis
   mutate(pct = ifelse(!(tnc_purp %in% c("Late-night (non-work)","Daytime (non-work)")),
                       -1 * pct, pct)) %>% 
+  # Add labels
+  left_join(tnc_p4_labels, by = "race_eth") %>% 
   # Capitalize
   mutate(race_eth = recode_factor(race_eth,
                                   "other" = "Other",
@@ -471,11 +490,7 @@ tnc_p4 <-
                                   "white" = "White")) %>% 
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = race_eth, fill = tnc_purp,
-             # Only label bars that round to at least 5 percent
-             label = ifelse(!(tnc_purp %in% c("Late-night (non-work)","Daytime (non-work)")),
-                            scales::label_percent(accuracy = 1)(-1 * pct),
-                            scales::label_percent(accuracy = 1)(pct)))) +
+  ggplot(aes(x = pct, y = race_eth, fill = tnc_purp)) +
   # Use "geom_col_pattern" to add texture to a subset of columns
   ggpattern::geom_col_pattern(aes(pattern = type),
                               pattern_color = "white",
@@ -491,14 +506,18 @@ tnc_p4 <-
                                   "0" = "none"),
                        guide = "none") +
   
-  geom_text(position = position_stack(reverse = T,vjust = 0.5),
-            color = "white") +
+  # Add labels
+  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(label),
+                 x = label, y = race_eth),
+             label.size = 0,
+             hjust = 0,
+             fill = "white") +
   
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-.75,.75,by = .25), 
                      labels = scales::label_percent()(abs(seq(-.75,.75,by = .25))),
-                     limits = c(-.75,.8)) +
+                     limits = c(-.75,.85)) +
   
   # Add CMAP themes
   theme_cmap(gridlines = "v",
@@ -511,7 +530,18 @@ tnc_p4 <-
 finalize_plot(tnc_p4,
               title = "White travelers are much more likely to report using 
               Transportation Network Companies for non-work trips.",
-              caption = "Source: Chicago Metropolitan Agency for Planning 
+              caption = 
+              "Note: Excludes travelers 18 and younger, as they were not asked about 
+              TNC usage.
+              <br><br>
+              Sample size:
+              <br>- White (4605);
+              <br>- Asian (466);
+              <br>- Black (981);
+              <br>- Hispanic (895);
+              <br>- Other (209);
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning 
               Analysis of My Daily Travel data.",
               filename = "tnc_p4",
               mode = "png",
