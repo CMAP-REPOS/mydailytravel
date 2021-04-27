@@ -362,6 +362,20 @@ finalize_plot(tpurps_of_modes_p3,
               # mode = "png",
               overwrite = T)
 
+
+detailed_tnc_chain_mdt <-
+  pct_calculator(mdt_base_2 %>% 
+                   mutate(chain_c = fct_collapse(chain,
+                                                 "Work" = c("Work trip",
+                                                            "Return home (work)"),
+                                                 "Shopping" = c("Shopping trip",
+                                                                "Return home (shopping)"))),
+                 subset = c("rideshare","shared rideshare","taxi"),
+                 subset_of = "mode",
+                 breakdown_by = "chain_c",
+                 second_breakdown = "mode",
+                 weight = "wtperfin",
+                 survey = "mdt")
 ################################################################################
 # Backup - breakdown of trips by origin and destination
 ################################################################################
