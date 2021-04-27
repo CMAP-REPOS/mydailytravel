@@ -491,7 +491,8 @@ tt_hh <- sqlFetch(con,'hh_public') %>%
          SURVEY,     # Whether the household had a 1- or 2-day survey.
          DAY,        # The day of the week of the travel day.
          HHVEH,      # The number of household vehicles.
-         INCOM       # Household income.
+         INCOM,      # Household income.
+         WGTHH       # Household weight
   )
 
 # people
@@ -556,6 +557,13 @@ tt_location <- sqlFetch(con,"loc_public") %>%
          Y_PUBLIC    # The centroid of the census tract of location
   )
 
+tt_veh <- sqlFetch(con,"veh_public") %>%
+  select(SAMPN,     # Household and vehicle identifiers
+         VEHNO,      
+         
+         PARKD       # Location of vehicle parking
+  )
+
 # Close the database connection
 odbcClose(con)
 
@@ -614,7 +622,7 @@ tt_home <- tt_location %>%
     home_county_chi == "Chicago" ~ "Chicago",
     home_county_chi == "Suburban Cook" ~ "Suburban Cook",
     is.na(home_county_chi) ~ "Other - NA",
-    TRUE ~ "Other counties")) %>% 
+    TRUE ~ "Other suburban counties")) %>% 
   # Extract FIPS for state from larger FIPS code
   mutate(home_state = as.integer(substr(FIPS,1,2))) %>%
   # Extract FIPS for county from larger FIPS code
