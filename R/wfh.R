@@ -82,7 +82,7 @@ wfh_mdt_all <-
   mutate(combined_tc_wfh =
            case_when(
              tc_frequency == 1 ~ 1, # Flag all 1-3 day/week telecommuters
-             tc_frequency == 2 ~ 2, # Then flag all 4-5 day/week telecommuters
+             tc_frequency == 2 ~ 2, # Then flag all 4+ day/week telecommuters
              wfh == 1 ~ 2,          # Add any WFHers that are not reporting 
                                     #   themselves in either of the first two categories
              tc_frequency == 0 ~ 0  # Finally add any remaining to the "none" category
@@ -446,7 +446,7 @@ wfh_worktrip_status <-
   # filter(bothtrips == 1)
 
 # Collapse trips into total distances traveled per traveler
-wfh_worktrips_person_level <-
+wfh_trips_person_level_mdt <-
   wfh_worktrip_status %>% 
   # Group by traveler and work trip status
   group_by(sampno,perno,worktrip) %>%
@@ -470,7 +470,7 @@ wfh_worktrips_person_level <-
 
 # Calculate summary statistics for work trips
 wfh_worktrips_summary <-
-  wfh_worktrips_person_level %>%
+  wfh_trips_person_level_mdt %>%
   # Calculate based on TC status, work trip status, and geography
   group_by(tc_frequency,worktrip,geog) %>%
   summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
@@ -527,7 +527,7 @@ finalize_plot(wfh_p2,
               "Part-time telecommuters who live outside Chicago have 
               significantly longer journeys to and from work on days when they 
               work outside the home.",
-              "Note: These estimates are based on on answers given in both the
+              paste0("Note: These estimates are based on on answers given in both the
               survey and travel diary components of My Daily Travel. Mean 
               mileage accounts for all trips associated with a work trip chain 
               that included a work destination outside the home (both fixed and 
@@ -535,13 +535,59 @@ finalize_plot(wfh_p2,
               telecommute 4+ days per week due to low sample sizes.
               <br><br>
               Sample size (Chicago/Suburban Cook/Other):
-              <br>- Does not regularly telecommute (3645/1965/5072);
-              <br>- Sometimes telecommutes (583/ 278/727)
+              <br>- Does not regularly telecommute (",
+                     paste(wfh_worktrips_summary %>%
+                             ungroup() %>% 
+                             filter(geog == "Chicago", 
+                                    worktrip == 1,
+                                    flag == 0) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           wfh_worktrips_summary %>%
+                             ungroup() %>% 
+                             filter(geog == "Suburban Cook", 
+                                    worktrip == 1,
+                                    flag == 0) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           wfh_worktrips_summary %>%
+                             ungroup() %>% 
+                             filter(geog == "Other suburban counties", 
+                                    worktrip == 1,
+                                    flag == 0) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           sep = "/"),
+                     ");
+              <br>- Sometimes telecommutes (",
+                     paste(wfh_worktrips_summary %>%
+                             ungroup() %>% 
+                             filter(geog == "Chicago", 
+                                    worktrip == 1,
+                                    flag == 1) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           wfh_worktrips_summary %>%
+                             ungroup() %>% 
+                             filter(geog == "Suburban Cook", 
+                                    worktrip == 1,
+                                    flag == 1) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           wfh_worktrips_summary %>%
+                             ungroup() %>% 
+                             filter(geog == "Other suburban counties", 
+                                    worktrip == 1,
+                                    flag == 1) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           sep = "/"),
+                     ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data.",
+              Daily Travel data."),
               filename = "wfh_p2",
-              mode = "png",
+              # mode = "png",
               overwrite = T,
               # height = 4.5,
               # width = 8,
@@ -622,7 +668,7 @@ finalize_plot(wfh_p3,
               "Suburban part-time telecommuters are much more 
               likely to use transit on days when they work outside the home, 
               while those in Chicago are more likely to walk to work.",
-              "Note: These estimates are based on on answers given in both the
+              paste0("Note: These estimates are based on on answers given in both the
               survey and travel diary components of My Daily Travel. Mode share
               accounts for all trips associated with a work trip chain 
               that included a work destination outside the home (both fixed and 
@@ -631,13 +677,53 @@ finalize_plot(wfh_p3,
               bars have less than 5% mode share.
               <br><br>
               Sample size (Chicago/Suburban Cook/Other):
-              <br>- 0 days/wk. (11661/ 6349/16145);
-              <br>- 1-3 days/wk. (1988/865/2402).
+              <br>- 0 days/wk. (",
+              paste(wfh_mode_share %>% 
+                      ungroup() %>% 
+                      filter(geog == "Chicago", 
+                             mode_c == "driver", tc_frequency == 0) %>% 
+                      select(total_n) %>% 
+                      as.numeric(),
+                    wfh_mode_share %>%
+                      ungroup() %>% 
+                      filter(geog == "Suburban Cook", 
+                             mode_c == "driver", tc_frequency == 0) %>% 
+                      select(total_n) %>% 
+                      as.numeric(),
+                    wfh_mode_share %>%
+                      ungroup() %>% 
+                      filter(geog == "Other suburban counties", 
+                             mode_c == "driver", tc_frequency == 0) %>% 
+                      select(total_n) %>% 
+                      as.numeric(),
+                    sep = "/"),
+              ");
+              <br>- 1-3 days/wk. (",
+              paste(wfh_mode_share %>% 
+                      ungroup() %>% 
+                      filter(geog == "Chicago", 
+                             mode_c == "driver", tc_frequency == 1) %>% 
+                      select(total_n) %>% 
+                      as.numeric(),
+                    wfh_mode_share %>% 
+                      ungroup() %>% 
+                      filter(geog == "Suburban Cook", 
+                             mode_c == "driver", tc_frequency == 1) %>% 
+                      select(total_n) %>% 
+                      as.numeric(),
+                    wfh_mode_share %>%
+                      ungroup() %>% 
+                      filter(geog == "Other suburban counties", 
+                             mode_c == "driver", tc_frequency == 1) %>% 
+                      select(total_n) %>% 
+                      as.numeric(),
+                    sep = "/"),
+              ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data.",
+              Daily Travel data."),
               filename = "wfh_p3",
-              mode = "png",
+              # mode = "png",
               overwrite = T,
               # height = 4.5,
               # width = 8,
@@ -652,16 +738,18 @@ finalize_plot(wfh_p3,
 
 # Calculate averages for all trips
 wfh_alltraveler_trips_general <-
+  # Start with the universe of all relevant respondents in MDT
   wfh_mdt_all %>% 
-  # Add non-work trips for everyone who didn't travel today (these are included
-  # in the averages as 0 distance)
-  left_join(wfh_worktrips_person_level %>% 
-              group_by(sampno,perno) %>% 
+  # Add distances traveled by individuals who had trips
+  left_join(wfh_trips_person_level_mdt %>%
+              # Combine work and non-work trips
+              group_by(sampno,perno) %>%
               summarize(distance_pg = sum(distance_pg)) %>% 
               ungroup(),
             by = c("sampno","perno")) %>% 
-  # Mutate NAs for distance for non-travelers to be 0
-  replace_na(list(distance_pg = 0)) %>% 
+  # Add trips for everyone who didn't travel today (these are included
+  # in the averages as 0 distance)
+  replace_na(list(distance_pg = 0)) %>%
   # Remove travelers with homes in multiple counties
   filter(home_county != "999") %>% # 82772 records
   # Calculate average distances
@@ -716,7 +804,7 @@ wfh_p4 <-
 finalize_plot(wfh_p4,
               "On average, part-time telecommuters who live outside Chicago 
               travel the greatest distances every day.",
-              "Note: These estimates are based on on answers given in both the
+              paste0("Note: These estimates are based on on answers given in both the
               survey and travel diary components of My Daily Travel. These 
               averages also account for employed individuals who did not travel 
               in the region on their assigned travel day (i.e., individuals who 
@@ -724,14 +812,56 @@ finalize_plot(wfh_p4,
               Those individuals are included as having zero travel distance.
               <br><br>
               Sample size (Chicago/Suburban Cook/Other):
-              <br>- Not regular (4752/2518/6588); 
-              <br>- Sometimes (838/423/1089);
-              <br>- Almost always (383/270/685).
+              <br>- Not regular (",
+                     paste(wfh_alltraveler_trips_general %>% 
+                             filter(geog == "Chicago", flag == 0) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           wfh_alltraveler_trips_general %>% 
+                             filter(geog == "Suburban Cook", flag == 0) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           wfh_alltraveler_trips_general %>% 
+                             filter(geog == "Other suburban counties", flag == 0) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           sep = "/"),
+                     ");
+              <br>- Sometimes (",
+                     paste(wfh_alltraveler_trips_general %>% 
+                             filter(geog == "Chicago", flag == 1) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           wfh_alltraveler_trips_general %>% 
+                             filter(geog == "Suburban Cook", flag == 1) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           wfh_alltraveler_trips_general %>% 
+                             filter(geog == "Other suburban counties", flag == 1) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           sep = "/"),
+                     ");
+              <br>- Almost always (",
+                     paste(wfh_alltraveler_trips_general %>% 
+                             filter(geog == "Chicago", flag == 2) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           wfh_alltraveler_trips_general %>% 
+                             filter(geog == "Suburban Cook", flag == 2) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           wfh_alltraveler_trips_general %>% 
+                             filter(geog == "Other suburban counties", flag == 2) %>% 
+                             select(n) %>% 
+                             as.numeric(),
+                           sep = "/"),
+                     ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data.",
+              Daily Travel data."),
               filename = "wfh_p4",
-              mode = "png",
+              # mode = "png",
               overwrite = T,
               # height = 4.5,
               # width = 8,
@@ -746,12 +876,16 @@ finalize_plot(wfh_p4,
 
 # Calculate the average length of non-work travel by TC/WFH status and home
 # jurisdiction
+
+# Start with the universe of all relevant respondents in MDT
 wfh_mdt_all %>% 
-  # Add non-work trips for everyone who didn't travel today
-  left_join(wfh_worktrips_person_level %>% 
+  # Add travel statistics for those with trips
+  left_join(wfh_trips_person_level_mdt %>% 
+              # Keep only non-work trips
               filter(worktrip == 0) %>% 
               select(sampno,perno,wfh_today,wfo_today,distance_pg),
             by = c("sampno","perno")) %>% 
+  # Add non-work trips for everyone who didn't travel today
   # Mutate NAs for distance and wfo/wfh flags for non-travelers to be 0
   replace_na(list(wfh_today = 0, wfo_today = 0,distance_pg = 0)) %>% 
   # Remove travelers with homes in multiple counties
@@ -771,7 +905,7 @@ wfh_mdt_all %>%
 # Understand the distribution of 1-3 day/week tc/wfh-ers by county
 
 # Count the workers by tc/wfh behavior by home county
-wfh_worktrips_person_level %>%
+wfh_trips_person_level_mdt %>%
   group_by(combined_tc_wfh,home_county) %>%
   summarize(n = sum(wtperfin)) %>%
   mutate(total = sum(n)) %>%
@@ -780,14 +914,14 @@ wfh_worktrips_person_level %>%
 
 # Create table for exporting location and tc/wfh behavior
 tc_homes <-
-  wfh_worktrips_person_level %>%
+  wfh_trips_person_level_mdt %>%
   select(combined_tc_wfh,home_lat,home_long,home_county,home_tract,income_c)
 
 # Export for analysis in a GIS software
 write.csv(tc_homes,"tc_homes.csv")
 
 tc_od <-
-  wfh_worktrips_person_level %>%
+  wfh_trips_person_level_mdt %>%
   filter(combined_tc_wfh == 1,
          home_county != 31,
          worktrip == 1)
@@ -829,7 +963,7 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 # tract_sf <- sf::read_sf("V:/Demographic_and_Forecast/Census/2010/Geography/CMAP_Region_Projected/Tracts_CMAP_TIGER2010.shp")
 # 
 # tract_wfh_count <-
-#   wfh_worktrips_person_level %>%
+#   wfh_trips_person_level_mdt %>%
 #   group_by(home_county,home_tract) %>%
 #   summarize(n = n(),
 #             weighted_n = sum(wtperfin))
@@ -868,7 +1002,7 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 # 
 # coords_map <-
 #   ggplot() +
-#   geom_point(data = wfh_worktrips_person_level %>% filter(combined_tc_wfh == 1) %>% filter(home_county %in% cmap_seven_counties),
+#   geom_point(data = wfh_trips_person_level_mdt %>% filter(combined_tc_wfh == 1) %>% filter(home_county %in% cmap_seven_counties),
 #              aes(x = home_long, y = home_lat),
 #              fill = "red",
 #              shape=23,
@@ -970,7 +1104,7 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 # ################################################################################
 # 
 # wfh_p2_bp <-
-#   wfh_worktrips_person_level %>%
+#   wfh_trips_person_level_mdt %>%
 #   mutate(flag = recode_factor(factor(combined_tc_wfh),
 #                               "2" = "Almost always telecommutes or works from home (4+ days/week)",
 #                               "1" = "Sometimes telecommutes or works from home (1-3 days/week)",
