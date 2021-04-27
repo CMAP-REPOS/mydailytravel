@@ -459,7 +459,7 @@ finalize_plot(modes_of_tpurps_p3,
               <br>- Relatives (238/166/427).
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data. ",
+              Daily Travel data.",
               # width = 6.5,
               # height = 4,
               overwrite = T,
