@@ -387,28 +387,28 @@ pct_calculator(
 # #
 # # CARPOOL VS PASSENGER
 # ################################################################################
-
-### Calculate proportions for subcategories for driver/passenger in MDT and TT
-car_totals_mdt <-
-  pct_calculator(mdt_base_2,
-                 subset = c("driver","passenger"),
-                 subset_of = "mode_c",
-                 breakdown_by = "mode_c",
-                 weight = "wtperfin",
-                 survey = "mdt")
-
-car_totals_tt <-
-  pct_calculator(tt_base_2,
-                 subset = c("driver","passenger"),
-                 subset_of = "mode_c",
-                 breakdown_by = "mode_c",
-                 weight = "weight",
-                 survey = "tt")
-
-all_car <-
-  rbind(car_totals_mdt,
-        car_totals_tt)
-
+# 
+# ### Calculate proportions for subcategories for driver/passenger in MDT and TT
+# car_totals_mdt <-
+#   pct_calculator(mdt_base_2,
+#                  subset = c("driver","passenger"),
+#                  subset_of = "mode_c",
+#                  breakdown_by = "mode_c",
+#                  weight = "wtperfin",
+#                  survey = "mdt")
+# 
+# car_totals_tt <-
+#   pct_calculator(tt_base_2,
+#                  subset = c("driver","passenger"),
+#                  subset_of = "mode_c",
+#                  breakdown_by = "mode_c",
+#                  weight = "weight",
+#                  survey = "tt")
+# 
+# all_car <-
+#   rbind(car_totals_mdt,
+#         car_totals_tt)
+# 
 # ################################################################################
 # # Chart of total car trips, MDT vs TT
 # ################################################################################
