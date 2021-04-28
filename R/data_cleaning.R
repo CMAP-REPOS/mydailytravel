@@ -407,7 +407,7 @@ mdt_wip2 <- mdt_wip1 %>%
   # Create a similar flag for trips that are in the TT travel region
   mutate(out_tt_trip = case_when(
     # If both the origin and destination are inside the TT region, it is 0
-    outside_tt == 0 | outside_tt_lag == 0 ~ 0,
+    outside_tt == 0 & outside_tt_lag == 0 ~ 0,
     # Otherwise, it is 1 (outside the TT region)
     TRUE ~ 1
   )) %>% 
