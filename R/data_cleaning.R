@@ -145,6 +145,7 @@ hh <- read.csv(unzip(mdt_zip,files = "household.csv")) %>%
          hhinc,      # Household income (in dollars).
          hhsize,     # Household size.
          hhveh,      # Number of vehicles in the household.
+         wthhfin,
          travday     # The day of the week for the household's travel diary.
   )
 
@@ -360,14 +361,14 @@ placeGroupStats <- trips %>%
 
 # Merge datasets (except location, which has to be added after accounting for
 # placegroup trips)
-mdt <- trips %>% # 128,229 records
+mdt_wip1 <- trips %>% # 128,229 records
   inner_join(ppl, by = c("sampno", "perno")) %>% # 128,229 records
   inner_join(hh, by = "sampno") %>% # 128,229 records
   inner_join(home, by = c("sampno")) %>% # 128,229 records
   inner_join(chains, by = c("sampno", "perno", "placeno")) # 128,229 records
 
 # take care of collapsed trips with placeGroup and add lags for trip origins
-mdt <- mdt %>%
+mdt_wip2 <- mdt_wip1 %>%
   # distinct takes the first row for duplicates, so order by distance to get the
   # "main" mode of the trip.
   arrange(desc(distance)) %>%
@@ -375,7 +376,6 @@ mdt <- mdt %>%
   # Add combined distance and time values calculated above (note some trips are
   # missing one or more records)
   left_join(placeGroupStats, by = c("sampno","perno","placeGroup")) %>% # 127333 records
-  arrange(desc(sampno),perno,placeGroup) %>%
   # Fill NAs in locno_pg
   mutate(locno_pg = case_when(
     is.na(locno_pg) ~ locno,
@@ -383,6 +383,9 @@ mdt <- mdt %>%
   )) %>% 
   # Add location information
   inner_join(location, by = c("sampno", "locno_pg" = "locno")) %>% # 128,229 records
+  
+  # Sort to allow lagging
+  arrange(sampno,perno,placeGroup) %>%
   # Add lagged trip start time
   mutate(start_times_pg = lag(deptime_pg,1)) %>%
   # Add lagged trip origin location and TT inclusion
@@ -438,7 +441,8 @@ mdt <- mdt %>%
     TRUE ~ as.numeric((arrtime_pg - start_times_pg)/60))) %>%
   select(-c(sampno_lag,perno_lag,check,out_region_lag,outside_tt,outside_tt_lag))
 
-mdt <- mdt %>%
+mdt <- 
+  mdt_wip2 %>% # 127333 records
   # Keep only trips that have an out_region_trip value of 0, implying they start
   # and/or end in the region
   filter(out_region_trip==0) %>% # 125752 records
@@ -458,7 +462,7 @@ mdt <- mdt %>%
     hdist,distance,travtime))
 
 # Remove placegroup stats
-rm(placeGroupStats)
+rm(placeGroupStats,mdt_wip1,mdt_wip2)
 
 
 # Create a dataset for all respondents (regardless of whether they traveled on
@@ -665,14 +669,14 @@ tt_home <- tt_home %>% # 105,554 records
 
 
 # Combine datasets
-tt <- tt_place %>% # 218,945 records
+tt_wip1 <- tt_place %>% # 218,945 records
   inner_join(tt_ppl, by = c("SAMPN", "PERNO")) %>% # 218,945 records
   inner_join(tt_hh, by = c("SAMPN")) %>% # 218,945 records
   inner_join(tt_location, by = c("locno" = "LOCNO")) %>% # 218,945 records
   left_join(tt_home, by = "SAMPN") # 218,945 records (58 records lack a home county; they are kept for analyses that do not rely on home location)
 
 # Flag weekend trips and adjust weights accordingly
-tt <- tt %>%
+tt_wip2 <- tt_wip1 %>%
   mutate(
     # Flag weekend travel days (those that had two day surveys that started on a
     # Friday (day 5) or a Sunday (day 7))
@@ -698,7 +702,7 @@ tt_all_respondents <- tt_ppl %>% # 32,366 records
   filter(MPO==1) 
 
 # Identify trips that either start or end within the CMAP region
-tt <- tt %>%
+tt_wip3 <- tt_wip2 %>%
   arrange(SAMPN,PERNO) %>%
   # Create a flag - is the location in the nine counties?
   mutate(out_region = ifelse(FIPS %in% cmap_state_nine_counties,
@@ -760,14 +764,12 @@ tt <- tt %>%
 
 # Remove trips not part of the CMAP survey, that start and end outside the nine
 # county region, that are over 100 miles, and/or that are on weekends
-tt <- tt %>%           # 218945 records
+tt <- tt_wip3 %>%           # 218945 records
   filter(MPO==1) %>%   # 159856 records
   filter(out_region_trip == 0) %>% # 153437 records
   filter(DIST<100) %>% # 153437 records
-  filter(weekend==0)   # 135306 records
-
-# Select the correct number of trips per day (based on day number)
-tt <- tt %>%
+  filter(weekend==0) %>% # 135306 records
+  # Select the correct number of trips per day (based on day number)
   mutate(pertrips = ifelse(DAYNO == 1,PTRIPS1,PTRIPS2)) %>%
   # And filter out unneeded variables
   select(-c(
@@ -778,6 +780,7 @@ tt <- tt %>%
     MPO,weekend,out_region_trip))
 
 
+rm(tt_wip1,tt_wip2,tt_wip3)
 
 
 #################################################
