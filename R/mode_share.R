@@ -26,11 +26,11 @@ source("R/data_cleaning.R")
 
 mdt_base_3 <-
   mdt %>%                              # 125463 records
-  # Keep only travelers >= 16 years old, either through age, age bucket, or
+  # Keep only travelers >= 5 years old, either through age, age bucket, or
   # school enrollment
-  filter(age >= 16 |                   # 108622
-           (age < 0 & aage %in% c(4,5,6,7)) |
-           (age < 0 & schol %in% c(5,6,7,8))) %>%
+  filter(age >= 5 |                   # 108622
+           (age < 0 & aage %in% c(2,3,4,5,6,7)) |
+           (age < 0 & schol %in% c(4,5,6,7,8))) %>%
   # Exclude "beginning" trips
   filter(mode_c != "beginning") %>%    # 85022
   # Exclude trips with zero distance
@@ -39,13 +39,13 @@ mdt_base_3 <-
   filter(mode_c != "missing") %>%      # 84932
   # Exlclude trips missing from residents outside the seven counties
   filter(home_state == 17 &            # 82732
-           home_county %in% cmap_seven_counties) %>% 
-  # Put school bus back into "other" category
-  mutate(mode_c = as.character(mode_c)) %>%
-  mutate(mode_c = case_when(
-    mode_c == "schoolbus" ~ "other",
-    TRUE ~ mode_c)) %>%
-  mutate(mode_c = factor(mode_c,levels = mode_c_levels))
+           home_county %in% cmap_seven_counties) #%>% 
+  # # ARCHIVE - Put school bus back into "other" category
+  # mutate(mode_c = as.character(mode_c)) %>%
+  # mutate(mode_c = case_when(
+  #   mode_c == "schoolbus" ~ "other",
+  #   TRUE ~ mode_c)) %>%
+  # mutate(mode_c = factor(mode_c,levels = mode_c_levels))
 
 # # Note: The TT code is included but was not used in published analyses. We
 # # decided to exclude this comparison because the overall mode shares between TT
@@ -55,18 +55,18 @@ mdt_base_3 <-
 # # the overall mode shares) are not directly comparable.
 # tt_base_3 <-
 #   tt %>%                               # 139769 records
-#   # Keep only travelers >= 16 years old, either through age, age bucket, or
+#   # Keep only travelers >= 5 years old, either through age, age bucket, or
 #   # school enrollment. Note that 99 is DK/RF for AGE.
-#   filter((AGE >= 16 & AGE < 99) |                   # 117605
-#            (AGE == 99 & SCHOL %in% c(5,6,7,8)) |
+#   filter((AGE >= 5 & AGE < 99) |                   # 117605
+#            (AGE == 99 & SCHOL %in% c(3,4,5,6,7,8)) |
 #            (AGE == 99 & AGEB == 2)) %>%
 #   # Keep only trips with nonzero distance
 #   filter(DIST > 0) %>%                 # 89463
 #   # Exclude all first records
 #   filter(PLANO > 1) %>%                # 89463
 #   # Exclude missing modes
-#   filter(mode_c != "missing") %>%      # 89463
-#   # Put school bus back into "other" category
+#   filter(mode_c != "missing") # %>%      # 89463
+#   # # ARCHIVE - Put school bus back into "other" category
 #   mutate(mode_c = as.character(mode_c)) %>%
 #   mutate(mode_c = case_when(
 #     mode_c == "schoolbus" ~ "other",
@@ -88,7 +88,8 @@ mdt_base_3 <-
 mdt_mode_all <-
   pct_calculator(mdt_base_3,
                  breakdown_by = "mode_c",
-                 weight = "wtperfin")
+                 weight = "wtperfin") %>% 
+  ungroup()
 
 # Analyze percents at the county and region-wide level
 mdt_mode_counties <-
@@ -98,7 +99,8 @@ mdt_mode_counties <-
     second_breakdown = "home_county_chi",
     weight = "wtperfin") %>% 
   # Add the regional total calculated above
-  rbind(mdt_mode_all %>% mutate(home_county_chi = "CMAP region"))
+  rbind(mdt_mode_all %>% mutate(home_county_chi = "CMAP region")) %>% 
+  ungroup()
 
 # Analyze percents by household income
 mdt_mode_income <-
@@ -123,7 +125,8 @@ mdt_mode_income <-
                              "3" = "$25,000 to $29,999",
                              "2" = "$15,000 to $24,999",
                              "1" = "Less than $15,000",
-                             "99" = "CMAP region"))
+                             "99" = "CMAP region")) %>% 
+  ungroup()
 
 # Do the same again, but for race and ethnicity
 mdt_mode_race <-
@@ -143,13 +146,14 @@ mdt_mode_race <-
                                   "asian" = "Asian",
                                   "hispanic" = "Hispanic",
                                   "white" = "White",
-                                  "CMAP region" = "CMAP region"))
+                                  "CMAP region" = "CMAP region")) %>% 
+  ungroup()
 
 # Do the same again, but for age
 
 # Age bins
-age_breaks <- c(-1,29, 49, 69, 150)
-age_labels <- c("16 to 29", "30 to 49",  "50 to 69", "70 and above")
+age_breaks <- c(-1,17,29, 49, 69, 150)
+age_labels <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
 
 mdt_mode_age <-
   pct_calculator(
@@ -164,8 +168,13 @@ mdt_mode_age <-
   # Add baseline totals
   rbind(mdt_mode_all %>% mutate(age_bin = "CMAP region")) %>% 
   # Reorder factors for publication
-  mutate(age_bin = fct_relevel(age_bin,"CMAP region")) %>%
-  mutate(age_bin = fct_rev(factor(age_bin)))
+  mutate(age_bin = factor(age_bin,levels = c("70 and above",
+                                             "50 to 69",
+                                             "30 to 49",
+                                             "18 to 29",
+                                             "5 to 17",
+                                             "CMAP region"))) %>%
+  ungroup()
 
 
 
@@ -189,7 +198,8 @@ mdt_mode_mileage <-
   rbind(mdt_mode_all %>% mutate(mileage_bin = "CMAP region")) %>% 
   # Reorder factors for publication
   mutate(mileage_bin = fct_relevel(mileage_bin,"CMAP region")) %>%
-  mutate(mileage_bin = fct_rev(factor(mileage_bin)))
+  mutate(mileage_bin = fct_rev(factor(mileage_bin))) %>% 
+  ungroup()
 
 # Do the same for sex
 mdt_mode_sex <-
@@ -205,7 +215,8 @@ mdt_mode_sex <-
                       "1" = "Male",
                       "2" = "Female")) %>% 
   # Add the regional total calculated above
-  rbind(mdt_mode_all %>% mutate(sex = "CMAP region"))
+  rbind(mdt_mode_all %>% mutate(sex = "CMAP region")) %>% 
+  ungroup()
 
 
 ################################################################################
@@ -215,7 +226,7 @@ mdt_mode_sex <-
 # Create labels
 mode_share_p1_labels <-
   mdt_mode_counties %>%
-  filter(mode_c %in% c("walk","transit","bike","other")) %>%
+  filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(home_county_chi) %>%
   summarize(label = sum(pct))
 
@@ -230,12 +241,13 @@ mode_share_p1 <-
     # Reorder factors and capitalize
     mode_c = recode_factor(factor(mode_c,levels = 
                                     c("driver","passenger","walk",
-                                      "transit","bike","other")),
-                           "driver" = "Driver",
+                                      "transit","bike","schoolbus","other")),
                            "passenger" = "Passenger",
+                           "driver" = "Driver",
                            "walk" = "Walk",
                            "transit" = "Transit",
                            "bike" = "Bike",
+                           "schoolbus" = "School bus",
                            "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
     pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
@@ -268,32 +280,43 @@ mode_share_p1 <-
 
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, xlab = "Mode share by home jurisdiction") +
-  # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
-                               "#efa7a7","#0084ac")) +
-  
+  # Add colors
+  scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
+                    labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
+
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
                      labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
                      limits = c(-1,.61)) +
 
   # Adjust legend for formatting
-  guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
+  guides(fill = guide_legend(ncol = 7,
+                             override.aes = list(fill = c("#8c0000","#e5bd72","#36d8ca",
+                                                          "#6d8692","#efa7a7","#3d6600",
+                                                          "#0084ac"),
+                                                 pattern = "none")))
 
 # Export finalized graphic
 finalize_plot(mode_share_p1,
               title = "Residents of Chicago and Cook County have by far the highest non-car 
               mode share in the CMAP region.",
-              caption = "Note: Includes trips by residents of the region that 
+              caption = 
+              paste0("Note: Includes trips by residents of the region that 
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
-              travelers younger than 16.
+              travelers younger than 5.
               <br><br>
-              Sample size: Figures are based on a total of 82,732 recorded trips. 
-              McHenry County has the lowest sample size, with 2,266 records.
+              Sample size: Figures are based on a total of ",
+                     format(nrow(mdt_base_3),big.mark = ","),
+                     " recorded trips. 
+              McHenry County has the lowest sample size, with ",
+                     format(mdt_mode_counties %>% 
+                              filter(home_county_chi == "McHenry") %>% 
+                              select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
+                     " records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data.",
+              Daily Travel data."),
               # height = 4.5,
               # width = 8,
               filename = "mode_share_p1",
@@ -307,7 +330,7 @@ finalize_plot(mode_share_p1,
 # Create labels
 mode_share_p2_labels <-
   mdt_mode_income %>%
-  filter(mode_c %in% c("walk","transit","bike","other")) %>%
+  filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(hhinc) %>%
   summarize(label = sum(pct))
 
@@ -322,12 +345,14 @@ mode_share_p2 <-
     # Reorder factors and capitalize
     mode_c = recode_factor(factor(mode_c,levels = 
                                     c("driver","passenger","walk",
-                                      "transit","bike","other")),
-                           "driver" = "Driver",
+                                      "transit","bike","schoolbus",
+                                      "other")),
                            "passenger" = "Passenger",
+                           "driver" = "Driver",
                            "walk" = "Walk",
                            "transit" = "Transit",
                            "bike" = "Bike",
+                           "schoolbus" = "School bus",
                            "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
     pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
@@ -361,9 +386,9 @@ mode_share_p2 <-
 
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,xlab = "Mode share by household income") +
-  # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
-                               "#efa7a7","#0084ac")) +
+  # Add colors
+  scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
+                    labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
@@ -371,24 +396,34 @@ mode_share_p2 <-
                      limits = c(-1,.68))+
   
   # Adjust legend for formatting
-  guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
-
+  guides(fill = guide_legend(ncol = 7,
+                             override.aes = list(fill = c("#8c0000","#e5bd72","#36d8ca",
+                                                          "#6d8692","#efa7a7","#3d6600",
+                                                          "#0084ac"),
+                                                 pattern = "none")))
 # Export finalized graphic
 finalize_plot(mode_share_p2,
               title = "Households with less than $30,000 in income are the most
               reliant  on non-car modes, but the highest-income households also
               exceed the regional average.",
-              caption = "Note: Includes trips by residents of the region that 
+              caption = 
+                paste0("Note: Includes trips by residents of the region that 
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
-              travelers younger than 16.
+              travelers younger than 5.
               <br><br>
-              Sample size: Figures are based on a total of 82,732 recorded trips. 
+              Sample size: Figures are based on a total of ",
+                       format(nrow(mdt_base_3),big.mark = ","),
+                       " recorded trips. 
               Travelers with household incomes from $25,000 to $25,999 have the 
-              lowest sample size, with 1,943 records.
+              lowest sample size, with ",
+                       format(mdt_mode_income %>% 
+                                filter(hhinc == "$25,000 to $29,999") %>% 
+                                select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
+                       " records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data.",
+              Daily Travel data."),
               # height = 4.5,
               # width = 8,
               filename = "mode_share_p2",
@@ -429,7 +464,7 @@ mdt_mode_income_detailed <-
 # Create labels
 mode_share_p3_labels <-
   mdt_mode_race %>%
-  filter(mode_c %in% c("walk","transit","bike","other")) %>%
+  filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(race_eth) %>%
   summarize(label = sum(pct))
 
@@ -444,12 +479,14 @@ mode_share_p3 <-
     # Reorder factors and capitalize
     mode_c = recode_factor(factor(mode_c,levels = 
                                     c("driver","passenger","walk",
-                                      "transit","bike","other")),
-                           "driver" = "Driver",
+                                      "transit","bike","schoolbus",
+                                      "other")),
                            "passenger" = "Passenger",
+                           "driver" = "Driver",
                            "walk" = "Walk",
                            "transit" = "Transit",
                            "bike" = "Bike",
+                           "schoolbus" = "School bus",
                            "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
     pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
@@ -483,9 +520,9 @@ mode_share_p3 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,xlab = "Mode share by race and ethnicity") +
-  # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
-                               "#efa7a7","#0084ac")) +
+  # Add colors
+  scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
+                    labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
@@ -493,24 +530,34 @@ mode_share_p3 <-
                      limits = c(-1,.55))+
   
   # Adjust legend for formatting
-  guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
-
+  guides(fill = guide_legend(ncol = 7,
+                             override.aes = list(fill = c("#8c0000","#e5bd72","#36d8ca",
+                                                          "#6d8692","#efa7a7","#3d6600",
+                                                          "#0084ac"),
+                                                 pattern = "none")))
 # Export finalized graphic
 finalize_plot(mode_share_p3,
               title = "White residents of the region are the likeliest to rely 
               on personal automobiles for their transportation.",
-              caption = "Note: 'Hispanic' includes respondents who identified as 
+              caption = 
+              paste0("Note: 'Hispanic' includes respondents who identified as 
               Hispanic of any racial category. Other categories are non-Hispanic. 
-              Includes trips by residents of the region that  start and/or end 
-              in the Illinois counties of Cook, DeKalb, DuPage, Grundy, Kane, 
-              Kendall, Lake, McHenry, and Will. Excludes trips by travelers 
-              younger than 16.
+              Includes trips by residents of the region that 
+              start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
+              Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
+              travelers younger than 5.
               <br><br>
-              Sample size: Figures are based on a total of 82,732 recorded trips. 
-              'Other' travelers have the lowest sample size, with 1,783 records.
+              Sample size: Figures are based on a total of ",
+                     format(nrow(mdt_base_3),big.mark = ","),
+                     " recorded trips. 
+              'Other' travelers have the lowest sample size, with ",
+                     format(mdt_mode_race %>% 
+                              filter(race_eth == "other") %>% 
+                              select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
+                     " records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data.",
+              Daily Travel data."),
               # height = 5.5,
               # width = 11.3,
               filename = "mode_share_p3",
@@ -524,7 +571,7 @@ finalize_plot(mode_share_p3,
 # Create labels
 mode_share_p4_labels <-
   mdt_mode_age %>%
-  filter(mode_c %in% c("walk","transit","bike","other")) %>%
+  filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(age_bin) %>%
   summarize(label = sum(pct))
 
@@ -539,12 +586,14 @@ mode_share_p4 <-
     # Reorder factors and capitalize
     mode_c = recode_factor(factor(mode_c,levels = 
                                     c("driver","passenger","walk",
-                                      "transit","bike","other")),
-                           "driver" = "Driver",
+                                      "transit","bike","schoolbus",
+                                      "other")),
                            "passenger" = "Passenger",
+                           "driver" = "Driver",
                            "walk" = "Walk",
                            "transit" = "Transit",
                            "bike" = "Bike",
+                           "schoolbus" = "School bus",
                            "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
     pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
@@ -579,9 +628,9 @@ mode_share_p4 <-
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,
              xlab = "Mode share by age") +
-  # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
-                               "#efa7a7","#0084ac")) +
+  # Add colors
+  scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
+                    labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
@@ -589,22 +638,31 @@ mode_share_p4 <-
                      limits = c(-1,.55))+
   
   # Adjust legend for formatting
-  guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
-
+  guides(fill = guide_legend(ncol = 7,
+                             override.aes = list(fill = c("#8c0000","#e5bd72","#36d8ca",
+                                                          "#6d8692","#efa7a7","#3d6600",
+                                                          "#0084ac"),
+                                                 pattern = "none")))
 finalize_plot(mode_share_p4,
               title = "The region's younger travelers disproportionately rely on 
               non-car modes.",
-              caption = "Note: Includes trips by residents of the region that 
+              caption = 
+              paste0("Note: Includes trips by residents of the region that 
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
-              travelers younger than 16.
+              travelers younger than 5.
               <br><br>
-              Sample size: Figures are based on a total of 82,732 recorded trips. 
-              Travelers 70 and older have the lowest sample size, with 4,219
-              records.
+              Sample size: Figures are based on a total of ",
+                     format(nrow(mdt_base_3),big.mark = ","),
+                     " recorded trips. 
+              Travelers 70 and older have the lowest sample size, with ",
+                     format(mdt_mode_age %>% 
+                              filter(age_bin == "70 and above") %>% 
+                              select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
+                     " records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data.",
+              Daily Travel data."),
               # # height = 5.5,
               # width = 11.3,
               filename = "mode_share_p4",
@@ -638,7 +696,7 @@ mdt_mode_age_detailed <-
 # Create labels
 mode_share_p5_labels <-
   mdt_mode_mileage %>%
-  filter(mode_c %in% c("walk","transit","bike","other")) %>%
+  filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(mileage_bin) %>%
   summarize(label = sum(pct))
 
@@ -653,12 +711,14 @@ mode_share_p5 <-
     # Reorder factors and capitalize
     mode_c = recode_factor(factor(mode_c,levels = 
                                     c("driver","passenger","walk",
-                                      "transit","bike","other")),
-                           "driver" = "Driver",
+                                      "transit","bike","schoolbus",
+                                      "other")),
                            "passenger" = "Passenger",
+                           "driver" = "Driver",
                            "walk" = "Walk",
                            "transit" = "Transit",
                            "bike" = "Bike",
+                           "schoolbus" = "School bus",
                            "other" = "Other"),
     # Make driver/passenger go on the left-hand-side of the graph
     pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
@@ -690,9 +750,9 @@ mode_share_p5 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6) +
-  # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
-                               "#efa7a7","#0084ac")) +
+  # Add colors
+  scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
+                    labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.75,by = .25), 
@@ -700,25 +760,35 @@ mode_share_p5 <-
                      limits = c(-1,.83))+
   
   # Adjust legend for formatting
-  guides(fill = guide_legend(ncol = 6,override.aes = list(pattern = "none")))
+  guides(fill = guide_legend(ncol = 7,
+                             override.aes = list(fill = c("#8c0000","#e5bd72","#36d8ca",
+                                                          "#6d8692","#efa7a7","#3d6600",
+                                                          "#0084ac"),
+                                                 pattern = "none")))
 
 # Export finalized graphic
 finalize_plot(mode_share_p5,
               title = "Travelers rely most on non-car modes for the shortest and 
               the longest trips.",
-              caption = "Note: Includes trips by residents of the region that 
+              caption = 
+              paste0("Note: Includes trips by residents of the region that 
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Excludes trips by 
-              travelers younger than 16. Distances are 'network distances' and 
+              travelers younger than 5. Distances are 'network distances' and 
               capture the total distance traveled along the route, not just the 
               distance from origin to destination.
               <br><br>
-              Sample size: Figures are based on a total of 82,732 recorded trips. 
-              Trips of 25 miles or more have the lowest sample size, with 5,489 
-              records.
+              Sample size: Figures are based on a total of ",
+                     format(nrow(mdt_base_3),big.mark = ","),
+                     " recorded trips.
+              Trips of 25 miles or more have the lowest sample size,with ",
+                     format(mdt_mode_mileage %>% 
+                              filter(mileage_bin == "More than 25 miles") %>% 
+                              select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
+                     " records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data.",
+              Daily Travel data."),
               # # height = 5.5,
               # width = 11.3,
               filename = "mode_share_p5",
