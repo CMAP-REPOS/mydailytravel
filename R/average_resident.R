@@ -21,9 +21,10 @@ setwd("~/GitHub/mydailytravel")
 source("R/helper_fns.R")
 source("R/data_cleaning.R")
 
+
 # Age bins
-age_breaks <- c(-1,15,29, 49, 69, 150)
-age_labels <- c("5 to 15","16 to 29", "30 to 49",  "50 to 69", "70 and above")
+age_breaks <- c(-1,17,29, 49, 69, 150)
+age_labels <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
 
 # filter out trips we don't want to evaluate
 avgtravel_mdt <-
@@ -47,8 +48,8 @@ avgtravel_mdt <-
   
   ###### RUN ONE OF THE TWO BELOW (MDT-only vs. MDT + TT comparison)
   
-  ### MDT ONLY
-  # Eliminate 0 distance trips (network - use for MDT-specific analyses)
+  # ### MDT ONLY
+  # # Eliminate 0 distance trips (network - use for MDT-specific analyses)
   # filter(distance_pg > 0) %>%   # 97273 records
   
   ### MDT VS TT
@@ -56,7 +57,7 @@ avgtravel_mdt <-
   filter(hdist_pg > 0) %>%   # 96343 records
   # Filter out trips that were not within the TT travel region (only for
   # comparisons with TT - see explanation in TT data prep below)
-  filter(out_tt_trip == 0) %>% # 95233 records
+  filter(out_tt_trip == 0) %>% # 94531 records
   
   
   # Add calculation for weighted distance and time
@@ -456,7 +457,7 @@ travel_summaries <-
                           levels = c("Overall",
                                      "Male","Female",
                                      "White","Asian","Black","Hispanic","Other",
-                                     "5 to 15","16 to 29","30 to 49","50 to 69","70 and above",
+                                     "5 to 17","18 to 29","30 to 49","50 to 69","70 and above",
                                      "Less than $35K","$35K to $59K","$60K to $99K","$100K or more"
                                      ))) %>% 
   # Pivot longer
@@ -701,7 +702,7 @@ finalize_plot(average_resident_p2,
               Daily Travel data."),
               filename = "average_resident_p2",
               mode = "png",
-              # height = 7.75,
+              height = 6,
               overwrite = T)
 
 
