@@ -248,21 +248,47 @@ tnc_p1 <-
              xlab = "TNC usage characteristics by age") +
   cmap_fill_highlight(age_cost_and_usage$age_bin,"CMAP region")
 
+tnc_p1_samplesize <-
+  age_usage %>% select(age_bin,usage = n) %>% 
+  left_join(age_cost %>% select(age_bin,cost = n), by = "age_bin") %>% 
+  ungroup()
+
 finalize_plot(tnc_p1,
               "Usage of Transportation Network Companies (TNCs) decreases by age, 
               while the average cost per trip increases with age.",
-              "Note: Excludes travelers 18 and younger, as they were not asked about 
-              TNC usage.
+              paste0("Note: These figures are based on survey responses and are 
+              not derived from trip diaries. Excludes travelers 18 and younger, 
+              as they were not asked about TNC usage.
               <br><br>
               Sample size (Usage/Cost): 
-              <br>- 19-29 (4398/2132); 
-              <br>- 30-39 (5324/1891); 
-              <br>- 40-49 (4129/903); 
-              <br>- 50-59 (3853/602); 
-              <br>- 60+ (4366/455).
+              <br>- 19-29 (",
+              paste(tnc_p1_samplesize %>% filter(age_bin == "19 to 29") %>% select(usage),
+                    tnc_p1_samplesize %>% filter(age_bin == "19 to 29") %>% select(cost),
+                    sep = "/"),
+                    "); 
+              <br>- 30-39 (",
+              paste(tnc_p1_samplesize %>% filter(age_bin == "30 to 39") %>% select(usage),
+                    tnc_p1_samplesize %>% filter(age_bin == "30 to 39") %>% select(cost),
+                    sep = "/"),
+                    "); 
+              <br>- 40-49 (",
+              paste(tnc_p1_samplesize %>% filter(age_bin == "40 to 49") %>% select(usage),
+                    tnc_p1_samplesize %>% filter(age_bin == "40 to 49") %>% select(cost),
+                    sep = "/"),
+                    "); 
+              <br>- 50-59 (",
+              paste(tnc_p1_samplesize %>% filter(age_bin == "50 to 59") %>% select(usage),
+                    tnc_p1_samplesize %>% filter(age_bin == "50 to 59") %>% select(cost),
+                    sep = "/"),
+                    "); 
+              <br>- 60+ (",
+              paste(tnc_p1_samplesize %>% filter(age_bin == "60 and above") %>% select(usage),
+                    tnc_p1_samplesize %>% filter(age_bin == "60 and above") %>% select(cost),
+                    sep = "/"),
+                    ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
-              Daily Travel data.",
+              Daily Travel data."),
               filename = "tnc_p1",
               # width = 8,
               # height = 4.5,
@@ -274,7 +300,7 @@ finalize_plot(tnc_p1,
 # PLOT OF HOME JURISDICTION USAGE
 ################################################################################
 
-# Usage by home county - monthly
+# Usage by home county
 home_usage <- 
   tnc_wide %>%
   filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
@@ -308,21 +334,37 @@ tnc_p2 <-
 finalize_plot(tnc_p2,
               "Usage of Transportation Network Companies (TNCs) is greatest in 
               Chicago and Suburban Cook County.",
-              "Note: Excludes travelers 18 and younger, as they were not asked about 
+              paste0("Note: Excludes travelers 18 and younger, as they were not asked about 
               TNC usage.
               <br><br>
               Sample size:
-              <br>- Chicago (7337);
-              <br>- Suburban Cook (4067);
-              <br>- DuPage (3248);
-              <br>- Lake (1710);
-              <br>- Kane (1218);
-              <br>- Will (2616); 
-              <br>- McHenry (605);
-              <br>- Kendall (758).
+              <br>- Chicago (",
+                     home_usage %>% filter(home_county_chi == "Chicago") %>% select(n),
+                     ");
+              <br>- Suburban Cook (",
+                     home_usage %>% filter(home_county_chi == "Suburban Cook") %>% select(n),
+                     ");
+              <br>- DuPage (",
+                     home_usage %>% filter(home_county_chi == "DuPage") %>% select(n),
+                     ");
+              <br>- Lake (",
+                     home_usage %>% filter(home_county_chi == "Lake") %>% select(n),
+                     ");
+              <br>- Kane (",
+                     home_usage %>% filter(home_county_chi == "Kane") %>% select(n),
+                     ");
+              <br>- Will (",
+                     home_usage %>% filter(home_county_chi == "Will") %>% select(n),
+                     "); 
+              <br>- McHenry (",
+                     home_usage %>% filter(home_county_chi == "McHenry") %>% select(n),
+                     ");
+              <br>- Kendall (",
+                     home_usage %>% filter(home_county_chi == "Kendall") %>% select(n),
+                     ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
-              Daily Travel data.",
+              Daily Travel data."),
               filename = "tnc_p2",
               mode = "png",
               overwrite = T)
@@ -331,7 +373,7 @@ finalize_plot(tnc_p2,
 # OTHER CHARACTERISTICS
 ################################################################################
 
-# Usage by race and ethnicity - turned into a monthly figure
+# Usage by race and ethnicity
 tnc_wide %>%
   filter(race_eth != "missing",
          !(tnc_use %in% c(-9,-8,-7,-1))) %>%
@@ -356,96 +398,6 @@ tnc_wide %>%
   summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
             n = n()) %>%
   arrange(-tnc_cost)
-
-################################################################################
-# PLOT OF AGE | PURPOSE
-################################################################################
-
-# Age bins
-age_breaks_large <- c(-1, 9, 18, 39, 59, 150)
-age_labels_large <- c("5 to 9", "10 to 18", "19 to 39", "40 to 59",
-                      "60 and above")
-
-tnc_for_purposes <-
-  tnc %>% 
-  mutate(age_bin = cut(age, breaks = age_breaks_large,
-                       labels = age_labels_large)) %>% 
-  filter(tnc_purp > 0) %>%
-  mutate(tnc_purp = recode(factor(tnc_purp,levels = c(1,2,3,5,4)),
-                           "1" = "Commute (whole or part)",
-                           "2" = "Commute (whole or part)",
-                           "3" = "Daytime (work)",
-                           "4" = "Daytime (non-work)",
-                           "5" = "Late-night (non-work)"))
-
-tnc_purpose_overall <-
-  pct_calculator(tnc_for_purposes,
-                 breakdown_by = "tnc_purp",
-                 weight = "wtperfin")
-
-
-tnc_purpose_age <-
-  pct_calculator(tnc_for_purposes %>% 
-                   filter(!is.na(age_bin)),
-                 breakdown_by = "tnc_purp",
-                 second_breakdown = "age_bin",
-                 weight = "wtperfin") %>% 
-  # Add baseline totals
-  rbind(tnc_purpose_overall %>% mutate(age_bin = "CMAP region")) %>% 
-  # Adjust factors
-  mutate(age_bin = factor(age_bin,levels = c("60 and above","40 to 59","19 to 39","CMAP region")))
-
-tnc_p3 <-
-  # Get data
-  tnc_purpose_age %>% 
-  # Add flag for pattern
-  mutate(type = case_when(age_bin == "CMAP region" ~ "1",
-                          TRUE ~ "0" )) %>% 
-  
-  # Create ggplot object
-  ggplot(aes(x = pct, y = age_bin, fill = tnc_purp,
-             # Only label bars that round to at least 5 percent
-             label = ifelse(pct >.05,scales::label_percent(accuracy = 1)(pct),""))) +
-  # Use "geom_col_pattern" to add texture to a subset of columns
-  ggpattern::geom_col_pattern(aes(pattern = type),
-                              pattern_color = "white",
-                              pattern_fill = "white",
-                              pattern_angle = 30,
-                              pattern_density = 0.05,
-                              pattern_spacing = 0.0325,
-                              pattern_key_scale_factor = 0.4,
-                              position = position_stack(reverse = T),
-                              width = 0.8) +  
-  # Re-assign patterns manually
-  scale_pattern_manual(values = c("1" = "stripe",
-                                  "0" = "none"),
-                       guide = "none") +
-  
-  geom_text(position = position_stack(reverse = T,vjust = 0.5),
-            color = "white") +
-  
-  
-  # Adjust axis
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1)) +
-  
-  # Add CMAP themes
-  theme_cmap(gridlines = "v",
-             xlab = "Typical reason for using a Transportation Network Company") +
-  scale_fill_discrete(type = c("#8c0000","#efa7a7","#00093f","#006b8c")) +
-  
-  # Adjust legend for formatting
-  guides(fill = guide_legend(ncol = 3,override.aes = list(pattern = "none")))
-
-
-finalize_plot(tnc_p3,
-              title = "Across age groups, a majority of travelers say they 
-              typically use Transportation Network Companies for non-work trips, 
-              although there are differences by time of day.",
-              caption = "Source: Chicago Metropolitan Agency for Planning 
-              Analysis of My Daily Travel data.",
-              filename = "tnc_p3",
-              # mode = "png",
-              overwrite = T)
 
 ################################################################################
 # PLOT OF RACE | PURPOSE
@@ -496,11 +448,11 @@ tnc_p4 <-
                               pattern_color = "white",
                               pattern_fill = "white",
                               pattern_angle = 30,
-                              pattern_density = 0.05,
-                              pattern_spacing = 0.0325,
-                              pattern_key_scale_factor = 0.4,
+                              pattern_density = 0.25,
+                              pattern_spacing = 0.0125,
+                              pattern_key_scale_factor = 0.6,
                               position = position_stack(reverse = T),
-                              width = 0.8) +  
+                              width = 0.8) +
   # Re-assign patterns manually
   scale_pattern_manual(values = c("1" = "stripe",
                                   "0" = "none"),
@@ -521,36 +473,143 @@ tnc_p4 <-
   
   # Add CMAP themes
   theme_cmap(gridlines = "v",
-             xlab = "Typical reason for using a Transportation Network Company") +
+             xlab = "Typical reason for using a TNC by race and ethnicity") +
   scale_fill_discrete(type = c("#8c0000","#efa7a7","#00093f","#006b8c")) +
   
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 3,override.aes = list(pattern = "none")))
 
+tnc_p4_samplesize <-
+  tnc_purpose_race %>% 
+  ungroup() %>% 
+  select(race_eth,n = total_n) %>% 
+  distinct()
+
 finalize_plot(tnc_p4,
               title = "White travelers are much more likely to report using 
-              Transportation Network Companies for non-work trips.",
+              Transportation Network Companies (TNCs) for non-work trips.",
               caption = 
-              "Note: Excludes travelers 18 and younger, as they were not asked about 
+                paste0("Note: 'Hispanic' includes respondents who identified as 
+              Hispanic of any racial category. Other categories are non-Hispanic. 
+              Excludes travelers 18 and younger, as they were not asked about 
               TNC usage.
               <br><br>
               Sample size:
-              <br>- White (4605);
-              <br>- Asian (466);
-              <br>- Black (981);
-              <br>- Hispanic (895);
-              <br>- Other (209);
+              <br>- White (",
+                       tnc_p4_samplesize %>% filter(race_eth == "white") %>% select(n),
+                       ");
+              <br>- Asian (",
+                       tnc_p4_samplesize %>% filter(race_eth == "asian") %>% select(n),
+                       ");
+              <br>- Black (",
+                       tnc_p4_samplesize %>% filter(race_eth == "black") %>% select(n),
+                       ");
+              <br>- Hispanic (",
+                       tnc_p4_samplesize %>% filter(race_eth == "hispanic") %>% select(n),
+                       ");
+              <br>- Other (",
+                       tnc_p4_samplesize %>% filter(race_eth == "other") %>% select(n),
+                       ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning 
-              Analysis of My Daily Travel data.",
+              Analysis of My Daily Travel data."),
               filename = "tnc_p4",
               mode = "png",
               overwrite = T)
 
-
-################################################################################
-# ARCHIVE - PLOT OF INCOME | PURPOSE
-################################################################################
+# ################################################################################
+# # ARCHIVE - PLOT OF AGE | PURPOSE
+# ################################################################################
+# 
+# # Age bins
+# age_breaks_large <- c(-1, 9, 18, 39, 59, 150)
+# age_labels_large <- c("5 to 9", "10 to 18", "19 to 39", "40 to 59",
+#                       "60 and above")
+# 
+# tnc_for_purposes <-
+#   tnc %>% 
+#   mutate(age_bin = cut(age, breaks = age_breaks_large,
+#                        labels = age_labels_large)) %>% 
+#   filter(tnc_purp > 0) %>%
+#   mutate(tnc_purp = recode(factor(tnc_purp,levels = c(1,2,3,5,4)),
+#                            "1" = "Commute (whole or part)",
+#                            "2" = "Commute (whole or part)",
+#                            "3" = "Daytime (work)",
+#                            "4" = "Daytime (non-work)",
+#                            "5" = "Late-night (non-work)"))
+# 
+# tnc_purpose_overall <-
+#   pct_calculator(tnc_for_purposes,
+#                  breakdown_by = "tnc_purp",
+#                  weight = "wtperfin")
+# 
+# 
+# tnc_purpose_age <-
+#   pct_calculator(tnc_for_purposes %>% 
+#                    filter(!is.na(age_bin)),
+#                  breakdown_by = "tnc_purp",
+#                  second_breakdown = "age_bin",
+#                  weight = "wtperfin") %>% 
+#   # Add baseline totals
+#   rbind(tnc_purpose_overall %>% mutate(age_bin = "CMAP region")) %>% 
+#   # Adjust factors
+#   mutate(age_bin = factor(age_bin,levels = c("60 and above","40 to 59","19 to 39","CMAP region")))
+# 
+# tnc_p3 <-
+#   # Get data
+#   tnc_purpose_age %>% 
+#   # Add flag for pattern
+#   mutate(type = case_when(age_bin == "CMAP region" ~ "1",
+#                           TRUE ~ "0" )) %>% 
+#   
+#   # Create ggplot object
+#   ggplot(aes(x = pct, y = age_bin, fill = tnc_purp,
+#              # Only label bars that round to at least 5 percent
+#              label = ifelse(pct >.05,scales::label_percent(accuracy = 1)(pct),""))) +
+#   # Use "geom_col_pattern" to add texture to a subset of columns
+#   ggpattern::geom_col_pattern(aes(pattern = type),
+#                               pattern_color = "white",
+#                               pattern_fill = "white",
+#                               pattern_angle = 30,
+#                               pattern_density = 0.05,
+#                               pattern_spacing = 0.0325,
+#                               pattern_key_scale_factor = 0.4,
+#                               position = position_stack(reverse = T),
+#                               width = 0.8) +  
+#   # Re-assign patterns manually
+#   scale_pattern_manual(values = c("1" = "stripe",
+#                                   "0" = "none"),
+#                        guide = "none") +
+#   
+#   geom_text(position = position_stack(reverse = T,vjust = 0.5),
+#             color = "white") +
+#   
+#   
+#   # Adjust axis
+#   scale_x_continuous(labels = scales::label_percent(accuracy = 1)) +
+#   
+#   # Add CMAP themes
+#   theme_cmap(gridlines = "v",
+#              xlab = "Typical reason for using a Transportation Network Company") +
+#   scale_fill_discrete(type = c("#8c0000","#efa7a7","#00093f","#006b8c")) +
+#   
+#   # Adjust legend for formatting
+#   guides(fill = guide_legend(ncol = 3,override.aes = list(pattern = "none")))
+# 
+# 
+# finalize_plot(tnc_p3,
+#               title = "Across age groups, a majority of travelers say they 
+#               typically use Transportation Network Companies for non-work trips, 
+#               although there are differences by time of day.",
+#               caption = "Source: Chicago Metropolitan Agency for Planning 
+#               Analysis of My Daily Travel data.",
+#               filename = "tnc_p3",
+#               # mode = "png",
+#               overwrite = T)
+# 
+# ################################################################################
+# # ARCHIVE - PLOT OF INCOME | PURPOSE
+# ################################################################################
 # 
 # tnc_purpose_income <-
 #   pct_calculator(tnc_for_purposes %>% filter(income_c != "missing"),
