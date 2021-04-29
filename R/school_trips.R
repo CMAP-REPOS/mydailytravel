@@ -46,10 +46,10 @@ all_school_mdt <-
   # Keep only trips to school
   filter(tpurp_c == "school") %>%    # 4424 records
   # Keep only trips to identified school locations
-  filter(loctype == 3) %>%           # 4001 records
+  filter(loctype == 3) %>%           # 4002 records
   # Keep only trips that start or end between 7am and 9am (so those that have a
   # start time and/or an end time with 7 or 8 as their hour.)
-  filter(hour(arrtime_pg) %in% c(7,8) |  # 3530 records
+  filter(hour(arrtime_pg) %in% c(7,8) |  # 3531 records
            hour(start_times_pg) %in% c(7,8)) %>%
   
   # # Exclude Kendall County (for validation purposes only - not run in published
@@ -336,7 +336,7 @@ school_trips_p4 <-
   # Get data
   school_time_race_mdt %>%
   # Rename desired statistic
-  rename(stat = travtime90) %>% 
+  rename(stat = travtime50) %>% 
   # Capitalize
   mutate(race_eth = recode_factor(factor(race_eth,
                                          levels = c("black","hispanic","white","asian",
