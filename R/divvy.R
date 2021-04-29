@@ -213,7 +213,8 @@ finalize_plot(divvy_p1,
               # overrides = list(margin_plot_l = 30),
               overwrite = T)
 
-# Combined plot of Divvy ridership and MDT bike ridership
+# Combined plot of Divvy ridership and MDT bike ridership - this requires
+# running the code for the MDT bike ridership plot in 'trips_in_motion.R'
 bike_p1 <- ggpubr::ggarrange(trips_in_motion_p4,divvy_p1,
                      ncol = 2,nrow = 1)
 
@@ -221,7 +222,7 @@ finalize_plot(bike_p1,
               sidebar_width = 0,
               title = "Personal bike trips peak in the morning, while Divvy 
               trips peak in the afternoon.",
-              "Note: Trips in motion are 55-minute rolling averages for personal 
+              paste0("Note: Trips in motion are 55-minute rolling averages for personal 
               bikes and 25-minute rolling averages for Divvy.
               'One-time user' refers to Divvy customers that purchased a
               single ride or a day pass. Personal bike trips anlyzed include all 
@@ -232,14 +233,15 @@ finalize_plot(bike_p1,
               of the graph, and are not included in the totals of trips in
               motion as of 3:00 A.M. on the left side of the graph.
               <br><br>
-              Sample size: Personal bike trips are based on 1,513 records. Divvy 
-              trips are actual ridership numbers.
+              Sample size: Personal bike trips are based on ",
+                     format(nrow(tim_mdt_bike),big.mark = ","),
+                     " records. Divvy trips are actual ridership numbers.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel survey data and Divvy ridership data for weekdays 
               between September 4, 2018 and May 9, 2019 (excluding all federal 
               holidays and the weeks of November 19, December 24, December 31, 
-              and April 15).",
+              and April 15)."),
               filename = "bike_p1",
               mode = "png",
               overwrite = T

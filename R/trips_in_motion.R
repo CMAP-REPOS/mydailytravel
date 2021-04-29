@@ -169,15 +169,17 @@ finalize_plot(trips_in_motion_p1,
               "The morning and evening peaks in travel demand are very 
               pronounced, although the COVID-19 pandemic's impact on these 
               travel patterns remains uncertain.",
-              "Note: Trips in motion are 25-minute rolling averages. Trips 
+              paste0("Note: Trips in motion are 25-minute rolling averages. Trips 
               analyzed include all weekday trips by residents of the region that
               start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will.
               <br><br>
-              Sample size: Figures are based on a total of 97,273 records.
+              Sample size: Figures are based on a total of ",
+                     format(nrow(tim_mdt_wip),big.mark = ","),
+                     " records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries.",
+              Daily Travel trip diaries."),
               filename = "trips_in_motion_p1",
               mode = "png",
               # sidebar_width = 2.3,
@@ -240,28 +242,40 @@ trips_in_motion_p2 <-
              strip.text = element_text(hjust = 0.5,face = "bold"),
              xlab = "Weekday trips in motion by time of day and trip chain type")
 
+trips_in_motion_p2_samplesize <-
+  tim_mdt_wip %>% 
+  mutate(chain_c = fct_collapse(chain,
+                                work = c("Work trip","Return home (work)"),
+                                shop = c("Shopping trip","Return home (shopping)"),
+                                other = "Other trip")) %>% 
+  ungroup() %>% 
+  count(chain_c)
+
 finalize_plot(trips_in_motion_p2,
               "Travelers rely on substantially different modes for trips to and 
               from work vs. other trip purposes.",
-              "Note: Trips in motion are 25-minute rolling averages. Trips 
+              paste0("Note: Trips in motion are 25-minute rolling averages. Trips 
               analyzed include all trips by residents of the region that start 
               and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
               Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
               100 miles or lasting longer than 15 hours are excluded.
               <br><br>
               Sample size: 
-              <br>- Work (42,607); 
-              <br>- Shopping (15,057); 
-              <br>- Other (39,609).
+              <br>- Work (",
+                     trips_in_motion_p2_samplesize %>% filter(chain_c == "work") %>% select(n),
+                     "); 
+              <br>- Shopping (",
+                     trips_in_motion_p2_samplesize %>% filter(chain_c == "shop") %>% select(n),
+                     "); 
+              <br>- Other (",
+                     trips_in_motion_p2_samplesize %>% filter(chain_c == "other") %>% select(n),
+                     ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries.",
+              Daily Travel trip diaries."),
               filename = "trips_in_motion_p2",
               mode = "png",
-              overwrite = TRUE
-              # height = 6.3,
-              # width = 11.3
-              )
+              overwrite = TRUE)
 
 ################################################################################
 # Bikes (personal)

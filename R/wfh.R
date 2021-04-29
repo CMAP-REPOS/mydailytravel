@@ -389,12 +389,19 @@ wfh_p1 <-
   # Add faceting
   facet_wrap(~type,ncol = 2,scales = "free_y")
 
+wfh_p1_samplesize <-
+  tc_summaries %>% 
+  filter(name == "n") %>% 
+  select(subtype,n = value) %>% 
+  ungroup()
+
 # Export finalized graphic
 finalize_plot(wfh_p1,
               # sidebar_width = 0,
               "Lower-income, Black, and Hispanic residents are the least likely 
               to telecommute.",
-              caption = "Note: Includes only employed residents. 'Hispanic' 
+              caption = 
+              paste0("Note: Includes only employed residents. 'Hispanic' 
               includes respondents who identified as Hispanic of any racial 
               category. Other categories are non-Hispanic. For the 
               categorization by sex, the survey asked respondents whether they 
@@ -402,13 +409,43 @@ finalize_plot(wfh_p1,
               answer and are excluded based on small sample sizes.
               <br><br>
               Sample size:
-              <br>- 18-29 (3624); 30-49 (8525); 50-69 (5056); 70+ (257); 
-              <br>- <$35K (1715); $35-59K (2211); $60-99K (4631); $100K+ (8959); 
-              <br>- Asian (815); White (13461); Other (399); Black (1366); Hispanic (1588); 
-              <br>- Male (8441); Female (9214).
+              <br>- Age: 18-29 (",
+                     wfh_p1_samplesize %>% filter(subtype == "18 to 29") %>% select(n),
+                     "); 30-49 (",
+                     wfh_p1_samplesize %>% filter(subtype == "30 to 49") %>% select(n),
+                     "); 50-69 (",
+                     wfh_p1_samplesize %>% filter(subtype == "50 to 69") %>% select(n),
+                     "); 70+ (",
+                     wfh_p1_samplesize %>% filter(subtype == "70 and above") %>% select(n),
+                     ").
+              <br>- Income: <$35K (",
+                     wfh_p1_samplesize %>% filter(subtype == "Less than $35K") %>% select(n),
+                     "); $35-59K (",
+                     wfh_p1_samplesize %>% filter(subtype == "$35K to $59K") %>% select(n),
+                     "); $60-99K (",
+                     wfh_p1_samplesize %>% filter(subtype == "$60K to $99K") %>% select(n),
+                     "); $100K+ (",
+                     wfh_p1_samplesize %>% filter(subtype == "$100K or more") %>% select(n),
+                     ").
+              <br>- Race/Ethnicity: Asian (",
+                     wfh_p1_samplesize %>% filter(subtype == "Asian") %>% select(n),
+                     "); White (",
+                     wfh_p1_samplesize %>% filter(subtype == "White") %>% select(n),
+                     "); Other (",
+                     wfh_p1_samplesize %>% filter(subtype == "Other") %>% select(n),
+                     "); Black (",
+                     wfh_p1_samplesize %>% filter(subtype == "Black") %>% select(n),
+                     "); Hispanic (",
+                     wfh_p1_samplesize %>% filter(subtype == "Hispanic") %>% select(n),
+                     ").
+              <br>- Sex: Male (",
+                     wfh_p1_samplesize %>% filter(subtype == "Male") %>% select(n),
+                     "); Female (",
+                     wfh_p1_samplesize %>% filter(subtype == "Female") %>% select(n),
+                     ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
-              Daily Travel data.",
+              Daily Travel data."),
               filename = "wfh_p1",
               mode = "png",
               # height = 6.5,
@@ -522,6 +559,12 @@ wfh_p2 <-
              axis.title.x = element_text(hjust = 0.5)) +
   cmap_fill_discrete(palette = "legislation")
 
+wfh_p2_samplesize <-
+  wfh_worktrips_summary %>% 
+  ungroup() %>%
+  filter(worktrip == 1) %>% 
+  select(geog,flag,n)
+
 # Export finalized graphic
 finalize_plot(wfh_p2,
               "Part-time telecommuters who live outside Chicago have 
@@ -536,48 +579,36 @@ finalize_plot(wfh_p2,
               <br><br>
               Sample size (Chicago/Suburban Cook/Other):
               <br>- Does not regularly telecommute (",
-                     paste(wfh_worktrips_summary %>%
-                             ungroup() %>% 
+                     paste(wfh_p2_samplesize %>% 
                              filter(geog == "Chicago", 
-                                    worktrip == 1,
                                     flag == 0) %>% 
                              select(n) %>% 
                              as.numeric(),
-                           wfh_worktrips_summary %>%
-                             ungroup() %>% 
+                           wfh_p2_samplesize %>% 
                              filter(geog == "Suburban Cook", 
-                                    worktrip == 1,
                                     flag == 0) %>% 
                              select(n) %>% 
                              as.numeric(),
-                           wfh_worktrips_summary %>%
-                             ungroup() %>% 
-                             filter(geog == "Other suburban counties", 
-                                    worktrip == 1,
+                           wfh_p2_samplesize %>% 
+                             filter(geog == "Other suburban counties",
                                     flag == 0) %>% 
                              select(n) %>% 
                              as.numeric(),
                            sep = "/"),
                      ");
               <br>- Sometimes telecommutes (",
-                     paste(wfh_worktrips_summary %>%
-                             ungroup() %>% 
+                     paste(wfh_p2_samplesize %>% 
                              filter(geog == "Chicago", 
-                                    worktrip == 1,
                                     flag == 1) %>% 
                              select(n) %>% 
                              as.numeric(),
-                           wfh_worktrips_summary %>%
-                             ungroup() %>% 
+                           wfh_p2_samplesize %>% 
                              filter(geog == "Suburban Cook", 
-                                    worktrip == 1,
                                     flag == 1) %>% 
                              select(n) %>% 
                              as.numeric(),
-                           wfh_worktrips_summary %>%
-                             ungroup() %>% 
+                           wfh_p2_samplesize %>% 
                              filter(geog == "Other suburban counties", 
-                                    worktrip == 1,
                                     flag == 1) %>% 
                              select(n) %>% 
                              as.numeric(),
@@ -663,6 +694,10 @@ wfh_p3 <-
   # Add faceting
   facet_wrap(~geog,ncol = 1)
 
+wfh_p3_samplesize <-
+  wfh_mode_share %>% 
+  ungroup()
+
 # Export finalized graphic
 finalize_plot(wfh_p3,
               "Suburban part-time telecommuters are much more 
@@ -678,20 +713,17 @@ finalize_plot(wfh_p3,
               <br><br>
               Sample size (Chicago/Suburban Cook/Other):
               <br>- 0 days/wk. (",
-              paste(wfh_mode_share %>% 
-                      ungroup() %>% 
+              paste(wfh_p3_samplesize %>% 
                       filter(geog == "Chicago", 
                              mode_c == "driver", tc_frequency == 0) %>% 
                       select(total_n) %>% 
                       as.numeric(),
-                    wfh_mode_share %>%
-                      ungroup() %>% 
+                    wfh_p3_samplesize %>% 
                       filter(geog == "Suburban Cook", 
                              mode_c == "driver", tc_frequency == 0) %>% 
                       select(total_n) %>% 
                       as.numeric(),
-                    wfh_mode_share %>%
-                      ungroup() %>% 
+                    wfh_p3_samplesize %>% 
                       filter(geog == "Other suburban counties", 
                              mode_c == "driver", tc_frequency == 0) %>% 
                       select(total_n) %>% 
@@ -699,20 +731,17 @@ finalize_plot(wfh_p3,
                     sep = "/"),
               ");
               <br>- 1-3 days/wk. (",
-              paste(wfh_mode_share %>% 
-                      ungroup() %>% 
+              paste(wfh_p3_samplesize %>% 
                       filter(geog == "Chicago", 
                              mode_c == "driver", tc_frequency == 1) %>% 
                       select(total_n) %>% 
                       as.numeric(),
-                    wfh_mode_share %>% 
-                      ungroup() %>% 
+                    wfh_p3_samplesize %>% 
                       filter(geog == "Suburban Cook", 
                              mode_c == "driver", tc_frequency == 1) %>% 
                       select(total_n) %>% 
                       as.numeric(),
-                    wfh_mode_share %>%
-                      ungroup() %>% 
+                    wfh_p3_samplesize %>% 
                       filter(geog == "Other suburban counties", 
                              mode_c == "driver", tc_frequency == 1) %>% 
                       select(total_n) %>% 
@@ -723,7 +752,7 @@ finalize_plot(wfh_p3,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "wfh_p3",
-              # mode = "png",
+              mode = "png",
               overwrite = T,
               # height = 4.5,
               # width = 8,
