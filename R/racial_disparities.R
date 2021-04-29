@@ -29,9 +29,11 @@ all_trips_mdt <-
   filter(
     # Keep only:                     # 108612
     # Those 16 or older
-    age >= 16 |
-      # or those in an age category from 16 to 44
-      (age < 0 & aage %in% c(4,5,6,7))) %>%
+    age >= 5 |
+      # or those in an age category from 5 to 44
+      (age < 0 & aage %in% c(2,3,4,5,6,7)) |
+      # Or those enrolled in school grades we know are 5+
+      (age < 0 & schol %in% c(4,5,6,7,8))) %>%
   # Exclude "beginning" trips
   filter(mode_c != "beginning") %>%  # 85014
   # Keep only trips with nonzero distance
@@ -82,7 +84,7 @@ work_time_race_mdt <-
   # Exclude households with missing race and ethnicity information
   filter(race_eth != "missing") %>% # 12012 records
   
-  # Calculate weighted mean of trip times by race and ethnicity
+  # Calculate weighted median of trip times by race and ethnicity
   group_by(race_eth,tpurp) %>%
   summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, 
                                                                    w = wtperfin)),
@@ -164,20 +166,70 @@ finalize_plot(racial_disparities_p1,
               "Black residents of the region have significantly longer trips to 
               work, health care, and routine shopping than those of 
               other residents.",
-              "Note: Excludes travelers younger than 16. Trips to 'Work (fixed 
+              caption = 
+              paste0("Note: Excludes travelers younger than 5. Trips to 'Work (fixed 
               location)' only include trips made to fixed workplace locations by 
               employed respondents. In all categories, trips with no travel time 
-              are excluded. Hispanic' includes individuals of any racial 
+              are excluded. 'Hispanic' includes individuals of any racial 
               group that identify as Hispanic. All other categories are 
               non-Hispanic.
               <br><br>
               Sample size (Black/Other/Asian/ Hispanic/White): 
-              <br>- Work (687/233/567/990/9557); 
-              <br>- Health (214/41/46/131/1473); 
-              <br>- Shopping (713/153/198/452/4880).
+              <br>- Work (",
+                     paste(
+                       work_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "black") %>% select(n) %>% as.numeric(),
+                       work_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "other") %>% select(n) %>% as.numeric(),
+                       work_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "asian") %>% select(n) %>% as.numeric(),
+                       work_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "hispanic") %>% select(n) %>% as.numeric(),
+                       work_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "white") %>% select(n) %>% as.numeric(),
+                       sep = "/"),
+                       "); 
+              <br>- Health (",
+                     paste(
+                       other_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "black",tpurp == "Health care") %>% 
+                         select(n) %>% as.numeric(),
+                       other_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "other",tpurp == "Health care") %>% 
+                         select(n) %>% as.numeric(),
+                       other_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "asian",tpurp == "Health care") %>% 
+                         select(n) %>% as.numeric(),
+                       other_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "hispanic",tpurp == "Health care") %>% 
+                         select(n) %>% as.numeric(),
+                       other_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "white",tpurp == "Health care") %>% 
+                         select(n) %>% as.numeric(),
+                       sep = "/"),
+                     "); 
+              <br>- Shop (",
+                     paste(
+                       other_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "black",tpurp == "Shopped (routine like grocery, clothing)") %>% 
+                         select(n) %>% as.numeric(),
+                       other_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "other",tpurp == "Shopped (routine like grocery, clothing)") %>% 
+                         select(n) %>% as.numeric(),
+                       other_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "asian",tpurp == "Shopped (routine like grocery, clothing)") %>% 
+                         select(n) %>% as.numeric(),
+                       other_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "hispanic",tpurp == "Shopped (routine like grocery, clothing)") %>% 
+                         select(n) %>% as.numeric(),
+                       other_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "white",tpurp == "Shopped (routine like grocery, clothing)") %>% 
+                         select(n) %>% as.numeric(),
+                       sep = "/"),
+                     ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data.",
+              Daily Travel data."),
               filename = "racial_disparities_p1",
               mode = "png",
               sidebar_width = 2.5,
