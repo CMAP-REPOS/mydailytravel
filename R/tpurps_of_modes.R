@@ -275,107 +275,49 @@ tpurps_of_modes_p2 <-
   # Manually include CMAP colors
   scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c"))
 
+tpurps_of_modes_p2_samplesize <-
+  all_tnc_tpurp_c %>% 
+  select(mode,survey,n = total_n) %>% 
+  ungroup() %>% 
+  distinct()
+
+
 # Export finalized graphic
 finalize_plot(tpurps_of_modes_p2,
-              "While taxi ridership has fallen significantly since 2008, Transportation Network Company (TNC) trips have more than made up the difference.",
-              "Note: Includes only trips by regional residents and excludes 
-              weekend trips. The reported regional totals for both taxi and TNC 
-              trips in My Daily Travel are similar to but slightly less than 
-              those captured in the City of Chicago's data on TNC and taxi 
-              trips, which may be due to the exclusion of non-resident and 
-              weekend trips and/or other survey design factors.
+              "While taxi ridership has fallen significantly since 2008, 
+              Transportation Network Company (TNC) trips have more than made up 
+              the difference.",
+              paste0("Note: 'TNC (regular)' includes trips reported as 
+              'rideshare', while 'TNC (shared)' includes trips reported as 
+              'shared rideshare.' The reported regional totals for both taxi and 
+              TNC trips in My Daily Travel are similar to but slightly less than 
+              those captured in the City of Chicago's data on TNC and taxi trips, 
+              which may be due to the exclusion of non-resident and weekend 
+              trips and/or other survey design factors.
               <br><br>
               Sample size:
-              <br>- Taxis 2008 (342);
-              <br>- Taxis 2019 (125);
-              <br>- Regular TNC (633);
-              <br>- Shared TNC (246).
+              <br>- Taxi, 2008 (",
+                     tpurps_of_modes_p2_samplesize %>% filter(mode == "taxi" & survey == "tt") %>% select(n),
+                     ");
+              <br>- Taxi, 2019 (",
+                     tpurps_of_modes_p2_samplesize %>% filter(mode == "taxi" & survey == "mdt") %>% select(n),
+                     ");
+              <br>- Regular TNC (",
+                     tpurps_of_modes_p2_samplesize %>% filter(mode == "rideshare") %>% select(n),
+                     ");
+              <br>- Shared TNC (",
+                     tpurps_of_modes_p2_samplesize %>% filter(mode == "shared rideshare") %>% select(n),
+                     ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel and Travel Tracker data.",
+              Daily Travel and Travel Tracker data."),
               filename = "tpurps_of_modes_p2",
+              sidebar_width = 2.5,
               mode = "png",
               # height = 6.3,
               # width = 11.3,
               overwrite = T)
 
-################################################################################
-# Backup - Chart of trip purposes for TNC/taxi trips, MDT
-################################################################################
-
-tpurps_of_modes_p3 <-
-  # Get data
-  all_tnc_tpurp_c %>%
-  # Keep only subcategories and MDT responses
-  filter(survey == "mdt",
-         mode != "tnc (all)") %>%
-  # Add factor levels and format for chart ordering
-  mutate(mode = recode_factor(factor(mode, levels = c("taxi",
-                                                      "rideshare",
-                                                      "shared rideshare")),
-                              "taxi" = "Taxi",
-                              "rideshare" = "TNC (regular)",
-                              "shared rideshare" = "TNC (shared)"),
-         tpurp_c = recode_factor(factor(tpurp_c,
-                                        c("all other","dining","community",
-                                          "shopping/errands","work","home")),
-                                 "all other" = "All other",
-                                 "dining" = "Dining",
-                                 "community" = "Community",
-                                 "shopping/errands" = "Shopping/errands",
-                                 "work" = "Work",
-                                 "home" = "Home")
-         ) %>%
-  
-  # Create ggplot object
-  ggplot(aes(y = tpurp_c, x = pct, fill = mode)) +
-  geom_col(position = position_dodge2(reverse = TRUE)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
-                 group = mode),
-             position = position_dodge2(reverse = T,
-                                        width = 0.9),
-             hjust = 0,
-             label.size = 0,
-             label.padding = unit(3,"bigpts"),
-             fill = "white") +
-  
-  # Adjust axis
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
-                     limits = c(0, .42)) +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "v",vline = 0) +
-  scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c"))
-
-# Export finalized graphic
-finalize_plot(tpurps_of_modes_p3,
-              "Trip purposes of TNC and taxi trips, 2019.",
-              "Note: \"All other\" includes categories with less than 5% of the
-              overall mode share for taxis and TNCs. This includes healthcare,
-              school, transport, transfers, and other.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My 
-              Daily Travel data.",
-              # width = 11.3,
-              # height = 6.3,
-              filename = "tpurps_of_modes_p4",
-              # mode = "png",
-              overwrite = T)
-
-
-detailed_tnc_chain_mdt <-
-  pct_calculator(mdt_base_2 %>% 
-                   mutate(chain_c = fct_collapse(chain,
-                                                 "Work" = c("Work trip",
-                                                            "Return home (work)"),
-                                                 "Shopping" = c("Shopping trip",
-                                                                "Return home (shopping)"))),
-                 subset = c("rideshare","shared rideshare","taxi"),
-                 subset_of = "mode",
-                 breakdown_by = "chain_c",
-                 second_breakdown = "mode",
-                 weight = "wtperfin",
-                 survey = "mdt")
 ################################################################################
 # Backup - breakdown of trips by origin and destination
 ################################################################################
@@ -390,12 +332,87 @@ pct_calculator(
   breakdown_by = "chicago_tnc",
   # second_breakdown = "mode",
   weight = "wtperfin")
-  
+
+# Suburb-to-suburb trips represent 12.9 percent of all TNC trips, with a higher
+# share of rideshare (14.3%) than shared rideshare (9.5%)
+
 
 ################################################################################
 # ARCHIVE
 #
 ################################################################################
+# 
+# ################################################################################
+# # ARCHIVE - Information on trip purposes for TNC/taxi trips, MDT
+# ################################################################################
+# 
+# tpurps_of_modes_p3 <-
+#   # Get data
+#   all_tnc_tpurp_c %>%
+#   # Keep only subcategories and MDT responses
+#   filter(survey == "mdt",
+#          mode != "tnc (all)") %>%
+#   # Add factor levels and format for chart ordering
+#   mutate(mode = recode_factor(factor(mode, levels = c("taxi",
+#                                                       "rideshare",
+#                                                       "shared rideshare")),
+#                               "taxi" = "Taxi",
+#                               "rideshare" = "TNC (regular)",
+#                               "shared rideshare" = "TNC (shared)"),
+#          tpurp_c = recode_factor(factor(tpurp_c,
+#                                         c("all other","dining","community",
+#                                           "shopping/errands","work","home")),
+#                                  "all other" = "All other",
+#                                  "dining" = "Dining",
+#                                  "community" = "Community",
+#                                  "shopping/errands" = "Shopping/errands",
+#                                  "work" = "Work",
+#                                  "home" = "Home")
+#   ) %>%
+#   
+#   # Create ggplot object
+#   ggplot(aes(y = tpurp_c, x = pct, fill = mode)) +
+#   geom_col(position = position_dodge2(reverse = TRUE)) +
+#   geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
+#                  group = mode),
+#              position = position_dodge2(reverse = T,
+#                                         width = 0.9),
+#              hjust = 0,
+#              label.size = 0,
+#              label.padding = unit(3,"bigpts"),
+#              fill = "white") +
+#   
+#   # Adjust axis
+#   scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+#                      limits = c(0, .42)) +
+#   
+#   # Add CMAP style
+#   theme_cmap(gridlines = "v",vline = 0) +
+#   scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c"))
+# 
+# # Export finalized graphic
+# finalize_plot(tpurps_of_modes_p3,
+#               "Trip purposes of TNC and taxi trips, 2019.",
+#               "Note: \"All other\" includes categories with less than 5% of the
+#               overall mode share for taxis and TNCs. This includes healthcare,
+#               school, transport, transfers, and other.
+#               <br><br>
+#               Source: My Daily Travel data.")
+# 
+# detailed_tnc_chain_mdt <-
+#   pct_calculator(mdt_base_2 %>% 
+#                    mutate(chain_c = fct_collapse(chain,
+#                                                  "Work" = c("Work trip",
+#                                                             "Return home (work)"),
+#                                                  "Shopping" = c("Shopping trip",
+#                                                                 "Return home (shopping)"))),
+#                  subset = c("rideshare","shared rideshare","taxi"),
+#                  subset_of = "mode",
+#                  breakdown_by = "chain_c",
+#                  second_breakdown = "mode",
+#                  weight = "wtperfin",
+#                  survey = "mdt")
+# 
 # 
 # ################################################################################
 # #
