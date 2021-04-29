@@ -326,19 +326,24 @@ school_time_race_mdt <-
             distance = MetricsWeighted::weighted_median(distance_pg, w = wtperfin),
             n = n()) 
 
+school_trips_p4_samplesize <-
+  school_time_race_mdt %>% 
+  ungroup() %>% 
+  select(race_eth,n)
+
 # Chart of travel time to school by household income
 school_trips_p4 <-
   # Get data
   school_time_race_mdt %>%
   # Rename desired statistic
-  rename(stat = travtime50) %>% 
+  rename(stat = travtime90) %>% 
   # Capitalize
   mutate(race_eth = recode_factor(factor(race_eth,
-                                         levels = c("black","asian","Non-white",
-                                                    "white","hispanic","other")),
-                           "black" = "Black", "asian" = "Asian",
-                           "Non-white" = "Non-white","white" = "White",
-                           "hispanic" = "Hispanic","other" = "Other"
+                                         levels = c("black","hispanic","white","asian",
+                                                    "Non-white","other")),
+                           "black" = "Black", "hispanic" = "Hispanic",
+                           "white" = "White","asian" = "Asian",
+                           "Non-white" = "Non-white","other" = "Other"
                            )) %>%
   
   # Create ggplot object
@@ -354,17 +359,18 @@ school_trips_p4 <-
   theme_cmap(gridlines = "h",legend.position = "None",
              xlab = "Median travel time to school (minutes)") +
   scale_fill_discrete(type = c("#84c87e", # Black
+                               "#d8ba39", # Hispanic
+                               "#75a5d8", # White
                                "#e77272", # Asian
                                # "#77008c", # Non-white (archived for high school)
-                               "#75a5d8", # White
-                               "#d8ba39", # Hispanic
                                "#607b88" # Other
                                )) 
   # scale_y_continuous(limits = c(0,16))
 
 finalize_plot(school_trips_p4,
               "Black elementary and middle school students have longer trips to school than those of other children.",
-              "Note: Includes school trips for travelers enrolled in K-8 and at 
+              caption = 
+              paste0("Note: Includes school trips for travelers enrolled in K-8 and at 
               least 5 years old. Excludes trips to non-school locations and any 
               trips that did not start or end between 7:00 A.M. and 9:00 A.M. 
               Also excludes highest and lowest 5 percent of weighted records, 
@@ -375,16 +381,26 @@ finalize_plot(school_trips_p4,
               categories, e.g., 'White', represent non-Hispanic travelers.
               <br><br>
               Sample size: 
-              <br>- Black (187);
-              <br>- Asian (102);
-              <br>- White (1643);
-              <br>- Hispanic (300);
-              <br>- Other (146)
+              <br>- Black (",
+                     school_trips_p4_samplesize %>% 
+                     filter(race_eth == "black") %>% select(n),");
+              <br>- Hispanic (",
+                     school_trips_p4_samplesize %>% 
+                       filter(race_eth == "hispanic") %>% select(n),");
+              <br>- White (",
+                     school_trips_p4_samplesize %>% 
+                       filter(race_eth == "white") %>% select(n),");
+              <br>- Asian (",
+                     school_trips_p4_samplesize %>% 
+                       filter(race_eth == "asian") %>% select(n),");
+              <br>- Other (",
+                     school_trips_p4_samplesize %>% 
+                       filter(race_eth == "other") %>% select(n),")
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data.",
+              Daily Travel data."),
               filename = "school_trips_p4",
-              mode = "png",
+              # mode = "png",
               sidebar_width = 2.5,
               # height = 4.5,
               # width = 8,
@@ -394,14 +410,14 @@ finalize_plot(school_trips_p4,
 
 school_time_race_mode_mdt <-
   school_time_race_person_level_mdt %>%
-  filter(k12 != "High school") %>% 
+  # filter(k12 != "High school") %>% 
   group_by(race_eth,mode_c) %>% 
-  # # Commented code allows for graphing of high school
-  # mutate(race_eth = case_when(
-  #   k12 == "High school" & race_eth != "white" ~ "Non-white",
-  #   TRUE ~ race_eth
-  # )) %>% 
-  # group_by(race_eth,k12) %>% 
+  # Commented code allows for graphing of high school
+  mutate(race_eth = case_when(
+    k12 == "High school" & race_eth != "white" ~ "Non-white",
+    TRUE ~ race_eth
+  )) %>%
+  group_by(race_eth,k12) %>%
   # Summarize travel time by race/ethnicity and school enrollment
   summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, w = wtperfin)),
             distance = MetricsWeighted::weighted_median(distance_pg, w = wtperfin),
