@@ -86,8 +86,9 @@ work_time_race_mdt <-
   
   # Calculate weighted median of trip times by race and ethnicity
   group_by(race_eth,tpurp) %>%
-  summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, 
-                                                                   w = wtperfin)),
+  # # BACKUP - for prose, group by race, ethnicity, and mode
+  # group_by(race_eth,tpurp,mode_c) %>% 
+  summarize(travtime = weighted.mean(travtime_pg_calc, w = wtperfin),
             n = n())
 
 
@@ -115,8 +116,7 @@ other_time_race_mdt <-
   
   # Calculate weighted mean of trip times by race and ethnicity
   group_by(race_eth,tpurp) %>%
-  summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, 
-                                                                   w = wtperfin)),
+  summarize(travtime = weighted.mean(travtime_pg_calc,w = wtperfin),
             n = n())
 
 # Combine results
@@ -150,13 +150,13 @@ racial_disparities_p1 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "h", legend.position = "None",
-             xlab = "Median travel times for various trip purposes (minutes)",
+             xlab = "Mean travel times for various trip purposes (minutes)",
              strip.text = element_text(face = "bold",hjust = 0.5)) +
   cmap_fill_race(white = "White", black = "Black", hispanic = "Hispanic", 
                  asian = "Asian", other = "Other") +
   
   # Adjust axes
-  scale_y_continuous(limits = c(0,35)) +
+  scale_y_continuous(limits = c(0,43)) +
   
   # Add faceting by trip purpose
   facet_wrap(~tpurp_disp,ncol = 1)
@@ -170,9 +170,9 @@ finalize_plot(racial_disparities_p1,
               paste0("Note: Excludes travelers younger than 5. Trips to 'Work (fixed 
               location)' only include trips made to fixed workplace locations by 
               employed respondents. In all categories, trips with no travel time 
-              are excluded. 'Hispanic' includes individuals of any racial 
-              group that identify as Hispanic. All other categories are 
-              non-Hispanic.
+              and those lasting more than two and a half hours are excluded. 
+              'Hispanic' includes individuals of any racial group that identify 
+              as Hispanic. All other categories are non-Hispanic.
               <br><br>
               Sample size (Black/Other/Asian/ Hispanic/White): 
               <br>- Work (",
