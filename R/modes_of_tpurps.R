@@ -30,9 +30,9 @@ mdt_base_1 <-
   mdt %>%                             # 125463 records
   # Keep only travelers >= 16 years old, either through age, age bucket, or
   # school enrollment
-  filter(age >= 16 |                   # 108622
-           (age < 0 & aage %in% c(4,5,6,7)) |
-           (age < 0 & schol %in% c(5,6,7,8))) %>%
+  filter(age >= 5 |                   # 108622
+           (age < 0 & aage %in% c(2,3,4,5,6,7)) |
+           (age < 0 & schol %in% c(4,5,6,7,8))) %>%
   # Exclude beginning trips
   filter(mode_c != "beginning") %>%  # 85022
   # Exclude trips with no travel distance. Note this is a different difference
@@ -55,10 +55,10 @@ mdt_base_1 <-
 # # not included in publication.
 # tt_base_1 <-
 #   tt %>%                             # 139769 records
-#   # Keep only records for travelers >= 16 or who we can identify as being >= 16
+#   # Keep only records for travelers >= 5 or who we can identify as being >= 5
 #   # based on age buckets or school enrollment. Note that 99 is DK/RF for AGE.
-#   filter((AGE >= 16 & AGE < 99)|                  # 132680
-#            (AGE == 99 & SCHOL %in% c(6,7,8)) |
+#   filter((AGE >= 5 & AGE < 99)|                  # 132680
+#            (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) |
 #            (AGE == 99 & AGEB == 2)) %>%
 #   # Exclude the first record of the day - this is the beginning record, and does
 #   # not represent a trip.
@@ -156,7 +156,8 @@ finalize_plot(modes_of_tpurps_p1,
               "Although driving is most common, transit plays an 
               important role for personal health care visits, especially for 
               Chicago residents.",
-              "Note: Excludes travelers younger than 16 years old. 'By car' 
+              caption = 
+              paste0("Note: Excludes travelers younger than 5 years old. 'By car' 
               includes trips as either a driver of a passenger of a personal 
               vehicle (not including services like taxis or TNCs). 'Other modes' 
               includes all other modes, but is predominantly composed of 
@@ -164,12 +165,27 @@ finalize_plot(modes_of_tpurps_p1,
               bars have less than five percent mode share.
               <br><br>
               Sample size:
-              <br>- Chicago (436); 
-              <br>- Suburban Cook (259); 
-              <br>- Other suburban counties (636).
+              <br>- Chicago (",
+                     detailed_health_mode_c_mdt %>%
+                       ungroup() %>% 
+                       filter(geog == "Chicago",tpurp == "Personal") %>% 
+                       select(total_n) %>% distinct(),
+                     "); 
+              <br>- Suburban Cook (",
+                     detailed_health_mode_c_mdt %>%
+                       ungroup() %>% 
+                       filter(geog == "Suburban Cook",tpurp == "Personal") %>% 
+                       select(total_n) %>% distinct(),
+                     ");
+              <br>- Other suburban counties (",
+                     detailed_health_mode_c_mdt %>%
+                       ungroup() %>% 
+                       filter(geog == "Other suburban counties",tpurp == "Personal") %>% 
+                       select(total_n) %>% distinct(),
+                     ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data. ",
+              Daily Travel data. "),
               # width = 8,
               # height = 4.5,
               # sidebar_width = 2.25,
@@ -358,18 +374,47 @@ modes_of_tpurps_p2 <-
 finalize_plot(modes_of_tpurps_p2,
               "Walking and transit are more important modes for eating in person 
               than for picking up take-out.",
-              "Note: Excludes travelers younger than 16 years old. 'By car' 
+              caption = 
+              paste0("Note: Excludes travelers younger than 5 years old. 'By car' 
               includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               'Other modes' includes transit, biking, and all other modes.
               Unlabeled bars have less than 5 percent mode share.
               <br><br>
-              Sample size (Chicago/Suburban Cook/Other suburban counties): 
-              <br>- Ate or dined out (1482/672/1778); 
-              <br>- Drive-thru or take-out (611/398/1126).
+              Sample size (Chicago/Suburban Cook/Other suburban counties):
+              <br>- Ate or dined out (",
+                     paste(detailed_dining_mode_c_mdt %>%
+                             ungroup() %>% 
+                             filter(geog == "Chicago",tpurp == "Ate or dined out") %>%
+                             select(total_n) %>% distinct(),
+                           detailed_dining_mode_c_mdt %>%
+                             ungroup() %>% 
+                             filter(geog == "Suburban Cook",tpurp == "Ate or dined out") %>%
+                             select(total_n) %>% distinct(),
+                           detailed_dining_mode_c_mdt %>%
+                             ungroup() %>% 
+                             filter(geog == "Other suburban counties",tpurp == "Ate or dined out") %>%
+                             select(total_n) %>% distinct(),
+                           sep = "/"),
+                           ");              
+              - Drive-thru or take-out (",
+              paste(detailed_dining_mode_c_mdt %>%
+                      ungroup() %>% 
+                      filter(geog == "Chicago",tpurp == "Drive-thru or take-out") %>%
+                      select(total_n) %>% distinct(),
+                    detailed_dining_mode_c_mdt %>%
+                      ungroup() %>% 
+                      filter(geog == "Suburban Cook",tpurp == "Drive-thru or take-out") %>%
+                      select(total_n) %>% distinct(),
+                    detailed_dining_mode_c_mdt %>%
+                      ungroup() %>% 
+                      filter(geog == "Other suburban counties",tpurp == "Drive-thru or take-out") %>%
+                      select(total_n) %>% distinct(),
+                    sep = "/"),
+              ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data. ",
+              Daily Travel data."),
               # width = 11.3,
               # height = 6.3,
               filename = "modes_of_tpurps_p2",
@@ -450,16 +495,43 @@ modes_of_tpurps_p3 <-
 finalize_plot(modes_of_tpurps_p3,
               "Walking and other non-car modes are significantly more common for 
               trips to socialize with friends than with relatives.",
-              "Note: Excludes travelers younger than 16 years old. 'By car' 
+              paste0("Note: Excludes travelers younger than 5 years old. 'By car' 
               includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               <br><br>
               Sample size (Chicago/Suburban Cook/Other suburban counties): 
-              <br>- Friends (840/297/682); 
-              <br>- Relatives (238/166/427).
+              <br>- Friends (",
+              paste(detailed_community_mode_c_mdt %>%
+                      ungroup() %>% 
+                      filter(geog == "Chicago",tpurp == "Friends") %>%
+                      select(total_n) %>% distinct(),
+                    detailed_community_mode_c_mdt %>%
+                      ungroup() %>% 
+                      filter(geog == "Suburban Cook",tpurp == "Friends") %>%
+                      select(total_n) %>% distinct(),
+                    detailed_community_mode_c_mdt %>%
+                      ungroup() %>% 
+                      filter(geog == "Other suburban counties",tpurp == "Friends") %>%
+                      select(total_n) %>% distinct(),
+                    sep = "/"),");
+              <br>- Relatives (",
+              paste(detailed_community_mode_c_mdt %>%
+                      ungroup() %>% 
+                      filter(geog == "Chicago",tpurp == "Relatives") %>%
+                      select(total_n) %>% distinct(),
+                    detailed_community_mode_c_mdt %>%
+                      ungroup() %>% 
+                      filter(geog == "Suburban Cook",tpurp == "Relatives") %>%
+                      select(total_n) %>% distinct(),
+                    detailed_community_mode_c_mdt %>%
+                      ungroup() %>% 
+                      filter(geog == "Other suburban counties",tpurp == "Relatives") %>%
+                      select(total_n) %>% distinct(),
+                    sep = "/"),
+              ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data.",
+              Daily Travel data."),
               # width = 6.5,
               # height = 4,
               overwrite = T,
