@@ -386,41 +386,17 @@ mdt_wip2 <- mdt_wip1 %>%
   
   # Sort to allow lagging
   arrange(sampno,perno,placeGroup) %>%
+  # Group by household and traveler ID for lagged figures
+  group_by(sampno,perno) %>% 
   # Add lagged trip start time
   mutate(start_times_pg = lag(deptime_pg,1)) %>%
   # Add lagged trip origin location and TT inclusion
   mutate(county_chi_name_lag = lag(county_chi_name,1),
          outside_tt_lag = lag(outside_tt,1)) %>% 
-  # Add lagged identifiers
-  mutate(sampno_lag = lag(sampno,1),
-         perno_lag = lag(perno,1)) %>%
   # Add lagged out_region flag
   mutate(out_region_lag = lag(out_region,1)) %>%
-  # Check whether the previous trip is a match. The vast majority of the
-  # non-matches are beginning trips. There are 36 other non-matches, which are
-  # mostly records missing a beginning trip and at least one record in which the
-  # beginning trip has been collapsed into the first placeGroup. If the trip's
-  # destination is in the region, these trips are maintained in the filtering
-  # below for inclusion in analyses where travel time is not a consideration.
-  mutate(check = perno == perno_lag & sampno == sampno_lag) %>%
-  # If it isn't a match, change start_times_pg, out_region_lag, and
-  # county_chi_name_lag to NA, -1, and "NA"
-  mutate(
-    start_times_pg = case_when(
-      check ~ start_times_pg,
-      !check ~ ymd_hms(NA),
-      TRUE ~ ymd_hms(NA)),
-    out_region_lag = case_when(
-      check ~ as.double(out_region_lag),
-      !check ~ -1,
-      TRUE ~ -1),
-    county_chi_name_lag = case_when(
-      check ~ county_chi_name_lag,
-      !check ~ ""),
-    outside_tt_lag = case_when(
-      check ~ outside_tt_lag,
-      !check ~ -1)
-    ) %>%
+  # Ungroup
+  ungroup() %>% 
   # Create new out_region flag for trips that neither started nor ended in the
   # CMAP region. We assign 0 to trips that started and/or ended in the region,
   # and 1 to other trips.
@@ -437,9 +413,13 @@ mdt_wip2 <- mdt_wip1 %>%
   )) %>% 
   # Calculate travel time based on actual departure and arrival
   mutate(travtime_pg_calc = case_when(
+    # If the trip start time is NA, use original figure
     is.na(start_times_pg) ~ travtime_pg,
+    # If the trip start time is after the arrival time, use original figure
+    arrtime_pg < start_times_pg ~ travtime_pg,
+    # Otherwise, calculate travel time based on trip start time and trip arrival time
     TRUE ~ as.numeric((arrtime_pg - start_times_pg)/60))) %>%
-  select(-c(sampno_lag,perno_lag,check,out_region_lag,outside_tt,outside_tt_lag))
+  select(-c(out_region_lag,outside_tt,outside_tt_lag))
 
 mdt <- 
   mdt_wip2 %>% # 127333 records
@@ -710,38 +690,22 @@ tt_wip3 <- tt_wip2 %>%
                              1) # 1 if true - these are out-region locations
   ) %>%
   
+  # Group by SAMPN and PERNO for lagging
+  group_by(SAMPN,PERNO) %>% 
+  # Use lag to identify the out_region status of the starting point of the
+  # trip (from the previous record).
+  mutate(out_region_lag = lag(out_region,1)) %>%
+  # Use lag to get the start time of the current trip
   mutate(
-    # Use lag to identify the out_region status of the starting point of the
-    # trip (from the previous record).
-    out_region_lag = lag(out_region,1),
-    # Also get lagged identifiers to validate comparison.
-    perno_lag = lag(PERNO,1),
-    sampn_lag = lag(SAMPN,1)) %>%
-  mutate(check = PERNO == perno_lag & SAMPN == sampn_lag) %>%
-  # If it isn't a match, change out_region_lag to -1
-  mutate(
-    out_region_lag = case_when(
-      check ~ out_region_lag,
-      !check ~ -1,
-      TRUE ~ -1)
-  ) %>%
+    start_hr_lag = lag(DEP_HR,1),
+    start_min_lag = lag(DEP_MIN,1)) %>%
+  ungroup() %>% 
   # Create new out_region flag for trips that neither started nor ended in the
   # CMAP region
   mutate(out_region_trip = case_when(
     out_region == 0 | out_region_lag == 0 ~ 0,
     TRUE ~ 1
   )) %>%
-  # Remove unneeded variables.
-  select(-sampn_lag,-perno_lag,-out_region_lag)
-
-
-# Identify trip start times (based on lagged DEP_HR and DEP_MIN)
-tt <- tt %>%
-  arrange(SAMPN,PERNO) %>%
-  # Use lag to get the start time of the current trip
-  mutate(
-    start_hr_lag = lag(DEP_HR,1),
-    start_min_lag = lag(DEP_MIN,1)) %>%
   # Calculate the start time as an alternative for non-valid lags
   mutate(
     start_time_calc = lubridate::hms(paste(ARR_HR,ARR_MIN,0)) - TRPDUR * 60) %>%
@@ -749,18 +713,20 @@ tt <- tt %>%
   mutate(
     start_hr_calc = hour(start_time_calc),
     start_min_calc = minute(start_time_calc)) %>%
-  # If it isn't a match, change the lagged times to calculated ones using the
-  # "check" variable created above.
+  # If the lagged variables are NA, that means there was no preceding records.
+  # These should typically be the first record, but add values in case some
+  # records are incomplete.
   mutate(
     start_hr = case_when(
-      check ~ start_hr_lag,
-      !check ~ start_hr_calc),
+      !is.na(start_hr_lag) ~ start_hr_lag,
+      TRUE ~ start_hr_calc),
     start_min = case_when(
-      check ~ start_min_lag,
-      !check ~ start_min_calc)) %>%
-  # Remove unneeded variables
-  select(-check,-start_hr_lag,-start_min_lag,
+      !is.na(start_min_lag) ~ start_min_lag,
+      TRUE ~ start_min_calc)) %>%
+  # Remove unneeded variables.
+  select(-out_region_lag,-start_hr_lag,-start_min_lag,
          -start_time_calc,-start_hr_calc,-start_min_calc)
+
 
 # Remove trips not part of the CMAP survey, that start and end outside the nine
 # county region, that are over 100 miles, and/or that are on weekends
