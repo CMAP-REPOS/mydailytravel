@@ -248,48 +248,23 @@ all_time_race_mdt <-
   # Only include trips that are more than 0 minutes and less than 2.5 hours
   filter(
     travtime_pg_calc < 150 & 
-    travtime_pg_calc > 0) %>% # 12044 records
+      travtime_pg_calc > 0) %>% # 12044 records
   
   # Exclude households with missing race and ethnicity information
   filter(race_eth != "missing") %>% # 12012 records
- 
+  
   # Calculate weighted mean of trip times by race and ethnicity
   group_by(race_eth,tpurp) %>%
-  summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, 
-                                                                   w = wtperfin)),
-            distance = as.numeric(MetricsWeighted::weighted_median(distance_pg, 
-                                                                   w = wtperfin)))
+  summarize(travtime = weighted.mean(travtime_pg_calc, w = wtperfin)) %>% 
+  group_by(tpurp) %>% 
+  arrange(-travtime) %>% 
+  mutate(rank = row_number()) %>% 
+  ungroup() %>% 
+  arrange(tpurp,rank)
 
-# Chart of travel time to school by household income
-racial_disparities_p2 <-
-  # Get data
-  all_time_race_mdt %>%
-  # Recode labels for publication
-  mutate(race_eth = recode(race_eth,
-                           "black" = "Black","white" = "White",
-                           "asian" = "Asian","other" = "Other",
-                           "hispanic" = "Hispanic")) %>%
-  
-  # Create ggplot object
-  ggplot(aes(x = reorder(race_eth,-travtime), y = travtime, fill = race_eth)) +
-  geom_col() +
-  geom_label(aes(label = scales::label_number(accuracy = 1)(travtime)),
-             vjust = 0, label.size = 0, fill = "white") +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "h", legend.position = "None",
-             xlab = "Median travel time to work (minutes)") +
-  cmap_fill_race(white = "White", black = "Black", hispanic = "Hispanic", 
-                 asian = "Asian", other = "Other") +
-  facet_wrap(~tpurp)
-
-finalize_plot(racial_disparities_p2,
-              sidebar_width = 0,
-              filename = "racial_disparities_p2",
-              mode = "png",
-              width = 13,
-              overwrite = T)
-
+all_time_race_mdt %>% 
+  filter(rank == 1) %>% 
+  count(race_eth)
 ################################################################################
 # BACKUP - Median travel times by race and mode
 ################################################################################
@@ -308,7 +283,10 @@ all_time_race_mode_mdt <-
   
   # Calculate weighted mean of trip times by race and ethnicity
   group_by(race_eth,mode_c,tpurp) %>%
-  summarize(travtime = as.numeric(MetricsWeighted::weighted_median(travtime_pg_calc, 
-                                                                   w = wtperfin))) %>% 
-  arrange(tpurp,mode_c)
+  summarize(travtime = weighted.mean(travtime_pg_calc, w = wtperfin)) %>% 
+  group_by(tpurp,mode_c) %>% 
+  arrange(-travtime) %>% 
+  mutate(rank = row_number()) %>% 
+  ungroup() %>% 
+  arrange(tpurp,mode_c,rank)
 
