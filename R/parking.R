@@ -22,7 +22,7 @@ source("R/data_cleaning.R")
 
 household_vehicles_mdt <-
   mdt_all_respondents %>% 
-  select(sampno,perno,wtperfin,hhinc,hhveh,
+  select(sampno,perno,wtperfin,wthhfin,hhinc,hhveh,
          home_state,home_county,home_tract,home_county_chi,geog,
          income,income_c,race_eth) %>% 
   filter(perno == 1) %>% 
@@ -70,6 +70,24 @@ household_vehicles_tt <-
   filter(PERNO == 1) %>% 
   select(-PERNO) %>%
   left_join(tt_veh, by = "SAMPN") 
+
+################################################################################
+# Total vehicles
+################################################################################
+total_vehs_mdt <-
+  hh %>% 
+  summarize(total_vehs = sum(hhveh * wthhfin)) %>% 
+  as.numeric()
+
+total_hhs_mdt <- 
+  mdt_all_respondents %>% 
+  select(sampno,wthhfin) %>% 
+  distinct() %>% 
+  count(wt = wthhfin) %>% 
+  as.numeric()
+
+# Vehicles per household
+total_vehs_mdt / total_hhs_mdt
 
 ################################################################################
 # Parking
@@ -135,7 +153,7 @@ parking_behavior <-
            survey == "mdt"),
   breakdown_by = "parkd",
   second_breakdown = "geog",
-  weight = "weight") %>% arrange(parkd,geog)
+  weight = "weight") %>% arrange(parkd)
 
 
 parking_p1 <-
@@ -148,7 +166,7 @@ parking_p1 <-
          parkd = factor(parkd, levels = rev(levels(parkd)))) %>% 
   # Create ggplot object
   ggplot(aes(x = pct, y = str_wrap_factor(geog,15), fill = parkd,
-             # Only label bars that round to at least 5 percent
+             # Only label bars of at least 5 percent
              label = ifelse(pct >=.05,scales::label_percent(accuracy = 1)(pct),""))) +
   geom_col(position = position_stack(reverse = T)) +
   
@@ -168,10 +186,9 @@ finalize_plot(parking_p1,
               "Chicago households are the most likely to not have a vehicle or 
               to rely on street parking, but there are similar households in the 
               rest of the region as well.",
-              paste0("Note: 'Park car(s)' on-street includes all households that 
+              paste0("Note: 'Park car(s) on-street' includes all households that 
               park at least one car on-street, even if other cars are parked 
-              off-street. Categories without labels have values of less than 5 
-              percent.
+              off-street. Unlabeled bars have values of less than five percent.
               <br><br>
               Sample size: 
               <br>- Chicago (",
@@ -202,11 +219,11 @@ finalize_plot(parking_p1,
               overwrite = T)
 
 ################################################################################
-# Fuel type
+# Archive - Fuel type
 ################################################################################
 
 household_fuel_type <-
-  household_vehicles %>% 
+  household_vehicles_mdt %>% 
   replace_na(list(fuel = 0)) %>% 
   filter(fuel > -1) %>%
   # group_by(sampno,wtperfin,hhinc,hhveh,
@@ -224,8 +241,12 @@ household_fuel_type <-
                               "-7" = "Missing",
                               "-8" = "Missing"))
 
-pct_calculator(household_fuel_type %>% filter(!(fuel %in% c("No vehicle","Missing"))),
-               breakdown_by = "fuel",
+pct_calculator(household_fuel_type %>% 
+                 filter(!(fuel %in% c("No vehicle","Missing"))) %>% 
+                 mutate(fuel_c = fct_collapse(fuel,
+                                              "Gas/Diesel" = c("Gas","Diesel"),
+                                              "Alternative" = c("Hybrid","EV","Alternative","Other"))),
+               breakdown_by = "fuel_c",
                second_breakdown = "household_race_eth",
                weight = "wtperfin") %>% View()
 
