@@ -60,10 +60,8 @@ avgtravel_mdt <-
   filter(out_tt_trip == 0) %>% # 94531 records
   # Keep only residents of the seven counties, Grundy (63) and double-home
   # residents in the seven county region (999) for comparability with TT. This
-  # excludes residents of DeKalb and the households with two or more homes that
-  # were not all in the seven county region - each of those had at least one
-  # home in DeKalb.
-  filter(home_county %in% c(cmap_seven_counties,63,999)) %>% # 94421 records
+  # excludes residents of DeKalb.
+  filter(home_county %in% c(cmap_seven_counties,63,999)) %>% # 94431 records
   
   
   # Add calculation for weighted distance and time
@@ -84,7 +82,7 @@ avgtravel_mdt <-
 
 # Create a similarly filtered list of all respondents (With age filters but not travel)
 avgtravel_all_respondents_mdt <-
-  mdt_all_respondents %>% 
+  mdt_all_respondents %>%  # 30683
   filter(
     # Keep only trips with travelers at least 5 years old.
     # - note the "sampno" selections have no information but are school-aged
@@ -92,14 +90,14 @@ avgtravel_all_respondents_mdt <-
     age >= 5 |               # 125459 records
       (age < 0 & aage %in% c(2,3,4,5,6,7)) |
       (age < 0 & schol %in% c(4,5,6,7,8)) |
-      sampno %in% c(70038312, 70051607))
+      sampno %in% c(70038312, 70051607)) # 28573
 
 # Identify distinct list of travelers that took at least one trip to enable
 # summing by different demographic characteristics
 distinct_daily_travelers_mdt <-
-  avgtravel_mdt %>% # 94421
+  avgtravel_mdt %>% # 94431
   select(sampno,perno,weight,race_eth,sex,income_c,home_county_chi,age_bin,survey) %>%
-  distinct() # 24307
+  distinct() # 24311
 
 # Identify individuals who did travel in the survey, but are excluded based on 
 # the filtering criteria (e.g., they did not travel in the CMAP area)
@@ -107,10 +105,10 @@ ineligible_travelers_mdt <-
   # Take the full list of respondents
   avgtravel_all_respondents_mdt %>% # 28573
   # Remove all respondents who are included in the list of distinct daily travelers
-  anti_join(distinct_daily_travelers_mdt, by = c("sampno","perno")) %>% # 4266
+  anti_join(distinct_daily_travelers_mdt, by = c("sampno","perno")) %>% # 4262
   # Identify those of the remainder that did travel, and are thus excluded from
   # the list of distinct travelers based on some other condition
-  filter(pertrips > 0) %>% # 700
+  filter(pertrips > 0) %>% # 696
   # add age bins and survey ID
   mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels),
          survey = "mdt") %>% 
@@ -480,8 +478,9 @@ travel_home <-
          time_per_capita = total_time / total_eligible_travelers,
          traveling_pct = total_travelers / total_residents) %>% 
   ungroup() %>% 
-  # Remove individuals in DeKalb, Grundy, or those with 2+ homes
-  filter(!(home_county_chi %in% c("DeKalb","Grundy","Homes in multiple counties","Other - NA"))) %>% 
+  # Keep the nine counties but remove those that span multiple counties
+  filter(home_county_chi %in% c("Cook","DeKalb","DuPage","Grundy","Kane",
+                                "Kendall","Lake","McHenry","Will")) %>% 
   mutate(type = "Home jurisdiction") %>% 
   rename(subtype = home_county_chi)
 
@@ -672,10 +671,11 @@ finalize_plot(average_resident_p1,
               aged between 18 and 29 or older than 70.
               <br><br>
               Includes trips by travelers aged 5 and older who live in the 
-              Illinois counties of Cook, DuPage, Grundy, Kane, 
-              Kendall, Lake, McHenry, and Will. Only includes trips within that 
-              region and between that region and the Indiana counties of Lake, 
-              LaPorte, and Porter. 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will), as well as Grundy. For comparability with 
+              Travel Tracker survey results, only includes trips within 
+              that region and between that region and the Indiana counties of 
+              Lake, LaPorte, and Porter. 
               Distances are calculated as point-to-point ('haversine') and do 
               not account for additional distance traveled along the route. 
               'Hispanic' includes respondents who identified as Hispanic of any 
@@ -779,8 +779,9 @@ finalize_plot(average_resident_p2,
               to travel on a weekday.",
               caption = 
               paste0("Note: Figures are based on the travel behavior of 
-              residents of the CMAP seven county region as well as Grundy and 
-              DeKalb counties. Excludes travelers younger than 5 years old. 
+              residents aged 5 or older of the CMAP seven county region (Cook, 
+              DuPage, Kane, Kendall, Lake, McHenry, and Will), as well as Grundy 
+              and DeKalb.
               Individuals were counted as 'traveling' if they had at least one 
               trip on their assigned travel day, no matter whether that trip was 
               in the CMAP region. 'Hispanic' includes respondents who identified 
@@ -891,10 +892,10 @@ finalize_plot(average_resident_p3,
               caption = 
               paste0(
               "Note: Includes trips by travelers aged 5 and older who live in the 
-              Illinois counties of Cook, DuPage, Grundy, Kane, Kendall, Lake, 
-              McHenry, and Will. Only includes trips within that region and 
-              between that region and the Indiana counties of Lake, LaPorte, and 
-              Porter. 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will), as well as Grundy. Only includes trips within 
+              that region and between that region and the Indiana counties of 
+              Lake, LaPorte, and Porter. 
               Distances are calculated as point-to-point ('haversine') and do 
               not account for additional distance traveled along the route. For 
               the categorization by sex, the survey asked respondents whether 
