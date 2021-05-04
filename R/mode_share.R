@@ -314,7 +314,7 @@ finalize_plot(mode_share_p1,
               caption = 
               paste0("Note: Includes trips by residents of the CMAP seven county 
               region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will) that 
-              started and/or ended in those counties, as well as Grundy and DuPage. 
+              started and/or ended in those counties, as well as Grundy and DeKalb. 
               Excludes trips by travelers younger than 5. Households with homes 
               in multiple CMAP region counties are not shown but are included in 
               regional averages.
@@ -419,7 +419,7 @@ finalize_plot(mode_share_p2,
               caption = 
                 paste0("Note: Includes trips by residents of the CMAP seven county 
               region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will) that 
-              started and/or ended in those counties, as well as Grundy and DuPage. 
+              started and/or ended in those counties, as well as Grundy and DeKalb. 
               Excludes trips by 
               travelers younger than 5. Distances are 'network distances' and 
               capture the total distance traveled along the route, not just the 
@@ -546,7 +546,7 @@ finalize_plot(mode_share_p3,
               caption = 
                 paste0("Note: Includes trips by residents of the CMAP seven county 
               region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will) that 
-              started and/or ended in those counties, as well as Grundy and DuPage. 
+              started and/or ended in those counties, as well as Grundy and DeKalb. 
               Excludes trips by 
               travelers younger than 5.
               <br><br>
@@ -681,7 +681,7 @@ finalize_plot(mode_share_p4,
               Hispanic of any racial category. Other categories are non-Hispanic. 
               Includes trips by residents of the CMAP seven county 
               region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will) that 
-              started and/or ended in those counties, as well as Grundy and DuPage. 
+              started and/or ended in those counties, as well as Grundy and DeKalb. 
               Excludes trips by 
               travelers younger than 5.
               <br><br>
@@ -786,7 +786,7 @@ finalize_plot(mode_share_p5,
               caption = 
                 paste0("Note: Includes trips by residents of the CMAP seven county 
               region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will) that 
-              started and/or ended in those counties, as well as Grundy and DuPage. 
+              started and/or ended in those counties, as well as Grundy and DeKalb. 
               Excludes trips by travelers younger than 5.
               <br><br>
               Sample size: Figures are based on a total of ",
