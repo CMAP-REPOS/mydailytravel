@@ -171,11 +171,13 @@ finalize_plot(trips_in_motion_p1,
               "The morning and evening peaks in travel demand were very 
               pronounced, although the COVID-19 pandemic's impact on these 
               travel patterns remains uncertain.",
-              paste0("Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include all weekday trips by residents of the Illinois 
-              counties of Cook, DeKalb, DuPage, Grundy, Kane, Kendall, Lake, 
-              McHenry, and Will that start or end within that region. Excludes 
-              trips longer than 100 miles or greater than 15 hours long.
+              paste0(
+              "Note: Trips in motion are 25-minute rolling averages. Trips 
+              analyzed include weekday trips by residents aged 5 and older 
+              of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
+              Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
+              only trips that were within, to, and/or from one of those counties.
+              Excludes trips longer than 100 miles or greater than 15 hours long.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(tim_mdt_wip),big.mark = ","),
@@ -296,11 +298,13 @@ trips_in_motion_p2_samplesize <-
 finalize_plot(trips_in_motion_p2,
               "Travelers relied on substantially different modes for trips to and 
               from work vs. other trip purposes.",
-              paste0("Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include all weekday trips by residents of the Illinois 
-              counties of Cook, DeKalb, DuPage, Grundy, Kane, Kendall, Lake, 
-              McHenry, and Will that start or end within that region. Excludes 
-              trips longer than 100 miles or greater than 15 hours long.
+              paste0(
+              "Note: Trips in motion are 25-minute rolling averages. Trips 
+              analyzed include weekday trips by residents aged 5 and older 
+              of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
+              Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
+              only trips that were within, to, and/or from one of those counties.
+              Excludes trips longer than 100 miles or greater than 15 hours long.
               <br><br>
               Sample size: 
               <br>- Work (",
@@ -371,11 +375,12 @@ trips_in_motion_p4 <-
 
 finalize_plot(trips_in_motion_p4,
               "Personal bike usage has a strong morning peak, with PM usage spread more evenly across the afternoon and evening.",
-              "Note: Trips in motion are 55-minute rolling averages. Trips
-              analyzed include all trips by residents of the region that start
-              and/or end in the Illinois counties of Cook, DeKalb, DuPage,
-              Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than
-              100 miles or lasting longer than 15 hours are excluded.
+              "Note: Trips in motion are 55-minute rolling averages. Trips 
+              analyzed include weekday trips by residents aged 5 and older 
+              of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
+              Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
+              only trips that were within, to, and/or from one of those counties.
+              Excludes trips longer than 100 miles or greater than 15 hours long.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries.",
