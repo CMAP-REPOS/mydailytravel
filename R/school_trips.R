@@ -10,7 +10,7 @@ library(ggplot2)
 library(tidyverse)
 library(cmapplot)
 library(lubridate)
-library(sf)
+# library(sf)
 library(MetricsWeighted)
 
 #################################################
@@ -65,15 +65,25 @@ all_school_mdt <-
   # # code below that allows the user to understand the distribution of these
   # # school trips. Note that there are some ties in record weighting, so dropped
   # # trips should be examined and treated with caution to ensure that changes are
-  # # not due to systematic sorting. 
+  # # not due to systematic sorting. The below code handles ties by excluding 
+  # # all tied values.
   # ungroup() %>%
   # group_by(cluster) %>%
-  # arrange(wtperfin) %>%
+  # arrange(cluster,wtperfin) %>%
+  # # Identify the ranked order of this record by weight
   # mutate(rank = row_number()) %>%
+  # # Find the total number of records in the cluster
   # mutate(max_rank = max(rank)) %>%
+  # # Divide the row's rank by the total
   # mutate(pct_rank = rank / max_rank) %>%
-  # filter(pct_rank >= 0.2,
-  #        pct_rank <= 0.8) %>%      # 3179 records
+  # ungroup() %>% 
+  # # Since there are ties in weights, find the highest and lowest percent for a
+  # # given weight
+  # group_by(cluster,wtperfin) %>% 
+  # mutate(max_wt_pct = max(pct_rank),
+  #        min_wt_pct = min(pct_rank)) %>% 
+  # filter(min_wt_pct >= 0.05,
+  #        max_wt_pct <= 0.95) %>%      # 3179 records
   ungroup()
 
 # Repeat same filtering and mutation for TT
@@ -199,16 +209,19 @@ school_trips_p1 <-
   # scale_y_continuous(limits = c(0,16))
 
 finalize_plot(school_trips_p1,
-              "Black elementary and middle school students have longer trips to school than those of other children.",
+              "Black elementary and middle school students had longer trips to 
+              school than those of other children.",
               caption = 
-              paste0("Note: Includes school trips for travelers enrolled in K-8 and at 
-              least 5 years old. Excludes trips to non-school locations, trips 
+              paste0("Note: Includes school trips for travelers enrolled in K-8, at 
+              least 5 years old, and residents of the CMAP seven county region 
+              (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will), as well as 
+              Grundy and DeKalb. Excludes trips to non-school locations, trips 
               longer than two and a half hours, and any trips that did not start
               or end between 7:00 A.M. and 9:00 A.M.
               <br><br>
-              'Hispanic' represents travelers 
-              who identify as Hispanic regardless of racial identity. Other 
-              categories, e.g., 'White', represent non-Hispanic travelers.
+              'Hispanic' represents travelers who identify as Hispanic 
+              regardless of racial identity. Other categories, e.g., 'White', 
+              represent non-Hispanic travelers.
               <br><br>
               Sample size: 
               <br>- Black (",
@@ -253,8 +266,8 @@ time_disparity <-
 (time_disparity %>% filter(race_eth == "black") %>% select(travtime_mean) - 
   time_disparity %>% filter(race_eth == "not black") %>% select(travtime_mean)) *
   2 * # Multiply by two trips per day
-  5 * # Multiply by 5 trips per week
-  52/12 / # Multiply by the number of weeks per month 
+  5 * # Multiply by 5 days per week
+  (52/12) / # Multiply by the number of weeks per month 
   60 # Divide by the number of minutes in an hour
 
 # Backup - median trip times by race and mode (for prose)
@@ -318,8 +331,8 @@ mdt %>% filter(race_eth == "black",
          home_tract) %>% 
   View()
 
-# We identified traveler #4 from household #70034002 as an 8-year-old in the
-# Grand Crossing neighborhood with a 15-minute bus ride to school.
+# We identified traveler #3 from household #70029462 as an 11-year-old from
+# Harvey with a 20 minute bus ride to school.
 
 
 ################################################################################
