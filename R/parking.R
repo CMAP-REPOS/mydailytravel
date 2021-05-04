@@ -21,16 +21,24 @@ source("R/helper_fns.R")
 source("R/data_cleaning.R")
 
 household_vehicles_mdt <-
+  # Get data
   mdt_all_respondents %>% 
+  # Keep variables of interest
   select(sampno,perno,wtperfin,wthhfin,hhinc,hhveh,
          home_state,home_county,home_tract,home_county_chi,geog,
          income,income_c,race_eth) %>% 
+  # Keep only head of household (this allows us to not duplicate)
   filter(perno == 1) %>% 
+  # Remove unneeded person identifier
   select(-perno) %>%
+  # Join with vehicle information
   left_join(veh, by = "sampno") %>% 
+  # Group by household
   group_by(sampno) %>% 
+  # Concatenate the race and ethnicity of household members
   mutate(household_race_eth_concat = paste(race_eth, collapse = ",")) %>% 
   ungroup() %>% 
+  # Flag households as uniformly one race and ethnicity, or mixed
   mutate(
     household_race_eth = case_when(
       grepl("white",household_race_eth_concat, fixed = TRUE) & 
@@ -61,24 +69,31 @@ household_vehicles_mdt <-
       TRUE ~ "mixed"
     ))
   
-
+# ARCHIVED CODE - not used for publication
 household_vehicles_tt <-
-  tt_all_respondents %>% 
+  tt_all_respondents %>%
   select(SAMPN,PERNO,WGTHH,HHVEH,
          home_county_chi,geog,
-         income_c) %>% 
-  filter(PERNO == 1) %>% 
+         income_c) %>%
+  filter(PERNO == 1) %>%
   select(-PERNO) %>%
-  left_join(tt_veh, by = "SAMPN") 
+  left_join(tt_veh, by = "SAMPN")
 
 ################################################################################
 # Total vehicles
 ################################################################################
+
+# Count the total number of vehicles
 total_vehs_mdt <-
-  hh %>% 
+  mdt_all_respondents %>% 
+  select(sampno,home_county,wthhfin,hhveh) %>%
+  # Exclude residents outside of the seven county region
+  filter(home_county %in% c(cmap_seven_counties,999)) %>% 
+  distinct() %>% 
   summarize(total_vehs = sum(hhveh * wthhfin)) %>% 
   as.numeric()
 
+# Count the total number of households
 total_hhs_mdt <- 
   mdt_all_respondents %>% 
   select(sampno,wthhfin) %>% 
@@ -90,24 +105,28 @@ total_hhs_mdt <-
 total_vehs_mdt / total_hhs_mdt
 
 ################################################################################
-# Parking
+# Parking data setup
 ################################################################################
 
+# Analyze parking behavior for MDT
 household_parking_mdt <-
   household_vehicles_mdt %>% # 21498
   ungroup() %>% 
-  # Add values for households with no vehicle
+  # Add values for households with no vehicle (which are NA since they had no
+  # vehicle in the join above)
   replace_na(list(parkd = 0)) %>% 
   # Remove entries without parking information
   filter(parkd > -1) %>% # 21484
-  group_by(sampno,wtperfin,hhinc,hhveh,
-           home_state,home_county,home_tract,home_county_chi,geog,
-           income,income_c,race_eth) %>%
+  # Remove records from travelers outside the seven county region
+  filter(home_county %in% c(cmap_seven_counties)) %>% 
+  # Group to keep identifiers, weighting, and geography
+  group_by(sampno,wtperfin,geog,household_race_eth) %>%
   # Keep the lowest value for parking - i.e., if a household parks any car on
   # street, it is identified as using street parking.
   summarize(parkd = min(parkd)) %>% # 12389
   ungroup() %>% 
-  # Recode for ease of presentation and cluster "Off street" and "Garage" (2 and 3)
+  # Recode for ease of presentation and cluster "Off street" and "Garage" (coded
+  # as 2 and 3, respectively)
   mutate(parkd = recode_factor(factor(parkd,levels = c(0,1,2,3,97)),
                                "0" = "No vehicle",
                                "1" = "Park car(s) on-street",
@@ -115,24 +134,23 @@ household_parking_mdt <-
                                "3" = "Only park car(s) off-street",
                                "97" = "Other"))
 
-
+# Repeat for TT
 household_parking_tt <-
-  household_vehicles_tt %>% # 21498
+  household_vehicles_tt %>% # 18246
   ungroup() %>% 
   # Add values for households with no vehicle
   replace_na(list(PARKD = 0)) %>% 
   # Remove entries without parking information
-  filter(!(PARKD %in% c(8,9))) %>% # 21484
-  group_by(SAMPN,WGTHH,HHVEH,
-           home_county_chi,geog,
-           income_c) %>%
+  filter(!(PARKD %in% c(8,9))) %>% # 17637
+  # Keep identifiers, weighting, and geography
+  group_by(SAMPN,WGTHH,geog) %>%
   # Keep the lowest value for parking - i.e., if a household parks any car on
   # street, it is identified as using street parking.
-  summarize(PARKD = min(PARKD)) %>% # 12389
+  summarize(PARKD = min(PARKD)) %>% # 10248
   ungroup() %>% 
   # Recode for ease of presentation and cluster "Off street - driveway" and
   # "Garage" (2 and 3)
-  mutate(parkd = recode_factor(factor(PARKD,levels = c(0,1,2,3,7)),
+  mutate(parkd = recode_factor(factor(PARKD,levels = c(0,1,2,3,97)),
                                "0" = "No vehicle",
                                "1" = "Park car(s) on-street",
                                "2" = "Only park car(s) off-street",
@@ -141,10 +159,23 @@ household_parking_tt <-
 
 # Combine the two datasets with relevant variables
 household_parking <-
-  rbind(household_parking_mdt %>% select(weight = wtperfin,geog,parkd) %>% mutate(survey = "mdt"),
-        household_parking_tt %>% select(weight = WGTHH,geog,parkd) %>% mutate(survey = "tt"))
+  rbind(household_parking_mdt %>% 
+          select(weight = wtperfin,geog,household_race_eth,parkd) %>% 
+          mutate(survey = "mdt"),
+        household_parking_tt %>% 
+          select(weight = WGTHH,geog,parkd) %>% 
+          mutate(survey = "tt",household_race_eth = NA))
 
-# Identify percentage of parking behavior and vehicle ownership
+# Export total non-vehicle ownership
+pct_calculator(
+  household_parking %>% 
+    filter(geog != "Other",
+           parkd != "Other",
+           survey == "mdt"),
+  breakdown_by = "parkd",
+  weight = "weight") %>% arrange(parkd)
+
+# Identify percentage of parking behavior and vehicle ownership for MDT
 parking_behavior <-
   pct_calculator(
   household_parking %>% 
@@ -153,8 +184,14 @@ parking_behavior <-
            survey == "mdt"),
   breakdown_by = "parkd",
   second_breakdown = "geog",
+  # # Archived - allows for breakdown by household race and ethnicity
+  # third_breakdown = "household_race_eth",
   weight = "weight") %>% arrange(parkd)
 
+
+################################################################################
+# Parking behavior chart
+################################################################################
 
 parking_p1 <-
   # Get data
@@ -170,6 +207,7 @@ parking_p1 <-
              label = ifelse(pct >=.05,scales::label_percent(accuracy = 1)(pct),""))) +
   geom_col(position = position_stack(reverse = T)) +
   
+  # Add labels
   geom_text(position = position_stack(vjust = 0.5, reverse = T),
             color = "white") +
   
@@ -182,34 +220,38 @@ parking_p1 <-
   scale_x_continuous(labels = scales::label_percent())
   
 
+parking_p1_samplesize <-
+  parking_behavior %>% 
+  ungroup() %>% 
+  select(geog,n = total_n) %>% 
+  distinct()
+
 finalize_plot(parking_p1,
-              "Chicago households are the most likely to not have a vehicle or 
-              to rely on street parking, but there are similar households in the 
-              rest of the region as well.",
+              "Chicago households were the most likely to not have a vehicle or 
+              to rely on street parking, but there were also similar households 
+              in the rest of the region.",
               paste0("Note: 'Park car(s) on-street' includes all households that 
-              park at least one car on-street, even if other cars are parked 
-              off-street. Unlabeled bars have values of less than five percent.
+              park at least one car on-street, even if other car(s) are parked 
+              off-street. Includes households from the CMAP seven county region 
+              (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will). Excludes 
+              households with homes in multiple counties. Unlabeled bars have 
+              values of less than five percent.
               <br><br>
               Sample size: 
               <br>- Chicago (",
-              parking_behavior %>% ungroup() %>% 
+              parking_p1_samplesize %>% 
                 filter(geog == "Chicago") %>% 
-                select(total_n) %>% 
-                distinct() %>% 
-                select(total_n)
+                select(n)
               ,");
               <br>- Suburban Cook (",
-              parking_behavior %>% ungroup() %>% 
+              parking_p1_samplesize %>% 
                 filter(geog == "Suburban Cook") %>% 
-                select(total_n) %>% distinct() %>% 
-                select(total_n)
+                select(n)
               ,");
               <br>- Other suburban counties (",
-              parking_behavior %>% ungroup() %>% 
+              parking_p1_samplesize %>% 
                 filter(geog == "Other suburban counties") %>% 
-                select(total_n) %>% 
-                distinct() %>% 
-                select(total_n)
+                select(n)
               ,").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
@@ -218,37 +260,37 @@ finalize_plot(parking_p1,
               mode = "png",
               overwrite = T)
 
-################################################################################
-# Archive - Fuel type
-################################################################################
-
-household_fuel_type <-
-  household_vehicles_mdt %>% 
-  replace_na(list(fuel = 0)) %>% 
-  filter(fuel > -1) %>%
-  # group_by(sampno,wtperfin,hhinc,hhveh,
-  #          home_state,home_county,home_tract,home_county_chi,geog,
-  #          income,income_c,race_eth) %>% 
-  # summarize(park_simp = min(parkd)) %>% 
-  mutate(fuel = recode_factor(factor(fuel,levels = c(0,1,2,3,4,5,97,-7,-8)),
-                              "0" = "No vehicle",
-                              "1" = "Gas",
-                              "2" = "Diesel",
-                              "3" = "Hybrid",
-                              "4" = "EV",
-                              "5" = "Alternative",
-                              "97" = "Other",
-                              "-7" = "Missing",
-                              "-8" = "Missing"))
-
-pct_calculator(household_fuel_type %>% 
-                 filter(!(fuel %in% c("No vehicle","Missing"))) %>% 
-                 mutate(fuel_c = fct_collapse(fuel,
-                                              "Gas/Diesel" = c("Gas","Diesel"),
-                                              "Alternative" = c("Hybrid","EV","Alternative","Other"))),
-               breakdown_by = "fuel_c",
-               second_breakdown = "household_race_eth",
-               weight = "wtperfin") %>% View()
-
-
-household_fuel_type %>% filter(fuel == "EV") %>% count(household_race_eth,wt = wtperfin)
+# ################################################################################
+# # Archive - Fuel type
+# ################################################################################
+# 
+# household_fuel_type <-
+#   household_vehicles_mdt %>% 
+#   replace_na(list(fuel = 0)) %>% 
+#   filter(fuel > -1) %>%
+#   # group_by(sampno,wtperfin,hhinc,hhveh,
+#   #          home_state,home_county,home_tract,home_county_chi,geog,
+#   #          income,income_c,race_eth) %>% 
+#   # summarize(park_simp = min(parkd)) %>% 
+#   mutate(fuel = recode_factor(factor(fuel,levels = c(0,1,2,3,4,5,97,-7,-8)),
+#                               "0" = "No vehicle",
+#                               "1" = "Gas",
+#                               "2" = "Diesel",
+#                               "3" = "Hybrid",
+#                               "4" = "EV",
+#                               "5" = "Alternative",
+#                               "97" = "Other",
+#                               "-7" = "Missing",
+#                               "-8" = "Missing"))
+# 
+# pct_calculator(household_fuel_type %>% 
+#                  filter(!(fuel %in% c("No vehicle","Missing"))) %>% 
+#                  mutate(fuel_c = fct_collapse(fuel,
+#                                               "Gas/Diesel" = c("Gas","Diesel"),
+#                                               "Alternative" = c("Hybrid","EV","Alternative","Other"))),
+#                breakdown_by = "fuel_c",
+#                second_breakdown = "household_race_eth",
+#                weight = "wtperfin") %>% View()
+# 
+# 
+# household_fuel_type %>% filter(fuel == "EV") %>% count(household_race_eth,wt = wtperfin)
