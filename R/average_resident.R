@@ -646,7 +646,7 @@ average_resident_p1 <-
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
              # xlab = "Travel patterns by demographic characteristics",
-             strip.text.x = element_text(hjust = 0.5),
+             strip.text.x = element_text(hjust = 0.5,vjust = 1),
              strip.text.y = element_blank()) +
   cmap_fill_discrete(palette = "legislation") +
   scale_color_discrete(type = "black") +
@@ -878,7 +878,7 @@ average_resident_p3 <-
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
              xlab = "Distance per day for residents who traveled (miles)",
-             strip.text = element_text(hjust = 0.5)) +
+             strip.text = element_text(hjust = 0.5,vjust = 1)) +
   cmap_fill_discrete(palette = "friday",reverse = T) +
   
   # Adjust legend for formatting
@@ -975,7 +975,7 @@ average_resident_p4 <-
   # Add CMAP theme
   theme_cmap(gridlines = "h",hline = 0,
              xlab = "Travel characteristics over time",
-             strip.text = element_text(hjust = 0.5)) +
+             strip.text = element_text(hjust = 0.5,vjust = 1)) +
   cmap_fill_discrete(palette = "friday")
 
 # Export finalized graphic

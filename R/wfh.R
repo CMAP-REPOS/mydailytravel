@@ -386,7 +386,7 @@ wfh_p1 <-
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
              xlab = "Share of residents who telecommute at least once a week",
-             strip.text = element_text(hjust = 0.5)) +
+             strip.text = element_text(hjust = 0.5,vjust = 1)) +
   cmap_fill_discrete(palette = "legislation") +
   scale_color_discrete(type = "#181f22") +
   
@@ -695,7 +695,7 @@ wfh_p3 <-
              vline = 0,
              xlab = "Mode share for work trips by home jurisdiction and telecommute status \n(excluding travelers with no trips to a work location)",
              axis.title.x = element_text(hjust = 0.5),
-             strip.text = element_text(hjust = 0.5)) +
+             strip.text = element_text(hjust = 0.5,vjust = 1)) +
   # Manually add colors
   scale_fill_discrete(type = c("#00665c","#6d8692","#36d8ca",
                                "#efa7a7","#0084ac")) +

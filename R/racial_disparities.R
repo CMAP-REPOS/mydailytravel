@@ -159,7 +159,7 @@ racial_disparities_p1 <-
   # Add CMAP style
   theme_cmap(gridlines = "h", legend.position = "None",
              xlab = "Mean travel times for various trip purposes (minutes)",
-             strip.text = element_text(face = "bold",hjust = 0.5)) +
+             strip.text = element_text(face = "bold",hjust = 0.5,vjust = 1)) +
   cmap_fill_race(white = "White", black = "Black", hispanic = "Hispanic", 
                  asian = "Asian", other = "Other") +
   

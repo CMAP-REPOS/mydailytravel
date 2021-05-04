@@ -283,7 +283,7 @@ trips_in_motion_p2 <-
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray",),
              legend.max.columns = 7,
-             strip.text = element_text(hjust = 0.5,face = "bold"),
+             strip.text = element_text(hjust = 0.5,face = "bold",vjust = 1),
              xlab = "Weekday trips in motion by time of day and trip chain type")
 
 trips_in_motion_p2_samplesize <-
@@ -346,7 +346,7 @@ trip_times_bike_and_chain_mdt <-
                  rolling_window = 55)
 
 # Graph output of trips in motion by purpose for bike trips (personal bike only)
-trips_in_motion_p4 <-
+trips_in_motion_p3 <-
   # Get data
   trip_times_bike_and_chain_mdt %>%
   # Sort chains for ordering
@@ -373,7 +373,7 @@ trips_in_motion_p4 <-
              panel.grid.major.x = element_line(color = "light gray"),
              xlab = "Personal bike trips")
 
-finalize_plot(trips_in_motion_p4,
+finalize_plot(trips_in_motion_p3,
               "Personal bike usage has a strong morning peak, with PM usage spread more evenly across the afternoon and evening.",
               "Note: Trips in motion are 55-minute rolling averages. Trips 
               analyzed include weekday trips by residents aged 5 and older 
@@ -384,7 +384,7 @@ finalize_plot(trips_in_motion_p4,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries.",
-              filename = "trips_in_motion_p4",
+              filename = "trips_in_motion_p3",
               # mode = "png",
               overwrite = TRUE,
               # height = 2.25,
