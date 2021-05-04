@@ -25,10 +25,12 @@ source("R/data_cleaning.R")
 
 # Identify respondents who report that they don't travel for work and have a
 # diary entry for working from home but did not report home as their workplace
-extra_wfhers <- mdt %>%
+extra_wfhers <- 
+  mdt %>% # 125463
   filter(wmode == 18 | wtrav == 0, 
          wplace != 2, 
-         tpurp == "Worked at home (paid)") %>%
+         tpurp == "Worked at home (paid)") %>% # There are 24 of these
+  # Make a combined sample and person ID for recoding below.
   mutate(identifier = paste(sampno,perno,sep = "_")) %>%
   select(identifier)
 
@@ -36,48 +38,50 @@ extra_wfhers <- mdt %>%
 age_breaks <- c(-1,17,29, 49, 69, 150)
 age_labels <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
 
-# Summary statistics (includes individuals with no trips)
+# Create base dataset (includes individuals with no trips)
 wfh_mdt_all <-
   mdt_all_respondents %>% # 30,683 records
   # Keep only employed respondents (either those who report having 1+ jobs or
   # those who report being employed)
   filter(emply_ask == 1 | jobs > 0) %>% # 17,656 records
   # Create a flag for people who telecommute and/or work from home
-  mutate(tc =
-           case_when(
-             tcdays >= 1 ~ 1,
-             TRUE ~ 0),
-         
-         wfh = 
-           case_when(
-             wplace == 2 ~ 1,
-             paste(sampno,perno,sep = "_") %in% extra_wfhers$identifier ~ 1,
-             TRUE ~ 0),
-         
-         tc_frequency =
-           case_when(
-             tcdays < 1 ~ 0,
-             tcdays >= 1 & tcdays <= 3 ~ 1,
-             tcdays >= 4 ~ 2,
-             TRUE ~ 0),
-         
-         tc_freq_or_wfh =
-           case_when(
-             tc_frequency > 0 ~ tc_frequency,
-             wfh == 1 ~ 3,
-             TRUE ~ 0
-           ),
-         
-         tc_or_wfh =
-           case_when(
-             tc == 1 | wfh == 1 ~ 1,
-             TRUE ~ 0),
-         
-         tc_not_wfh = 
-           case_when(
-             tc == 1 | wfh != 1 ~ 1,
-             TRUE ~ 0)
-         ) %>%
+  mutate(
+    # Do they telecommute? 1 is yes, 0 is no.
+    tc =
+      case_when(
+        tcdays >= 1 ~ 1,
+        TRUE ~ 0),
+    
+    # Do they report working from home? 1 is yes, 0 is no.
+    wfh = 
+      case_when(
+        wplace == 2 ~ 1,
+        paste(sampno,perno,sep = "_") %in% extra_wfhers$identifier ~ 1,
+        TRUE ~ 0),
+    
+    # How often do they telecommute? 0 is none, 1 is 1-3 days/wk., 2 is 4+ days/wk.
+    tc_frequency =
+      case_when(
+        tcdays < 1 ~ 0,
+        tcdays >= 1 & tcdays <= 3 ~ 1,
+        tcdays >= 4 ~ 2,
+        TRUE ~ 0),
+    
+    # Combined flag for TC and WFH. If TC is coded, use that. If not, and they
+    # work from home, make an additional category (3) for WFHers.
+    tc_freq_or_wfh =
+      case_when(
+        tc_frequency > 0 ~ tc_frequency,
+        wfh == 1 ~ 3,
+        TRUE ~ 0
+      ),
+    
+    # Do they TC or WFH? 1 is yes, 0 is no.
+    tc_or_wfh =
+      case_when(
+        tc == 1 | wfh == 1 ~ 1,
+        TRUE ~ 0)
+  ) %>%
   # Create a consolidated flag for wfh and tc behavior
   mutate(combined_tc_wfh =
            case_when(
@@ -117,7 +121,8 @@ wfh_mdt <-
   # employed individuals above. For those that are in the list, add the flags we
   # developed on telecommuting and working from home.
   inner_join(wfh_mdt_all %>% # 83291 records
-               select(sampno,perno,tc,wfh,tc_frequency,combined_tc_wfh,age_bin),
+               select(sampno,perno,tc,wfh,tc_frequency,tc_freq_or_wfh,
+                      combined_tc_wfh,age_bin),
              by = c("sampno","perno")) %>% 
   # Recode school bus trips as other trips (there are a small but nonzero number)
   mutate(mode_c = as.character(mode_c)) %>%
@@ -150,25 +155,24 @@ wfh_tt_all <-
   # those who report being employed)
   filter(EMPLY == 1 | EMPLY == 2 | (JOBS > 0 & JOBS < 97)) %>% # 17,656 records
   # Create a flag for people who telecommute and/or work from home
-  mutate(tc =
-           case_when(
-             WHOME %in% c(1,2) ~ 1,
-             TRUE ~ 0),
-         
-         wfh = 
-           case_when(
-             WLOC == 1 ~ 1,
-             TRUE ~ 0),
-         
-         tc_or_wfh =
-           case_when(
-             tc == 1 | wfh == 1 ~ 1,
-             TRUE ~ 0),
-         
-         tc_not_wfh = 
-           case_when(
-             tc == 1 | wfh != 1 ~ 1,
-             TRUE ~ 0)
+  mutate(
+    # Did they telecommute? 1 is yes, 0 is no.
+    tc =
+      case_when(
+        WHOME %in% c(1,2) ~ 1,
+        TRUE ~ 0),
+    
+    # Was their home their workplace? 1 is yes, 0 is no.
+    wfh = 
+      case_when(
+        WLOC == 1 ~ 1,
+        TRUE ~ 0),
+    
+    # Combined flag for TC and WFH.
+    tc_or_wfh =
+      case_when(
+        tc == 1 | wfh == 1 ~ 1,
+        TRUE ~ 0)
   ) %>%
   ungroup() %>% 
   # And add age bins
@@ -267,8 +271,8 @@ tc_home <-
             n = n(),
             w_n = sum(wtperfin),
             tcwfhers = w_n * pct) %>% 
-  # Remove individuals in DeKalb, Grundy, or those with 2+ homes
-  filter(!(home_county_chi %in% c("DeKalb","Grundy","Homes in multiple counties"))) %>% 
+  # Remove individuals in DeKalb, Grundy, or those with 2+ homes (for presentation)
+  filter(!(home_county_chi %in% c("DeKalb","Grundy","Homes in multiple jurisdictions (Chicago/Cook)"))) %>% 
   mutate(type = "Home jurisdiction") %>% 
   rename(subtype = home_county_chi)
 
@@ -398,10 +402,12 @@ wfh_p1_samplesize <-
 # Export finalized graphic
 finalize_plot(wfh_p1,
               # sidebar_width = 0,
-              "Lower-income, Black, and Hispanic residents are the least likely 
-              to telecommute.",
+              "Lower-income, Black, and Hispanic residents were the least likely 
+              to telecommute prior to COVID-19.",
               caption = 
-              paste0("Note: Includes only employed residents. 'Hispanic' 
+              paste0("Note: Includes only employed residents from the CMAP seven 
+              county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 
+              Will), as well as Grundy and DeKalb. 'Hispanic' 
               includes respondents who identified as Hispanic of any racial 
               category. Other categories are non-Hispanic. For the 
               categorization by sex, the survey asked respondents whether they 
@@ -409,7 +415,7 @@ finalize_plot(wfh_p1,
               answer and are excluded based on small sample sizes.
               <br><br>
               Sample size:
-              <br>- Age: 18-29 (",
+              <br>- <i>Age</i>: 18-29 (",
                      wfh_p1_samplesize %>% filter(subtype == "18 to 29") %>% select(n),
                      "); 30-49 (",
                      wfh_p1_samplesize %>% filter(subtype == "30 to 49") %>% select(n),
@@ -418,7 +424,7 @@ finalize_plot(wfh_p1,
                      "); 70+ (",
                      wfh_p1_samplesize %>% filter(subtype == "70 and above") %>% select(n),
                      ").
-              <br>- Income: <$35K (",
+              <br>- <i>Income</i>: <$35K (",
                      wfh_p1_samplesize %>% filter(subtype == "Less than $35K") %>% select(n),
                      "); $35-59K (",
                      wfh_p1_samplesize %>% filter(subtype == "$35K to $59K") %>% select(n),
@@ -427,7 +433,7 @@ finalize_plot(wfh_p1,
                      "); $100K+ (",
                      wfh_p1_samplesize %>% filter(subtype == "$100K or more") %>% select(n),
                      ").
-              <br>- Race/Ethnicity: Asian (",
+              <br>- <i>Race/Ethnicity</i>: Asian (",
                      wfh_p1_samplesize %>% filter(subtype == "Asian") %>% select(n),
                      "); White (",
                      wfh_p1_samplesize %>% filter(subtype == "White") %>% select(n),
@@ -438,7 +444,7 @@ finalize_plot(wfh_p1,
                      "); Hispanic (",
                      wfh_p1_samplesize %>% filter(subtype == "Hispanic") %>% select(n),
                      ").
-              <br>- Sex: Male (",
+              <br>- <i>Sex</i>: Male (",
                      wfh_p1_samplesize %>% filter(subtype == "Male") %>% select(n),
                      "); Female (",
                      wfh_p1_samplesize %>% filter(subtype == "Female") %>% select(n),
@@ -448,6 +454,7 @@ finalize_plot(wfh_p1,
               Daily Travel data."),
               filename = "wfh_p1",
               mode = "png",
+              sidebar_width = 2.6,
               # height = 6.5,
               overwrite = T)
 
@@ -567,12 +574,14 @@ wfh_p2_samplesize <-
 
 # Export finalized graphic
 finalize_plot(wfh_p2,
-              "Part-time telecommuters who live outside Chicago have 
+              "Part-time telecommuters who lived outside Chicago had 
               significantly longer journeys to and from work on days when they 
-              work outside the home.",
-              paste0("Note: These estimates are based on on answers given in both the
-              survey and travel diary components of My Daily Travel. Mean 
-              mileage accounts for all trips associated with a work trip chain 
+              worked outside the home.",
+              paste0("Note: Figures are for trips by employed residents from the 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              trips within, to, and/or from those counties. Mean mileage 
+              accounts for all trips associated with a work trip chain 
               that included a work destination outside the home (both fixed and 
               non-fixed). Excludes work trips for travelers that
               telecommute 4+ days per week due to low sample sizes.
@@ -618,8 +627,9 @@ finalize_plot(wfh_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "wfh_p2",
-              # mode = "png",
+              mode = "png",
               overwrite = T,
+              sidebar_width = 2.6,
               # height = 4.5,
               # width = 8,
               # sidebar = 2.5
@@ -639,9 +649,9 @@ wfh_mode_share <-
       filter(worktrip == 1) %>%
       # Exclude missing modes
       filter(mode_c != "missing") %>% 
-      # Due to low sample size, exclude work trips for those that almost always work
-      # from home/telecommute
-      filter(combined_tc_wfh != 2),
+      # Due to low sample size, exclude work trips for those that almost always
+      # telecommute
+      filter(tc_frequency != 2),
     breakdown_by = "mode_c",
     second_breakdown = "tc_frequency",
     third_breakdown = "geog",
@@ -700,11 +710,13 @@ wfh_p3_samplesize <-
 
 # Export finalized graphic
 finalize_plot(wfh_p3,
-              "Suburban part-time telecommuters are much more 
-              likely to use transit on days when they work outside the home, 
-              while those in Chicago are more likely to walk to work.",
-              paste0("Note: These estimates are based on on answers given in both the
-              survey and travel diary components of My Daily Travel. Mode share
+              "Suburban part-time telecommuters were much more 
+              likely to use transit on days when they worked outside the home, 
+              while those in Chicago were more likely to walk to work.",
+              paste0("Note: Figures are for trips by employed residents from the 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              trips within, to, and/or from those counties. Mode share
               accounts for all trips associated with a work trip chain 
               that included a work destination outside the home (both fixed and 
               non-fixed). Excludes work trips for travelers that
@@ -754,6 +766,7 @@ finalize_plot(wfh_p3,
               filename = "wfh_p3",
               mode = "png",
               overwrite = T,
+              sidebar_width = 2.7,
               # height = 4.5,
               # width = 8,
               # sidebar = 2.5
@@ -782,10 +795,10 @@ wfh_alltraveler_trips_general <-
   # Remove travelers with homes in multiple counties
   filter(home_county != "999") %>% # 82772 records
   # Calculate average distances
-  group_by(combined_tc_wfh,geog) %>%
+  group_by(tc_frequency,geog) %>%
   summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
             n = n()) %>%
-  rename(flag = combined_tc_wfh) %>% 
+  rename(flag = tc_frequency) %>% 
   ungroup()
 
 # Create chart
@@ -794,9 +807,9 @@ wfh_p4 <-
   wfh_alltraveler_trips_general %>%
   # Reformat and reorder
   mutate(flag = recode_factor(factor(flag,levels = c(0,1,2)),
-                              "0" = "Does not regularly telecommute or work from home",
+                              "0" = "Does not regularly telecommute",
                               "1" = "Sometimes telecommutes (1-3 days/week)",
-                              "2" = "Almost always telecommutes (4+ days/week) or only works from home "),
+                              "2" = "Almost always telecommutes (4+ days/week)"),
          
          geog = recode_factor(geog,
                               "Other suburban counties" = "Other counties",
@@ -831,13 +844,15 @@ wfh_p4 <-
 
 # Export finalized graphic
 finalize_plot(wfh_p4,
-              "On average, part-time telecommuters who live outside Chicago 
-              travel the greatest distances every day.",
-              paste0("Note: These estimates are based on on answers given in both the
-              survey and travel diary components of My Daily Travel. These 
+              "On average, part-time telecommuters living outside Chicago 
+              traveled the greatest distances every day.",
+              paste0("Note: Figures are for trips by employed residents from the 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              trips within, to, and/or from those counties. These 
               averages also account for employed individuals who did not travel 
               in the region on their assigned travel day (i.e., individuals who 
-              work from home and did not travel outside the home on that day). 
+              worked from home and did not travel outside the home on that day). 
               Those individuals are included as having zero travel distance.
               <br><br>
               Sample size (Chicago/Suburban Cook/Other):
@@ -890,7 +905,7 @@ finalize_plot(wfh_p4,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "wfh_p4",
-              # mode = "png",
+              mode = "png",
               overwrite = T,
               # height = 4.5,
               # width = 8,
