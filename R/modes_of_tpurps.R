@@ -25,7 +25,7 @@ source("R/data_cleaning.R")
 
 # Create base dataset for mode analyses
 
-modes_of_tpurps_base_mdt <-
+tpurp_analysis_base_mdt <-
   mdt %>%                             # 125463 records
   # Keep only travelers >= 16 years old, either through age, age bucket, or
   # school enrollment
@@ -52,7 +52,7 @@ modes_of_tpurps_base_mdt <-
 
 # # Filter data for TT. Note: this code is included but archived because it was
 # # not included in publication.
-# modes_of_tpurps_base_tt <-
+# tpurp_analysis_base_tt <-
 #   tt %>%                             # 139769 records
 #   # Keep only records for travelers >= 5 or who we can identify as being >= 5
 #   # based on age buckets or school enrollment. Note that 99 is DK/RF for AGE.
@@ -88,7 +88,7 @@ modes_of_tpurps_base_mdt <-
 
 ### Calculate proportions for subcategories for dining in MDT
 detailed_health_mode_c_mdt <-
-  pct_calculator(modes_of_tpurps_base_mdt %>% 
+  pct_calculator(tpurp_analysis_base_mdt %>% 
                    # Keep only travelers assigned to Chicago, Suburban Cook, or
                    # Other suburban counties (for display purposes)
                    filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties")) %>% 
@@ -110,7 +110,7 @@ detailed_health_mode_c_mdt <-
 # Chart of healthcare sub-purposes by mode
 ################################################################################
 
-modes_of_tpurps_p1 <-
+tpurp_analysis_p1 <-
   # Get data
   detailed_health_mode_c_mdt %>%
   # Order for graph
@@ -151,7 +151,7 @@ modes_of_tpurps_p1 <-
 
 
 # Export plot
-finalize_plot(modes_of_tpurps_p1,
+finalize_plot(tpurp_analysis_p1,
               "Although driving was most common, transit played an 
               important role for personal health care visits, especially for 
               Chicago residents.",
@@ -191,7 +191,7 @@ finalize_plot(modes_of_tpurps_p1,
               # width = 8,
               # height = 4.5,
               # sidebar_width = 2.6,
-              filename = "modes_of_tpurps_p1",
+              filename = "tpurp_analysis_p1",
               mode = "png",
               overwrite = TRUE)
 
@@ -202,7 +202,7 @@ finalize_plot(modes_of_tpurps_p1,
 
 # Calculate health mode share by race and ethnicity
 detailed_health_race_mode_c_mdt <-
-  pct_calculator(modes_of_tpurps_base_mdt,
+  pct_calculator(tpurp_analysis_base_mdt,
                  subset = "Health care visit for self",
                  subset_of = "tpurp",
                  breakdown_by = "mode_c",
@@ -211,7 +211,7 @@ detailed_health_race_mode_c_mdt <-
                  survey = "mdt")
 
 # Breakdown by race and ethnicity
-modes_of_tpurps_p1a <-
+tpurp_analysis_p1a <-
   # Get data
   detailed_health_race_mode_c_mdt %>%
   # Exclude those without race and ethnicity
@@ -245,7 +245,7 @@ modes_of_tpurps_p1a <-
   scale_x_continuous(labels = scales::label_percent())
 
 # Generate finalized graphic
-finalize_plot(modes_of_tpurps_p1a,
+finalize_plot(tpurp_analysis_p1a,
               "Mode share of health trips by race and ethnicity, 2019.",
               "Note: 'By car' includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
@@ -258,7 +258,7 @@ finalize_plot(modes_of_tpurps_p1a,
               Daily Travel data. ",
               # width = 11.3,
               # height = 6.3,
-              filename = "modes_of_tpurps_p1a",
+              filename = "tpurp_analysis_p1a",
               # mode = "png",
               overwrite = TRUE)
 
@@ -270,7 +270,7 @@ finalize_plot(modes_of_tpurps_p1a,
 # Calculations to understand the relationship between transit use for healthcare
 # and household vehicle ownership
 health_mode_c_vehs_mdt <-
-  pct_calculator(modes_of_tpurps_base_mdt %>% 
+  pct_calculator(tpurp_analysis_base_mdt %>% 
                    mutate(hhveh = case_when(
                      hhveh == 0 ~ 0,
                      hhveh == 1 ~ 1,
@@ -297,7 +297,7 @@ health_mode_c_vehs_mdt %>% arrange(hhveh,pct) %>%
 # Backup - detail on "other" mode share for Chicago healthcare
 ################################################################################
 
-pct_calculator(modes_of_tpurps_base_mdt %>% 
+pct_calculator(tpurp_analysis_base_mdt %>% 
                  filter(geog %in% c("Chicago","Suburban Cook"),
                         tpurp == "Health care visit for self"),
                breakdown_by = "mode",
@@ -319,7 +319,7 @@ pct_calculator(modes_of_tpurps_base_mdt %>%
 
 ### Calculate proportions for subcategories for dining in MDT
 detailed_dining_mode_c_mdt <-
-  pct_calculator(modes_of_tpurps_base_mdt %>% filter(geog != "Other") %>% 
+  pct_calculator(tpurp_analysis_base_mdt %>% filter(geog != "Other") %>% 
                    # Keep only travelers assigned to Chicago, Suburban Cook, or
                    # Rest of region
                    filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties")) %>% 
@@ -338,7 +338,7 @@ detailed_dining_mode_c_mdt <-
 # Chart of dining sub-purposes by mode
 ################################################################################
 
-modes_of_tpurps_p2 <-
+tpurp_analysis_p2 <-
   # Get data
   detailed_dining_mode_c_mdt %>%
   # Reformat for publication
@@ -368,7 +368,7 @@ modes_of_tpurps_p2 <-
   # Add CMAP style
   theme_cmap(gridlines = "v",vline = 0,
              xlab = "Mode share",
-             strip.text = element_text(hjust = 0.5,face = "bold")) +
+             strip.text = element_text(hjust = 0.5,vjust = 1,face = "bold")) +
   scale_fill_discrete(type = c("#00665c","#36d8ca","#6d8692","#006b8c")) +
   
   # Adjust axis
@@ -377,7 +377,7 @@ modes_of_tpurps_p2 <-
   # Add faceting
   facet_wrap(~geog, ncol = 1)
 
-finalize_plot(modes_of_tpurps_p2,
+finalize_plot(tpurp_analysis_p2,
               "Walking and transit were more important modes for eating in person 
               than for picking up take-out.",
               caption = 
@@ -427,7 +427,7 @@ finalize_plot(modes_of_tpurps_p2,
               # width = 11.3,
               # height = 6.3,
               # sidebar_width = 2.6,
-              filename = "modes_of_tpurps_p2",
+              filename = "tpurp_analysis_p2",
               mode = "png",
               overwrite = T)
 
@@ -440,7 +440,7 @@ finalize_plot(modes_of_tpurps_p2,
 ### Calculate proportions for subcategories for community in MDT
 
 detailed_community_mode_c_mdt <-
-  pct_calculator(modes_of_tpurps_base_mdt %>% 
+  pct_calculator(tpurp_analysis_base_mdt %>% 
                    # Keep only travelers assigned to Chicago, Suburban Cook, or
                    # Rest of region
                    filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties")) %>% 
@@ -461,7 +461,7 @@ detailed_community_mode_c_mdt <-
 # Chart of community sub-purposes by mode
 ################################################################################
 
-modes_of_tpurps_p3 <-
+tpurp_analysis_p3 <-
   # Get data
   detailed_community_mode_c_mdt %>%
   # Keep only the trip types of interest
@@ -494,7 +494,7 @@ modes_of_tpurps_p3 <-
   # Add CMAP style
   theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
              xlab = "Mode share for socializing trips by home jurisdiction",
-             strip.text = element_text(hjust = 0.5,face = "bold")) +
+             strip.text = element_text(hjust = 0.5,vjust = 1,face = "bold")) +
   scale_fill_discrete(type = c("#00665c","#36d8ca","#6d8692","#006b8c")) +
   
   # Adjust axis
@@ -504,7 +504,7 @@ modes_of_tpurps_p3 <-
   facet_wrap(~geog,ncol = 1)
 
 # Export graphic
-finalize_plot(modes_of_tpurps_p3,
+finalize_plot(tpurp_analysis_p3,
               "Walking and other non-car modes were significantly more common for 
               trips to socialize with friends than with relatives.",
               paste0(
@@ -528,7 +528,8 @@ finalize_plot(modes_of_tpurps_p3,
                       ungroup() %>% 
                       filter(geog == "Other suburban counties",tpurp == "Friends") %>%
                       select(total_n) %>% distinct(),
-                    sep = "/"),");
+                    sep = "/"),
+                    ");
               <br>- Relatives (",
               paste(detailed_community_mode_c_mdt %>%
                       ungroup() %>% 
@@ -552,14 +553,14 @@ finalize_plot(modes_of_tpurps_p3,
               # sidebar_width = 2.6,
               overwrite = T,
               mode = "png",
-              filename = "modes_of_tpurps_p3")
+              filename = "tpurp_analysis_p3")
 
 ################################################################################
 # Median distances for community trips
 ################################################################################
 
 # Median distance overall
-  modes_of_tpurps_base_mdt %>%
+  tpurp_analysis_base_mdt %>%
   filter(tpurp %in% c("Socialized with friends","Socialized with relatives"),
          geog != "Other") %>%
   group_by(tpurp) %>%
@@ -568,7 +569,7 @@ finalize_plot(modes_of_tpurps_p3,
             wt = sum(wtperfin)) 
 
 # Median distance and proportion by geography
-modes_of_tpurps_base_mdt %>%
+tpurp_analysis_base_mdt %>%
   filter(tpurp %in% c("Socialized with friends","Socialized with relatives"),
          geog != "Other") %>%
   group_by(tpurp,geog) %>%
@@ -584,7 +585,7 @@ modes_of_tpurps_base_mdt %>%
 ################################################################################
 # Mode share for similar distances
 ################################################################################
-pct_calculator(modes_of_tpurps_base_mdt %>% 
+pct_calculator(tpurp_analysis_base_mdt %>% 
                  # Keep only travelers assigned to Chicago, Suburban Cook, or
                  # Rest of region
                  filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties"),
@@ -606,7 +607,7 @@ pct_calculator(modes_of_tpurps_base_mdt %>%
 ################################################################################
 
 # Travel party size
-modes_of_tpurps_base_mdt %>% 
+tpurp_analysis_base_mdt %>% 
   filter(tpurp %in% c("Socialized with friends","Socialized with relatives")) %>% 
   group_by(sampno,locno_pg,tpurp,arrtime_pg,start_times_pg) %>% 
   summarize(n = n(),
@@ -618,7 +619,7 @@ modes_of_tpurps_base_mdt %>%
   mutate(pct = breakdown / total)
 
 # Travel party size and age
-modes_of_tpurps_base_mdt %>% 
+tpurp_analysis_base_mdt %>% 
   filter(tpurp %in% c("Socialized with friends","Socialized with relatives"),
          age > 0) %>% 
   group_by(sampno,locno_pg,tpurp,arrtime_pg,start_times_pg) %>% 
@@ -640,7 +641,7 @@ group_by(tpurp) %>%
 ### Calculate proportions for all trip purposes in MDT
 
 detailed_allpurps_mode_c_mdt <-
-  pct_calculator(modes_of_tpurps_base_mdt %>% filter(geog != "Other"),
+  pct_calculator(tpurp_analysis_base_mdt %>% filter(geog != "Other"),
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
                  third_breakdown = "geog",
@@ -648,7 +649,7 @@ detailed_allpurps_mode_c_mdt <-
                  survey = "mdt")
 
 # Identify trip purposes by car share
-pct_calculator(modes_of_tpurps_base_mdt,
+pct_calculator(tpurp_analysis_base_mdt,
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
                  weight = "wtperfin") %>% 
@@ -664,7 +665,7 @@ pct_calculator(modes_of_tpurps_base_mdt,
 # Table of all trips by mode
 ################################################################################
 
-modes_of_tpurps_t1 <-
+tpurp_analysis_t1 <-
   # Get data
   detailed_allpurps_mode_c_mdt %>%
   # Collapse low-percentage modes
@@ -694,7 +695,7 @@ modes_of_tpurps_t1 <-
 # ### Calculate proportions for subcategories for shopping/errands in MDT
 # 
 # detailed_errands_mode_c_mdt <-
-#   pct_calculator(modes_of_tpurps_base_mdt,
+#   pct_calculator(tpurp_analysis_base_mdt,
 #                  subset = "shopping/errands",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -706,7 +707,7 @@ modes_of_tpurps_t1 <-
 # # Chart of shopping/errands trips by mode
 # ################################################################################
 # 
-# modes_of_tpurps_p4 <-
+# tpurp_analysis_p4 <-
 #   # Get data
 #   detailed_errands_mode_c_mdt %>%
 #   # Order factors
@@ -744,7 +745,7 @@ modes_of_tpurps_t1 <-
 #   # Adjust axis
 #   scale_x_continuous(labels = scales::label_percent())
 # 
-# finalize_plot(modes_of_tpurps_p4,
+# finalize_plot(tpurp_analysis_p4,
 #               "Mode share of shopping and errands trips, 2019.",
 #               "Note: 'By car' includes trips as either a driver of a passenger
 #               of a personal vehicle (not including services like taxis or
@@ -757,7 +758,7 @@ modes_of_tpurps_t1 <-
 #               # height = 4,
 #               overwrite = T,
 #               # mode = "png",
-#               filename = "modes_of_tpurps_p4")
+#               filename = "tpurp_analysis_p4")
 # 
 # ################################################################################
 # #
@@ -767,7 +768,7 @@ modes_of_tpurps_t1 <-
 # ### Calculate proportions for subcategories for recreation/fitness in MDT
 # 
 # detailed_recreation_mode_c_mdt <-
-#   pct_calculator(modes_of_tpurps_base_mdt %>% filter(geog != "Other"),
+#   pct_calculator(tpurp_analysis_base_mdt %>% filter(geog != "Other"),
 #                  subset = "recreation/fitness",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -780,7 +781,7 @@ modes_of_tpurps_t1 <-
 # # Chart of recreation/fitness trips by mode
 # ################################################################################
 # 
-# modes_of_tpurps_p5 <-
+# tpurp_analysis_p5 <-
 #   # Get data
 #   detailed_recreation_mode_c_mdt %>%
 #   # Order factors
@@ -820,7 +821,7 @@ modes_of_tpurps_t1 <-
 #   # Add faceting
 #   facet_wrap(~geog,ncol = 1)
 # 
-# finalize_plot(modes_of_tpurps_p5,
+# finalize_plot(tpurp_analysis_p5,
 #               "Mode share of recreation and fitness trips, 2019.",
 #               "Note: 'By car' includes trips as either a driver of a passenger
 #               of a personal vehicle (not including services like taxis or
@@ -833,7 +834,7 @@ modes_of_tpurps_t1 <-
 #               # height = 4,
 #               overwrite = T,
 #               # mode = "png",
-#               filename = "modes_of_tpurps_p5")
+#               filename = "tpurp_analysis_p5")
 # 
 # 
 # ################################################################################
@@ -871,7 +872,7 @@ modes_of_tpurps_t1 <-
 #   rbind(total_dining_mode_c,
 #         detailed_dining_mode_c_mdt)
 # 
-# modes_of_tpurps_p1a <-
+# tpurp_analysis_p1a <-
 #   all_dining_mode_c %>%
 #   mutate(tpurp = factor(tpurp,levels = c("Dining outside of home (all)",
 #                                          "Drive thru / take-out dining",
@@ -887,12 +888,12 @@ modes_of_tpurps_t1 <-
 #   scale_x_continuous(labels = scales::label_percent(),n.breaks = 6) +
 #   cmap_fill_discrete(palette = "friday")
 # 
-# finalize_plot(modes_of_tpurps_p1a,
+# finalize_plot(tpurp_analysis_p1a,
 #               "Mode share of dining trips, 2008 vs. 2019.",
 #               "Source: CMAP analysis of MDT and TT data.",
 #               width = 11.3,
 #               height = 6.3,
-#               filename = "modes_of_tpurps_p1a",
+#               filename = "tpurp_analysis_p1a",
 #               mode = "png")
 # 
 # ################################################################################
@@ -903,7 +904,7 @@ modes_of_tpurps_t1 <-
 # 
 # ### Calculate proportions for TT
 # all_health_mode_c_tt <-
-#   pct_calculator(modes_of_tpurps_base_tt,
+#   pct_calculator(tpurp_analysis_base_tt,
 #                  subset = "health",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -912,7 +913,7 @@ modes_of_tpurps_t1 <-
 # 
 # ### Calculate proportions for MDT
 # all_health_mode_c_mdt <-
-#   pct_calculator(modes_of_tpurps_base_mdt,
+#   pct_calculator(tpurp_analysis_base_mdt,
 #                  subset = "health",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -930,7 +931,7 @@ modes_of_tpurps_t1 <-
 #   rbind(total_health_mode_c,
 #         detailed_health_mode_c_mdt)
 # 
-# modes_of_tpurps_p2a <-
+# tpurp_analysis_p2a <-
 #   all_health_mode_c %>%
 #   mutate(tpurp = factor(tpurp,levels = c("Healthcare (all)",
 #                                          "Health care visit for self",
@@ -947,12 +948,12 @@ modes_of_tpurps_t1 <-
 #   scale_x_continuous(labels = scales::label_percent(),n.breaks = 6) +
 #   cmap_fill_discrete(palette = "governance")
 # 
-# finalize_plot(modes_of_tpurps_p2a,
+# finalize_plot(tpurp_analysis_p2a,
 #               "Mode share of health trips, 2008 vs. 2019.",
 #               "Source: CMAP analysis of MDT and TT data.",
 #               width = 11.3,
 #               height = 6.3,
-#               filename = "modes_of_tpurps_p2a",
+#               filename = "tpurp_analysis_p2a",
 #               mode = "png",
 #               overwrite = TRUE)
 # 
@@ -965,7 +966,7 @@ modes_of_tpurps_t1 <-
 # 
 # ### Calculate proportions for TT
 # all_community_mode_c_tt <-
-#   pct_calculator(modes_of_tpurps_base_tt,
+#   pct_calculator(tpurp_analysis_base_tt,
 #                  subset = "community",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -974,7 +975,7 @@ modes_of_tpurps_t1 <-
 # 
 # ### Calculate proportions for MDT
 # all_community_mode_c_mdt <-
-#   pct_calculator(modes_of_tpurps_base_mdt,
+#   pct_calculator(tpurp_analysis_base_mdt,
 #                  subset = "community",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -990,7 +991,7 @@ modes_of_tpurps_t1 <-
 # ### Calculate proportions for subcategories for community in TT
 # 
 # detailed_community_mode_c_tt <-
-#   pct_calculator(modes_of_tpurps_base_tt,
+#   pct_calculator(tpurp_analysis_base_tt,
 #                  subset = "community",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -1004,7 +1005,7 @@ modes_of_tpurps_t1 <-
 #         detailed_community_mode_c_mdt,
 #         detailed_community_mode_c_tt)
 # 
-# modes_of_tpurps_p3a <-
+# tpurp_analysis_p3a <-
 #   all_community_mode_c %>%
 #   mutate(tpurp = factor(tpurp,levels = c("Community (all)",
 #                                          "Visit friends/relatives",
@@ -1034,14 +1035,14 @@ modes_of_tpurps_t1 <-
 #   scale_x_continuous(labels = scales::label_percent()) +
 #   cmap_fill_discrete(palette = "environment")
 # 
-# finalize_plot(modes_of_tpurps_p3a,
+# finalize_plot(tpurp_analysis_p3a,
 #               "Mode share of community trips, 2008 vs. 2019.",
 #               "Source: CMAP analysis of MDT and TT data.",
 #               title_width = 1.8,
 #               width = 11.3,
 #               height = 6.3,
 #               overwrite = T,
-#               filename = "modes_of_tpurps_p3a",
+#               filename = "tpurp_analysis_p3a",
 #               mode = "png")
 # 
 # ################################################################################
@@ -1050,7 +1051,7 @@ modes_of_tpurps_t1 <-
 # 
 # ### Filter data
 # all_tnc_school_mdt <-
-#   modes_of_tpurps_base_mdt %>%                         # 96,821 records
+#   tpurp_analysis_base_mdt %>%                         # 96,821 records
 #   filter(age <= 18,                      # 15,495 records
 #          schol %in% c(3,4),              # 13,879 records
 #          mode %in% c("rideshare",
