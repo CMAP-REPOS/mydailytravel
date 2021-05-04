@@ -253,6 +253,9 @@ location <-
 home_wip <- location %>%
   # Identify home locations
   filter(home == 1) %>%
+  # Exclude home locations outside the CMAP region
+  filter(county_fips %in% cmap_nine_counties,
+         state_fips == "17") %>%
   # Keep relevant variables and rename
   select(sampno,
          home_state = state_fips,
@@ -261,38 +264,39 @@ home_wip <- location %>%
          home_lat = latitude,
          home_long = longitude,
          county_chi_name) %>%
-  # Keep distinct home locations based on sample
-  distinct(sampno,home_county,.keep_all = TRUE)
+  # Keep distinct home locations based on sample. Note this will collapse
+  # records for any households that have two homes in the same county (as
+  # intended).
+  distinct(sampno,home_state,home_county,.keep_all = TRUE)
 
-# # Note - there are four homes out of state and 7 homes with an unknown state.
-# # Each of these households also has a home in the CMAP region. They are
-# # handled by the two_homes approach below.
-#
-# out_of_state <-
-#   home_wip %>% filter(home_state != 17) %>%
-#   select(sampno)
-#
-# home_wip %>%
-#   filter(sampno %in% out_of_state$sampno) %>%
-
-
-# There are <100 households coded as having home locations in multiple counties.
-# Identify them.
+# There are 52 households coded as having home locations in multiple counties in
+# the CMAP region. Identify them.
 two_homes <- (home_wip %>%
                 group_by(sampno) %>%
                 summarize(n = n()) %>%
                 filter(n > 1))$sampno
 
-# Replace multi-county records with a county_fips of 999
+# There is one household that has homes in DeKalb and Grundy but nowhere else in
+# the CMAP region. It is sample number 70050790
+outside_seven_counties <-
+  (home_wip %>%
+  filter(sampno %in% two_homes) %>%
+  group_by(sampno) %>%
+  mutate(multi = paste(county_chi_name,collapse = "")) %>%
+  filter(county_chi_name %in% c("Grundy","DeKalb")) %>% 
+  select(sampno) %>% 
+  distinct())$sampno
+  
+# Replace multi-county records with a county_fips of 999 and make similar
+# assignments for tracts. For the three households that have homes outside the CMAP 7-county
+# region, make a special assignment of 998.
 home <- home_wip %>%
   mutate(
-    # Make everyone's home state Illinois (since we verified that everyone has
-    # at least one home in Illinois above).
-    home_state = case_when(
-      sampno %in% two_homes ~ 17,
-      TRUE ~ as.double(home_state)),
+    # Make everyone's home state Illinois.
+    home_state = 17,
     # Replace multi-county home households with 999 for the county.
     home_county = case_when(
+      sampno %in% outside_seven_counties ~ 998,
       sampno %in% two_homes ~ 999,
       TRUE ~ as.double(home_county)),
     # Replace multi-county home households with 999999 for the tract.
@@ -304,22 +308,25 @@ home <- home_wip %>%
   distinct(sampno,home_county,.keep_all = TRUE) %>%
   # Create flag for home county with Chicago and suburban Cook
   mutate(home_county_chi = case_when(
+    home_county == 998 ~ "Homes in multiple counties (Grundy/DeKalb)",
     home_county == 999 ~ "Homes in multiple counties",
     TRUE ~ county_chi_name)) %>% 
   # Create flag for Chicago vs. Suburban Cook vs. Other
   mutate(geog = case_when(
-    home_county_chi == "Chicago" ~ "Chicago",
-    home_county_chi == "Suburban Cook" ~ "Suburban Cook",
-    home_county_chi == "Homes in multiple counties" ~ "Other",
+    home_county_chi %in% c("Chicago","Suburban Cook",
+                           "Homes in multiple counties",
+                           "Homes in multiple counties (Grundy/DeKalb)") ~ home_county_chi,
     TRUE ~ "Other suburban counties"
   )) %>% 
   mutate(geog = factor(geog, levels = c("Chicago","Suburban Cook",
-                                        "Other suburban counties","Other"))) %>% 
+                                        "Other suburban counties",
+                                        "Homes in multiple counties",
+                                        "Homes in multiple counties (Grundy/DeKalb)"))) %>% 
   # Remove unnecessary variable
   select(-county_chi_name)
 
 # Remove WIP tables and Chicago tracts
-rm(home_wip, two_homes, location_raw)
+rm(home_wip, two_homes, location_raw, outside_seven_counties)
 
 # Add combined duration and distance for placeGroup trips. These trips are
 # single trips that were split across multiple records. We merge them, keeping
