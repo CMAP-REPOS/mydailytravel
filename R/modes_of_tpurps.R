@@ -26,7 +26,7 @@ source("R/data_cleaning.R")
 
 # Create base dataset for mode analyses
 
-mdt_base_1 <-
+modes_of_tpurps_base_mdt <-
   mdt %>%                             # 125463 records
   # Keep only travelers >= 16 years old, either through age, age bucket, or
   # school enrollment
@@ -43,6 +43,9 @@ mdt_base_1 <-
   filter(distance_pg > 0) %>%        # 84969
   # Exclude trips with no mode
   filter(mode_c != "missing") %>%    # 84932
+  # Exclude trips from residents outside the seven counties (999 is residents
+  # with two or more homes, all of which are in the 7 counties)
+  filter(home_county %in% c(cmap_seven_counties,999)) %>% 
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
   mutate(mode_c = case_when(
@@ -53,7 +56,7 @@ mdt_base_1 <-
 
 # # Filter data for TT. Note: this code is included but archived because it was
 # # not included in publication.
-# tt_base_1 <-
+# modes_of_tpurps_base_tt <-
 #   tt %>%                             # 139769 records
 #   # Keep only records for travelers >= 5 or who we can identify as being >= 5
 #   # based on age buckets or school enrollment. Note that 99 is DK/RF for AGE.
@@ -89,10 +92,10 @@ mdt_base_1 <-
 
 ### Calculate proportions for subcategories for dining in MDT
 detailed_health_mode_c_mdt <-
-  pct_calculator(mdt_base_1 %>% 
+  pct_calculator(modes_of_tpurps_base_mdt %>% 
                    # Keep only travelers assigned to Chicago, Suburban Cook, or
                    # Rest of region
-                   filter(geog != "Other") %>% 
+                   filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties")) %>% 
                    # Recode purposes
                    mutate(tpurp = recode_factor(
                      tpurp,
@@ -153,11 +156,13 @@ modes_of_tpurps_p1 <-
 
 # Export plot
 finalize_plot(modes_of_tpurps_p1,
-              "Although driving is most common, transit plays an 
+              "Although driving was most common, transit played an 
               important role for personal health care visits, especially for 
               Chicago residents.",
               caption = 
-              paste0("Note: Excludes travelers younger than 5 years old. 'By car' 
+              paste0("Note: Includes trips by residents of the CMAP seven county 
+              region (Cook, DuPage, Kane, Kendall, McHenry, Lake, and Will). 
+              Excludes travelers younger than 5 years old. 'By car' 
               includes trips as either a driver of a passenger of a personal 
               vehicle (not including services like taxis or TNCs). 'Other modes' 
               includes all other modes, but is predominantly composed of 
@@ -200,7 +205,7 @@ finalize_plot(modes_of_tpurps_p1,
 
 # Calculate health mode share by race and ethnicity
 detailed_health_race_mode_c_mdt <-
-  pct_calculator(mdt_base_1,
+  pct_calculator(modes_of_tpurps_base_mdt,
                  subset = "Health care visit for self",
                  subset_of = "tpurp",
                  breakdown_by = "mode_c",
@@ -267,7 +272,7 @@ finalize_plot(modes_of_tpurps_p1a,
 # Calculations to understand the relationship between transit use for healthcare
 # and household vehicle ownership
 health_mode_c_vehs_mdt <-
-  pct_calculator(mdt_base_1 %>% 
+  pct_calculator(modes_of_tpurps_base_mdt %>% 
                    mutate(hhveh = case_when(
                      hhveh == 0 ~ 0,
                      hhveh == 1 ~ 1,
@@ -294,7 +299,7 @@ health_mode_c_vehs_mdt %>% arrange(hhveh,pct) %>%
 # Backup - detail on "other" mode share for Chicago healthcare
 ################################################################################
 
-pct_calculator(mdt_base_1 %>% 
+pct_calculator(modes_of_tpurps_base_mdt %>% 
                  filter(geog %in% c("Chicago","Suburban Cook"),
                         tpurp == "Health care visit for self"),
                breakdown_by = "mode",
@@ -316,7 +321,10 @@ pct_calculator(mdt_base_1 %>%
 
 ### Calculate proportions for subcategories for dining in MDT
 detailed_dining_mode_c_mdt <-
-  pct_calculator(mdt_base_1 %>% filter(geog != "Other") %>% 
+  pct_calculator(modes_of_tpurps_base_mdt %>% filter(geog != "Other") %>% 
+                   # Keep only travelers assigned to Chicago, Suburban Cook, or
+                   # Rest of region
+                   filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties")) %>% 
                    mutate(tpurp = recode_factor(tpurp,
                                                 "Ate / dined out" = "Ate or dined out",
                                                 "Drive thru / take-out dining" = "Drive-thru or take-out")),
@@ -372,10 +380,12 @@ modes_of_tpurps_p2 <-
   facet_wrap(~geog, ncol = 1)
 
 finalize_plot(modes_of_tpurps_p2,
-              "Walking and transit are more important modes for eating in person 
+              "Walking and transit were more important modes for eating in person 
               than for picking up take-out.",
               caption = 
-              paste0("Note: Excludes travelers younger than 5 years old. 'By car' 
+              paste0("Note: Includes trips by residents of the CMAP seven county 
+              region (Cook, DuPage, Kane, Kendall, McHenry, Lake, and Will). 
+              Excludes travelers younger than 5 years old. 'By car' 
               includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               'Other modes' includes transit, biking, and all other modes.
@@ -430,8 +440,10 @@ finalize_plot(modes_of_tpurps_p2,
 ### Calculate proportions for subcategories for community in MDT
 
 detailed_community_mode_c_mdt <-
-  pct_calculator(mdt_base_1 %>% 
-                   filter(geog != "Other") %>% 
+  pct_calculator(modes_of_tpurps_base_mdt %>% 
+                   # Keep only travelers assigned to Chicago, Suburban Cook, or
+                   # Rest of region
+                   filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties")) %>% 
                    mutate(tpurp = recode_factor(tpurp,
                                                 "Socialized with friends" = "Friends",
                                                 "Socialized with relatives" = "Relatives")),
@@ -493,9 +505,11 @@ modes_of_tpurps_p3 <-
 
 # Export graphic
 finalize_plot(modes_of_tpurps_p3,
-              "Walking and other non-car modes are significantly more common for 
+              "Walking and other non-car modes were significantly more common for 
               trips to socialize with friends than with relatives.",
-              paste0("Note: Excludes travelers younger than 5 years old. 'By car' 
+              paste0("Note: Includes trips by residents of the CMAP seven county 
+              region (Cook, DuPage, Kane, Kendall, McHenry, Lake, and Will). 
+              Excludes travelers younger than 5 years old. 'By car' 
               includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               <br><br>
@@ -543,7 +557,7 @@ finalize_plot(modes_of_tpurps_p3,
 ################################################################################
 
 # Median distance overall
-mdt_base_1 %>%
+modes_of_tpurps_base_mdt %>%
   filter(tpurp %in% c("Socialized with friends","Socialized with relatives"),
          geog != "Other") %>%
   group_by(tpurp) %>%
@@ -552,7 +566,7 @@ mdt_base_1 %>%
             wt = sum(wtperfin)) 
 
 # Median distance and proportion by geography
-mdt_base_1 %>%
+modes_of_tpurps_base_mdt %>%
   filter(tpurp %in% c("Socialized with friends","Socialized with relatives"),
          geog != "Other") %>%
   group_by(tpurp,geog) %>%
@@ -564,14 +578,35 @@ mdt_base_1 %>%
   mutate(total = sum(wt),
          share = wt/total)
 
+
+################################################################################
+# Mode share for similar distances
+################################################################################
+pct_calculator(modes_of_tpurps_base_mdt %>% 
+                 # Keep only travelers assigned to Chicago, Suburban Cook, or
+                 # Rest of region
+                 filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties"),
+                        tpurp %in% c("Socialized with friends","Socialized with relatives")) %>% 
+                 # Recode car vs non-car
+                 mutate(by_car = case_when(
+                   mode_c %in% c("driver","passenger") ~ "By car",
+                   TRUE ~ "Not by car")) %>% 
+                 # Optional filter to compare like trips with like
+                 filter(distance_pg < 1.5 & distance_pg > 0.5),
+               breakdown_by = "by_car",
+               second_breakdown = "tpurp",
+               weight = "wtperfin",
+               survey = "mdt")
+
+
 ################################################################################
 # Understanding number of fellow travelers for community trips
 ################################################################################
 
 # Travel party size
-mdt_base_1 %>% 
+modes_of_tpurps_base_mdt %>% 
   filter(tpurp %in% c("Socialized with friends","Socialized with relatives")) %>% 
-  group_by(sampno,locno,tpurp,arrtime_pg,start_times_pg) %>% 
+  group_by(sampno,locno_pg,tpurp,arrtime_pg,start_times_pg) %>% 
   summarize(n = n(),
             wt = sum(wtperfin)) %>% 
   group_by(tpurp) %>% 
@@ -580,11 +615,11 @@ mdt_base_1 %>%
   summarize(breakdown = sum(wt)) %>% 
   mutate(pct = breakdown / total)
 
-# Travel party age
-mdt_base_1 %>% 
+# Travel party size and age
+modes_of_tpurps_base_mdt %>% 
   filter(tpurp %in% c("Socialized with friends","Socialized with relatives"),
          age > 0) %>% 
-  group_by(sampno,locno,tpurp,arrtime_pg,start_times_pg) %>% 
+  group_by(sampno,locno_pg,tpurp,arrtime_pg,start_times_pg) %>% 
   summarize(n = n(),
             wt = sum(wtperfin),
             age = mean(age)) %>% 
@@ -603,12 +638,25 @@ group_by(tpurp) %>%
 ### Calculate proportions for all trip purposes in MDT
 
 detailed_allpurps_mode_c_mdt <-
-  pct_calculator(mdt_base_1 %>% filter(geog != "Other"),
+  pct_calculator(modes_of_tpurps_base_mdt %>% filter(geog != "Other"),
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
                  third_breakdown = "geog",
                  weight = "wtperfin",
                  survey = "mdt")
+
+# Identify trip purposes by car share
+pct_calculator(modes_of_tpurps_base_mdt,
+                 breakdown_by = "mode_c",
+                 second_breakdown = "tpurp",
+                 weight = "wtperfin") %>% 
+  mutate(by_car = case_when(
+    mode_c %in% c("driver","passenger") ~ "By car",
+    TRUE ~ "Not by car")) %>% 
+  group_by(by_car,tpurp) %>% 
+  summarize(pct = sum(pct)) %>% 
+  filter(by_car == "Not by car") %>% 
+  arrange(-pct)
 
 ################################################################################
 # Table of all trips by mode
@@ -644,7 +692,7 @@ modes_of_tpurps_t1 <-
 # ### Calculate proportions for subcategories for shopping/errands in MDT
 # 
 # detailed_errands_mode_c_mdt <-
-#   pct_calculator(mdt_base_1,
+#   pct_calculator(modes_of_tpurps_base_mdt,
 #                  subset = "shopping/errands",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -717,7 +765,7 @@ modes_of_tpurps_t1 <-
 # ### Calculate proportions for subcategories for recreation/fitness in MDT
 # 
 # detailed_recreation_mode_c_mdt <-
-#   pct_calculator(mdt_base_1 %>% filter(geog != "Other"),
+#   pct_calculator(modes_of_tpurps_base_mdt %>% filter(geog != "Other"),
 #                  subset = "recreation/fitness",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -853,7 +901,7 @@ modes_of_tpurps_t1 <-
 # 
 # ### Calculate proportions for TT
 # all_health_mode_c_tt <-
-#   pct_calculator(tt_base_1,
+#   pct_calculator(modes_of_tpurps_base_tt,
 #                  subset = "health",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -862,7 +910,7 @@ modes_of_tpurps_t1 <-
 # 
 # ### Calculate proportions for MDT
 # all_health_mode_c_mdt <-
-#   pct_calculator(mdt_base_1,
+#   pct_calculator(modes_of_tpurps_base_mdt,
 #                  subset = "health",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -915,7 +963,7 @@ modes_of_tpurps_t1 <-
 # 
 # ### Calculate proportions for TT
 # all_community_mode_c_tt <-
-#   pct_calculator(tt_base_1,
+#   pct_calculator(modes_of_tpurps_base_tt,
 #                  subset = "community",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -924,7 +972,7 @@ modes_of_tpurps_t1 <-
 # 
 # ### Calculate proportions for MDT
 # all_community_mode_c_mdt <-
-#   pct_calculator(mdt_base_1,
+#   pct_calculator(modes_of_tpurps_base_mdt,
 #                  subset = "community",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -940,7 +988,7 @@ modes_of_tpurps_t1 <-
 # ### Calculate proportions for subcategories for community in TT
 # 
 # detailed_community_mode_c_tt <-
-#   pct_calculator(tt_base_1,
+#   pct_calculator(modes_of_tpurps_base_tt,
 #                  subset = "community",
 #                  subset_of = "tpurp_c",
 #                  breakdown_by = "mode_c",
@@ -1000,7 +1048,7 @@ modes_of_tpurps_t1 <-
 # 
 # ### Filter data
 # all_tnc_school_mdt <-
-#   mdt_base_1 %>%                         # 96,821 records
+#   modes_of_tpurps_base_mdt %>%                         # 96,821 records
 #   filter(age <= 18,                      # 15,495 records
 #          schol %in% c(3,4),              # 13,879 records
 #          mode %in% c("rideshare",
