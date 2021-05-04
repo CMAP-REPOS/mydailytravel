@@ -24,7 +24,7 @@ source("R/data_cleaning.R")
 
 # Create base dataset for mode analyses
 
-mdt_base_2 <-
+tpurps_of_modes_base_mdt <-
   mdt %>%                             # 125463 records
   # Keep only records for travelers >= 5 or who we can identify as being >= 5
   # based on age buckets (those from age 5 and above), school enrollment
@@ -38,10 +38,17 @@ mdt_base_2 <-
                          70051607)) %>%
   # Exclude beginning trips
   filter(mode_c != "beginning") %>%  # 97374 records
-  # Exclude trips with no travel distance
+  # Exclude trips with no travel distance. Note this is a different difference
+  # calculation than that used in TT (great circle vs. actual travel distance).
+  # We chose to do this since the published graphics do not involve any
+  # comparison between TT and MDT. However, if we instead filter out those trips
+  # that have a nonzero haversine distance from MDT, the results are similar.
   filter(distance_pg > 0) %>%        # 97316 records
   # Exclude trips with no trip purpose
   filter(tpurp_c != "missing") %>%   # 97245 records
+  # Exclude trips from residents outside the seven counties (999 is residents
+  # with two or more homes, all of which are in the 7 counties)
+  filter(home_county %in% c(cmap_seven_counties,999)) %>% 
   # Add flag for under 18 vs. 18 and over (combining all age variables)
   mutate(under18 = ifelse(age >= 18 | 
                             (age < 0 & aage %in% c(5,6,7)) |
@@ -49,7 +56,7 @@ mdt_base_2 <-
                           "18 and over", "Under 18")) %>%
   ungroup()
 
-tt_base_2 <-
+tpurps_of_modes_base_tt <-
   tt %>%                             # 139769 records
   # Keep only records for travelers >= 5 or who we can identify as being >= 5
   # based on age buckets (greater than 16) or school enrollment (from 9th grade
@@ -95,7 +102,7 @@ tt_base_2 <-
 
 ### Calculate proportions for subcategories for biking in MDT
 detailed_bike_tpurp_c_mdt <-
-  pct_calculator(mdt_base_2,subset = "bike",
+  pct_calculator(tpurps_of_modes_base_mdt,subset = "bike",
                  subset_of = "mode_c",
                  breakdown_by = "chain",
                  # # Alternative - breakdown by trip purpose (reveals connection
@@ -164,7 +171,7 @@ finalize_plot(tpurps_of_modes_p1,
 
 ### Calculate proportions for TT
 all_tnc_tpurp_c_tt <-
-  pct_calculator(tt_base_2,
+  pct_calculator(tpurps_of_modes_base_tt,
                  subset = "taxi",
                  subset_of = "mode",
                  breakdown_by = "tpurp_c",
@@ -173,7 +180,7 @@ all_tnc_tpurp_c_tt <-
 
 ### Calculate proportions for MDT
 all_tnc_tpurp_c_mdt <-
-  pct_calculator(mdt_base_2,
+  pct_calculator(tpurps_of_modes_base_mdt,
                  subset = c("rideshare","shared rideshare","taxi"),
                  subset_of = "mode",
                  breakdown_by = "tpurp_c",
@@ -193,7 +200,7 @@ total_tnc_tpurp_c <-
 ### Calculate proportions for subcategories for rideshare in MDT (using the
 ### "second_breakdown" argument of pct_calculator)
 detailed_tnc_tpurp_c_mdt <-
-  pct_calculator(mdt_base_2 %>%
+  pct_calculator(tpurps_of_modes_base_mdt %>%
                    # Collapse low-percentage modes into "all other" for chart
                    mutate(tpurp_c =
                             fct_collapse(tpurp_c,
@@ -323,7 +330,7 @@ finalize_plot(tpurps_of_modes_p2,
 ################################################################################
 
 pct_calculator(
-  mdt_base_2 %>% 
+  tpurps_of_modes_base_mdt %>% 
     mutate(chicago_tnc = case_when(
       county_chi_name == "Chicago" | county_chi_name_lag == "Chicago" ~ 1,
       TRUE ~ 0)),
@@ -400,7 +407,7 @@ pct_calculator(
 #               Source: My Daily Travel data.")
 # 
 # detailed_tnc_chain_mdt <-
-#   pct_calculator(mdt_base_2 %>% 
+#   pct_calculator(tpurps_of_modes_base_mdt %>% 
 #                    mutate(chain_c = fct_collapse(chain,
 #                                                  "Work" = c("Work trip",
 #                                                             "Return home (work)"),
@@ -421,7 +428,7 @@ pct_calculator(
 # 
 # ### Calculate proportions for subcategories for driver/passenger in MDT and TT
 # car_totals_mdt <-
-#   pct_calculator(mdt_base_2,
+#   pct_calculator(tpurps_of_modes_base_mdt,
 #                  subset = c("driver","passenger"),
 #                  subset_of = "mode_c",
 #                  breakdown_by = "mode_c",
@@ -429,7 +436,7 @@ pct_calculator(
 #                  survey = "mdt")
 # 
 # car_totals_tt <-
-#   pct_calculator(tt_base_2,
+#   pct_calculator(tpurps_of_modes_base_tt,
 #                  subset = c("driver","passenger"),
 #                  subset_of = "mode_c",
 #                  breakdown_by = "mode_c",
@@ -497,7 +504,7 @@ pct_calculator(
 # 
 # ### Calculate proportions for TT
 # all_bike_tpurp_c_tt <-
-#   pct_calculator(tt_base_2,subset = "bike",
+#   pct_calculator(tpurps_of_modes_base_tt,subset = "bike",
 #                  subset_of = "mode_c",
 #                  breakdown_by = "tpurp_c",
 #                  weight = "weight",
@@ -505,7 +512,7 @@ pct_calculator(
 #
 # ### Calculate proportions for MDT
 # all_bike_tpurp_c_mdt <-
-#   pct_calculator(mdt_base_2,subset = "bike",
+#   pct_calculator(tpurps_of_modes_base_mdt,subset = "bike",
 #                  subset_of = "mode_c",
 #                  breakdown_by = "tpurp_c",
 #                  weight = "wtperfin",
@@ -556,12 +563,12 @@ pct_calculator(
 #
 # ### Calculate total number of trips
 # all_purp_mdt <-
-#   mdt_base_2 %>%
+#   tpurps_of_modes_base_mdt %>%
 #   group_by(tpurp_c) %>%
 #   summarize(tpurp_c_total = sum(wtperfin))
 #
 # all_purp_tt <-
-#   tt_base_2 %>%
+#   tpurps_of_modes_base_tt %>%
 #   group_by(tpurp_c) %>%
 #   summarize(tpurp_c_total = sum(weight))
 #
