@@ -1,5 +1,6 @@
 # This script allows for the creation of "trips in motion" analyses of the MDT
-# trip diary survey data. 
+# trip diary survey data. Note that unlike many of the files in this repo, this
+# script does *not* exclude residents of DeKalb and Grundy counties.
 
 #################################################
 #                                               #
@@ -163,16 +164,18 @@ trips_in_motion_p1 <-
   # Add CMAP style
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
+             legend.max.columns = 7,
              xlab = "Weekday trips in motion by time of day")
 
 finalize_plot(trips_in_motion_p1,
-              "The morning and evening peaks in travel demand are very 
+              "The morning and evening peaks in travel demand were very 
               pronounced, although the COVID-19 pandemic's impact on these 
               travel patterns remains uncertain.",
               paste0("Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include all weekday trips by residents of the region that
-              start and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
-              Grundy, Kane, Kendall, Lake, McHenry, and Will.
+              analyzed include all weekday trips by residents of the Illinois 
+              counties of Cook, DeKalb, DuPage, Grundy, Kane, Kendall, Lake, 
+              McHenry, and Will that start or end within that region. Excludes 
+              trips longer than 100 miles or greater than 15 hours long.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(tim_mdt_wip),big.mark = ","),
@@ -187,6 +190,45 @@ finalize_plot(trips_in_motion_p1,
               # height = 4.5,
               # width = 8
               )
+
+# Backup - trips in motion by mode, faceted (for prose)
+
+# Graph output of trips in motion by mode
+trip_times_mode_c_mdt %>%
+  # Remove missing modes
+  filter(identifier != "missing") %>%
+  # Capitalize
+  mutate(identifier = recode_factor(identifier,
+                                    "driver" = "Driver",
+                                    "passenger" = "Passenger",
+                                    "walk" = "Walk",
+                                    "transit" = "Transit",
+                                    "bike" = "Bike",
+                                    "schoolbus" = "School bus",
+                                    "other" = "Other")) %>% 
+  
+  # Create ggplot object
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = identifier)) +
+  
+  # Adjust axes
+  scale_x_datetime(labels = scales::date_format("%H:%M",
+                                                tz = "America/Chicago"),
+                   breaks = breaks) +
+  scale_y_continuous(label = scales::comma,breaks = waiver()) +
+  
+  # Manually add colors
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
+                               "#efa7a7","#3d6600","#0084ac")) +
+  
+  # Add faceting 
+  facet_wrap(~identifier,ncol = 2,scales = "free_y") +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"),
+             legend.max.columns = 7,
+             xlab = "Weekday trips in motion by time of day")
 
 ################################################################################
 # Trips in motion by trip chains and mode
@@ -252,13 +294,13 @@ trips_in_motion_p2_samplesize <-
   count(chain_c)
 
 finalize_plot(trips_in_motion_p2,
-              "Travelers rely on substantially different modes for trips to and 
+              "Travelers relied on substantially different modes for trips to and 
               from work vs. other trip purposes.",
               paste0("Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include all trips by residents of the region that start 
-              and/or end in the Illinois counties of Cook, DeKalb, DuPage, 
-              Grundy, Kane, Kendall, Lake, McHenry, and Will. Trips greater than 
-              100 miles or lasting longer than 15 hours are excluded.
+              analyzed include all weekday trips by residents of the Illinois 
+              counties of Cook, DeKalb, DuPage, Grundy, Kane, Kendall, Lake, 
+              McHenry, and Will that start or end within that region. Excludes 
+              trips longer than 100 miles or greater than 15 hours long.
               <br><br>
               Sample size: 
               <br>- Work (",

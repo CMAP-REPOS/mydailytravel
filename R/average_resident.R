@@ -51,13 +51,16 @@ avgtravel_mdt <-
   # ### MDT ONLY
   # # Eliminate 0 distance trips (network - use for MDT-specific analyses)
   # filter(distance_pg > 0) %>%   # 97273 records
-  
+
   ### MDT VS TT
   # Eliminate 0 distance trips (haversine - only use for comparisons with TT)
   filter(hdist_pg > 0) %>%   # 96343 records
   # Filter out trips that were not within the TT travel region (only for
   # comparisons with TT - see explanation in TT data prep below)
   filter(out_tt_trip == 0) %>% # 94531 records
+  # Filter out trips made by residents of DeKalb County, which was excluded from
+  # TT
+  filter(home_county_chi != "DeKalb") %>% # 94433 records
   
   
   # Add calculation for weighted distance and time
@@ -244,6 +247,23 @@ travel_overall <-
   # Add variables for combining with other calculations
   mutate(type = "Overall",
          subtype = "Overall")
+
+
+## Export details
+### Trips
+travel_overall %>% select(survey,total_trips)
+### Miles
+travel_overall %>% select(survey,total_distance)
+### Time (in hours)
+travel_overall %>% select(survey,total_time) %>% mutate(total_time = total_time / 60)
+### Distance per traveler
+travel_overall %>% select(survey,distance_per_capita)
+### Trips per traveler
+travel_overall %>% select(survey,trips_per_capita)
+### Time per trip
+travel_overall %>% select(survey,avg_trip_time)
+
+
 
 # Calculate summary statistics by gender (reusing overall code)
 travel_sex <-
@@ -600,7 +620,7 @@ finalize_plot(average_resident_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "average_resident_p1",
-              mode = "png",
+              # mode = "png",
               height = 7.75,
               overwrite = T)
   
