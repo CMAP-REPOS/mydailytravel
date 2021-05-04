@@ -40,10 +40,7 @@ mode_share_base_mdt <-
   # that have a nonzero haversine distance from MDT, the results are similar.
   filter(distance_pg > 0) %>%         # 97307
   # Exclude trips with a "missing" mode
-  filter(mode_c != "missing") %>%     # 97270
-  # Exclude trips from residents outside the seven counties (999 is residents
-  # with two or more homes, all of which are in the 7 counties)
-  filter(home_county %in% c(cmap_seven_counties,999)) # 95350
+  filter(mode_c != "missing")         # 97270
   # # ARCHIVE - Put school bus back into "other" category
   # mutate(mode_c = as.character(mode_c)) %>%
   # mutate(mode_c = case_when(
@@ -104,8 +101,10 @@ mdt_mode_all %>% select(mode_c,pct)
 mdt_mode_counties <-
   pct_calculator(
     mode_share_base_mdt %>% 
-      # Remove homes in multiple counties
-      filter(home_county_chi != "Homes in multiple counties"),
+      # For percentage calculations (for display) only calculate the seven
+      # counties. This excludes DeKalb, Grundy, and the household that has a
+      # home in both Chicago and Suburban Cook.
+      filter(home_county %in% cmap_seven_counties),
     breakdown_by = "mode_c",
     second_breakdown = "home_county_chi",
     weight = "wtperfin") %>% 
@@ -312,12 +311,12 @@ finalize_plot(mode_share_p1,
               title = "Residents of Chicago and Cook County had by far the highest non-car 
               mode share in the CMAP region.",
               caption = 
-              paste0("Note: Includes trips by residents of the CMAP seven county 
-              region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will) that 
-              started and/or ended in those counties, as well as Grundy and DeKalb. 
-              Excludes trips by travelers younger than 5. Households with homes 
-              in multiple CMAP region counties are not shown but are included in 
-              regional averages.
+              paste0("Note: Includes trips by residents aged 5 and older of the 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will) as well as Grundy and DeKalb. Includes only 
+              trips that were within, to, and/or from one of those counties.
+              Residents of Grundy and DeKalb counties are not shown but are 
+              included in regional averages.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(mode_share_base_mdt),big.mark = ","),
@@ -417,11 +416,11 @@ finalize_plot(mode_share_p2,
               title = "Travelers relied most on non-car modes for the shortest and 
               the longest trips.",
               caption = 
-                paste0("Note: Includes trips by residents of the CMAP seven county 
-              region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will) that 
-              started and/or ended in those counties, as well as Grundy and DeKalb. 
-              Excludes trips by 
-              travelers younger than 5. Distances are 'network distances' and 
+              paste0("Note: Includes trips by residents aged 5 and older of the 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will) as well as Grundy and DeKalb. Includes only 
+              trips that were within, to, and/or from one of those counties.
+              Distances are 'network distances' and 
               capture the total distance traveled along the route, not just the 
               distance from origin to destination.
               <br><br>
@@ -462,156 +461,22 @@ detailed_transit_mileage <-
 # driven by increased work chain trips
 
 ################################################################################
-# Chart of mode share by income
-################################################################################
-
-# Create labels
-mode_share_p3_labels <-
-  mdt_mode_income %>%
-  filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
-  group_by(hhinc) %>%
-  summarize(label = sum(pct))
-
-# Create plot
-mode_share_p3 <-
-  # Get data
-  mdt_mode_income %>%
-  # Add labels
-  left_join(mode_share_p3_labels, by = "hhinc") %>%
-  # Make changes for graphing
-  mutate(
-    # Reorder factors and capitalize
-    mode_c = recode_factor(factor(mode_c,levels = 
-                                    c("driver","passenger","walk",
-                                      "transit","bike","schoolbus",
-                                      "other")),
-                           "passenger" = "Passenger",
-                           "driver" = "Driver",
-                           "walk" = "Walk",
-                           "transit" = "Transit",
-                           "bike" = "Bike",
-                           "schoolbus" = "School bus",
-                           "other" = "Other"),
-    # Make driver/passenger go on the left-hand-side of the graph
-    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
-    # Add flag for CMAP region for pattern in display
-    type = ifelse(hhinc == "CMAP region","1","0")) %>%
-  
-  # Create ggplot object
-  ggplot(aes(x = pct, y = hhinc)) +
-  # Use "geom_col_pattern" to add texture to a subset of columns
-  ggpattern::geom_col_pattern(aes(fill = mode_c,pattern = type),
-                              pattern_color = "white",
-                              pattern_fill = "white",
-                              pattern_angle = 30,
-                              pattern_density = 0.25,
-                              pattern_spacing = 0.0125,
-                              pattern_key_scale_factor = 0.6,
-                              position = position_stack(reverse = T),
-                              width = 0.8) +  
-  # Re-assign patterns manually
-  scale_pattern_manual(values = c("1" = "stripe",
-                                  "0" = "none"),
-                       guide = "none") +
-  
-  # Add labels
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(label),
-                 x = label, y = hhinc),
-             label.size = 0,
-             hjust = 0,
-             fill = "white") +
-
-  # Add CMAP style
-  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,xlab = "Mode share by household income") +
-  # Add colors
-  scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
-                    labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
-  
-  # Adjust axis
-  scale_x_continuous(breaks = seq(-1,.5,by = .25), 
-                     labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
-                     limits = c(-1,.68))+
-  
-  # Adjust legend for formatting
-  guides(fill = guide_legend(ncol = 7,
-                             override.aes = list(fill = c("#8c0000","#e5bd72","#36d8ca",
-                                                          "#6d8692","#efa7a7","#3d6600",
-                                                          "#0084ac"),
-                                                 pattern = "none")))
-# Export finalized graphic
-finalize_plot(mode_share_p3,
-              title = "Households with less than $30,000 in income were the most
-              reliant  on non-car modes, but the highest-income households also
-              exceeded the regional average.",
-              caption = 
-                paste0("Note: Includes trips by residents of the CMAP seven county 
-              region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will) that 
-              started and/or ended in those counties, as well as Grundy and DeKalb. 
-              Excludes trips by 
-              travelers younger than 5.
-              <br><br>
-              Sample size: Figures are based on a total of ",
-                       format(nrow(mode_share_base_mdt),big.mark = ","),
-                       " recorded trips. 
-              Travelers with household incomes from $25,000 to $25,999 have the 
-              lowest sample size, with ",
-                       format(mdt_mode_income %>% 
-                                filter(hhinc == "$25,000 to $29,999") %>% 
-                                select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
-                       " records.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel data."),
-              # height = 4.5,
-              # width = 8,
-              filename = "mode_share_p3",
-              mode = "png",
-              overwrite = T)
-
-################################################################################
-# Backup - detailed mode by income
-################################################################################
-
-# Analyze percents by household income
-mdt_mode_income_detailed <-
-  pct_calculator(
-    # Keep all respondents with a reported household income
-    mode_share_base_mdt %>% filter(hhinc > 0),
-    # Execute the rest of the function
-    breakdown_by = "mode",
-    second_breakdown = "hhinc",
-    weight = "wtperfin") %>% 
-  mutate(hhinc_c = recode_factor(factor(hhinc),
-                               "10" = "$150,000 or more",
-                               "9" = "$100,000 to $149,999",
-                               "8" = "$75,000 to $99,999",
-                               "7" = "$60,000 to $74,999",
-                               "6" = "$50,000 to $59,999",
-                               "5" = "$35,000 to $49,999",
-                               "4" = "$30,000 to $34,999",
-                               "3" = "$25,000 to $29,999",
-                               "2" = "$15,000 to $24,999",
-                               "1" = "Less than $15,000")) %>%
-  mutate(pct = round(pct,2)) %>% 
-  arrange(mode,hhinc)
-
-################################################################################
 # Chart of mode share by race
 ################################################################################
 
 # Create labels
-mode_share_p4_labels <-
+mode_share_p3_labels <-
   mdt_mode_race %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(race_eth) %>%
   summarize(label = sum(pct))
 
 # Create plot
-mode_share_p4 <-
+mode_share_p3 <-
   # Get data
   mdt_mode_race %>%
   # Add labels
-  left_join(mode_share_p4_labels, by = "race_eth") %>%
+  left_join(mode_share_p3_labels, by = "race_eth") %>%
   # Make changes for graphing
   mutate(
     # Reorder factors and capitalize
@@ -673,24 +538,23 @@ mode_share_p4 <-
                                                           "#0084ac"),
                                                  pattern = "none")))
 # Export finalized graphic
-finalize_plot(mode_share_p4,
+finalize_plot(mode_share_p3,
               title = "White residents of the region were the likeliest to rely 
               on personal automobiles for their transportation.",
               caption = 
-              paste0("Note: 'Hispanic' includes respondents who identified as 
+              paste0("Note: Includes trips by residents aged 5 and older of the 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will) as well as Grundy and DeKalb. Includes only 
+              trips that were within, to, and/or from one of those counties.
+              'Hispanic' includes respondents who identified as 
               Hispanic of any racial category. Other categories are non-Hispanic. 
-              Includes trips by residents of the CMAP seven county 
-              region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will) that 
-              started and/or ended in those counties, as well as Grundy and DeKalb. 
-              Excludes trips by 
-              travelers younger than 5.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(mode_share_base_mdt),big.mark = ","),
                      " recorded trips. 
               'Other' travelers have the lowest sample size, with ",
                      format(mdt_mode_race %>% 
-                              filter(race_eth == "other") %>% 
+                              filter(race_eth == "Other") %>% 
                               select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
                      " records.
               <br><br>
@@ -698,9 +562,142 @@ finalize_plot(mode_share_p4,
               Daily Travel data."),
               # height = 5.5,
               # width = 11.3,
+              filename = "mode_share_p3",
+              mode = "png",
+              overwrite = T)
+
+################################################################################
+# Chart of mode share by income
+################################################################################
+
+# Create labels
+mode_share_p4_labels <-
+  mdt_mode_income %>%
+  filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
+  group_by(hhinc) %>%
+  summarize(label = sum(pct))
+
+# Create plot
+mode_share_p4 <-
+  # Get data
+  mdt_mode_income %>%
+  # Add labels
+  left_join(mode_share_p4_labels, by = "hhinc") %>%
+  # Make changes for graphing
+  mutate(
+    # Reorder factors and capitalize
+    mode_c = recode_factor(factor(mode_c,levels = 
+                                    c("driver","passenger","walk",
+                                      "transit","bike","schoolbus",
+                                      "other")),
+                           "passenger" = "Passenger",
+                           "driver" = "Driver",
+                           "walk" = "Walk",
+                           "transit" = "Transit",
+                           "bike" = "Bike",
+                           "schoolbus" = "School bus",
+                           "other" = "Other"),
+    # Make driver/passenger go on the left-hand-side of the graph
+    pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
+    # Add flag for CMAP region for pattern in display
+    type = ifelse(hhinc == "CMAP region","1","0")) %>%
+  
+  # Create ggplot object
+  ggplot(aes(x = pct, y = hhinc)) +
+  # Use "geom_col_pattern" to add texture to a subset of columns
+  ggpattern::geom_col_pattern(aes(fill = mode_c,pattern = type),
+                              pattern_color = "white",
+                              pattern_fill = "white",
+                              pattern_angle = 30,
+                              pattern_density = 0.25,
+                              pattern_spacing = 0.0125,
+                              pattern_key_scale_factor = 0.6,
+                              position = position_stack(reverse = T),
+                              width = 0.8) +  
+  # Re-assign patterns manually
+  scale_pattern_manual(values = c("1" = "stripe",
+                                  "0" = "none"),
+                       guide = "none") +
+  
+  # Add labels
+  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(label),
+                 x = label, y = hhinc),
+             label.size = 0,
+             hjust = 0,
+             fill = "white") +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,xlab = "Mode share by household income") +
+  # Add colors
+  scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
+                    labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
+  
+  # Adjust axis
+  scale_x_continuous(breaks = seq(-1,.5,by = .25), 
+                     labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
+                     limits = c(-1,.68))+
+  
+  # Adjust legend for formatting
+  guides(fill = guide_legend(ncol = 7,
+                             override.aes = list(fill = c("#8c0000","#e5bd72","#36d8ca",
+                                                          "#6d8692","#efa7a7","#3d6600",
+                                                          "#0084ac"),
+                                                 pattern = "none")))
+# Export finalized graphic
+finalize_plot(mode_share_p4,
+              title = "Households with less than $30,000 in income were the most
+              reliant  on non-car modes, but the highest-income households also
+              exceeded the regional average.",
+              caption = 
+              paste0("Note: Includes trips by residents aged 5 and older of the 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will) as well as Grundy and DeKalb. Includes only 
+              trips that were within, to, and/or from one of those counties.
+              <br><br>
+              Sample size: Figures are based on a total of ",
+                  format(nrow(mode_share_base_mdt),big.mark = ","),
+                  " recorded trips. 
+              Travelers with household incomes from $25,000 to $25,999 have the 
+              lowest sample size, with ",
+                  format(mdt_mode_income %>% 
+                           filter(hhinc == "$25,000 to $29,999") %>% 
+                           select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
+                  " records.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel data."),
+              # height = 4.5,
+              # width = 8,
               filename = "mode_share_p4",
               mode = "png",
               overwrite = T)
+
+################################################################################
+# Backup - detailed mode by income
+################################################################################
+
+# Analyze percents by household income
+mdt_mode_income_detailed <-
+  pct_calculator(
+    # Keep all respondents with a reported household income
+    mode_share_base_mdt %>% filter(hhinc > 0),
+    # Execute the rest of the function
+    breakdown_by = "mode",
+    second_breakdown = "hhinc",
+    weight = "wtperfin") %>% 
+  mutate(hhinc_c = recode_factor(factor(hhinc),
+                                 "10" = "$150,000 or more",
+                                 "9" = "$100,000 to $149,999",
+                                 "8" = "$75,000 to $99,999",
+                                 "7" = "$60,000 to $74,999",
+                                 "6" = "$50,000 to $59,999",
+                                 "5" = "$35,000 to $49,999",
+                                 "4" = "$30,000 to $34,999",
+                                 "3" = "$25,000 to $29,999",
+                                 "2" = "$15,000 to $24,999",
+                                 "1" = "Less than $15,000")) %>%
+  mutate(pct = round(pct,2)) %>% 
+  arrange(mode,hhinc)
 
 ################################################################################
 # Chart of mode share by age
@@ -784,10 +781,10 @@ finalize_plot(mode_share_p5,
               title = "The region's younger travelers disproportionately relied on 
               non-car modes.",
               caption = 
-                paste0("Note: Includes trips by residents of the CMAP seven county 
-              region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will) that 
-              started and/or ended in those counties, as well as Grundy and DeKalb. 
-              Excludes trips by travelers younger than 5.
+              paste0("Note: Includes trips by residents aged 5 and older of the 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will) as well as Grundy and DeKalb. Includes only 
+              trips that were within, to, and/or from one of those counties.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(mode_share_base_mdt),big.mark = ","),

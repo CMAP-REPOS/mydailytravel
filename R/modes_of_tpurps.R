@@ -43,9 +43,6 @@ modes_of_tpurps_base_mdt <-
   filter(distance_pg > 0) %>%        # 84969
   # Exclude trips with no mode
   filter(mode_c != "missing") %>%    # 84932
-  # Exclude trips from residents outside the seven counties (999 is residents
-  # with two or more homes, all of which are in the 7 counties)
-  filter(home_county %in% c(cmap_seven_counties,999)) %>% 
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
   mutate(mode_c = case_when(
@@ -94,7 +91,7 @@ modes_of_tpurps_base_mdt <-
 detailed_health_mode_c_mdt <-
   pct_calculator(modes_of_tpurps_base_mdt %>% 
                    # Keep only travelers assigned to Chicago, Suburban Cook, or
-                   # Rest of region
+                   # Other suburban counties (for display purposes)
                    filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties")) %>% 
                    # Recode purposes
                    mutate(tpurp = recode_factor(
@@ -160,10 +157,11 @@ finalize_plot(modes_of_tpurps_p1,
               important role for personal health care visits, especially for 
               Chicago residents.",
               caption = 
-              paste0("Note: Includes trips by residents of the CMAP seven county 
-              region (Cook, DuPage, Kane, Kendall, McHenry, Lake, and Will). 
-              Excludes travelers younger than 5 years old. 'By car' 
-              includes trips as either a driver of a passenger of a personal 
+              paste0(
+              "Note: Includes trips made by residents aged 5 or older of the 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will), as well as Grundy and DeKalb.
+              'By car' includes trips as either a driver of a passenger of a personal 
               vehicle (not including services like taxis or TNCs). 'Other modes' 
               includes all other modes, but is predominantly composed of 
               paratransit, private shuttles, and personal bicycles. Unlabeled 
@@ -193,7 +191,7 @@ finalize_plot(modes_of_tpurps_p1,
               Daily Travel data. "),
               # width = 8,
               # height = 4.5,
-              # sidebar_width = 2.25,
+              # sidebar_width = 2.6,
               filename = "modes_of_tpurps_p1",
               mode = "png",
               overwrite = TRUE)
@@ -264,6 +262,7 @@ finalize_plot(modes_of_tpurps_p1a,
               filename = "modes_of_tpurps_p1a",
               # mode = "png",
               overwrite = TRUE)
+
 
 ################################################################################
 # Backup - health mode share by household vehicle ownership
@@ -383,10 +382,11 @@ finalize_plot(modes_of_tpurps_p2,
               "Walking and transit were more important modes for eating in person 
               than for picking up take-out.",
               caption = 
-              paste0("Note: Includes trips by residents of the CMAP seven county 
-              region (Cook, DuPage, Kane, Kendall, McHenry, Lake, and Will). 
-              Excludes travelers younger than 5 years old. 'By car' 
-              includes trips as either a driver of a passenger
+              paste0(
+                "Note: Includes trips made by residents aged 5 or older of the 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will), as well as Grundy and DeKalb.
+              'By car' includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               'Other modes' includes transit, biking, and all other modes.
               Unlabeled bars have less than 5 percent mode share.
@@ -427,6 +427,7 @@ finalize_plot(modes_of_tpurps_p2,
               Daily Travel data."),
               # width = 11.3,
               # height = 6.3,
+              # sidebar_width = 2.6,
               filename = "modes_of_tpurps_p2",
               mode = "png",
               overwrite = T)
@@ -507,10 +508,11 @@ modes_of_tpurps_p3 <-
 finalize_plot(modes_of_tpurps_p3,
               "Walking and other non-car modes were significantly more common for 
               trips to socialize with friends than with relatives.",
-              paste0("Note: Includes trips by residents of the CMAP seven county 
-              region (Cook, DuPage, Kane, Kendall, McHenry, Lake, and Will). 
-              Excludes travelers younger than 5 years old. 'By car' 
-              includes trips as either a driver of a passenger
+              paste0(
+              "Note: Includes trips made by residents aged 5 or older of the 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will), as well as Grundy and DeKalb.              
+              'By car' includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               <br><br>
               Sample size (Chicago/Suburban Cook/Other suburban counties): 
@@ -548,6 +550,7 @@ finalize_plot(modes_of_tpurps_p3,
               Daily Travel data."),
               # width = 6.5,
               # height = 4,
+              # sidebar_width = 2.6,
               overwrite = T,
               mode = "png",
               filename = "modes_of_tpurps_p3")
@@ -557,7 +560,7 @@ finalize_plot(modes_of_tpurps_p3,
 ################################################################################
 
 # Median distance overall
-modes_of_tpurps_base_mdt %>%
+  modes_of_tpurps_base_mdt %>%
   filter(tpurp %in% c("Socialized with friends","Socialized with relatives"),
          geog != "Other") %>%
   group_by(tpurp) %>%

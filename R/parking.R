@@ -87,8 +87,6 @@ household_vehicles_tt <-
 total_vehs_mdt <-
   mdt_all_respondents %>% 
   select(sampno,home_county,wthhfin,hhveh) %>%
-  # Exclude residents outside of the seven county region
-  filter(home_county %in% c(cmap_seven_counties,999)) %>% 
   distinct() %>% 
   summarize(total_vehs = sum(hhveh * wthhfin)) %>% 
   as.numeric()
@@ -117,8 +115,6 @@ household_parking_mdt <-
   replace_na(list(parkd = 0)) %>% 
   # Remove entries without parking information
   filter(parkd > -1) %>% # 21484
-  # Remove records from travelers outside the seven county region
-  filter(home_county %in% c(cmap_seven_counties)) %>% 
   # Group to keep identifiers, weighting, and geography
   group_by(sampno,wtperfin,geog,household_race_eth) %>%
   # Keep the lowest value for parking - i.e., if a household parks any car on
@@ -169,7 +165,7 @@ household_parking <-
 # Export total non-vehicle ownership
 pct_calculator(
   household_parking %>% 
-    filter(geog != "Other",
+    filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties"),
            parkd != "Other",
            survey == "mdt"),
   breakdown_by = "parkd",
@@ -179,7 +175,7 @@ pct_calculator(
 parking_behavior <-
   pct_calculator(
   household_parking %>% 
-    filter(geog != "Other",
+    filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties"),
            parkd != "Other",
            survey == "mdt"),
   breakdown_by = "parkd",
@@ -213,7 +209,7 @@ parking_p1 <-
   
   # Add CMAP theme
   theme_cmap(gridlines = "v",
-             xlab = "Households by vehicle ownership and parking behavior") +
+             xlab = "Household vehicle ownership and parking by home jurisdiction") +
   cmap_fill_discrete(palette = "friday") +
   
   # Adjust axis
@@ -233,9 +229,9 @@ finalize_plot(parking_p1,
               paste0("Note: 'Park car(s) on-street' includes all households that 
               park at least one car on-street, even if other car(s) are parked 
               off-street. Includes households from the CMAP seven county region 
-              (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will). Excludes 
-              households with homes in multiple counties. Unlabeled bars have 
-              values of less than five percent.
+              (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will), as well as 
+              Grundy and DeKalb. Unlabeled bars have values of less than five 
+              percent.
               <br><br>
               Sample size: 
               <br>- Chicago (",
