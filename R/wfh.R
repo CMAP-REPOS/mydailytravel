@@ -368,7 +368,7 @@ wfh_p1 <-
   geom_vline(data = tc_summaries_vlines,
              mapping = aes(xintercept = value, 
                            color = paste0("Dashed lines represent regional share (",
-                           round(100*value[1],1),"%)")),
+                           round(100*value[1]),"%)")),
              linetype = "dashed",
              size = .33
   ) +

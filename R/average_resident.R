@@ -742,7 +742,7 @@ average_resident_p2 <-
   geom_vline(data = travel_summaries_vlines %>% 
                filter(survey == "mdt") %>%
                filter(name == "Percent traveling") %>% 
-               mutate(color = paste0("Regional average (",round(100*value[1],1),"%)")),
+               mutate(color = paste0("Regional average (",round(100*value[1]),"%)")),
              mapping = aes(xintercept = value,
                            color = color),
              linetype = "dashed",
@@ -750,7 +750,7 @@ average_resident_p2 <-
   ) +
   
   # Add labels
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(value),
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(value),
                  group = name),
              position = position_dodge2(width = .9,reverse = T),
              fill = "white",
