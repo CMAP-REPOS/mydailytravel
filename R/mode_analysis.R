@@ -265,15 +265,14 @@ pct_calculator(
   mode_analysis_base_mdt %>% 
     filter(mode %in% c("rideshare","shared rideshare")) %>% 
     mutate(chicago_tnc = case_when(
-      # Trips that are totally outside Chicago
-      county_chi_name != "Chicago" & county_chi_name_lag != "Chicago" ~ 0,
+      # Trips that are totally outside Chicago (note there are some trips that
+      # left the region that are captured as NAs)
+      (county_chi_name != "Chicago" | is.na(county_chi_name)) & 
+        (county_chi_name_lag != "Chicago" | is.na(county_chi_name_lag)) ~ 0,
       # Trips that start or end (but not both) in Chicago
       xor(county_chi_name == "Chicago",county_chi_name_lag == "Chicago") ~ 1,
       # Trips that are entirely within Chicago
-      county_chi_name == "Chicago" & county_chi_name_lag == "Chicago" ~ 2,
-      # Any remaining trips have NAs in at least one and were not captured by the
-      # xor for Chicago, so they are outside Chicago
-      TRUE ~ 0)),
+      county_chi_name == "Chicago" & county_chi_name_lag == "Chicago" ~ 2)),
   subset = c("rideshare","shared rideshare"),
   subset_of = "mode",
   breakdown_by = "chicago_tnc",
