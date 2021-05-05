@@ -241,7 +241,7 @@ finalize_plot(racial_disparities_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "racial_disparities_p1",
-              mode = "png",
+              mode = c("png","pdf"),
               sidebar_width = 2.5,
               # # height = 6.3,
               # width = 11.3,

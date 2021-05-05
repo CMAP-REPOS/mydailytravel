@@ -701,11 +701,17 @@ finalize_plot(average_resident_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "average_resident_p1",
-              mode = "png",
+              mode = c("png","pdf"),
               height = 8,
               overwrite = T)
   
 
+# Identify sample sizes ("Other" race/eth has the lowest)
+
+distinct_daily_travelers_mdt %>% count(age_bin)
+distinct_daily_travelers_mdt %>% count(income_c)
+distinct_daily_travelers_mdt %>% count(race_eth)
+distinct_daily_travelers_mdt %>% count(sex)
 
 ################################################################################
 # Plot of percent traveling for MDT
@@ -803,7 +809,7 @@ finalize_plot(average_resident_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "average_resident_p2",
-              mode = "png",
+              mode = c("png","pdf"),
               height = 6,
               overwrite = T)
 
@@ -926,11 +932,11 @@ finalize_plot(average_resident_p3,
               Daily Travel and Travel Tracker data."),
               filename = "average_resident_p3",
               sidebar_width = 0,
-              mode = "png",
+              mode = c("png","pdf"),
               height = 6.5,
               overwrite = T)
 
-# Identify sample sizes
+# Identify sample sizes - 70 and above from MDT has the lowest
 distinct_daily_travelers %>% count(survey,age_bin)
 distinct_daily_travelers %>% count(survey,income_c)
 distinct_daily_travelers %>% count(survey,sex)
@@ -994,7 +1000,7 @@ distinct_daily_travelers %>% count(survey,sex)
 #               Source: Chicago Metropolitan Agency for Planning analysis of My 
 #               Daily Travel and Travel Tracker data.",
 #               filename = "average_resident_p4",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               # height = 6.5,
 #               overwrite = T)
 # 

@@ -252,7 +252,7 @@ finalize_plot(mode_analysis_p1,
               Daily Travel and Travel Tracker data."),
               filename = "mode_analysis_p1",
               sidebar_width = 3.25,
-              mode = "png",
+              mode = c("png","pdf"),
               # height = 6.3,
               # width = 11.3,
               overwrite = T)
@@ -353,7 +353,7 @@ finalize_plot(mode_analysis_p2,
               # width = 11.3,
               # height = 6.3,
               filename = "mode_analysis_p2",
-              # mode = "png",
+              # mode = c("png","pdf"),
               overwrite = T)
 
 ################################################################################
@@ -500,7 +500,7 @@ finalize_plot(mode_analysis_p2,
 #               filename = "mode_analysis_p4",
 #               # height = 6.3,
 #               # width = 11.3,
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               overwrite = T
 # )
 
@@ -566,7 +566,7 @@ finalize_plot(mode_analysis_p2,
 #               filename = "mode_analysis_p4",
 #               height = 6.3,
 #               width = 11.3,
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               overwrite = T)
 #
 #
@@ -631,7 +631,7 @@ finalize_plot(mode_analysis_p2,
 #               filename = "mode_analysis_p5",
 #               height = 6.3,
 #               width = 11.3,
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               overwrite = T)
 #
 #

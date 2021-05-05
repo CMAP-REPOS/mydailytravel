@@ -192,7 +192,7 @@ finalize_plot(tpurp_analysis_p1,
               # height = 4.5,
               # sidebar_width = 2.6,
               filename = "tpurp_analysis_p1",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = TRUE)
 
 
@@ -259,7 +259,7 @@ finalize_plot(tpurp_analysis_p1a,
               # width = 11.3,
               # height = 6.3,
               filename = "tpurp_analysis_p1a",
-              # mode = "png",
+              # mode = c("png","pdf"),
               overwrite = TRUE)
 
 
@@ -428,7 +428,7 @@ finalize_plot(tpurp_analysis_p2,
               # height = 6.3,
               # sidebar_width = 2.6,
               filename = "tpurp_analysis_p2",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T)
 
 
@@ -552,7 +552,7 @@ finalize_plot(tpurp_analysis_p3,
               # height = 4,
               # sidebar_width = 2.6,
               overwrite = T,
-              mode = "png",
+              mode = c("png","pdf"),
               filename = "tpurp_analysis_p3")
 
 ################################################################################
@@ -757,7 +757,7 @@ tpurp_analysis_t1 <-
 #               # width = 6.5,
 #               # height = 4,
 #               overwrite = T,
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               filename = "tpurp_analysis_p4")
 # 
 # ################################################################################
@@ -833,7 +833,7 @@ tpurp_analysis_t1 <-
 #               # width = 6.5,
 #               # height = 4,
 #               overwrite = T,
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               filename = "tpurp_analysis_p5")
 # 
 # 
@@ -894,7 +894,7 @@ tpurp_analysis_t1 <-
 #               width = 11.3,
 #               height = 6.3,
 #               filename = "tpurp_analysis_p1a",
-#               mode = "png")
+#               mode = c("png","pdf"))
 # 
 # ################################################################################
 # # Archive - TT vs. MDT comparison of healthcare sub-purposes by mode
@@ -954,7 +954,7 @@ tpurp_analysis_t1 <-
 #               width = 11.3,
 #               height = 6.3,
 #               filename = "tpurp_analysis_p2a",
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               overwrite = TRUE)
 # 
 # ################################################################################
@@ -1043,7 +1043,7 @@ tpurp_analysis_t1 <-
 #               height = 6.3,
 #               overwrite = T,
 #               filename = "tpurp_analysis_p3a",
-#               mode = "png")
+#               mode = c("png","pdf"))
 # 
 # ################################################################################
 # # Examination of TNC school trips - not enough records for rigorous analysis

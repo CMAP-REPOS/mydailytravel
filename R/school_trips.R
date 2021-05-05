@@ -249,7 +249,7 @@ finalize_plot(school_trips_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "school_trips_p1",
-              mode = "png",
+              mode = c("png","pdf"),
               sidebar_width = 2.5,
               # height = 4.5,
               # width = 8,
@@ -316,7 +316,7 @@ school_trips_output <-
   filter(include == 1 | include_lead == 1)
 
 write.csv(school_trips_output ,
-          "schooltrips.csv")
+          "outputs/schooltrips.csv")
 
 # Backup - specific trips for Black elementary school children (for prose)
 
@@ -469,7 +469,7 @@ all_school_mdt_lm %>%
 #               Source: Chicago Metropolitan Agency for Planning analysis of My
 #               Daily Travel and Travel Tracker survey data.",
 #               filename = "school_trips_p2",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               # width = 11.3,
 #               # height = 6.3,
 #               overwrite = T)
@@ -577,7 +577,7 @@ all_school_mdt_lm %>%
 #               # width = 11.3,
 #               sidebar_width = 2.5,
 #               filename = "school_trips_p3",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               overwrite = T)
 # 
 # ################################################################################
@@ -688,7 +688,7 @@ all_school_mdt_lm %>%
 #               # width = 11.3,
 #               sidebar_width = 2.5,
 #               filename = "school_trips_p5",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               overwrite = T)
 # 
 ################################################################################
@@ -798,7 +798,7 @@ all_school_mdt_lm %>%
 #               <br><br>
 #               Source: CMAP analysis of MDT and TT data.",
 #               filename = "school_trips_p1",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               overwrite = T,
 #               height = 4,
 #               width = 6)
@@ -852,7 +852,7 @@ all_school_mdt_lm %>%
 #               <br><br>
 #               Source: CMAP analysis of MDT and TT data.",
 #               filename = "school_trips_p1a",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               overwrite = T,
 #               height = 4,
 #               width = 6)
@@ -914,7 +914,7 @@ all_school_mdt_lm %>%
 #               height = 6.3,
 #               width = 5.65,
 #               filename = "school_trips_map1",
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               overwrite = T
 # )
 # 
@@ -964,7 +964,7 @@ all_school_mdt_lm %>%
 #               height = 6.3,
 #               width = 11.3,
 #               filename = "school_trips_map2",
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               overwrite = T
 # )
 # 
@@ -1018,7 +1018,7 @@ all_school_mdt_lm %>%
 #               legend_shift = FALSE,
 #               height = 9,
 #               filename = "school_trips_map3",
-#               # mode = "png"
+#               # mode = c("png","pdf")
 # )
 # 
 # ### Counties
@@ -1066,7 +1066,7 @@ all_school_mdt_lm %>%
 #               caption = "Source: CMAP analysis of TT data.",
 #               legend_shift = FALSE,
 #               filename = "school_trips_map4",
-#               # mode = "png"
+#               # mode = c("png","pdf")
 # )
 # 
 # 
@@ -1135,7 +1135,7 @@ all_school_mdt_lm %>%
 #               width = 11.3,
 #               title_width = 1.5,
 #               height = 6.3,
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               filename = "school_trips_p5",
 #               overwrite = T)
 
@@ -1196,7 +1196,7 @@ all_school_mdt_lm %>%
 #               <br><br>
 #               Source: CMAP analysis of MDT and TT data.",
 #               filename = "school_trips_p1a",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               width = 11.3,
 #               height = 6.3,
 #               overwrite = T)

@@ -213,7 +213,7 @@ finalize_plot(divvy_p1,
               filename = "divvy_p1",
               # sidebar_width = 0,
               # caption_align = 1,
-              # mode = "png",
+              # mode = c("png","pdf"),
               # height = 2.25,
               # width = 8,
               # overrides = list(margin_plot_l = 30),
@@ -254,7 +254,7 @@ finalize_plot(bike_p1,
               holidays and the weeks of November 19, December 24, December 31, 
               and April 15)."),
               filename = "bike_p1",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T)
 
 ################################################################################

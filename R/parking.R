@@ -253,7 +253,7 @@ finalize_plot(parking_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "parking_p1",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T)
 
 # ################################################################################

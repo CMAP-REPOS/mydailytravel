@@ -307,7 +307,7 @@ finalize_plot(tnc_p1,
               Source: Chicago Metropolitan Agency for Planning 
               Analysis of My Daily Travel data."),
               filename = "tnc_p1",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T)
 
 
@@ -412,7 +412,7 @@ finalize_plot(tnc_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "tnc_p2",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T)
 
 ################################################################################
@@ -530,7 +530,7 @@ finalize_plot(tnc_p3,
               # width = 8,
               # height = 4.5,
               # sidebar_width = 2.3,
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T)
 
 ################################################################################
@@ -627,7 +627,7 @@ tnc_wide %>%
 #               caption = "Source: Chicago Metropolitan Agency for Planning 
 #               Analysis of My Daily Travel data.",
 #               filename = "tnc_p3",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               overwrite = T)
 # 
 # ################################################################################
@@ -699,7 +699,7 @@ tnc_wide %>%
 #               caption = "Source: Chicago Metropolitan Agency for Planning 
 #               Analysis of My Daily Travel data.",
 #               filename = "tnc_p3",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               overwrite = T)
 # 
 

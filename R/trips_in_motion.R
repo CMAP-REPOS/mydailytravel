@@ -185,7 +185,7 @@ finalize_plot(trips_in_motion_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries."),
               filename = "trips_in_motion_p1",
-              mode = "png",
+              mode = c("png","pdf"),
               # sidebar_width = 2.3,
               overwrite = TRUE,
               # height = 4.5,
@@ -319,7 +319,7 @@ finalize_plot(trips_in_motion_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries."),
               filename = "trips_in_motion_p2",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = TRUE)
 
 ################################################################################
@@ -384,7 +384,7 @@ finalize_plot(trips_in_motion_p3,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries.",
               filename = "trips_in_motion_p3",
-              # mode = "png",
+              # mode = c("png","pdf"),
               overwrite = TRUE,
               # height = 2.25,
               # width = 8
@@ -474,7 +474,7 @@ finalize_plot(trips_in_motion_p3,
 #               Source: Chicago Metropolitan Agency for Planning analysis of My
 #               Daily Travel trip diaries.",
 #               filename = "trips_in_motion_p15",
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               overwrite = TRUE,
 #               # height = 6.3,
 #               # width = 11.3
@@ -519,7 +519,7 @@ finalize_plot(trips_in_motion_p3,
 #               Source: Chicago Metropolitan Agency for Planning analysis of My
 #               Daily Travel trip diaries.",
 #               filename = "trips_in_motion_p2",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               overwrite = TRUE,
 #               # height = 6.3,
 #               # width = 11.3
@@ -593,7 +593,7 @@ finalize_plot(trips_in_motion_p3,
 #               Daily Travel trip diaries.",
 #               # height = 6.3,
 #               # width = 11.3,
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               filename = "trips_in_motion_p3",
 #               overwrite = T)
 # 
@@ -647,7 +647,7 @@ finalize_plot(trips_in_motion_p3,
 #               Source: Chicago Metropolitan Agency for Planning analysis of My
 #               Daily Travel trip diaries.",
 #               filename = "trips_in_motion_p9",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               overwrite = TRUE,
 #               # height = 6.3,
 #               # width = 11.3
@@ -714,7 +714,7 @@ finalize_plot(trips_in_motion_p3,
 #               Daily Travel trip diaries.",
 #               # height = 6.3,
 #               # width = 11.3,
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               filename = "trips_in_motion_p7",
 #               overwrite = T)
 # 
@@ -779,7 +779,7 @@ finalize_plot(trips_in_motion_p3,
 #               Daily Travel trip diaries.",
 #               # height = 6.3,
 #               # width = 11.3,
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               filename = "trips_in_motion_p81",
 #               overwrite = T)
 # 
@@ -853,7 +853,7 @@ finalize_plot(trips_in_motion_p3,
 #               Daily Travel trip diaries.",
 #               # height = 6.3,
 #               # width = 11.3,
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               filename = "trips_in_motion_p6",
 #               overwrite = T)
 # 
@@ -924,7 +924,7 @@ finalize_plot(trips_in_motion_p3,
 #               Daily Travel trip diaries.",
 #               # height = 6.3,
 #               # width = 11.3,
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               filename = "trips_in_motion_p4",
 #               overwrite = T)
 
@@ -959,7 +959,7 @@ finalize_plot(trips_in_motion_p3,
 #               <br><br>
 #               Source: CMAP analysis of My Daily Travel survey.",
 #               filename = "trips_in_motion_p7",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               overwrite = TRUE,
 #               height = 6.3,
 #               width = 11.3)
@@ -995,7 +995,7 @@ finalize_plot(trips_in_motion_p3,
 #               <br><br>
 #               Source: CMAP analysis of My Daily Travel survey.",
 #               filename = "trips_in_motion_p8",
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               overwrite = TRUE,
 #               height = 6.3,
 #               width = 11.3)
@@ -1031,7 +1031,7 @@ finalize_plot(trips_in_motion_p3,
 #               <br><br>
 #               Source: CMAP analysis of My Daily Travel survey.",
 #               filename = "trips_in_motion_p9",
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               overwrite = TRUE,
 #               height = 6.3,
 #               width = 11.3)
@@ -1093,7 +1093,7 @@ finalize_plot(trips_in_motion_p3,
 # finalize_plot(trips_in_motion_p9_unweighted,
 #               title_width = 0,
 #               filename = "trips_in_motion_p9_unweighted",
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               overwrite = TRUE,
 #               height = 6.3,
 #               width = 8.3)

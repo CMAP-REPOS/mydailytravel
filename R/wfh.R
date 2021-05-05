@@ -370,7 +370,7 @@ wfh_p1 <-
                            color = paste0("Dashed lines represent regional share (",
                            round(100*value[1],1),"%)")),
              linetype = "dashed",
-             size = .65
+             size = .33
   ) +
   
   # Add labels
@@ -453,7 +453,7 @@ finalize_plot(wfh_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "wfh_p1",
-              mode = "png",
+              mode = c("png","pdf"),
               sidebar_width = 2.6,
               # height = 6.5,
               overwrite = T)
@@ -627,7 +627,7 @@ finalize_plot(wfh_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "wfh_p2",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T,
               sidebar_width = 2.6,
               # height = 4.5,
@@ -764,7 +764,7 @@ finalize_plot(wfh_p3,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "wfh_p3",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T,
               sidebar_width = 2.7,
               # height = 4.5,
@@ -905,7 +905,7 @@ finalize_plot(wfh_p4,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "wfh_p4",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T,
               # height = 4.5,
               # width = 8,
@@ -956,37 +956,38 @@ wfh_trips_person_level_mdt %>%
   mutate(pct = n/total) %>%
   View()
 
-# Create table for exporting location and tc/wfh behavior
+# Create table for exporting location and tc behavior
 tc_homes <-
   wfh_trips_person_level_mdt %>%
-  select(combined_tc_wfh,home_lat,home_long,home_county,home_tract,income_c)
+  select(tc_frequency,home_lat,home_long,home_county,home_tract,income_c)
 
 # Export for analysis in a GIS software
-write.csv(tc_homes,"tc_homes.csv")
+write.csv(tc_homes,"outputs/tc_homes.csv")
 
+# Create set of person-level information about telecommuters
 tc_od <-
   wfh_trips_person_level_mdt %>%
-  filter(combined_tc_wfh == 1,
+  filter(tc_frequency > 0,
          home_county != 31,
          worktrip == 1)
 
 # Identify the work trip chains closest to the mean length for 1-3 day
-# tc/wfh-ers that live outside of Cook County
+# tc-ers that live outside of Cook County
 tc_od_average <-
   tc_od %>% 
   mutate(average = weighted.mean(distance_pg,wtperfin)) %>% 
   mutate(variance = distance_pg / average) %>% 
-  filter(variance > .99 & variance < 1.01) %>% 
+  filter(variance > .95 & variance < 1.05) %>% 
   mutate(id = paste(sampno,perno,sep = "_"))
 
 # Extract the work trips with lat/long for locations
 df <-
-  wfh_worktrips_relevant %>% 
+  wfh_mdt %>% 
   mutate(id = paste(sampno,perno,sep = "_")) %>% 
   filter(id %in% tc_od_average$id)
   
 # Export to csv for mapping
-write.csv(df,"average_suburban_tc13_trips.csv")
+write.csv(df,"outputs/average_suburban_tc13_trips.csv")
 
 ################################################################################
 #
@@ -1038,7 +1039,7 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #               sidebar_width = 0,
 #               legend_shift = FALSE,
 #               filename = "wfh_tracts_map1",
-#               # mode = "png",
+#               # mode = c("png","pdf"),
 #               overwrite = T
 # )
 # 
@@ -1140,7 +1141,7 @@ write.csv(df,"average_suburban_tc13_trips.csv")
 #               width = 11.3,
 #               height = 6.3,
 #               filename = "wfh_p1",
-#               mode = "png",
+#               mode = c("png","pdf"),
 #               overwrite = T)
 # 
 # ################################################################################

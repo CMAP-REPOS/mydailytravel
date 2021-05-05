@@ -332,7 +332,7 @@ finalize_plot(mode_share_p1,
               # height = 4.5,
               # width = 8,
               filename = "mode_share_p1",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T)
 
 ################################################################################
@@ -438,7 +438,7 @@ finalize_plot(mode_share_p2,
               # # height = 5.5,
               # width = 11.3,
               filename = "mode_share_p2",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T)
 
 ################################################################################
@@ -563,7 +563,7 @@ finalize_plot(mode_share_p3,
               # height = 5.5,
               # width = 11.3,
               filename = "mode_share_p3",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T)
 
 ################################################################################
@@ -669,7 +669,7 @@ finalize_plot(mode_share_p4,
               # height = 4.5,
               # width = 8,
               filename = "mode_share_p4",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T)
 
 ################################################################################
@@ -800,7 +800,7 @@ finalize_plot(mode_share_p5,
               # # height = 5.5,
               # width = 11.3,
               filename = "mode_share_p5",
-              mode = "png",
+              mode = c("png","pdf"),
               overwrite = T)
 
 
