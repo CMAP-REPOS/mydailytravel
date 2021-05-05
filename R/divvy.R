@@ -190,7 +190,7 @@ divvy_p1 <-
 
 # Export plot
 finalize_plot(divvy_p1,
-              title = "Divvy ridership is significantly higher in the afternoon, 
+              title = "Divvy ridership was significantly higher in the afternoon, 
               especially for non-subscribers.",
               caption = "Note: Trips in motion are 25-minute rolling averages.
               \"One-time user\" refers to Divvy customers that purchased a
@@ -215,20 +215,21 @@ finalize_plot(divvy_p1,
 
 # Combined plot of Divvy ridership and MDT bike ridership - this requires
 # running the code for the MDT bike ridership plot in 'trips_in_motion.R'
-bike_p1 <- ggpubr::ggarrange(trips_in_motion_p4,divvy_p1,
+bike_p1 <- ggpubr::ggarrange(trips_in_motion_p3,divvy_p1,
                      ncol = 2,nrow = 1)
 
 finalize_plot(bike_p1,
               sidebar_width = 0,
-              title = "Personal bike trips peak in the morning, while Divvy 
-              trips peak in the afternoon.",
-              paste0("Note: Trips in motion are 55-minute rolling averages for personal 
-              bikes and 25-minute rolling averages for Divvy.
+              title = "Personal bike trips peaked in the morning, while Divvy 
+              trips peaked in the afternoon.",
+              paste0("Note: Trips in motion are 55-minute rolling averages for
+              personal bikes and 25-minute rolling averages for Divvy.
               'One-time user' refers to Divvy customers that purchased a
-              single ride or a day pass. Personal bike trips anlyzed include all 
-              trips by residents of the region that start and/or end in the I
-              llinois counties of Cook, DeKalb, DuPage, Grundy, Kane, Kendall, 
-              Lake, McHenry, and Will. Trips that were in motion as of 2:55
+              single ride or a day pass. Personal bike trips anlyzed include
+              trips by residents of the CMAP seven county region (Cook, DuPage,
+              Kane, Kendall, Lake, McHenry, and Will), as well as Grundy and DeKalb. 
+              Includes only trips that were within, to, and/or from one of those 
+              counties. Divvy trips that were in motion as of 2:55
               A.M. and ended after 3:00 A.M. are captured on the right side
               of the graph, and are not included in the totals of trips in
               motion as of 3:00 A.M. on the left side of the graph.
@@ -244,8 +245,7 @@ finalize_plot(bike_p1,
               and April 15)."),
               filename = "bike_p1",
               mode = "png",
-              overwrite = T
-              )
+              overwrite = T)
 
 # Count of ridership by day
 divvy_wip %>% 
