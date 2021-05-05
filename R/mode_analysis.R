@@ -46,9 +46,6 @@ mode_analysis_base_mdt <-
   filter(distance_pg > 0) %>%        # 97316 records
   # Exclude trips with no trip purpose
   filter(tpurp_c != "missing") %>%   # 97245 records
-  # Exclude trips from residents outside the seven counties (999 is residents
-  # with two or more homes, all of which are in the 7 counties)
-  filter(home_county %in% c(cmap_seven_counties,999)) %>% 
   # Add flag for under 18 vs. 18 and over (combining all age variables)
   mutate(under18 = ifelse(age >= 18 | 
                             (age < 0 & aage %in% c(5,6,7)) |
@@ -85,77 +82,6 @@ mode_analysis_base_tt <-
 #                  Analysis                     #
 #                                               #
 #################################################
-
-################################################################################
-#
-# BIKE TRIPS
-################################################################################
-
-### Note: Bike trip totals are not easily comparable between MDT and TT. In TT,
-### trip diaries were conducted in a geographically phased approach, with the
-### north side of Chicago conducted entirely in the winter months. Since this
-### part of the region has the highest rates of bike ridership, this sequencing
-### likely skewed the overall amount of bike trips captured in the survey, as
-### well as potentially skewed the purposes of those trips (e.g., by decreasing
-### the share of recreational bike trips). In contrast, there was no such
-### geographic phasing in the data collection for MDT.
-
-### Calculate proportions for subcategories for biking in MDT
-detailed_bike_tpurp_c_mdt <-
-  pct_calculator(mode_analysis_base_mdt,subset = "bike",
-                 subset_of = "mode_c",
-                 breakdown_by = "chain",
-                 # # Alternative - breakdown by trip purpose (reveals connection
-                 # # to other modes)
-                 # breakdown_by = "tpurp_c",
-                 second_breakdown = "mode",
-                 weight = "wtperfin",
-                 survey = "mdt")
-
-################################################################################
-# Backup - Chart of trip purposes, bike share vs. personal bike
-################################################################################
-
-mode_analysis_p1 <-
-  # Get data
-  detailed_bike_tpurp_c_mdt %>%
-  mutate(chain = recode_factor(chain,
-                               "Work trip" = "Work",
-                               "Return home (work)" = "Work",
-                               "Shopping trip" = "Shopping",
-                               "Return home (shopping)" = "Shopping",
-                               "Other trip" = "Other")) %>% 
-  group_by(chain,mode) %>% 
-  summarize(pct = sum(pct)) %>% 
-
-  # Create ggplot object
-  ggplot(aes(y = reorder(chain,desc(-pct)), x = pct, fill = mode)) +
-  geom_col(position = position_dodge2(reverse = TRUE)) +
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
-                 group = mode),
-             fill = "white",
-             position = position_dodge2(reverse = T, width = 0.9),
-             hjust = 0,
-             label.size = 0,
-             label.padding = unit(1,"bigpts")) +
-  
-  # Adjust axis
-  scale_x_continuous(labels = scales::label_percent(), limits = c(0,.7)) +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "v",vline = 0) +
-  cmap_fill_discrete(palette = "friday")
-
-# Export finalized graphic
-finalize_plot(mode_analysis_p1,
-              "Trip purposes of bike trips in 2019, personal vs. bike share",
-              "Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel and Travel Tracker data.",
-              # width = 11.3,
-              # height = 6.3,
-              filename = "mode_analysis_p1",
-              # mode = "png",
-              overwrite = T)
 
 ################################################################################
 #
@@ -233,7 +159,7 @@ all_tnc_tpurp_c <-
 taxi_2008_total <- unique(all_tnc_tpurp_c_tt$total)
 
 # Create chart. 
-mode_analysis_p2 <-
+mode_analysis_p1 <-
   # Get data
   all_tnc_tpurp_c %>%
   # Exclude the 2008 taxi levels and the 2019 totals
@@ -282,7 +208,7 @@ mode_analysis_p2 <-
   # Manually include CMAP colors
   scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c"))
 
-mode_analysis_p2_samplesize <-
+mode_analysis_p1_samplesize <-
   all_tnc_tpurp_c %>% 
   select(mode,survey,n = total_n) %>% 
   ungroup() %>% 
@@ -290,13 +216,19 @@ mode_analysis_p2_samplesize <-
 
 
 # Export finalized graphic
-finalize_plot(mode_analysis_p2,
-              "While taxi ridership has fallen significantly since 2008, 
-              Transportation Network Company (TNC) trips have more than made up 
-              the difference.",
-              paste0("Note: 'TNC (regular)' includes trips reported as 
+finalize_plot(mode_analysis_p1,
+              "While taxi ridership fell significantly between 2008 and 2019, 
+              Transportation Network Company (TNC) more than made up the
+              difference.",
+              paste0("Note: Includes trips by residents of the CMAP seven 
+              county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 
+              Will), as well as Grundy and DeKalb. Includes only 
+              trips that were within, to, and/or from one of those counties.
+              'TNC (regular)' includes trips reported as 
               'rideshare', while 'TNC (shared)' includes trips reported as 
-              'shared rideshare.' The reported regional totals for both taxi and 
+              'shared rideshare.' 
+              <br><br> 
+              The reported regional totals for both taxi and 
               TNC trips in My Daily Travel are similar to but slightly less than 
               those captured in the City of Chicago's data on TNC and taxi trips, 
               which may be due to the exclusion of non-resident and weekend 
@@ -304,22 +236,22 @@ finalize_plot(mode_analysis_p2,
               <br><br>
               Sample size:
               <br>- Taxi, 2008 (",
-                     mode_analysis_p2_samplesize %>% filter(mode == "taxi" & survey == "tt") %>% select(n),
+                     mode_analysis_p1_samplesize %>% filter(mode == "taxi" & survey == "tt") %>% select(n),
                      ");
               <br>- Taxi, 2019 (",
-                     mode_analysis_p2_samplesize %>% filter(mode == "taxi" & survey == "mdt") %>% select(n),
+                     mode_analysis_p1_samplesize %>% filter(mode == "taxi" & survey == "mdt") %>% select(n),
                      ");
               <br>- Regular TNC (",
-                     mode_analysis_p2_samplesize %>% filter(mode == "rideshare") %>% select(n),
+                     mode_analysis_p1_samplesize %>% filter(mode == "rideshare") %>% select(n),
                      ");
               <br>- Shared TNC (",
-                     mode_analysis_p2_samplesize %>% filter(mode == "shared rideshare") %>% select(n),
+                     mode_analysis_p1_samplesize %>% filter(mode == "shared rideshare") %>% select(n),
                      ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel and Travel Tracker data."),
-              filename = "mode_analysis_p2",
-              sidebar_width = 2.5,
+              filename = "mode_analysis_p1",
+              sidebar_width = 3.25,
               mode = "png",
               # height = 6.3,
               # width = 11.3,
@@ -348,10 +280,82 @@ pct_calculator(
   # second_breakdown = "mode",
   weight = "wtperfin")
 
-# Suburb-to-suburb trips represent 12.5 percent of all TNC trips, with a higher
-# share of rideshare (13.8%) than shared rideshare (9.5%)
+# Suburb-to-suburb trips represent 12.9 percent of all TNC trips, with a higher
+# share of rideshare (14.3%) than shared rideshare (9.5%). Chicago to suburb
+# trips represent 9.4% of all trips.
 
 
+
+################################################################################
+#
+# BIKE TRIPS
+################################################################################
+
+### Note: Bike trip totals are not easily comparable between MDT and TT. In TT,
+### trip diaries were conducted in a geographically phased approach, with the
+### north side of Chicago conducted entirely in the winter months. Since this
+### part of the region has the highest rates of bike ridership, this sequencing
+### likely skewed the overall amount of bike trips captured in the survey, as
+### well as potentially skewed the purposes of those trips (e.g., by decreasing
+### the share of recreational bike trips). In contrast, there was no such
+### geographic phasing in the data collection for MDT.
+
+### Calculate proportions for subcategories for biking in MDT
+detailed_bike_tpurp_c_mdt <-
+  pct_calculator(mode_analysis_base_mdt,subset = "bike",
+                 subset_of = "mode_c",
+                 # breakdown_by = "chain",
+                 # # Alternative - breakdown by trip purpose (reveals connection
+                 # # to other modes)
+                 breakdown_by = "tpurp_c",
+                 second_breakdown = "mode",
+                 weight = "wtperfin",
+                 survey = "mdt")
+
+################################################################################
+# Backup - Chart of trip purposes, bike share vs. personal bike
+################################################################################
+
+mode_analysis_p2 <-
+  # Get data
+  detailed_bike_tpurp_c_mdt %>%
+  mutate(chain = recode_factor(chain,
+                               "Work trip" = "Work",
+                               "Return home (work)" = "Work",
+                               "Shopping trip" = "Shopping",
+                               "Return home (shopping)" = "Shopping",
+                               "Other trip" = "Other")) %>% 
+  group_by(chain,mode) %>% 
+  summarize(pct = sum(pct)) %>% 
+
+  # Create ggplot object
+  ggplot(aes(y = reorder(chain,desc(-pct)), x = pct, fill = mode)) +
+  geom_col(position = position_dodge2(reverse = TRUE)) +
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(pct),
+                 group = mode),
+             fill = "white",
+             position = position_dodge2(reverse = T, width = 0.9),
+             hjust = 0,
+             label.size = 0,
+             label.padding = unit(1,"bigpts")) +
+  
+  # Adjust axis
+  scale_x_continuous(labels = scales::label_percent(), limits = c(0,.7)) +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v",vline = 0) +
+  cmap_fill_discrete(palette = "friday")
+
+# Export finalized graphic
+finalize_plot(mode_analysis_p2,
+              "Trip purposes of bike trips in 2019, personal vs. bike share",
+              "Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel and Travel Tracker data.",
+              # width = 11.3,
+              # height = 6.3,
+              filename = "mode_analysis_p2",
+              # mode = "png",
+              overwrite = T)
 
 ################################################################################
 # ARCHIVE
