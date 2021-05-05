@@ -167,7 +167,7 @@ trip_times_divvy_counts <-
     criteria = "usertype")
 
 # Define breaks
-breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 06:00:00"),
+divvy_breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 06:00:00"),
                      to = as.POSIXct("2020-01-02 03:00:00"),
                      by = "6 hours")
 # Create chart
@@ -185,7 +185,7 @@ divvy_p1 <-
   
   # Reformat axes
   scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
-                    breaks = breaks) +
+                    breaks = divvy_breaks) +
   scale_y_continuous(limits = c(0,500),expand = expansion(mult = c(.05,.01))) +
 
   # Add CMAP style

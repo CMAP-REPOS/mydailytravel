@@ -303,10 +303,10 @@ pct_calculator(
 detailed_bike_tpurp_c_mdt <-
   pct_calculator(mode_analysis_base_mdt,subset = "bike",
                  subset_of = "mode_c",
-                 # breakdown_by = "chain",
-                 # # Alternative - breakdown by trip purpose (reveals connection
-                 # # to other modes)
-                 breakdown_by = "tpurp_c",
+                 breakdown_by = "chain",
+                 # # # Alternative - breakdown by trip purpose (reveals connection
+                 # # # to other modes)
+                 # breakdown_by = "tpurp_c",
                  second_breakdown = "mode",
                  weight = "wtperfin",
                  survey = "mdt")

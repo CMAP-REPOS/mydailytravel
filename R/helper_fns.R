@@ -1,6 +1,7 @@
 library(stringr)
 library(tidyverse)
 library(lubridate)
+library(slider)
 
 ################################################################################
 # Purpose: A wrapper for stringr::str_wrap that enables text wrapping of
