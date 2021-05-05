@@ -1,6 +1,5 @@
 # This script allows for the creation of "trips in motion" analyses of the MDT
-# trip diary survey data. Note that unlike many of the files in this repo, this
-# script does *not* exclude residents of DeKalb and Grundy counties.
+# trip diary survey data.
 
 #################################################
 #                                               #
@@ -362,7 +361,7 @@ trips_in_motion_p3 <-
   # Adjust axes
   scale_x_datetime(labels = scales::date_format("%H:%M",
                                                 tz = "America/Chicago"),
-                   breaks = breaks) +
+                   breaks = breaks_less) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
   
   # Add colors
