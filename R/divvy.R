@@ -121,6 +121,8 @@ divvy_wip <-
   # on a Saturday will be evaluated at 11:35pm the prior day, making it a
   # Friday.
   mutate(wday = wday(start_time - 3 * 60 * 60)) %>%
+  # Create a day field for total trips by day
+  mutate(day = floor_date(start_time - 3 * 60 * 60,"day")) %>% 
   # Keep out trips that are either Saturday (7) or Sunday (1)
   filter(!(wday %in% c(1,7))) %>% # 2771405 records
   # Keep only trips in the MDT interval
@@ -152,6 +154,9 @@ divvy_wip <-
   mutate(trip_interval = interval(trip_start,trip_end,tz = "America/Chicago")) %>%
   # Add weight of 1 divided by the number of weekdays for summing the average TIMs
   mutate(weight = 1/number_of_weekdays)
+
+# Average Divvy trips per day over the time period
+divvy_wip %>% count(day) %>% summarize(avg = mean(n))
 
 # Use function defined in helper_fns.R to create trips in motion graph
 trip_times_divvy_counts <-
