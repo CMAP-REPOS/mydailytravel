@@ -823,6 +823,19 @@ mdt_mode_age_detailed <-
   arrange(age_bin,-pct)
 
 
+################################################################################
+# Backup - bike and bike share mode share
+################################################################################
+
+pct_calculator(
+  mode_share_base_mdt,
+  breakdown_by = "mode",
+  # second_breakdown = "geog",
+  weight = "wtperfin") %>% 
+  mutate(pct = round(pct,4)) %>% 
+  filter(mode %in% c("bike share","personal bike")) 
+
+
 
 ################################################################################
 # 
