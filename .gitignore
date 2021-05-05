@@ -43,3 +43,5 @@ schooltrips.csv
 home.csv
 mobility_recovery_tnc.R
 vehicle.csv
+*.pdf
+outputs/tc_homes.csv
