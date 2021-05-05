@@ -50,12 +50,16 @@ age_labels <- c("5 to 9", "10 to 18", "19 to 29", "30 to 39", "40 to 49",
 # Create working dataset based on variables pulled above and person/hh
 # characteristics from other tables
 tnc <-
-  mdt_all_respondents %>%
+  mdt_all_respondents %>% # 30683
   # Keep only travelers older than 18 (they are the ones that answered TNC survey
-  # questions)
+  # questions), either through age or age buckets
   filter(age > 18 |
            (age < 0 & aage %in% c(5,6,7)) |
-           (age < 0 & age18 == 1)) %>% 
+           (age < 0 & age18 == 1)) %>% # 22957
+  # Select relevant variables
+  select(sampno,perno,wtperfin,home_county,home_county_chi,
+         race_eth,age,income_c,hhveh,pertrips,smrtphn,
+         tnc_use,tnc_cost,tnc_purp) %>% 
   # Add information on active travel from above
   left_join(active_travel, by = c("sampno","perno")) %>%
   # Add 0s for people with no trips (who otherwise are NAs)
@@ -155,253 +159,41 @@ tnc_use_lm <-
 
 summary(tnc_use_lm)
 
-## There appears to be a positive correlation with TNC usage and transit use
+## There appears to be a positive and relatively strong correlation with TNC
+## usage and transit use, as well as residence in Cook County and smartphone
+## ownership. However, the overall R squared is quite low (.05).
 
 
 ################################################################################
 # 
 # Statistics about usage, cost, and purpose by age, race/ethnicity, and home 
 ################################################################################
-# 
-# # Helper for month conversions (from weeks)
-# w_to_m <- 
-#   (365/7) / # Number of weeks in a year
-#   12 # Divided by the number of months in a year
-
-w_to_m <- 1
-
-overall_usage <-
-  tnc_wide %>%
-  filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>% 
-  summarize(tnc_use = w_to_m*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
-            n = n())
-
-overall_cost <-
-  tnc_wide %>%
-  filter(tnc_cost > 0) %>% 
-  summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
-            n = n())
-
-################################################################################
-# PLOT OF AGE CHARACTERISTICS | USAGE AND COST
-################################################################################
-
-## Look at usage by age - turned into a monthly figure
-age_usage <-
-  tnc_wide %>%
-  filter(!(tnc_use %in% c(-9,-8,-7,-1)),
-         !(is.na(age_bin))) %>%
-  group_by(age_bin) %>%
-  summarize(tnc_use = w_to_m*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
-            n = n())
-
-# Cost by age
-age_cost <- 
-  tnc_wide %>%
-  filter(tnc_cost > 0,
-         !(is.na(age_bin))) %>%
-  group_by(age_bin) %>%
-  summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
-            n = n())
-
-# Combine age data for cost and usage
-age_cost_and_usage <-
-  left_join(age_usage %>% select(-n),
-            age_cost %>% select(-n),
-            by = "age_bin") %>% 
-  rbind(
-    left_join(overall_cost %>% select(-n) %>% mutate(age_bin = "CMAP region"),
-              overall_usage %>% select(-n) %>%  mutate(age_bin = "CMAP region"),
-              by = "age_bin")) %>% 
-  pivot_longer(cols = c("tnc_use","tnc_cost")) %>% 
-  # Adjust factor ordering for CMAP region
-  mutate(age_bin = relevel(age_bin,"CMAP region"))
-
-# Generate output chart for age
-tnc_p1 <-
-  # Get data
-  age_cost_and_usage %>% 
-  # Reformat
-  mutate(name = recode(factor(name,levels = c("tnc_use","tnc_cost")),
-                       "tnc_cost" = "Average cost per trip",
-                       "tnc_use" = "Average weekly trips")) %>% 
-  mutate(blank = case_when(
-    name == "Average cost per trip" ~ 20.5,
-    TRUE ~ 1
-  )) %>% 
-  
-  # Create ggplot object
-  ggplot(aes(x = value, y = factor(age_bin,levels = rev(levels(age_bin))), fill = age_bin)) +
-  geom_col() +
-  geom_label(aes(label = ifelse(name == "Average weekly trips",
-                                scales::label_number(accuracy = 0.01)(value),
-                                scales::label_dollar(accuracy = 1)(value))),
-             hjust = 0,
-             label.size = 0,
-             fill = "white") +
-  geom_blank(aes(x = blank)) +
-  facet_wrap(~name, scales = "free_x") +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "v",hline = 0,legend.position = "none",
-             panel.spacing.x = unit(30,"bigpts"),
-             xlab = "TNC usage characteristics by age") +
-  cmap_fill_highlight(age_cost_and_usage$age_bin,"CMAP region")
-
-tnc_p1_samplesize <-
-  age_usage %>% select(age_bin,usage = n) %>% 
-  left_join(age_cost %>% select(age_bin,cost = n), by = "age_bin") %>% 
-  ungroup()
-
-finalize_plot(tnc_p1,
-              "Usage of Transportation Network Companies (TNCs) decreases by age, 
-              while the average cost per trip increases with age.",
-              paste0("Note: These figures are based on survey responses and are 
-              not derived from trip diaries. Excludes travelers 18 and younger, 
-              as they were not asked about TNC usage.
-              <br><br>
-              Sample size (Usage/Cost): 
-              <br>- 19-29 (",
-              paste(tnc_p1_samplesize %>% filter(age_bin == "19 to 29") %>% select(usage),
-                    tnc_p1_samplesize %>% filter(age_bin == "19 to 29") %>% select(cost),
-                    sep = "/"),
-                    "); 
-              <br>- 30-39 (",
-              paste(tnc_p1_samplesize %>% filter(age_bin == "30 to 39") %>% select(usage),
-                    tnc_p1_samplesize %>% filter(age_bin == "30 to 39") %>% select(cost),
-                    sep = "/"),
-                    "); 
-              <br>- 40-49 (",
-              paste(tnc_p1_samplesize %>% filter(age_bin == "40 to 49") %>% select(usage),
-                    tnc_p1_samplesize %>% filter(age_bin == "40 to 49") %>% select(cost),
-                    sep = "/"),
-                    "); 
-              <br>- 50-59 (",
-              paste(tnc_p1_samplesize %>% filter(age_bin == "50 to 59") %>% select(usage),
-                    tnc_p1_samplesize %>% filter(age_bin == "50 to 59") %>% select(cost),
-                    sep = "/"),
-                    "); 
-              <br>- 60+ (",
-              paste(tnc_p1_samplesize %>% filter(age_bin == "60 and above") %>% select(usage),
-                    tnc_p1_samplesize %>% filter(age_bin == "60 and above") %>% select(cost),
-                    sep = "/"),
-                    ").
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My 
-              Daily Travel data."),
-              filename = "tnc_p1",
-              # width = 8,
-              # height = 4.5,
-              # sidebar_width = 2.3,
-              mode = "png",
-              overwrite = T)
-
-################################################################################
-# PLOT OF HOME JURISDICTION USAGE
-################################################################################
-
-# Usage by home county
-home_usage <- 
-  tnc_wide %>%
-  filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
-  filter(home_county %in% cmap_seven_counties) %>%
-  group_by(home_county_chi) %>%
-  summarize(tnc_use = w_to_m*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
-            n = n()) %>% 
-  rbind(overall_usage %>% mutate(home_county_chi = "CMAP region"))
-
-# Generate output chart for age
-tnc_p2 <-
-  # Get data
-  home_usage %>% 
-  
-  # Create ggplot object
-  ggplot(aes(x = tnc_use, y = reorder(home_county_chi,tnc_use), fill = home_county_chi)) +
-  geom_col() +
-  geom_label(aes(label = scales::label_number(accuracy = 0.01)(tnc_use)),
-             hjust = 0,
-             label.size = 0,
-             fill = "white") +
-  
-  # Add CMAP style
-  theme_cmap(gridlines = "v",vline = 0,legend.position = "none",
-             xlab = "TNC usage per week by home jurisdiction") +
-  cmap_fill_highlight(home_usage$home_county_chi,"CMAP region") +
-
-  # Adjust axes
-  scale_x_continuous(limits = c(0,0.8))
-
-finalize_plot(tnc_p2,
-              "Usage of Transportation Network Companies (TNCs) is greatest in 
-              Chicago and Suburban Cook County.",
-              paste0("Note: Excludes travelers 18 and younger, as they were not asked about 
-              TNC usage.
-              <br><br>
-              Sample size:
-              <br>- Chicago (",
-                     home_usage %>% filter(home_county_chi == "Chicago") %>% select(n),
-                     ");
-              <br>- Suburban Cook (",
-                     home_usage %>% filter(home_county_chi == "Suburban Cook") %>% select(n),
-                     ");
-              <br>- DuPage (",
-                     home_usage %>% filter(home_county_chi == "DuPage") %>% select(n),
-                     ");
-              <br>- Lake (",
-                     home_usage %>% filter(home_county_chi == "Lake") %>% select(n),
-                     ");
-              <br>- Kane (",
-                     home_usage %>% filter(home_county_chi == "Kane") %>% select(n),
-                     ");
-              <br>- Will (",
-                     home_usage %>% filter(home_county_chi == "Will") %>% select(n),
-                     "); 
-              <br>- McHenry (",
-                     home_usage %>% filter(home_county_chi == "McHenry") %>% select(n),
-                     ");
-              <br>- Kendall (",
-                     home_usage %>% filter(home_county_chi == "Kendall") %>% select(n),
-                     ").
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My 
-              Daily Travel data."),
-              filename = "tnc_p2",
-              mode = "png",
-              overwrite = T)
-
-################################################################################
-# OTHER CHARACTERISTICS
-################################################################################
-
-# Usage by race and ethnicity
-tnc_wide %>%
-  filter(race_eth != "missing",
-         !(tnc_use %in% c(-9,-8,-7,-1))) %>%
-  group_by(race_eth) %>%
-  summarize(tnc_use = w_to_m*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
-            n = n())
-
-# Usage by home county - monthly
-tnc_wide %>%
-  filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
-  filter(home_county %in% cmap_seven_counties) %>%
-  group_by(home_county_chi) %>%
-  summarize(tnc_use = w_to_m*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
-            n = n()) %>%
-  arrange(-tnc_use)
-
-# Cost by home county
-tnc_wide %>%
-  filter(tnc_cost>0) %>%
-  filter(home_county %in% cmap_seven_counties) %>%
-  group_by(home_county) %>%
-  summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
-            n = n()) %>%
-  arrange(-tnc_cost)
 
 ################################################################################
 # PLOT OF RACE | PURPOSE
 ################################################################################
+
+# Age bins
+age_breaks_large <- c(-1, 9, 18, 39, 59, 150)
+age_labels_large <- c("5 to 9", "10 to 18", "19 to 39", "40 to 59",
+                      "60 and above")
+
+tnc_for_purposes <-
+  tnc %>% # 22957
+  mutate(age_bin = cut(age, breaks = age_breaks_large,
+                       labels = age_labels_large)) %>%
+  filter(tnc_purp > 0) %>% # 7175
+  mutate(tnc_purp = recode(factor(tnc_purp,levels = c(1,2,3,5,4)),
+                           "1" = "Commute (whole or part)",
+                           "2" = "Commute (whole or part)",
+                           "3" = "Daytime (work)",
+                           "4" = "Daytime (non-work)",
+                           "5" = "Late-night (non-work)"))
+
+tnc_purpose_overall <-
+  pct_calculator(tnc_for_purposes,
+                 breakdown_by = "tnc_purp",
+                 weight = "wtperfin")
 
 tnc_purpose_race <-
   pct_calculator(tnc_for_purposes %>% filter(race_eth != "missing"),
@@ -415,13 +207,13 @@ tnc_purpose_race <-
                            levels = c("black","asian","other","hispanic","white","CMAP region")))
 
 
-tnc_p4_labels <-
+tnc_p1_labels <-
   tnc_purpose_race %>% 
   filter(tnc_purp %in% c("Late-night (non-work)","Daytime (non-work)")) %>% 
   group_by(race_eth) %>% 
   summarize(label = sum(pct))
 
-tnc_p4 <-
+tnc_p1 <-
   # Get data
   tnc_purpose_race %>% 
   # Add flag for pattern
@@ -431,7 +223,7 @@ tnc_p4 <-
   mutate(pct = ifelse(!(tnc_purp %in% c("Late-night (non-work)","Daytime (non-work)")),
                       -1 * pct, pct)) %>% 
   # Add labels
-  left_join(tnc_p4_labels, by = "race_eth") %>% 
+  left_join(tnc_p1_labels, by = "race_eth") %>% 
   # Capitalize
   mutate(race_eth = recode_factor(race_eth,
                                   "other" = "Other",
@@ -479,70 +271,301 @@ tnc_p4 <-
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 3,override.aes = list(pattern = "none")))
 
-tnc_p4_samplesize <-
+tnc_p1_samplesize <-
   tnc_purpose_race %>% 
   ungroup() %>% 
   select(race_eth,n = total_n) %>% 
   distinct()
 
-finalize_plot(tnc_p4,
-              title = "White travelers are much more likely to report using 
+finalize_plot(tnc_p1,
+              title = "White travelers were much more likely to report using 
               Transportation Network Companies (TNCs) for non-work trips.",
               caption = 
-                paste0("Note: 'Hispanic' includes respondents who identified as 
+              paste0(
+              "Note: 'Hispanic' includes respondents who identified as 
               Hispanic of any racial category. Other categories are non-Hispanic. 
-              Excludes travelers 18 and younger, as they were not asked about 
+              Excludes travelers 18 and younger, who were not asked about 
               TNC usage.
               <br><br>
               Sample size:
               <br>- White (",
-                       tnc_p4_samplesize %>% filter(race_eth == "white") %>% select(n),
+                       tnc_p1_samplesize %>% filter(race_eth == "white") %>% select(n),
                        ");
               <br>- Asian (",
-                       tnc_p4_samplesize %>% filter(race_eth == "asian") %>% select(n),
+                       tnc_p1_samplesize %>% filter(race_eth == "asian") %>% select(n),
                        ");
               <br>- Black (",
-                       tnc_p4_samplesize %>% filter(race_eth == "black") %>% select(n),
+                       tnc_p1_samplesize %>% filter(race_eth == "black") %>% select(n),
                        ");
               <br>- Hispanic (",
-                       tnc_p4_samplesize %>% filter(race_eth == "hispanic") %>% select(n),
+                       tnc_p1_samplesize %>% filter(race_eth == "hispanic") %>% select(n),
                        ");
               <br>- Other (",
-                       tnc_p4_samplesize %>% filter(race_eth == "other") %>% select(n),
+                       tnc_p1_samplesize %>% filter(race_eth == "other") %>% select(n),
                        ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning 
               Analysis of My Daily Travel data."),
-              filename = "tnc_p4",
+              filename = "tnc_p1",
               mode = "png",
               overwrite = T)
+
+
+################################################################################
+# Usage and cost
+################################################################################
+
+
+# # Helper for month conversions (from weeks)
+# converter <- 
+#   (365/7) / # Number of weeks in a year
+#   12 # Divided by the number of months in a year
+
+# Placeholder for converter (if not going from weeks to something else)
+converter <- 1
+
+overall_usage <-
+  tnc_wide %>%
+  filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
+  summarize(tnc_use = converter*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+            n = n())
+
+overall_cost <-
+  tnc_wide %>%
+  filter(tnc_cost > 0) %>% 
+  summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
+            n = n())
+
+################################################################################
+# PLOT OF HOME JURISDICTION USAGE
+################################################################################
+
+# Usage by home county
+home_usage <- 
+  tnc_wide %>%
+  filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
+  # Limit to residents of the seven counties for presentation. Grundy and DeKalb
+  # are included in regional averages.
+  filter(home_county %in% cmap_seven_counties) %>%
+  group_by(home_county_chi) %>%
+  summarize(tnc_use = converter*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+            n = n()) %>% 
+  rbind(overall_usage %>% mutate(home_county_chi = "CMAP region"))
+
+# Generate output chart for age
+tnc_p2 <-
+  # Get data
+  home_usage %>% 
+  
+  # Create ggplot object
+  ggplot(aes(x = tnc_use, y = reorder(home_county_chi,tnc_use), fill = home_county_chi)) +
+  geom_col() +
+  geom_label(aes(label = scales::label_number(accuracy = 0.01)(tnc_use)),
+             hjust = 0,
+             label.size = 0,
+             fill = "white") +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v",vline = 0,legend.position = "none",
+             xlab = "TNC usage per week by home jurisdiction") +
+  cmap_fill_highlight(home_usage$home_county_chi,"CMAP region") +
+  
+  # Adjust axes
+  scale_x_continuous(limits = c(0,0.8))
+
+finalize_plot(tnc_p2,
+              "Usage of Transportation Network Companies (TNCs) was greatest by 
+              residents of Chicago and suburban Cook County.",
+              paste0("Note: These figures are based on survey responses and not 
+              trip diaries. The CMAP region average includes usage by residents 
+              of the seven county region (Cook, DuPage, 
+              Kane, Kendall, Lake, McHenry, and Will), as well as residents of 
+              Grundy and DeKalb. Excludes travelers 18 and younger, who were 
+              not asked about TNC usage. 
+              <br><br>
+              Sample size:
+              <br>- Chicago (",
+                     home_usage %>% filter(home_county_chi == "Chicago") %>% select(n),
+                     ");
+              <br>- Suburban Cook (",
+                     home_usage %>% filter(home_county_chi == "Suburban Cook") %>% select(n),
+                     ");
+              <br>- DuPage (",
+                     home_usage %>% filter(home_county_chi == "DuPage") %>% select(n),
+                     ");
+              <br>- Lake (",
+                     home_usage %>% filter(home_county_chi == "Lake") %>% select(n),
+                     ");
+              <br>- Kane (",
+                     home_usage %>% filter(home_county_chi == "Kane") %>% select(n),
+                     ");
+              <br>- Will (",
+                     home_usage %>% filter(home_county_chi == "Will") %>% select(n),
+                     "); 
+              <br>- McHenry (",
+                     home_usage %>% filter(home_county_chi == "McHenry") %>% select(n),
+                     ");
+              <br>- Kendall (",
+                     home_usage %>% filter(home_county_chi == "Kendall") %>% select(n),
+                     ").
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My 
+              Daily Travel data."),
+              filename = "tnc_p2",
+              mode = "png",
+              overwrite = T)
+
+################################################################################
+# PLOT OF AGE CHARACTERISTICS | USAGE AND COST
+################################################################################
+
+## Look at usage by age
+age_usage <-
+  tnc_wide %>%
+  filter(!(tnc_use %in% c(-9,-8,-7,-1)),
+         !(is.na(age_bin))) %>%
+  group_by(age_bin) %>%
+  summarize(tnc_use = converter*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+            n = n())
+
+# Cost by age
+age_cost <- 
+  tnc_wide %>%
+  filter(tnc_cost > 0,
+         !(is.na(age_bin))) %>%
+  group_by(age_bin) %>%
+  summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
+            n = n())
+
+# Combine age data for cost and usage
+age_cost_and_usage <-
+  left_join(age_usage %>% select(-n),
+            age_cost %>% select(-n),
+            by = "age_bin") %>% 
+  rbind(
+    left_join(overall_cost %>% select(-n) %>% mutate(age_bin = "CMAP region"),
+              overall_usage %>% select(-n) %>%  mutate(age_bin = "CMAP region"),
+              by = "age_bin")) %>% 
+  pivot_longer(cols = c("tnc_use","tnc_cost")) %>% 
+  # Adjust factor ordering for CMAP region
+  mutate(age_bin = relevel(age_bin,"CMAP region"))
+
+# Generate output chart for age
+tnc_p3 <-
+  # Get data
+  age_cost_and_usage %>% 
+  # Reformat
+  mutate(name = recode(factor(name,levels = c("tnc_use","tnc_cost")),
+                       "tnc_cost" = "Average cost per trip",
+                       "tnc_use" = "Average weekly trips")) %>% 
+  # Create values to allow for axis adjustments on the faceted graph
+  mutate(blank = case_when(
+    name == "Average cost per trip" ~ 20.5,
+    TRUE ~ 1
+  )) %>% 
+  
+  # Create ggplot object
+  ggplot(aes(x = value, y = factor(age_bin,levels = rev(levels(age_bin))), fill = age_bin)) +
+  geom_col() +
+  geom_label(aes(label = ifelse(name == "Average weekly trips",
+                                scales::label_number(accuracy = 0.01)(value),
+                                scales::label_dollar(accuracy = 1)(value))),
+             hjust = 0,
+             label.size = 0,
+             fill = "white") +
+  geom_blank(aes(x = blank)) +
+  
+  # Add faceting
+  facet_wrap(~name, scales = "free_x") +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "v",hline = 0,legend.position = "none",
+             panel.spacing.x = unit(30,"bigpts"),
+             xlab = "TNC usage characteristics by age",
+             strip.text = element_text(face = "bold",hjust = 0.5,vjust = 1)) +
+  cmap_fill_highlight(age_cost_and_usage$age_bin,"CMAP region")
+
+tnc_p3_samplesize <-
+  age_usage %>% select(age_bin,usage = n) %>% 
+  left_join(age_cost %>% select(age_bin,cost = n), by = "age_bin") %>% 
+  ungroup()
+
+finalize_plot(tnc_p3,
+              "Usage of Transportation Network Companies (TNCs) decreased by age, 
+              while the average cost per trip increased with age.",
+              paste0("Note: These figures are based on survey responses and are 
+              not derived from trip diaries. Excludes travelers 18 and younger, 
+              as they were not asked about TNC usage.
+              <br><br>
+              Sample size (Usage/Cost): 
+              <br>- 19-29 (",
+              paste(tnc_p3_samplesize %>% filter(age_bin == "19 to 29") %>% select(usage),
+                    tnc_p3_samplesize %>% filter(age_bin == "19 to 29") %>% select(cost),
+                    sep = "/"),
+                    "); 
+              <br>- 30-39 (",
+              paste(tnc_p3_samplesize %>% filter(age_bin == "30 to 39") %>% select(usage),
+                    tnc_p3_samplesize %>% filter(age_bin == "30 to 39") %>% select(cost),
+                    sep = "/"),
+                    "); 
+              <br>- 40-49 (",
+              paste(tnc_p3_samplesize %>% filter(age_bin == "40 to 49") %>% select(usage),
+                    tnc_p3_samplesize %>% filter(age_bin == "40 to 49") %>% select(cost),
+                    sep = "/"),
+                    "); 
+              <br>- 50-59 (",
+              paste(tnc_p3_samplesize %>% filter(age_bin == "50 to 59") %>% select(usage),
+                    tnc_p3_samplesize %>% filter(age_bin == "50 to 59") %>% select(cost),
+                    sep = "/"),
+                    "); 
+              <br>- 60+ (",
+              paste(tnc_p3_samplesize %>% filter(age_bin == "60 and above") %>% select(usage),
+                    tnc_p3_samplesize %>% filter(age_bin == "60 and above") %>% select(cost),
+                    sep = "/"),
+                    ").
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My 
+              Daily Travel data."),
+              filename = "tnc_p3",
+              # width = 8,
+              # height = 4.5,
+              # sidebar_width = 2.3,
+              mode = "png",
+              overwrite = T)
+
+################################################################################
+# OTHER CHARACTERISTICS
+################################################################################
+
+# Usage by race and ethnicity
+tnc_wide %>%
+  filter(race_eth != "missing",
+         !(tnc_use %in% c(-9,-8,-7,-1))) %>%
+  group_by(race_eth) %>%
+  summarize(tnc_use = converter*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+            n = n())
+
+# Usage by home county - monthly
+tnc_wide %>%
+  filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
+  filter(home_county %in% cmap_seven_counties) %>%
+  group_by(home_county_chi) %>%
+  summarize(tnc_use = converter*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+            n = n()) %>%
+  arrange(-tnc_use)
+
+# Cost by home county
+tnc_wide %>%
+  filter(tnc_cost>0) %>%
+  filter(home_county %in% cmap_seven_counties) %>%
+  group_by(home_county) %>%
+  summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
+            n = n()) %>%
+  arrange(-tnc_cost)
 
 # ################################################################################
 # # ARCHIVE - PLOT OF AGE | PURPOSE
 # ################################################################################
-# 
-# # Age bins
-# age_breaks_large <- c(-1, 9, 18, 39, 59, 150)
-# age_labels_large <- c("5 to 9", "10 to 18", "19 to 39", "40 to 59",
-#                       "60 and above")
-# 
-# tnc_for_purposes <-
-#   tnc %>% 
-#   mutate(age_bin = cut(age, breaks = age_breaks_large,
-#                        labels = age_labels_large)) %>% 
-#   filter(tnc_purp > 0) %>%
-#   mutate(tnc_purp = recode(factor(tnc_purp,levels = c(1,2,3,5,4)),
-#                            "1" = "Commute (whole or part)",
-#                            "2" = "Commute (whole or part)",
-#                            "3" = "Daytime (work)",
-#                            "4" = "Daytime (non-work)",
-#                            "5" = "Late-night (non-work)"))
-# 
-# tnc_purpose_overall <-
-#   pct_calculator(tnc_for_purposes,
-#                  breakdown_by = "tnc_purp",
-#                  weight = "wtperfin")
-# 
 # 
 # tnc_purpose_age <-
 #   pct_calculator(tnc_for_purposes %>% 
