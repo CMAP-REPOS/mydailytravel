@@ -331,8 +331,16 @@ finalize_plot(mode_analysis_p2,
 
 pct_calculator(
   mode_analysis_base_mdt %>% 
+    filter(mode %in% c("rideshare","shared rideshare")) %>% 
     mutate(chicago_tnc = case_when(
-      county_chi_name == "Chicago" | county_chi_name_lag == "Chicago" ~ 1,
+      # Trips that are totally outside Chicago
+      county_chi_name != "Chicago" & county_chi_name_lag != "Chicago" ~ 0,
+      # Trips that start or end (but not both) in Chicago
+      xor(county_chi_name == "Chicago",county_chi_name_lag == "Chicago") ~ 1,
+      # Trips that are entirely within Chicago
+      county_chi_name == "Chicago" & county_chi_name_lag == "Chicago" ~ 2,
+      # Any remaining trips have NAs in at least one and were not captured by the
+      # xor for Chicago, so they are outside Chicago
       TRUE ~ 0)),
   subset = c("rideshare","shared rideshare"),
   subset_of = "mode",
@@ -340,8 +348,9 @@ pct_calculator(
   # second_breakdown = "mode",
   weight = "wtperfin")
 
-# Suburb-to-suburb trips represent 12.9 percent of all TNC trips, with a higher
-# share of rideshare (14.3%) than shared rideshare (9.5%)
+# Suburb-to-suburb trips represent 12.5 percent of all TNC trips, with a higher
+# share of rideshare (13.8%) than shared rideshare (9.5%)
+
 
 
 ################################################################################
