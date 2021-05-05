@@ -168,7 +168,7 @@ location_raw <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
          latitude, longitude # The lat/long coordinates of the place.
   )
 
-file.remove("place.csv","person.csv","household.csv","location.csv")
+file.remove("place.csv","person.csv","household.csv","location.csv","vehicle.csv")
 rm(mdt_zip)
 
 # Travel zones (provided by CMAP RAP staff).
