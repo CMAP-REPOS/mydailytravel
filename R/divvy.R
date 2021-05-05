@@ -50,12 +50,6 @@ names(divvy_19q2) <- names(divvy_19q1)
 divvy <- rbind(divvy_18q3,divvy_18q4,divvy_19q1,divvy_19q2)
 
 
-#################################################
-#                                               #
-#                  Analysis                     #
-#                                               #
-#################################################
-
 # Create helper values
 
 # 3am day threshold (since our day starts at 3am)
@@ -72,7 +66,7 @@ day_value <- 60*60*24
 # and the week of Spring Break (April 15th to 19th, 2019).
 mdt_int <-  interval(ymd_hms("2018-09-04 03:00:00",tz = "America/Chicago"),
                      ymd_hms("2019-05-10 02:59:59",tz = "America/Chicago"))
-                     
+
 xgiving <-  interval(ymd_hms("2018-11-19 03:00:00",tz = "America/Chicago"),
                      ymd_hms("2018-11-24 02:59:59",tz = "America/Chicago"))
 xmas <-     interval(ymd_hms("2018-12-24 03:00:00",tz = "America/Chicago"),
@@ -130,17 +124,17 @@ divvy_wip <-
   # Remove holidays (individually - note that %within% does not currently work
   # on a list of time intervals)
   filter(!(start_time %within% mlk |
-           start_time %within% pres |
-           start_time %within% columbus |
-           start_time %within% vets |
-           start_time %within% xgiving |
-           start_time %within% xmas |
-           start_time %within% springb)) %>% # 1285608 records
+             start_time %within% pres |
+             start_time %within% columbus |
+             start_time %within% vets |
+             start_time %within% xgiving |
+             start_time %within% xmas |
+             start_time %within% springb)) %>% # 1285608 records
   
   # Make every trip on the same day (for analysis and graphing)
   mutate(trip_start = force_tz(ymd_hms(paste0("2020-01-01 ",
-                                            substr(start_time,12,19))),
-                             tzone = "America/Chicago")) %>%
+                                              substr(start_time,12,19))),
+                               tzone = "America/Chicago")) %>%
   # Since we just forced all trips to start on the same day, but our days do not
   # begin at midnight, make trips that start before 3am into trips on the next
   # day.
@@ -155,8 +149,15 @@ divvy_wip <-
   # Add weight of 1 divided by the number of weekdays for summing the average TIMs
   mutate(weight = 1/number_of_weekdays)
 
-# Average Divvy trips per day over the time period
-divvy_wip %>% count(day) %>% summarize(avg = mean(n))
+#################################################
+#                                               #
+#                  Analysis                     #
+#                                               #
+#################################################
+
+################################################################################
+# Plot of Divvy ridership
+################################################################################
 
 # Use function defined in helper_fns.R to create trips in motion graph
 trip_times_divvy_counts <-
@@ -218,8 +219,12 @@ finalize_plot(divvy_p1,
               # overrides = list(margin_plot_l = 30),
               overwrite = T)
 
-# Combined plot of Divvy ridership and MDT bike ridership - this requires
-# running the code for the MDT bike ridership plot in 'trips_in_motion.R'
+################################################################################
+# Plot of MDT personal bike ridership and Divvy ridership
+################################################################################
+
+# This requires running the code for the MDT bike ridership plot in
+# 'trips_in_motion.R'
 bike_p1 <- ggpubr::ggarrange(trips_in_motion_p3,divvy_p1,
                      ncol = 2,nrow = 1)
 
@@ -252,17 +257,20 @@ finalize_plot(bike_p1,
               mode = "png",
               overwrite = T)
 
-# Count of ridership by day
-divvy_wip %>% 
-  mutate(day = floor_date(start_time - 3* 60*60, unit = "day")) %>% 
-  count(day) %>% 
-  summarize(average = mean(n))
+################################################################################
+# ARCHIVE
+################################################################################
 
-# Count of trips by subscriber gender
-divvy_wip %>% 
-  filter(gender != "") %>% 
-  count(gender) %>% 
-  mutate(pct = n/sum(n))
+# # Archive - Count of ridership by day
+# divvy_wip %>% 
+#   count(day) %>% 
+#   summarize(average = mean(n))
+
+# # Archive - Count of trips by subscriber gender
+# divvy_wip %>% 
+#   filter(gender != "") %>% 
+#   count(gender) %>% 
+#   mutate(pct = n/sum(n))
 
 ####### ARCHIVE OF 2019 HOLIDAYS (FOR FUTURE ANALYSIS)
 
