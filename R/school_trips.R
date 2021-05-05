@@ -10,8 +10,9 @@ library(ggplot2)
 library(tidyverse)
 library(cmapplot)
 library(lubridate)
-# library(sf)
 library(MetricsWeighted)
+# # Load for archived code
+# library(sf)
 
 #################################################
 #                                               #
@@ -49,8 +50,8 @@ all_school_mdt <-
   filter(loctype == 3) %>%           # 4002 records
   # Keep only trips that start or end between 7am and 9am (so those that have a
   # start time and/or an end time with 7 or 8 as their hour.)
-  filter(hour(arrtime_pg) %in% c(7,8) |  # 3531 records
-           hour(start_times_pg) %in% c(7,8)) %>%
+  filter(lubridate::hour(arrtime_pg) %in% c(7,8) |  # 3531 records
+           lubridate::hour(start_times_pg) %in% c(7,8)) %>%
   
   # # Exclude Kendall County (for validation purposes only - not run in published
   # # graphics)
@@ -150,6 +151,8 @@ school_time_race_mdt <-
   school_time_race_person_level_mdt %>%
   filter(k12 != "High school") %>% 
   group_by(race_eth) %>% 
+  # # Commented code allows for faceting by home jurisdiction
+  # group_by(race_eth,home_county_chi) %>% 
   # # Commented code allows for graphing of high school
   # mutate(race_eth = case_when(
   #   k12 == "High school" & race_eth != "white" ~ "Non-white",
@@ -195,6 +198,9 @@ school_trips_p1 <-
   
   # # Facet for high school (archived)
   # facet_wrap(~k12,scales = "free_x") +
+  
+  # # Facet for geography
+  # facet_wrap(~home_county_chi, scales = "free_x") +
   
   # Add CMAP style
   theme_cmap(gridlines = "h",legend.position = "None",
