@@ -233,6 +233,18 @@ mdt_mode_sex <-
 # Chart of mode share by home county
 ################################################################################
 
+# NOTE: County-level estimates should be treated with some caution for outer
+# region counties. The survey's weighting was developed based on 11 travel zones
+# (documented in Technical Memo 6.1), some of which line up with county
+# boundaries but some of which do not. Chicago, Cook, and Will Counties have one
+# or more zones that primarily make them up (although a small portion of NW Cook
+# County is included in an outer-region zone). Lake County is entirely contained
+# within another zone. However, other regional counties have zones that span
+# across them. This is particularly relevant for Kane, Kendall, and McHenry
+# Counties, as well as Grundy and DeKalb (which are only partially covered). As
+# a result, minor differences between overlapping zones, e.g., Kane and Kendall
+# County, are unlikely to be significant.
+
 # Create labels
 mode_share_p1_labels <-
   mdt_mode_counties %>%
@@ -676,28 +688,37 @@ finalize_plot(mode_share_p4,
 # Backup - detailed mode by income
 ################################################################################
 
-# Analyze percents by household income
+# Analyze percents by household income for transit ridership
 mdt_mode_income_detailed <-
   pct_calculator(
     # Keep all respondents with a reported household income
-    mode_share_base_mdt %>% filter(hhinc > 0),
+    mode_share_base_mdt %>% filter(hhinc > 0) %>% filter(mode_c == "transit"),
     # Execute the rest of the function
     breakdown_by = "mode",
-    second_breakdown = "hhinc",
+    second_breakdown = "income_c",
     weight = "wtperfin") %>% 
-  mutate(hhinc_c = recode_factor(factor(hhinc),
-                                 "10" = "$150,000 or more",
-                                 "9" = "$100,000 to $149,999",
-                                 "8" = "$75,000 to $99,999",
-                                 "7" = "$60,000 to $74,999",
-                                 "6" = "$50,000 to $59,999",
-                                 "5" = "$35,000 to $49,999",
-                                 "4" = "$30,000 to $34,999",
-                                 "3" = "$25,000 to $29,999",
-                                 "2" = "$15,000 to $24,999",
-                                 "1" = "Less than $15,000")) %>%
   mutate(pct = round(pct,2)) %>% 
-  arrange(mode,hhinc)
+  arrange(mode)
+
+
+# Analyze percents by household income for trip chain
+mdt_transit_chain_income <-
+  pct_calculator(
+    # Keep all respondents with a reported household income
+    mode_share_base_mdt %>% filter(hhinc > 0) %>% 
+      # Keep only transit trips
+      filter(mode_c == "transit") %>% 
+      # Recode chains
+      mutate(chain_c = fct_collapse(chain,
+                                    work = c("Work trip","Return home (work)"),
+                                    shop = c("Shopping trip","Return home (shopping)"),
+                                    other = "Other trip")),
+    # Execute the rest of the function
+    breakdown_by = "chain_c",
+    second_breakdown = "income_c",
+    weight = "wtperfin") %>% 
+  mutate(pct = round(pct,2)) %>% 
+  arrange(chain_c)
 
 ################################################################################
 # Chart of mode share by age
