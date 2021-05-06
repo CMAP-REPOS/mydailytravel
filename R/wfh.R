@@ -10,7 +10,8 @@
 library(ggplot2)
 library(tidyverse)
 library(cmapplot)
-library(sf)
+# # Package used in archived code
+# library(sf)
 
 #################################################
 #                                               #
@@ -693,7 +694,7 @@ wfh_p3 <-
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
              legend.max.columns = 7,
              vline = 0,
-             xlab = "Mode share for work trips by home jurisdiction and telecommute status \n(excluding travelers with no trips to a work location)",
+             xlab = "Work trips mode share by home jurisdiction and telecommute status \n(excluding travelers with no trips to a work location)",
              axis.title.x = element_text(hjust = 0.5),
              strip.text = element_text(hjust = 0.5,vjust = 1)) +
   # Manually add colors

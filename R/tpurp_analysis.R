@@ -510,7 +510,7 @@ finalize_plot(tpurp_analysis_p3,
               paste0(
               "Note: Includes trips made by residents aged 5 or older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb.              
+              McHenry, and Will), as well as Grundy and DeKalb. 
               'By car' includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               <br><br>

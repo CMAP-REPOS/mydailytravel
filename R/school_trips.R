@@ -233,12 +233,12 @@ finalize_plot(school_trips_p1,
               <br>- Black (",
                      school_trips_p1_samplesize %>% 
                      filter(race_eth == "black") %>% select(n),");
-              <br>- Other (",
-                     school_trips_p1_samplesize %>% 
-                       filter(race_eth == "other") %>% select(n),");
               <br>- Hispanic (",
                      school_trips_p1_samplesize %>% 
                        filter(race_eth == "hispanic") %>% select(n),");
+              <br>- Other (",
+                     school_trips_p1_samplesize %>% 
+                       filter(race_eth == "other") %>% select(n),");
               <br>- White (",
                      school_trips_p1_samplesize %>% 
                        filter(race_eth == "white") %>% select(n),");
