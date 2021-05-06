@@ -32,11 +32,11 @@ This repo includes several helper scripts that import, recode, and clean the dat
 There are also individuals scripts that support various analyses and graphics in the Policy Briefs:
 - [average_resident.R](/R/average_resident.R): This script calculates average travel behavior for MDT and TT. It includes general figures and breakdowns by demographic characteristics.
 - [divvy.R](/R/divvy.R): This script produces a trips-in-motion graph for Divvy ridership during the MDT survey period.
+- [mode_analysis.R](/R/tpurps_of_modes.R): This script analyzes the trip purpose patterns of specific modes.
 - [mode_share.R](/R/mode_share.R): This script calculates the mode share in the CMAP region by home location and demographic characteristics.
-- [modes_of_tpurps.R](/R/modes_of_tpurps.R): This script analyzes the modes used for specific trip purposes, including health care, dining, and socializing.
 - [racial_disparities.R](/R/racial_disparities.R): This script analyzes racial disparities in travel times in the region.
 - [school_trips.R](/R/school_trips.R): This script analyzes the dynamics of school trips in the MDT and TT surveys, with a specific exploration of racial disparities in trip times for K-8 students.
 - [tnc.R](/R/tnc.R): This script analyzes MDT's data on TNC ridership, including from both the trip diary and survey components.
-- [tpurps_of_modes.R](/R/tpurps_of_modes.R): This script analyzes the trip purpose patterns of specific modes.
+- [tpurp_analysis.R](/R/modes_of_tpurps.R): This script analyzes the modes used for specific trip purposes, including health care, dining, and socializing.
 - [trips_in_motion.R](/R/trips_in_motion.R): This script generates trips-in-motion charts for MDT.
 - [wfh.R](/R/wfh.R): This script analyzes MDT and TT data on telecommuting and working from home behavior.
