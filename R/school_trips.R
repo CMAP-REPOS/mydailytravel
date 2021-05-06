@@ -320,8 +320,7 @@ write.csv(school_trips_output ,
 
 # Backup - specific trips for Black elementary school children (for prose)
 
-mdt %>% filter(race_eth == "black",
-               tpurp_c == "school", 
+all_school_mdt %>% filter(race_eth == "black",
                age %in% c(8,9,10,11),
                mode_c %in% c("transit","walk","schoolbus")) %>% 
   select(sampno,
@@ -337,8 +336,8 @@ mdt %>% filter(race_eth == "black",
          home_tract) %>% 
   View()
 
-# We identified traveler #3 from household #70029462 as an 11-year-old from
-# Harvey with a 20 minute bus ride to school.
+# We identified traveler #3 from household #70032831 as an 11-year-old girl from
+# North Lawndale with a 45 minute bus ride to school.
 
 
 ################################################################################
