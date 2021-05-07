@@ -39,23 +39,6 @@ all_trips_mdt <-
   filter(distance_pg > 0) %>%        # 97307
   # Exclude missing mode trips
   filter(mode_c != "missing") %>%    # 97270
-  # # Code to exclude high and low weight households, by zone.
-  # group_by(cluster) %>%
-  # arrange(cluster,wtperfin) %>%
-  # # Identify the ranked order of this record by weight
-  # mutate(rank = row_number()) %>%
-  # # Find the total number of records in the cluster
-  # mutate(max_rank = max(rank)) %>%
-  # # Divide the row's rank by the total
-  # mutate(pct_rank = rank / max_rank) %>%
-  # ungroup() %>% 
-  # # Since there are ties in weights, find the highest and lowest percent for a
-  # # given weight
-  # group_by(cluster,wtperfin) %>% 
-  # mutate(max_wt_pct = max(pct_rank),
-  #        min_wt_pct = min(pct_rank)) %>% 
-  # filter(min_wt_pct >= 0.05,
-  #        max_wt_pct <= 0.95) %>%      # 3179 records
   ungroup()
 
 
@@ -243,60 +226,4 @@ finalize_plot(racial_disparities_p1,
               filename = "racial_disparities_p1",
               mode = c("png","pdf"),
               sidebar_width = 2.5,
-              # # height = 6.3,
-              # width = 11.3,
               overwrite = T)
-
-################################################################################
-# BACKUP - Travel times for all trip purposes by race
-################################################################################
-
-# Filter data
-all_time_race_mdt <-
-  all_trips_mdt %>% # 12099 records
-  
-  # Only include trips that are more than 0 minutes and less than 2.5 hours
-  filter(
-    travtime_pg_calc < 150 & 
-      travtime_pg_calc > 0) %>% # 12044 records
-  
-  # Exclude households with missing race and ethnicity information
-  filter(race_eth != "missing") %>% # 12012 records
-  
-  # Calculate weighted mean of trip times by race and ethnicity
-  group_by(race_eth,tpurp) %>%
-  summarize(travtime = weighted.mean(travtime_pg_calc, w = wtperfin)) %>% 
-  group_by(tpurp) %>% 
-  arrange(-travtime) %>% 
-  mutate(rank = row_number()) %>% 
-  ungroup() %>% 
-  arrange(tpurp,rank)
-
-all_time_race_mdt %>% 
-  filter(rank == 1) %>% 
-  count(race_eth)
-################################################################################
-# BACKUP - Median travel times by race and mode
-################################################################################
-
-# Filter data
-all_time_race_mode_mdt <-
-  all_trips_mdt %>% # 12099 records
-  
-  # Only include trips that are more than 0 minutes and less than 2.5 hours
-  filter(
-    travtime_pg_calc < 150 & 
-    travtime_pg_calc > 0) %>% # 12044 records
-  
-  # Exclude households with missing race and ethnicity information
-  filter(race_eth != "missing") %>% # 12012 records
-  
-  # Calculate weighted mean of trip times by race and ethnicity
-  group_by(race_eth,mode_c,tpurp) %>%
-  summarize(travtime = weighted.mean(travtime_pg_calc, w = wtperfin)) %>% 
-  group_by(tpurp,mode_c) %>% 
-  arrange(-travtime) %>% 
-  mutate(rank = row_number()) %>% 
-  ungroup() %>% 
-  arrange(tpurp,mode_c,rank)
-

@@ -255,38 +255,3 @@ finalize_plot(parking_p1,
               filename = "parking_p1",
               mode = c("png","pdf"),
               overwrite = T)
-
-# ################################################################################
-# # Archive - Fuel type
-# ################################################################################
-# 
-# household_fuel_type <-
-#   household_vehicles_mdt %>% 
-#   replace_na(list(fuel = 0)) %>% 
-#   filter(fuel > -1) %>%
-#   # group_by(sampno,wtperfin,hhinc,hhveh,
-#   #          home_state,home_county,home_tract,home_county_chi,geog,
-#   #          income,income_c,race_eth) %>% 
-#   # summarize(park_simp = min(parkd)) %>% 
-#   mutate(fuel = recode_factor(factor(fuel,levels = c(0,1,2,3,4,5,97,-7,-8)),
-#                               "0" = "No vehicle",
-#                               "1" = "Gas",
-#                               "2" = "Diesel",
-#                               "3" = "Hybrid",
-#                               "4" = "EV",
-#                               "5" = "Alternative",
-#                               "97" = "Other",
-#                               "-7" = "Missing",
-#                               "-8" = "Missing"))
-# 
-# pct_calculator(household_fuel_type %>% 
-#                  filter(!(fuel %in% c("No vehicle","Missing"))) %>% 
-#                  mutate(fuel_c = fct_collapse(fuel,
-#                                               "Gas/Diesel" = c("Gas","Diesel"),
-#                                               "Alternative" = c("Hybrid","EV","Alternative","Other"))),
-#                breakdown_by = "fuel_c",
-#                second_breakdown = "household_race_eth",
-#                weight = "wtperfin") %>% View()
-# 
-# 
-# household_fuel_type %>% filter(fuel == "EV") %>% count(household_race_eth,wt = wtperfin)

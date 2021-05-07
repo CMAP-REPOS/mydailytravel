@@ -50,3 +50,6 @@ R/archive_trips_in_motion.R
 R/archive_average_resident.R
 R/archive_mode_analysis.R
 R/archive_mode_share.R
+fuel_by_race.csv
+R/archive_racial_disparities.R
+R/archive_parking.R
