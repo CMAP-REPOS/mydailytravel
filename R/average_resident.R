@@ -133,13 +133,13 @@ distinct_residents_mdt <-
   
 
 avgtravel_tt <-
-  tt %>%                    # 139769 records
+  tt %>%                    # 139765 records
   # Keep only trips by travelers at least 5 years old. Note that 99 is DK/RF for
   # AGE. We also keep travelers with unknown age based on school enrollment or
   # AGEB of 2, which indicates 16+
   filter((AGE >= 5 & AGE < 99) |
            (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) |
-           (AGEB == 2 & AGE == 99)) %>% # 132680 records
+           (AGEB == 2 & AGE == 99)) %>% # 132676 records
   # Filter out the first record for each traveler (PLANO == 1)
   filter(PLANO != 1) %>%    # 105568 records
   # Include only travelers who made at least one trip
@@ -197,7 +197,7 @@ ineligible_travelers_tt <-
   # Keep travelers who traveled on a non-weekend. This means that they either
   # had trips on their first day for all non-Sunday surveys, or trips on their
   # second day for all non-Friday surveys.
-  filter(((PTRIPS1 > 0 & DAY != 7) | (PTRIPS2 > 0 & DAY != 5))) %>% 
+  filter(((PTRIPS1 > 0 & DAY != 7) | (PTRIPS2 > 0 & DAY != 5))) %>% # 382
   # Add age bins
   mutate(age_bin=cut(AGE,breaks=age_breaks,labels=age_labels),
          survey = "tt") %>% 
@@ -214,7 +214,7 @@ total_traveler_universe_tt <-
 # ALL RESIDENTS
 # Find the number of residents (including ineligible travelers)
 distinct_residents_tt <-
-  avgtravel_all_respondents_tt %>% 
+  avgtravel_all_respondents_tt %>% #22
   # Add age bins
   mutate(age_bin=cut(AGE,breaks=age_breaks,labels=age_labels)) %>%
   mutate(survey = "tt") %>%
