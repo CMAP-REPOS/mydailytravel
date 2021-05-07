@@ -261,18 +261,13 @@ finalize_plot(bike_p1,
 # ARCHIVE
 ################################################################################
 
-# # Archive - Count of ridership by day
-# divvy_wip %>% 
-#   count(day) %>% 
-#   summarize(average = mean(n))
+# Backup - Count of ridership by day
+divvy_wip %>%
+  count(day) %>%
+  summarize(average = mean(n))
 
-# # Archive - Count of trips by subscriber gender
-# divvy_wip %>% 
-#   filter(gender != "") %>% 
-#   count(gender) %>% 
-#   mutate(pct = n/sum(n))
 
-####### ARCHIVE OF 2019 HOLIDAYS (FOR FUTURE ANALYSIS)
+####### ARCHIVE OF ALL 2019 HOLIDAYS
 
 # mlk <-      interval(ymd_hms("2019-01-21 03:00:00",tz = "America/Chicago"),
 #                      ymd_hms("2019-01-22 02:59:59",tz = "America/Chicago"))
