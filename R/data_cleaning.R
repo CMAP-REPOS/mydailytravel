@@ -32,10 +32,13 @@
 #################################################
 
 # # Run code once per machine to install GitHub-based packages (not on CRAN)
+# # used in the overall analysis (not all of these are used in the data cleaning
+# # code below)
 # devtools::install_github("CMAP-REPOS/cmapplot")
 # devtools::install_github("CMAP-REPOS/cmapgeo")
 # devtools::install_github("coolbutuseless/ggpattern")
 
+# Load libraries used in data cleaning
 library(tidyverse)
 library(lubridate)
 library(RODBC)
@@ -145,7 +148,7 @@ hh <- read.csv(unzip(mdt_zip,files = "household.csv")) %>%
          hhinc,      # Household income (in dollars).
          hhsize,     # Household size.
          hhveh,      # Number of vehicles in the household.
-         wthhfin,
+         wthhfin,    # Household weight (note this is the same as wtperfin)
          travday     # The day of the week for the household's travel diary.
   )
 
@@ -165,7 +168,9 @@ location_raw <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
 
          home,       # Whether the location is a designated home location.
 
-         latitude, longitude # The lat/long coordinates of the place.
+         latitude, longitude # The lat/long coordinates of the place (which are 
+                     # anonymized as the centroids of the tract containing the
+                     # place).
   )
 
 file.remove("place.csv","person.csv","household.csv","location.csv","vehicle.csv")
@@ -189,9 +194,9 @@ munis <- read_csv("source/loc_city.csv") %>%
 # commute to work with a stop at a coffee shop in the morning, lunch at mid-day,
 # and a visit to the grocery store in the evening).
 chains <- read_csv("source/chains.csv") %>% 
-  select(sampno,    # The household identifier
-         perno,     # The person identifier
-         placeno,   # The place number
+  select(sampno,       # The household identifier
+         perno,        # The person identifier
+         placeno,      # The place number
          
          work_chain,   # Whether the trip is part of a chain to work
          
@@ -208,11 +213,6 @@ chains <- read_csv("source/chains.csv") %>%
 # Add flags to locations
 location <- 
   location_raw %>% 
-  # # Add municipality locations (ARCHIVED)
-  # left_join(
-  #   municipality_locations_mdt,
-  #   by = c("sampno","locno")
-  # ) %>%
   # Add travel zones - note these correspond to the home location of the
   # household, and not the location
   left_join(zones, by = "sampno") %>% 
@@ -220,16 +220,14 @@ location <-
   left_join(munis, by = c("sampno","locno")) %>% 
   
   mutate(county_chi_name = case_when(
-    # Use the three Chicago travel zones to ID Chicago locations (note this
-    # appears to excludes portions of the Far Northwest Side (portions of
-    # Norwood Park and Edison Park) that fall within the Chicago city limits -
-    # however, given the assignment of XY coordinates to the centroids of
-    # tracts, neither method allows for perfect sorting. We thus use travel
-    # zones, since they were used in the weighting of the survey.
+    # Use the municipality names to identify Chicago households
     city == "CHICAGO" ~ "Chicago", 
     # Everything else in Cook County belongs to Suburban Cook
     state_fips == 17 & county_fips == 31 ~ "Suburban Cook",
-    # And everything else is assigned using state and county FIPS with no issue.
+    # And everything else is assigned using state and county FIPS. Note that
+    # some of the travel zones do not perfectly align with county boundaries,
+    # and so county-specific results in outlying counties (especially Kane,
+    # Kendall, Grundy, and DeKalb) should be treated with caution.
     state_fips == 17 & county_fips == 37 ~ "DeKalb",
     state_fips == 17 & county_fips == 63 ~ "Grundy",
     state_fips == 17 & county_fips == 97 ~ "Lake",
@@ -239,15 +237,14 @@ location <-
     state_fips == 17 & county_fips == 111 ~ "McHenry",
     state_fips == 17 & county_fips == 197 ~ "Will")) %>% 
   # And add a flag for whether the location is in the set of locations that were
-  # coded in TT (and thus have distances associated with them)
+  # coded in TT (and thus have distances associated with them) - Cook, DuPage,
+  # Grundy, Kane, Kendall, Lake, McHenry, and/or Will in Illinois, and Lake,
+  # LaPorte, and Porter in Indiana
   mutate(outside_tt = case_when(
     state_fips == 17 & county_fips %in% c(cmap_seven_counties,63) ~ 0,
     state_fips == 18 & county_fips %in% c(89,91,127) ~ 0,
     TRUE ~ 1
     ))
-
-# # ARCHIVE - add back if using location assignment of centroids
-# rm(municipality_locations_mdt,location_xy_mdt)
 
 # Home location flag
 home_wip <- location %>%
@@ -265,7 +262,7 @@ home_wip <- location %>%
          home_long = longitude,
          county_chi_name) %>%
   # Keep distinct home locations based on sample. Note this will collapse
-  # records for any households that have two homes in the same county (as
+  # records for any households that have two homes in the same jurisdictions (as
   # intended).
   distinct(sampno,home_state,home_county,county_chi_name,.keep_all = TRUE)
 
@@ -305,9 +302,10 @@ home <- home_wip %>%
     # Assign the rest as "Other suburban counties".
     TRUE ~ "Other suburban counties"
   )) %>% 
-  mutate(geog = factor(geog, levels = c("Chicago","Suburban Cook",
-                                        "Other suburban counties",
-                                        "Homes in multiple jurisdictions (Chicago/Cook)"))) %>% 
+  mutate(geog = factor(geog, 
+                       levels = c("Chicago","Suburban Cook",
+                                  "Other suburban counties",
+                                  "Homes in multiple jurisdictions (Chicago/Cook)"))) %>% 
   # Remove unnecessary variable
   select(-county_chi_name)
 
@@ -437,7 +435,6 @@ mdt <-
 # Remove placegroup stats
 rm(placeGroupStats,mdt_wip1,mdt_wip2)
 
-
 # Create a dataset for all respondents (regardless of whether they traveled on
 # survey day)
 mdt_all_respondents <- ppl %>% # 30,683 records
@@ -544,7 +541,6 @@ tt_veh <- sqlFetch(con,"veh_public") %>%
 # Close the database connection
 odbcClose(con)
 
-
 # Add status in City of Chicago to location file
 
 # Add geometry to latitude and longitude for locations
@@ -583,6 +579,7 @@ tt_location <-
     FIPS == 17111 ~ "McHenry",
     FIPS == 17197 ~ "Will"))
 
+# Remove unneeded tables
 rm(municipality_locations_tt,location_xy_tt)
 
 # home location
@@ -612,26 +609,24 @@ tt_home <- tt_location %>%
 
 # # Check - is each sample associated with exactly one home
 # test1 <- tt_home %>% distinct(SAMPN,LOCNO,home_county,.keep_all = TRUE)
-#
+# 
 # number <- test1 %>%
 #   group_by(SAMPN) %>%
 #   summarize(n = n())
-#
+# 
 # test1 %>%
-#   left_join(.,
-#             number,
+#   left_join(number,
 #             by = "SAMPN") %>%
 #   filter(n > 1)
-#
+# 
 # test2 <- tt_home %>% distinct(SAMPN,.keep_all = TRUE)
-#
+# 
 # test1 %>%
-#   left_join(.,
-#             number,
+#   left_join(number,
 #             by = "SAMPN") %>%
 #   filter(is.na(n))
-# # Answer: Yes - except for 14 records with no sample number
-#
+# # Answer: Yes
+# 
 # # remove tests
 # rm(test1,test2,number)
 
@@ -639,7 +634,6 @@ tt_home <- tt_location %>%
 tt_home <- tt_home %>% # 105,554 records
   select(SAMPN,home_county,home_state,home_county_chi,geog) %>%
   distinct() # 14,376 records
-
 
 # Combine datasets
 tt_wip1 <- tt_place %>% # 218,945 records
@@ -672,19 +666,19 @@ tt_all_respondents <- tt_ppl %>% # 32,366 records
                                         # county; they are kept for analyses
                                         # that do not rely on home location)
   # Keep only CMAP survey respondents
-  filter(MPO==1) 
+  filter(MPO==1)                 # 23808
 
 # Identify trips that either start or end within the CMAP region
 tt_wip3 <- tt_wip2 %>%
-  arrange(SAMPN,PERNO) %>%
+  arrange(SAMPN,DAYNO,PERNO,PLANO) %>%
   # Create a flag - is the location in the nine counties?
   mutate(out_region = ifelse(FIPS %in% cmap_state_nine_counties,
                              0, # 0 if not - these are in-region locations
                              1) # 1 if true - these are out-region locations
   ) %>%
   
-  # Group by SAMPN and PERNO for lagging
-  group_by(SAMPN,PERNO) %>% 
+  # Group by SAMPN, PERNO, and DAYNO for lagging
+  group_by(SAMPN,PERNO,DAYNO) %>% 
   # Use lag to identify the out_region status of the starting point of the
   # trip (from the previous record).
   mutate(out_region_lag = lag(out_region,1)) %>%
@@ -725,9 +719,9 @@ tt_wip3 <- tt_wip2 %>%
 # county region, that are over 100 miles, and/or that are on weekends
 tt <- tt_wip3 %>%           # 218945 records
   filter(MPO==1) %>%   # 159856 records
-  filter(out_region_trip == 0) %>% # 153437 records
-  filter(DIST<100) %>% # 153437 records
-  filter(weekend==0) %>% # 135306 records
+  filter(out_region_trip == 0) %>% # 158627 records
+  filter(DIST<100) %>% # 158627 records
+  filter(weekend==0) %>% # 139765 records
   # Select the correct number of trips per day (based on day number)
   mutate(pertrips = ifelse(DAYNO == 1,PTRIPS1,PTRIPS2)) %>%
   # And filter out unneeded variables
@@ -738,7 +732,7 @@ tt <- tt_wip3 %>%           # 218945 records
     # Flags used for filtering
     MPO,weekend,out_region_trip))
 
-
+# Remove WIP tables
 rm(tt_wip1,tt_wip2,tt_wip3)
 
 
@@ -836,8 +830,6 @@ mdt_all_respondents <- mdt_all_respondents %>%
     hisp == 1 ~ "hispanic",
     TRUE ~ race_eth)) 
 
-
-
 # Recode into race and ethnicity groups
 tt <- tt %>%
   mutate(race_eth = recode(RACE,
@@ -897,4 +889,5 @@ rm(recode_income_buckets_mdt,recode_income_buckets_tt,
    recode_mode_detailed_mdt,recode_mode_detailed_tt,
    recode_tpurp_detailed_mdt,recode_tpurp_detailed_tt)
 
+# Reset working directory
 setwd("~/GitHub/mydailytravel")
