@@ -84,7 +84,7 @@ pct_calculator <- function(data,
       mutate(total = sum(.data[[weight_name]]),
              total_n = n()) %>%
       # Calculate percentages
-      group_by(.data[[breakdown_by]]) %>%
+      group_by(across(all_of(breakdown_by))) %>%
       summarize(breakdown_total = sum(.data[[weight_name]]),
                 total = median(total),
                 total_n = median(total_n),
@@ -96,11 +96,11 @@ pct_calculator <- function(data,
     percents <-
       relevant_data %>%
       # Create totals
-      group_by(.data[[second_breakdown]]) %>%
+      group_by(across(all_of(second_breakdown))) %>%
       mutate(total = sum(.data[[weight_name]]),
              total_n = n()) %>%
       # Calculate percentages
-      group_by(.data[[breakdown_by]],.data[[second_breakdown]]) %>%
+      group_by(across(all_of(c(breakdown_by,second_breakdown)))) %>%
       summarize(breakdown_total = sum(.data[[weight_name]]),
                 total = median(total),
                 total_n = median(total_n),
@@ -112,11 +112,11 @@ pct_calculator <- function(data,
     percents <-
       relevant_data %>%
       # Create totals
-      group_by(.data[[second_breakdown]],.data[[third_breakdown]]) %>%
+      group_by(across(all_of(c(second_breakdown,third_breakdown)))) %>%
       mutate(total = sum(.data[[weight_name]]),
              total_n = n()) %>%
       # Calculate percentages
-      group_by(.data[[breakdown_by]],.data[[second_breakdown]],.data[[third_breakdown]]) %>%
+      group_by(across(all_of(c(breakdown_by,second_breakdown,third_breakdown)))) %>%
       summarize(breakdown_total = sum(.data[[weight_name]]),
                 total = median(total),
                 total_n = median(total_n),
@@ -158,10 +158,9 @@ pct_calculator <- function(data,
 #           full list of trip intervals in the tim_mdt_wip table, but can be
 #           modified to use a shorter list for subset analyses.
 #         * criteria, a vector of strings. This will be the categorization into
-#           which trip counts are distributed (e.g., mode categories).
-#         * criteria2, a vector of strings. Defaults to NULL. If included, the
-#           function will calculate using both criteria as grouping variables.
-#           This will significantly increase processing times for large datasets.
+#           which trip counts are distributed (e.g., mode categories). Takes at
+#           most two criteria. A second criterion  will significantly increase
+#           processing times for large datasets.
 #         * interval, numeric. This is the width of the time interval in
 #           minutes in which trips will be counted. This must be a whole number
 #           and a divisor of the total number of minutes in the day (i.e.,
@@ -169,8 +168,8 @@ pct_calculator <- function(data,
 #         * rolling_window, numeric. This is the length of the rolling average
 #           window, in minutes. Defaults to 25 minutes. The rolling average is
 #           calculated as a straddling rolling average, with the interval plus a
-#           symmetric window on either side. rolling_window should be a whole number
-#           and a multiple of interval by an odd number.
+#           symmetric window on either side. rolling_window should be a whole 
+#           number and a multiple of interval by an odd number.
 ################################################################################
 # Outputs: This function calculates the rolling average of trips in motion
 #          within a specified set of categories (e.g., by mode) over the course
@@ -180,10 +179,14 @@ tim_calculator <- function(data,
                            weights = NULL,
                            trip_interval = "trip_interval",
                            criteria,
-                           criteria2 = NULL,
                            interval = 5,
                            rolling_window = 25) {
 
+  # Allow at most two criteria
+  if (length(criteria) > 2) {
+    stop("Only at most two criteria are allowed")
+  }
+  
   # Require rolling_window and interval to be integers
   if (interval %% 1 != 0 | rolling_window %% 1 != 0) {
     stop("Both `rolling_window` and `interval` must be whole numbers.")
@@ -202,11 +205,11 @@ tim_calculator <- function(data,
   # Extract relevant columns
   
   # First, create a helper joint column for two-criteria function calls
-  if (!is.null(criteria2)) {
+  if (length(criteria) == 2) {
     wip_data <- data %>% 
       mutate(criteria_wip = 
-               paste(.data[[criteria]],
-                     .data[[criteria2]],
+               paste(.data[[criteria[1]]],
+                     .data[[criteria[2]]],
                      sep = "-"))}
   else {
     wip_data <- data %>% 
@@ -270,18 +273,20 @@ tim_calculator <- function(data,
 
   # If there are two criteria, need to split identifier and group by both
   # columns. Otherwise, group by identifier.
-  if (is.null(criteria2)) {
+  if (length(criteria) != 2) {
     grouped_count <-
       raw_count %>%
-      group_by(identifier)
+      group_by(identifier) %>% 
+      # Use the {{ }} := construction to extract the criteria name for column
+      # naming (see https://cran.r-project.org/web/packages/dplyr/vignettes/programming.html)
+      rename({{criteria}} := identifier)
   } else {
     grouped_count <-
       raw_count %>%
       # Split the data using the '-' as a separator
-      separate(identifier,into = c(criteria,criteria2) , sep = "-") %>%
-      # using the .data[[criteriax]] format allows us to use the string as a
-      # variable name
-      group_by(.data[[criteria]],.data[[criteria2]])
+      separate(identifier,into = c(criteria[1],criteria[2]) , sep = "-") %>%
+      # Group by name
+      group_by(across(all_of(criteria)))
   }
 
   # Calculate rolling averages
