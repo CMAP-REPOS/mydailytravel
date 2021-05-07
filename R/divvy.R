@@ -175,12 +175,12 @@ divvy_p1 <-
   # Get data
   trip_times_divvy_counts %>%
   # Relevel user type
-  mutate(identifier = recode_factor(factor(identifier, levels = c("Subscriber",
+  mutate(usertype = recode_factor(factor(usertype, levels = c("Subscriber",
                                                                   "Customer")),
                                     "Subscriber" = "Subscriber",
                                     "Customer" = "One-time user")) %>%
   # Create ggplot object
-  ggplot(aes(x = time_band,y = rolling_count, fill = identifier)) +
+  ggplot(aes(x = time_band,y = rolling_count, fill = usertype)) +
   geom_area(position = position_stack(reverse = TRUE)) +
   
   # Reformat axes

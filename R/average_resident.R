@@ -147,7 +147,7 @@ avgtravel_tt <-
   # Exclude zero distance trips (note that TT did not capture distances for
   # trips outside the seven counties, Illinois' Grundy County, and Lake,
   # LaPorte, and Porter Counties in Indiana, so this means that travelers who
-  # only traveled to or from those counties, but not within them, will be
+  # only traveled to or from those counties, but not within that region, will be
   # excluded, in addition to any travelers who only traveled outside the
   # region).
   filter(DIST > 0) %>%      # 100573 records
@@ -251,54 +251,58 @@ distinct_residents <-
 # My Daily Travel
 ################################################################################
 
-# NOTE: The calculations for MDT use "network distance." If a comparison with TT
-# is desired, you should instead use the haversine distance, which will require
-# changing the calls to distance variables to use the hdist variants and
-# modifying the exclusion of nonzero distance trips above.
+# NOTE: The primary distance variable in MDT was "network distance." The code
+# below uses the haversine distance to enable comparability wiht TT. If you want
+# to just look at total distance traveled, that will require changing the calls
+# to distance variables to use the dist variants and modifying the exclusion of
+# nonzero distance trips above.
 
 ################################################################################
 # Summary statistics
 ################################################################################
 
-# Calculate summary statistics (code reused below for variations by demography)
-travel_overall <-
-  # Get data
-  avgtravel %>%
-  # Group by survey
-  group_by(survey) %>% 
-  # Calculate summaries of distance, trips, and trip lengths
-  summarize(
-    total_distance = sum(chosen_distance),
-    total_time = sum(time_weight),
-    total_trips = sum(weight),
-    avg_trip_length = total_distance / total_trips,
-    avg_trip_time = total_time / total_trips,
-    n = n()
-  ) %>%
+# Helper function to calculate summary statistics
+travel_calculator <- function(data = avgtravel,grouping) {
+  data %>% 
+    group_by(across(all_of(grouping))) %>% 
+    summarize(
+      total_distance = sum(chosen_distance),
+      total_time = sum(time_weight),
+      total_trips = sum(weight),
+      avg_trip_length = total_distance / total_trips,
+      avg_trip_time = total_time / total_trips,
+      n = n()
+    )  %>% 
   # Add total number of travelers (only eligible travelers)
   left_join(distinct_daily_travelers %>%
-              group_by(survey) %>% 
+              group_by(across(all_of(grouping))) %>% 
               summarize(total_eligible_travelers = sum(weight)),
-            by = c("survey")) %>%  
-  # Add total number of travelers (all travelers)
-  left_join(total_travel_universe %>%
-              group_by(survey) %>% 
-              summarize(total_travelers = sum(weight)),
-            by = c("survey")) %>%
-  # Add total number of residents
-  left_join(distinct_residents %>% 
-              group_by(survey) %>% 
-              summarize(total_residents = sum(weight)),
-            by = c("survey")) %>% 
-  # Calculate distance and trips per capita using total travelers
-  mutate(distance_per_capita = total_distance / total_eligible_travelers,
-         trips_per_capita = total_trips / total_eligible_travelers,
-         time_per_capita = total_time / total_eligible_travelers,
-         traveling_pct = total_travelers / total_residents) %>% 
+            by = c(grouping)) %>%  
+    # Add total number of travelers (all travelers)
+    left_join(total_travel_universe %>%
+                group_by(across(all_of(grouping))) %>% 
+                summarize(total_travelers = sum(weight)),
+              by = c(grouping)) %>%
+    # Add total number of residents
+    left_join(distinct_residents %>% 
+                group_by(across(all_of(grouping))) %>% 
+                summarize(total_residents = sum(weight)),
+              by = c(grouping)) %>% 
+    # Calculate distance and trips per capita using total travelers
+    mutate(distance_per_capita = total_distance / total_eligible_travelers,
+           trips_per_capita = total_trips / total_eligible_travelers,
+           time_per_capita = total_time / total_eligible_travelers,
+           traveling_pct = total_travelers / total_residents)
+    
+}
+
+
+# Calculate summary statistics (code reused below for variations by demography)
+travel_overall <-
+  travel_calculator(avgtravel,"survey") %>% 
   # Add variables for combining with other calculations
   mutate(type = "Overall",
          subtype = "Overall")
-
 
 ## Export details
 ### Trips
@@ -319,37 +323,7 @@ travel_overall %>% select(survey,avg_trip_length)
 
 # Calculate summary statistics by gender (reusing overall code)
 travel_sex <-
-  avgtravel %>%
-  group_by(survey,sex) %>% 
-  summarize(
-    total_distance = sum(chosen_distance),
-    total_time = sum(time_weight),
-    total_trips = sum(weight),
-    avg_trip_length = total_distance / total_trips,
-    avg_trip_time = total_time / total_trips,
-    n = n()
-  ) %>%
-  # Add total number of travelers (only eligible travelers)
-  left_join(distinct_daily_travelers %>%
-              group_by(sex,survey) %>% 
-              summarize(total_eligible_travelers = sum(weight)),
-            by = c("sex","survey")) %>%  
-  # Add total number of travelers (all travelers)
-  left_join(total_travel_universe %>%
-              group_by(sex,survey) %>% 
-              summarize(total_travelers = sum(weight)),
-            by = c("sex","survey")) %>%
-  # Add total number of residents
-  left_join(distinct_residents %>% 
-              group_by(sex,survey) %>% 
-              summarize(total_residents = sum(weight)),
-            by = c("sex","survey")) %>% 
-  # Calculate figures
-  group_by(sex,survey) %>% 
-  mutate(distance_per_capita = total_distance / total_eligible_travelers,
-         trips_per_capita = total_trips / total_eligible_travelers,
-         time_per_capita = total_time / total_eligible_travelers,
-         traveling_pct = total_travelers / total_residents) %>% 
+  travel_calculator(avgtravel,c("survey","sex")) %>% 
   ungroup() %>% 
   mutate(type = "Sex") %>% 
   # Remove individuals without a response
@@ -362,37 +336,7 @@ travel_sex <-
 
 # Calculate summary statistics by income (reusing overall code)
 travel_income <- 
-  avgtravel %>%
-  group_by(survey,income_c) %>% 
-  summarize(
-    total_distance = sum(chosen_distance),
-    total_time = sum(time_weight),
-    total_trips = sum(weight),
-    avg_trip_length = total_distance / total_trips,
-    avg_trip_time = total_time / total_trips,
-    n = n()
-  ) %>%
-  # Add total number of travelers (only eligible travelers)
-  left_join(distinct_daily_travelers %>%
-              group_by(income_c,survey) %>% 
-              summarize(total_eligible_travelers = sum(weight)),
-            by = c("income_c","survey")) %>%  
-  # Add total number of travelers (all travelers)
-  left_join(total_travel_universe %>%
-              group_by(income_c,survey) %>% 
-              summarize(total_travelers = sum(weight)),
-            by = c("income_c","survey")) %>%
-  # Add total number of residents
-  left_join(distinct_residents %>% 
-              group_by(income_c,survey) %>% 
-              summarize(total_residents = sum(weight)),
-            by = c("income_c","survey")) %>% 
-  # Calculate figures
-  group_by(income_c,survey) %>% 
-  mutate(distance_per_capita = total_distance / total_eligible_travelers,
-         trips_per_capita = total_trips / total_eligible_travelers,
-         time_per_capita = total_time / total_eligible_travelers,
-         traveling_pct = total_travelers / total_residents) %>% 
+  travel_calculator(avgtravel,c("survey","income_c")) %>% 
   ungroup() %>% 
   # Remove individuals without a response
   filter(income_c != "missing") %>% 
@@ -407,37 +351,7 @@ travel_income <-
 
 # Calculate summary statistics by age (reusing overall code)
 travel_age <-
-  avgtravel %>%
-  group_by(survey,age_bin) %>% 
-  summarize(
-    total_distance = sum(chosen_distance),
-    total_time = sum(time_weight),
-    total_trips = sum(weight),
-    avg_trip_length = total_distance / total_trips,
-    avg_trip_time = total_time / total_trips,
-    n = n()
-  ) %>%
-  # Add total number of travelers (only eligible travelers)
-  left_join(distinct_daily_travelers %>%
-              group_by(age_bin,survey) %>% 
-              summarize(total_eligible_travelers = sum(weight)),
-            by = c("age_bin","survey")) %>%  
-  # Add total number of travelers (all travelers)
-  left_join(total_travel_universe %>%
-              group_by(age_bin,survey) %>% 
-              summarize(total_travelers = sum(weight)),
-            by = c("age_bin","survey")) %>%
-  # Add total number of residents
-  left_join(distinct_residents %>% 
-              group_by(age_bin,survey) %>% 
-              summarize(total_residents = sum(weight)),
-            by = c("age_bin","survey")) %>% 
-  # Calculate figures
-  group_by(age_bin,survey) %>% 
-  mutate(distance_per_capita = total_distance / total_eligible_travelers,
-         trips_per_capita = total_trips / total_eligible_travelers,
-         time_per_capita = total_time / total_eligible_travelers,
-         traveling_pct = total_travelers / total_residents) %>% 
+  travel_calculator(avgtravel,c("survey","age_bin")) %>% 
   ungroup() %>% 
   # Remove individuals without a response
   filter(!is.na(age_bin)) %>% 
@@ -446,37 +360,7 @@ travel_age <-
 
 # Calculate summary statistics by home jurisdiction (reusing overall code)
 travel_home <-
-  avgtravel %>%
-  group_by(survey,home_county_chi) %>% 
-  summarize(
-    total_distance = sum(chosen_distance),
-    total_time = sum(time_weight),
-    total_trips = sum(weight),
-    avg_trip_length = total_distance / total_trips,
-    avg_trip_time = total_time / total_trips,
-    n = n()
-  ) %>%
-  # Add total number of travelers (only eligible travelers)
-  left_join(distinct_daily_travelers %>%
-              group_by(home_county_chi,survey) %>% 
-              summarize(total_eligible_travelers = sum(weight)),
-            by = c("home_county_chi","survey")) %>%  
-  # Add total number of travelers (all travelers)
-  left_join(total_travel_universe %>%
-              group_by(home_county_chi,survey) %>% 
-              summarize(total_travelers = sum(weight)),
-            by = c("home_county_chi","survey")) %>%
-  # Add total number of residents
-  left_join(distinct_residents %>% 
-              group_by(home_county_chi,survey) %>% 
-              summarize(total_residents = sum(weight)),
-            by = c("home_county_chi","survey")) %>% 
-  # Calculate figures
-  group_by(home_county_chi,survey) %>% 
-  mutate(distance_per_capita = total_distance / total_eligible_travelers,
-         trips_per_capita = total_trips / total_eligible_travelers,
-         time_per_capita = total_time / total_eligible_travelers,
-         traveling_pct = total_travelers / total_residents) %>% 
+  travel_calculator(avgtravel,c("survey","home_county_chi")) %>% 
   ungroup() %>% 
   # Keep the nine counties but remove those that span multiple counties
   filter(home_county_chi %in% c("Cook","DeKalb","DuPage","Grundy","Kane",
@@ -488,37 +372,7 @@ travel_home <-
 # this analysis only uses MDT since TT did not have race/ethnicity for all
 # household members
 travel_race_eth <- 
-  avgtravel_mdt %>%
-  group_by(race_eth,survey) %>% 
-  summarize(
-    total_distance = sum(chosen_distance),
-    total_time = sum(time_weight),
-    total_trips = sum(weight),
-    avg_trip_length = total_distance / total_trips,
-    avg_trip_time = total_time / total_trips,
-    n = n()
-  ) %>%
-  # Add total number of travelers (only eligible travelers)
-  left_join(distinct_daily_travelers %>%
-              group_by(race_eth,survey) %>% 
-              summarize(total_eligible_travelers = sum(weight)),
-            by = c("race_eth","survey")) %>%  
-  # Add total number of travelers (all travelers)
-  left_join(total_travel_universe %>%
-              group_by(race_eth,survey) %>% 
-              summarize(total_travelers = sum(weight)),
-            by = c("race_eth","survey")) %>%
-  # Add total number of residents
-  left_join(distinct_residents %>% 
-              group_by(race_eth,survey) %>% 
-              summarize(total_residents = sum(weight)),
-            by = c("race_eth","survey")) %>% 
-  # Calculate figures
-  group_by(race_eth,survey) %>% 
-  mutate(distance_per_capita = total_distance / total_eligible_travelers,
-         trips_per_capita = total_trips / total_eligible_travelers,
-         time_per_capita = total_time / total_eligible_travelers,
-         traveling_pct = total_travelers / total_residents) %>% 
+  travel_calculator(avgtravel,c("survey","race_eth")) %>% 
   ungroup() %>% 
   # Remove missing 
   filter(race_eth != "missing") %>% 
@@ -940,363 +794,3 @@ finalize_plot(average_resident_p3,
 distinct_daily_travelers %>% count(survey,age_bin)
 distinct_daily_travelers %>% count(survey,income_c)
 distinct_daily_travelers %>% count(survey,sex)
-
-
-# ################################################################################
-# # ARCHIVE - Plot of trips and distances for MDT vs. TT
-# ################################################################################
-# 
-# # Plot
-# average_resident_p4 <-
-#   # Get data
-#   travel_summaries %>%
-#   # Exclude total distances
-#   filter(name %in% c("trips_per_capita","avg_trip_length")) %>% 
-#   # Keep only overall
-#   filter(type == "Overall") %>% 
-#   # Rename variables we are keeping
-#   mutate(name = recode_factor(factor(name,levels = c("trips_per_capita","avg_trip_length")),
-#                               "trips_per_capita" = "Trips per day        ",
-#                               "avg_trip_length" = "Distance per trip (miles)"),
-#          survey = recode_factor(factor(survey),
-#                                 "tt" = "Travel Tracker ('08)",
-#                                 "mdt" = "My Daily Travel ('19)")) %>% 
-#   
-#   # Create ggplot object
-#   ggplot(aes(x = name, y = value, fill = survey)) +
-#   geom_col(position = position_dodge2(width = 1,padding = 0.15,reverse = F),
-#            width = .8) +
-#   
-#   # Add labels
-#   geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
-#                  group = survey),
-#              position = position_dodge2(width = .8,reverse = F),
-#              fill = "white",
-#              label.size = 0,label.padding = unit(1.5,"bigpts"),
-#              vjust = 0) +
-#   
-#   # Adjust axes
-#   # scale_x_continuous(limits = c(0,8)) +
-#   
-#   # Add CMAP theme
-#   theme_cmap(gridlines = "h",hline = 0,
-#              xlab = "Travel characteristics over time",
-#              strip.text = element_text(hjust = 0.5,vjust = 1)) +
-#   cmap_fill_discrete(palette = "friday")
-# 
-# # Export finalized graphic
-# finalize_plot(average_resident_p4,
-#               "Travelers in the region in 2019 were taking slightly fewer, and 
-#               slightly shorter, trips than they were in 2008.",
-#               caption = 
-#               "Note: Includes trips by travelers aged 5 and older who live in the 
-#               Illinois counties of Cook, DuPage, Grundy, Kane, Kendall, Lake, 
-#               McHenry, and Will. Only includes trips within that region and 
-#               between that region and the Indiana counties of Lake, LaPorte, and 
-#               Porter. 
-#               Distances are calculated as point-to-point ('haversine') and do 
-#               not account for additional distance traveled along the route.
-#               <br><br>
-#               Source: Chicago Metropolitan Agency for Planning analysis of My 
-#               Daily Travel and Travel Tracker data.",
-#               filename = "average_resident_p4",
-#               # mode = c("png","pdf"),
-#               # height = 6.5,
-#               overwrite = T)
-# 
-# ################################################################################
-# #
-# # ARCHIVE - Understand non-travelers in MDT
-# ################################################################################
-# 
-# # Create universe of all possible travelers, excluding the ones also excluded
-# # above (note this requires the "DAILY TRAVELERS" option in the code)
-# 
-# mdt_avg_excluded <-
-#   mdt %>% 
-#   filter(pertrips > 0) %>% 
-#   anti_join(distinct_daily_travelers_mdt %>% select(sampno,perno),
-#             by = c("sampno","perno")) %>% 
-#   distinct(sampno,perno)
-# 
-# mdt_all_respondents_excl <-
-#   mdt_all_respondents %>% 
-#   anti_join(mdt_avg_excluded, by = c("sampno","perno")) %>% 
-#   # filter by age
-#   filter(
-#     # Keep only trips with travelers at least 5 years old.
-#     # - note the "sampno" selections have no information but are school-aged
-#     # based on place. age < 0 are all respondents without a numeric age value.
-#     age >= 5 |               # 125459 records
-#       (age <0 & aage %in% c(2,3,4,5,6,7)) |
-#       (age < 0 & schol %in% c(4,5,6,7,8)) |
-#       sampno %in% c(70038312, 70051607)) %>%
-#   # And add age bins
-#   mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels))
-#   
-# # Generate variation from population totals for non-travelers (in percentage
-# # points)
-# 
-# # First, household income
-# mdt_notravel_income_c <-
-#   mdt_all_respondents_excl %>% 
-#   # Calculate baseline totals
-#   group_by(income_c) %>% 
-#   mutate(totalpop = sum(weight)) %>% 
-#   ungroup() %>% 
-#   # Identify travelers vs. non-travelers (keeping only those with an entry for
-#   # `pertrips`)
-#   filter(pertrips >= 0) %>% 
-#   mutate(traveled = ifelse(pertrips == 0,"No","Yes")) %>% 
-#   # Calculate totals by category, removing missing
-#   filter(income_c != "missing") %>% 
-#   group_by(income_c,traveled) %>% 
-#   summarize(pop = sum(weight),
-#             totalpop = median(totalpop)) %>% 
-#   # Now calculate proportions
-#   group_by(traveled) %>% 
-#   mutate(pct = pop/sum(pop),
-#          totalpoppct = totalpop/sum(totalpop),
-#          variation = pct - totalpoppct) %>% 
-#   # Keep only non-travelers
-#   filter(traveled == "No")
-# 
-# 
-# # Next, race and ethnicity
-# mdt_notravel_race_eth <-
-#   mdt_all_respondents_excl %>% 
-#   # Calculate baseline totals
-#   group_by(race_eth) %>% 
-#   mutate(totalpop = sum(weight)) %>% 
-#   ungroup() %>% 
-#   # Identify travelers vs. non-travelers (keeping only those with an entry for
-#   # `pertrips`)
-#   filter(pertrips >= 0) %>% 
-#   mutate(traveled = ifelse(pertrips == 0,"No","Yes")) %>% 
-#   # Calculate totals by category, removing missing
-#   filter(race_eth != "missing") %>% 
-#   group_by(race_eth,traveled) %>% 
-#   summarize(pop = sum(weight),
-#             totalpop = median(totalpop)) %>% 
-#   # Now calculate proportions
-#   group_by(traveled) %>% 
-#   mutate(pct = pop/sum(pop),
-#          totalpoppct = totalpop/sum(totalpop),
-#          variation = pct - totalpoppct) %>% 
-#   # Keep only non-travelers
-#   filter(traveled == "No")
-# 
-# # Next, sex
-# mdt_notravel_sex <-
-#   mdt_all_respondents_excl %>% 
-#   # Calculate baseline totals
-#   group_by(sex) %>% 
-#   mutate(totalpop = sum(weight)) %>% 
-#   ungroup() %>% 
-#   # Identify travelers vs. non-travelers (keeping only those with an entry for
-#   # `pertrips`)
-#   filter(pertrips >= 0) %>% 
-#   mutate(traveled = ifelse(pertrips == 0,"No","Yes")) %>% 
-#   # Calculate totals by category, removing missing
-#   filter(sex >0) %>% 
-#   group_by(sex,traveled) %>% 
-#   summarize(pop = sum(weight),
-#             totalpop = median(totalpop)) %>% 
-#   # Now calculate proportions
-#   group_by(traveled) %>% 
-#   mutate(pct = pop/sum(pop),
-#          totalpoppct = totalpop/sum(totalpop),
-#          variation = pct - totalpoppct) %>% 
-#   # Keep only non-travelers
-#   filter(traveled == "No")
-# 
-# 
-# # Finally, age
-# mdt_notravel_age <-
-#   mdt_all_respondents_excl %>% 
-#   # Calculate baseline totals
-#   group_by(age_bin) %>% 
-#   mutate(totalpop = sum(weight)) %>% 
-#   ungroup() %>% 
-#   # Identify travelers vs. non-travelers (keeping only those with an entry for
-#   # `pertrips`)
-#   filter(pertrips >= 0) %>% 
-#   mutate(traveled = ifelse(pertrips == 0,"No","Yes")) %>% 
-#   # Calculate totals by category, removing missing
-#   filter(!is.na(age_bin)) %>% 
-#   group_by(age_bin,traveled) %>% 
-#   summarize(pop = sum(weight),
-#             totalpop = median(totalpop)) %>% 
-#   # Now calculate proportions
-#   group_by(traveled) %>% 
-#   mutate(pct = pop/sum(pop),
-#          totalpoppct = totalpop/sum(totalpop),
-#          variation = pct - totalpoppct) %>% 
-#   # Keep only non-travelers
-#   filter(traveled == "No")
-# 
-# 
-# ################################################################################
-# # ARCHIVE
-# # Travel Tracker validity tests
-# ################################################################################
-# 
-# # Sarah's original method - calculate total number of daily travelers who take
-# # at least one trip
-# daily_travelers_tt_baseline <-
-#   tt_ppl %>%
-#   left_join(tt_hh, by = c("SAMPN")) %>% 
-#   mutate(
-#     
-#     age5 = case_when(
-#       (AGE >= 5 & AGE < 99) ~ 1,
-#       AGEB == 2 ~ 1,
-#       TRUE ~ 0),
-#     
-#     notravel = case_when(
-#       SURVEY == 1 & PTRIPS1 == 0 ~ 1,
-#       SURVEY == 2 & PTRIPS1 == 0 & PTRIPS2 == 0 ~ 1,
-#       TRUE ~ 0
-#       
-#     )) %>%
-#   filter(age5 == 1,
-#          notravel == 0,
-#          MPO == 1)
-# 
-# # This method identifies 7,076,812 travelers in the region
-# daily_travelers_tt_baseline %>%
-#   summarize(sum = sum(WGTP))
-# 
-# # Note that the method used in the charts and analyses above identifies only
-# # 6,694,147 travelers. Below, we account for the difference, which is 382,665
-# # travelers.
-# distinct_daily_travelers_tt %>% 
-#   summarize(sum = sum(weight))
-# 
-# # First, we add additional travelers that are included in tt above
-# daily_travelers_tt_test <-
-#   tt_ppl %>%
-#   left_join(tt_hh, by = c("SAMPN")) %>% 
-#   mutate(
-#     
-#     age5 = case_when(
-#       (AGE >= 5 & AGE < 99) ~ 1,
-#       AGEB == 2 ~ 1,
-#       (AGE == 99 & SCHOL %in% c(4,5,6,7,8)) ~ 1,
-#       TRUE ~ 0),
-#     
-#     notravel = case_when(
-#       SURVEY == 1 & PTRIPS1 == 0 ~ 1,
-#       SURVEY == 2 & PTRIPS1 == 0 & PTRIPS2 == 0 ~ 1,
-#       TRUE ~ 0
-#       
-#     )) %>%
-#   filter(age5 == 1,
-#          notravel == 0,
-#          MPO == 1)
-# 
-# # The new baseline is 7,080,209 travelers
-# daily_travelers_tt_test %>% 
-#   summarize(sum = sum(WGTP))
-# 
-# # How many of the travelers are excluded based on status as only weekend
-# # travelers?
-# tt_weekenders <-
-#   daily_travelers_tt_test %>%
-#   group_by(SAMPN,PERNO) %>%
-#   summarize(PTRIPS1 = first(PTRIPS1),
-#             PTRIPS2 = first(PTRIPS2),
-#             weight = first(WGTP),
-#             DAY = first(DAY),
-#             SURVEY = first(SURVEY)) %>%
-#   # Keep travelers who are recorded as having trips but have no travel on their
-#   # weekday travel day
-#   filter((SURVEY==2 & DAY==5 & PTRIPS1 == 0) | 
-#            (SURVEY==2 & DAY==7 & PTRIPS2 == 0)) %>%
-#   ungroup()
-# 
-# # This accounts for 104,371 travelers.
-# tt_weekenders %>% 
-#   summarize(total = sum(weight))
-# 
-# # How many of the travelers are excluded based on the out-of-region travel
-# # identified above (and are not weekenders)?
-# tt_out_of_region <-
-#   daily_travelers_tt_test %>%
-#   # Remove all travelers accounted for as only weekend travelers
-#   anti_join(tt_weekenders, by = c("SAMPN","PERNO")) %>% 
-#   # Add trip information. We want to find all travelers that only traveled
-#   # outside the region (and thus have zero distance) on their travel days. 
-#   left_join(tt_place, by = c("SAMPN","PERNO")) %>% 
-#   # Keep only weekday travel
-#   filter(!((DAYNO == 2 & DAY == 5) | (DAYNO == 1 & DAY == 7))) %>% 
-#   group_by(SAMPN,PERNO) %>%
-#   summarize(DIST = sum(DIST),
-#             weight = first(WGTP)) %>%
-#   filter(DIST == 0) %>%
-#   ungroup()
-# 
-# # This accounts for 182,123 travelers.
-# tt_out_of_region %>% 
-#   summarize(total = sum(weight))
-# 
-# # Identify travelers in one set but not the other
-# missing <-
-#   daily_travelers_tt_test %>%
-#   anti_join(distinct_daily_travelers_tt, by = c("SAMPN" = "sampno","PERNO" = "perno"))
-# 
-# # These add to 286,494 travelers (649 weighted records)
-# sum(missing$WGTP)
-# 
-# # This accounts for all missing travelers
-# missing_unaccounted <-
-#   missing %>% 
-#   anti_join(tt_weekenders, by = c("SAMPN","PERNO")) %>% 
-#   anti_join(tt_out_of_region, by = c("SAMPN","PERNO"))
-# 
-# missing_unaccounted %>% 
-#   summarize(total = sum(WGTP))
-# 
-# # The remaining discrepancy is primarily based on the adjustment to weights for
-# # travelers in 2-day surveys that only traveled on one of their two travel days.
-# tt_one_of_two_weekdays <-
-#   daily_travelers_tt_test %>%
-#   # Remove all travelers accounted for as only weekend travelers
-#   anti_join(tt_weekenders, by = c("SAMPN","PERNO")) %>%   
-#   # And out of region travelers
-#   anti_join(tt_out_of_region, by = c("SAMPN","PERNO")) %>% 
-#   # Keep those with 2 weekdays
-#   filter(SURVEY == 2 & DAY %in% c(1,2,3,4)) %>% 
-#   # Add trip information. We want to find all travelers with zero trips and/or
-#   # travel distance on one (but not both) of their two days.
-#   left_join(tt_place, by = c("SAMPN","PERNO")) %>% 
-#   group_by(SAMPN,PERNO,DAYNO,PTRIPS1,PTRIPS2) %>%
-#   summarize(DIST = sum(DIST),
-#             weight = first(WGTP)) %>%
-#   filter(DIST == 0 | (PTRIPS1 == 0 & PTRIPS2 >0) | (PTRIPS1 > 0 & PTRIPS2 == 0)) %>% 
-#   ungroup() %>% 
-#   distinct(SAMPN,PERNO,weight) 
-# 
-# # This accounts for 99,568 travelers that have been double-weighted in Sarah's
-# # but single-weighted in mine.
-# tt_one_of_two_weekdays %>% 
-#   summarize(total = sum(weight) / 2)
-# 
-# # This exactly accounts for the difference between the two figures
-# 
-# # The updated baseline
-# (daily_travelers_tt_test %>% summarize(sum = sum(WGTP))) -
-#   # Less the weekday double weighting
-#   (tt_one_of_two_weekdays %>% summarize(total = sum(weight) / 2)) -
-#   # Less the weekend-only travelers
-#   (tt_weekenders %>% summarize(total = sum(weight))) -
-#   # Less the out of region only travelers
-#   (tt_out_of_region %>% summarize(total = sum(weight))) ==
-#   # Equals the total travelers above
-#   (distinct_daily_travelers_tt %>% summarize(sum = sum(weight)))
-# 
-# # Confirm there are no travelers included above not captured in the test
-# distinct_daily_travelers_tt %>% 
-#   anti_join(daily_travelers_tt_test, by = c("sampno" = "SAMPN","perno"="PERNO"))
-
-   
