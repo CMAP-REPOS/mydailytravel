@@ -46,3 +46,5 @@ vehicle.csv
 *.pdf
 outputs/tc_homes.csv
 .RDataTmp
+R/archive_trips_in_motion.R
+R/archive_average_resident.R
