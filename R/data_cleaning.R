@@ -419,10 +419,22 @@ mdt <-
   filter(out_region_trip==0) %>% # 125752 records
   # Remove trips >= 100 miles
   filter(distance<100) %>% # 125463 records
+  # Remove walking trips that are greater than 25 miles, and those that are
+  # greater than 10 miles that have an average rate of 10 minutes per mile or
+  # less, both of which indicate that either the trip is an extraordinary
+  # outlier or the entry was miscoded
+  mutate(improbable_walk = case_when(
+    mode == 101 & distance_pg >= 25 ~ 1,
+    mode == 101 & 
+      distance_pg >= 10 &
+      travtime_pg / distance_pg <= 10 ~ 1,
+    TRUE ~ 0
+  )) %>% 
+  filter(improbable_walk == 0) %>% # 125410 records
   # Remove unneeded variables
   select(-c(
     # Flags used for filtering
-    out_region_trip,home,
+    out_region_trip,home,improbable_walk,
     # Original arrival and departures (superseded by pg)
     deptime,arrtime,
     # Original location number (superseded by pg)
