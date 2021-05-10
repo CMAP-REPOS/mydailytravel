@@ -268,7 +268,7 @@ mode_share_p1 <-
              aes(label = scales::label_percent(accuracy = 0.1)(label),
                  x = label, y = home_county_chi),
              label.size = 0,
-             hjust = 0,
+             hjust = -.02,
              fill = "white") +
 
   # Add CMAP style
@@ -371,7 +371,7 @@ mode_share_p2 <-
   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(label),
                  x = label, y = mileage_bin),
              label.size = 0,
-             hjust = 0,
+             hjust = -.02,
              fill = "white") +
   
   # Add CMAP style

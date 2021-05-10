@@ -254,7 +254,7 @@ tnc_p1 <-
   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(label),
                  x = label, y = race_eth),
              label.size = 0,
-             hjust = 0,
+             hjust = -.02,
              fill = "white") +
   
   
@@ -361,7 +361,7 @@ tnc_p2 <-
   ggplot(aes(x = tnc_use, y = reorder(home_county_chi,tnc_use), fill = home_county_chi)) +
   geom_col() +
   geom_label(aes(label = scales::label_number(accuracy = 0.01)(tnc_use)),
-             hjust = 0,
+             hjust = -0.02,
              label.size = 0,
              fill = "white") +
   
@@ -470,7 +470,7 @@ tnc_p3 <-
   geom_label(aes(label = ifelse(name == "Average weekly trips",
                                 scales::label_number(accuracy = 0.01)(value),
                                 scales::label_dollar(accuracy = 1)(value))),
-             hjust = 0,
+             hjust = -.02,
              label.size = 0,
              fill = "white") +
   geom_blank(aes(x = blank)) +

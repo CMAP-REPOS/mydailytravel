@@ -377,7 +377,7 @@ wfh_p1 <-
                  group = name),
              fill = "white",
              label.size = 0,label.padding = unit(1.5,"bigpts"),
-             hjust = 0) +
+             hjust = -0.02) +
   
   # Adjust axes
   scale_x_continuous(limits = c(0,.32),labels = scales::label_percent(accuracy = 1)) +
@@ -400,7 +400,6 @@ wfh_p1_samplesize <-
 
 # Export finalized graphic
 finalize_plot(wfh_p1,
-              # sidebar_width = 0,
               "Lower-income, Black, and Hispanic residents were the least likely 
               to telecommute prior to COVID-19.",
               caption = 
@@ -454,7 +453,6 @@ finalize_plot(wfh_p1,
               filename = "wfh_p1",
               mode = c("png","pdf"),
               sidebar_width = 2.6,
-              # height = 6.5,
               overwrite = T)
 
 
@@ -549,7 +547,7 @@ wfh_p2 <-
   geom_col(aes(fill = flag), position = position_dodge2(reverse = T)) +
   geom_label(aes(label = scales::label_number(accuracy = 0.1)(distance_pg),
                  group = flag),
-             hjust = 0,
+             hjust = -.02,
              label.size = 0,
              position = position_dodge2(width= 0.9, reverse = T)) +
   
@@ -628,13 +626,7 @@ finalize_plot(wfh_p2,
               filename = "wfh_p2",
               mode = c("png","pdf"),
               overwrite = T,
-              sidebar_width = 2.6,
-              # height = 4.5,
-              # width = 8,
-              # sidebar = 2.5
-              # height = 6.3,
-              # width = 11.3
-              )
+              sidebar_width = 2.6)
 
 
 ################################################################################
@@ -765,13 +757,7 @@ finalize_plot(wfh_p3,
               filename = "wfh_p3",
               mode = c("png","pdf"),
               overwrite = T,
-              sidebar_width = 2.7,
-              # height = 4.5,
-              # width = 8,
-              # sidebar = 2.5
-              # height = 6.3,
-              # width = 11.3
-)
+              sidebar_width = 2.7)
 
 ################################################################################
 # Chart of all mileage for trips for individuals by TC status
@@ -827,7 +813,7 @@ wfh_p4 <-
                  group = flag),
              position = position_dodge2(reverse = T,width = 0.9),
              label.size = 0,
-             hjust = 0) +
+             hjust = -.02) +
   
   # Adjust axis
   scale_x_continuous(limits = c(0,48)) +
@@ -905,13 +891,7 @@ finalize_plot(wfh_p4,
               Daily Travel data."),
               filename = "wfh_p4",
               mode = c("png","pdf"),
-              overwrite = T,
-              # height = 4.5,
-              # width = 8,
-              # sidebar = 2.5
-              # height = 6.3,
-              # width = 11.3
-)
+              overwrite = T)
 
 ################################################################################
 # Backup - summary of non-work chain trips (for prose)

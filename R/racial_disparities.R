@@ -137,7 +137,7 @@ racial_disparities_p1 <-
   ggplot(aes(x = race_eth, y = travtime, fill = race_eth)) +
   geom_col() +
   geom_label(aes(label = scales::label_number(accuracy = 1)(travtime)),
-             vjust = 0, label.size = 0, fill = "white") +
+             vjust = -.03, label.size = 0, fill = "white") +
   
   # Add CMAP style
   theme_cmap(gridlines = "h", legend.position = "None",

@@ -33,15 +33,15 @@ tpurp_analysis_base_mdt <-
            (age < 0 & aage %in% c(2,3,4,5,6,7)) |
            (age < 0 & schol %in% c(4,5,6,7,8))) %>%
   # Exclude beginning trips
-  filter(mode_c != "beginning") %>%  # 85022
+  filter(mode_c != "beginning") %>%  # 97312
   # Exclude trips with no travel distance. Note this is a different difference
   # calculation than that used in TT (great circle vs. actual travel distance).
   # We chose to do this since the published graphics do not involve any
   # comparison between TT and MDT. However, if we instead filter out those trips
   # that have a nonzero haversine distance from MDT, the results are similar.
-  filter(distance_pg > 0) %>%        # 84969
+  filter(distance_pg > 0) %>%        # 97254
   # Exclude trips with no mode
-  filter(mode_c != "missing") %>%    # 84932
+  filter(mode_c != "missing") %>%    # 97217
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
   mutate(mode_c = case_when(
@@ -200,7 +200,7 @@ finalize_plot(tpurp_analysis_p1,
               # height = 4.5,
               # sidebar_width = 2.6,
               filename = "tpurp_analysis_p1",
-              # mode = c("png","pdf"),
+              mode = c("png","pdf"),
               overwrite = TRUE)
 
 
@@ -372,7 +372,7 @@ finalize_plot(tpurp_analysis_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "tpurp_analysis_p2",
-              mode = c("png","pdf"),
+              # mode = c("png","pdf"),
               overwrite = T)
 
 
@@ -554,3 +554,4 @@ group_by(tpurp) %>%
   summarize(breakdown = sum(wt),
             age = weighted.mean(age,wt)) %>% 
   mutate(pct = breakdown / total)  
+

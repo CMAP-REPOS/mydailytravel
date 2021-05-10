@@ -162,7 +162,7 @@ school_trips_p1 <-
   ggplot(aes(x = race_eth, y = stat, fill = race_eth)) +
   geom_col() +
   geom_label(aes(label = scales::label_number(accuracy = 1)(stat)),
-             vjust = 0, label.size = 0, fill = "white") +
+             vjust = -.03, label.size = 0, fill = "white") +
   
   # # Facet for high school (archived)
   # facet_wrap(~k12,scales = "free_x") +
@@ -219,8 +219,6 @@ finalize_plot(school_trips_p1,
               filename = "school_trips_p1",
               mode = c("png","pdf"),
               sidebar_width = 2.5,
-              # height = 4.5,
-              # width = 8,
               overwrite = T)
 
 # Backup - differences over a month (for prose)

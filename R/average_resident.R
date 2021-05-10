@@ -492,7 +492,7 @@ average_resident_p1 <-
              position = position_dodge2(width = .9,reverse = T),
              fill = "white",
              label.size = 0,label.padding = unit(1.5,"bigpts"),
-             hjust = 0) +
+             hjust = -.02) +
   
   # Add geom_blank for positioning
   geom_blank(aes(x = blank)) +
@@ -609,7 +609,7 @@ average_resident_p2 <-
              position = position_dodge2(width = .9,reverse = T),
              fill = "white",
              label.size = 0,label.padding = unit(1.5,"bigpts"),
-             hjust = 0) +
+             hjust = -.02) +
   
   # Adjust scale
   scale_x_continuous(limits = c(0,1.15),
@@ -728,7 +728,7 @@ average_resident_p3 <-
              position = position_dodge2(width = .8,reverse = T),
              fill = "white",
              label.size = 0,label.padding = unit(1.5,"bigpts"),
-             hjust = 0) +
+             hjust = -.02) +
   
   facet_wrap(~type,ncol = 3,scales = "free_y",dir = "v") +
   
