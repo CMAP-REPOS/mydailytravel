@@ -56,6 +56,8 @@ tim_mdt_wip <-
     # Remove trips with 0 place group distance
     distance_pg > 0              # 97273 records
   ) %>%
+  # Exclude improbable walk trips
+  filter(improbable_walk == 0) %>% 
   
   # Make every trip on the same day (for analysis and graphing). I used January
   # 1, 2020 (arbitrarily). The code below extracts the time element of the

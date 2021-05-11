@@ -640,6 +640,8 @@ wfh_mode_share <-
       filter(worktrip == 1) %>%
       # Exclude missing modes
       filter(mode_c != "missing") %>% 
+      # Exclude improbable walk trips
+      filter(improbable_walk == 0) %>% 
       # Due to low sample size, exclude work trips for those that almost always
       # telecommute
       filter(tc_frequency != 2),

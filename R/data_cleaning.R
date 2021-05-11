@@ -419,22 +419,21 @@ mdt <-
   filter(out_region_trip==0) %>% # 125752 records
   # Remove trips >= 100 miles
   filter(distance<100) %>% # 125463 records
-  # Remove walking trips that are greater than 25 miles, and those that are
-  # greater than 10 miles that have an average rate of 10 minutes per mile or
+  # Flag walking trips that are greater than 25 miles, and those that are
+  # greater than 10 miles that have an average rate of 5 minutes per mile or
   # less, both of which indicate that either the trip is an extraordinary
   # outlier or the entry was miscoded
   mutate(improbable_walk = case_when(
     mode == 101 & distance_pg >= 25 ~ 1,
     mode == 101 & 
       distance_pg >= 10 &
-      travtime_pg / distance_pg <= 10 ~ 1,
+      travtime_pg / distance_pg <= 5 ~ 1,
     TRUE ~ 0
   )) %>% 
-  filter(improbable_walk == 0) %>% # 125410 records
   # Remove unneeded variables
   select(-c(
     # Flags used for filtering
-    out_region_trip,home,improbable_walk,
+    out_region_trip,home,
     # Original arrival and departures (superseded by pg)
     deptime,arrtime,
     # Original location number (superseded by pg)
@@ -736,6 +735,17 @@ tt <- tt_wip3 %>%           # 218945 records
   filter(weekend==0) %>% # 139765 records
   # Select the correct number of trips per day (based on day number)
   mutate(pertrips = ifelse(DAYNO == 1,PTRIPS1,PTRIPS2)) %>%
+  # Flag walking trips that are greater than 25 miles, and those that are
+  # greater than 10 miles that have an average rate of 5 minutes per mile or
+  # less, both of which indicate that either the trip is an extraordinary
+  # outlier or the entry was miscoded
+  mutate(improbable_walk = case_when(
+    MODE == 1 & DIST >= 25 ~ 1,
+    MODE == 1 & 
+      DIST >= 10 &
+      TRPDUR / DIST <= 5 ~ 1,
+    TRUE ~ 0
+  )) %>% 
   # And filter out unneeded variables
   select(-c(
     # Departure times, since these have been added to relevant records as start

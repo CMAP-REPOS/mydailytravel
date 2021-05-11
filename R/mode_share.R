@@ -40,7 +40,9 @@ mode_share_base_mdt <-
   # that have a nonzero haversine distance from MDT, the results are similar.
   filter(distance_pg > 0) %>%         # 97307
   # Exclude trips with a "missing" mode
-  filter(mode_c != "missing")         # 97270
+  filter(mode_c != "missing") %>%     # 97270
+  # Exclude improbable walk trips
+  filter(improbable_walk == 0)        # 97230
 
 #################################################
 #                                               #
@@ -425,13 +427,6 @@ finalize_plot(mode_share_p2,
 # Chart of mode share by mileage (more visual)
 ################################################################################
 
-# Create labels
-mode_share_p2a_labels <-
-  mdt_mode_mileage2 %>%
-  filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
-  group_by(mileage_bin) %>%
-  summarize(label = sum(pct))
-
 # Mileage bins
 mileage_breaks2 <- c(-1,.25,.5,1,2.5,5,10,25,50)
 mileage_labels2 <- c("<0.25","0.25 to 0.5","0.5 to 1","1 to 2.5","2.5 to 5",
@@ -449,6 +444,13 @@ mdt_mode_mileage2 <-
     weight = "wtperfin") %>%
   mutate(mileage_bin = factor(mileage_bin)) %>% 
   ungroup()
+
+# Create labels
+mode_share_p2a_labels <-
+  mdt_mode_mileage2 %>%
+  filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
+  group_by(mileage_bin) %>%
+  summarize(label = sum(pct))
 
 
 
@@ -485,7 +487,7 @@ mode_share_p2a <-
             position = position_stack(vjust = 0.5,reverse = T),
             color = "white") +
   geom_label(aes(label = scales::label_percent(accuracy = 1)(label),y = label),
-             vjust = 0,label.size = 0,
+             vjust = -.04,label.size = 0,
              fill = "white") +
   
   # Add CMAP style
@@ -551,7 +553,7 @@ finalize_plot(mode_share_p2a,
               sidebar_width = 0,
               height = 8,
               # width = 6,
-              mode = c("png","ai","pdf"),
+              # mode = c("png","pdf"),
               overwrite = T)
 
 
