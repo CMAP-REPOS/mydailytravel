@@ -19,7 +19,7 @@ Each of the scripts includes comments explaining which records were included or 
 - Trips that are 100 miles are longer are excluded.
 - Trips by travelers younger than 5 years old are excluded. This is primarily applicable to Travel Tracker, since My Daily Travel only asked for the travel behavior of household members 5 years old or older.
 - For My Daily Travel data, some single trips were split across multiple records. These records were merged using the `placeGroup` field, which is further explained in the My Daily Travel documentation.
-- The My Daily Travel survey includes some trips coded as walking trips that appear to be either miscoded or significant outliers, based on a combination of time and distance traveled (e.g., longer than 25 miles, or traveling 10 miles in 15 minutes). These are excluded.
+- Both surveys includes some trips coded as walking trips that appear to be either miscoded or significant outliers, based on a combination of time and distance traveled (e.g., longer than 25 miles, or walking 10 miles in 15 minutes). Walking trips longer than 25 miles or that were longer than 10 miles and traveled faster than 5 minutes per mile are coded as improbable walks and are excluded from some analyses.
 
 The My Daily Travel and Travel Tracker surveys are both representative of travel in the CMAP region for their respective travel periods. However, there were methodological differences between the two, which limits some possible comparisons. Where applicable, these limitations and caveats are noted in comments.
 
