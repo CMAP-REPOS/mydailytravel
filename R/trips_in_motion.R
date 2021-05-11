@@ -106,9 +106,9 @@ trip_times_mode_c_mdt <-
                  weights = "wtperfin")
 
 # Trips in motion by trip chain and mode category (25 minute rolling average)
-trip_times_mode_c_and_chain_mdt_25 <-
+trip_times_mode_c_and_chain_c_mdt_25 <-
   tim_calculator(data = tim_mdt_wip,
-                 criteria = c("mode_c","chain"),
+                 criteria = c("mode_c","chain_c"),
                  weights = "wtperfin")
 
 #################################################################
@@ -236,7 +236,7 @@ trip_times_mode_c_mdt %>%
 
 trips_in_motion_p2 <-
   # Get data
-  trip_times_mode_c_and_chain_mdt_25 %>%
+  trip_times_mode_c_and_chain_c_mdt_25 %>%
   # Factor for ordering
   mutate(mode_c = recode_factor(factor(mode_c, levels = mode_c_levels),
                                 "driver" = "Driver",
@@ -251,18 +251,15 @@ trips_in_motion_p2 <-
   # Capitalize for presentation
   mutate(chain_c = recode_factor(chain_c,
                                  "work" = "Work",
-                                 "shopping" = "Shopping",
+                                 "shop" = "Shopping",
                                  "other" = "Other")) %>% 
-  # Summarize by new buckets
-  group_by(time_band,mode_c,category) %>%
-  summarize(rolling_count = sum(rolling_count)) %>%
   
   # Create ggplot object
   ggplot(aes(x = time_band,y = rolling_count)) +
   geom_area(aes(fill = mode_c), position = position_stack(reverse = TRUE)) +
   
   # Add facets
-  facet_wrap(~category, ncol = 1) +
+  facet_wrap(~chain_c, ncol = 1) +
   
   # Adjust axes
   scale_x_datetime(labels = scales::date_format("%H:%M",
@@ -311,7 +308,7 @@ finalize_plot(trips_in_motion_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries."),
               filename = "trips_in_motion_p2",
-              mode = c("png","pdf"),
+              # mode = c("png","pdf"),
               overwrite = TRUE)
 
 ################################################################################
