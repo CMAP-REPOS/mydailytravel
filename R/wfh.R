@@ -470,9 +470,9 @@ wfh_worktrip_status <-
     # trip as 0 (this handles a few "work-from-home" trips that have significant
     # distances associated with them because they were the next step in a larger
     # trip chain that did not include a physical work trip).
-    chain %in% c("Work trip","Return home (work)") & wfo_today == 0 ~ 0,
+    chain_c == "work" & wfo_today == 0 ~ 0,
     # Assign all other work chains as 1
-    chain %in% c("Work trip","Return home (work)") ~ 1,
+    chain_c == "work" ~ 1,
     # Assign all other trips as 0
     TRUE ~ 0)) %>%
   # Remove travelers with homes in multiple counties

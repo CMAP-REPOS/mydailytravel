@@ -883,6 +883,10 @@ mdt <- mdt %>%
                         levels = c("Work trip","Return home (work)",
                                    "Shopping trip","Return home (shopping)",
                                    "Other trip"))) %>% 
+  mutate(chain_c = fct_collapse(chain,
+                                work = c("Work trip","Return home (work)"),
+                                shop = c("Shopping trip","Return home (shopping)"),
+                                other = "Other trip")) %>% 
   # Remove chain helper columns
   select(-c(home_to_work,work_to_work,work_to_home,
             home_to_shop,shop_to_shop,shop_to_home))

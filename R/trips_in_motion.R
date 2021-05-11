@@ -118,12 +118,12 @@ trip_times_mode_c_and_chain_mdt_25 <-
 #################################################################
 
 # Set breaks for charts (3 hour intervals)
-breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 03:00:00"),
+tim_breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 03:00:00"),
                      to = as.POSIXct("2020-01-02 03:00:00"),
                      by = "3 hours")
 
 # Create 6-hour interval option
-breaks_less <- breaks[c(2,4,6,8)]
+tim_breaks_less <- tim_breaks[c(2,4,6,8)]
 
 ################################################################################
 # Overall
@@ -152,7 +152,7 @@ trips_in_motion_p1 <-
   # Adjust axes
   scale_x_datetime(labels = scales::date_format("%H:%M",
                                                 tz = "America/Chicago"),
-                   breaks = breaks) +
+                   breaks = tim_breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
   
   # Manually add colors
@@ -214,7 +214,7 @@ trip_times_mode_c_mdt %>%
   # Adjust axes
   scale_x_datetime(labels = scales::date_format("%H:%M",
                                                 tz = "America/Chicago"),
-                   breaks = breaks) +
+                   breaks = tim_breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver()) +
   
   # Manually add colors
@@ -248,14 +248,11 @@ trips_in_motion_p2 <-
                                 "other" = "Other")) %>%
   # Remove missing modes
   filter(mode_c != "missing") %>%
-  # Simplify categories for presentation
-  mutate(category = fct_collapse(chain,
-                                 Work = c("Work trip","Return home (work)"),
-                                 Other = "Other trip",
-                                 Shopping = c("Shopping trip",
-                                              "Return home (shopping)"))) %>%
-  # Factor for ordering
-  mutate(category = factor(category, levels = c("Work","Shopping","Other"))) %>%
+  # Capitalize for presentation
+  mutate(chain_c = recode_factor(chain_c,
+                                 "work" = "Work",
+                                 "shopping" = "Shopping",
+                                 "other" = "Other")) %>% 
   # Summarize by new buckets
   group_by(time_band,mode_c,category) %>%
   summarize(rolling_count = sum(rolling_count)) %>%
@@ -270,7 +267,7 @@ trips_in_motion_p2 <-
   # Adjust axes
   scale_x_datetime(labels = scales::date_format("%H:%M",
                                                 tz = "America/Chicago"),
-                   breaks = breaks) +
+                   breaks = tim_breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
   
   # Manually add colors
@@ -286,10 +283,6 @@ trips_in_motion_p2 <-
 
 trips_in_motion_p2_samplesize <-
   tim_mdt_wip %>% 
-  mutate(chain_c = fct_collapse(chain,
-                                work = c("Work trip","Return home (work)"),
-                                shop = c("Shopping trip","Return home (shopping)"),
-                                other = "Other trip")) %>% 
   ungroup() %>% 
   count(chain_c)
 
@@ -360,7 +353,7 @@ trips_in_motion_p3 <-
   # Adjust axes
   scale_x_datetime(labels = scales::date_format("%H:%M",
                                                 tz = "America/Chicago"),
-                   breaks = breaks_less) +
+                   breaks = tim_breaks_less) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
   
   # Add colors
