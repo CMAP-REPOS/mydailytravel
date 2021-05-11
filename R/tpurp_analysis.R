@@ -478,6 +478,59 @@ finalize_plot(tpurp_analysis_p3,
               filename = "tpurp_analysis_p3")
 
 ################################################################################
+# Backup behavior for employed vs. unemployed
+################################################################################
+
+community_employed_mdt <-
+  pct_calculator(tpurp_analysis_base_mdt %>% filter(geog != "Other") %>% 
+                   # Keep only travelers assigned to Chicago, Suburban Cook, or
+                   # Other suburban counties (for display purposes)
+                   filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties"),
+                          emply_ask == 1,
+                          tpurp %in% c("Socialized with friends","Socialized with relatives")),
+                 breakdown_by = "mode_c",
+                 second_breakdown = "tpurp",
+                 # third_breakdown = "geog",
+                 weight = "wtperfin",
+                 survey = "employed")
+
+community_unemployed_mdt <-
+  pct_calculator(tpurp_analysis_base_mdt %>% filter(geog != "Other") %>% 
+                   # Keep only travelers assigned to Chicago, Suburban Cook, or
+                   # Other suburban counties (for display purposes)
+                   filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties"),
+                          emply_ask == 2,
+                          tpurp %in% c("Socialized with friends","Socialized with relatives")),
+                 breakdown_by = "mode_c",
+                 second_breakdown = "tpurp",
+                 # third_breakdown = "geog",
+                 weight = "wtperfin",
+                 survey = "unemployed")
+
+community_with_employment_status_mdt <-
+  rbind(community_employed_mdt,
+        community_unemployed_mdt)
+
+community_with_employment_status_mdt %>% 
+  # Recode names
+  mutate(tpurp = recode_factor(tpurp,
+                               "Socialized with relatives" = "Relatives",
+                               "Socialized with friends" = "Friends")) %>% 
+  # Collapse low-percentage modes
+  mutate(mode_c = recode_factor(mode_c,
+                                "driver" = "By car",
+                                "passenger" = "By car",
+                                "walk" = "Walking",
+                                "transit" = "Transit",
+                                "other" = "Other modes",
+                                "bike" = "Other modes")) %>%
+  # Calculate new totals
+  group_by(mode_c,tpurp,survey) %>%
+  summarize(pct = sum(pct),
+            n = sum(breakdown_n))
+
+
+################################################################################
 # Median distances for community trips
 ################################################################################
 
@@ -507,6 +560,7 @@ tpurp_analysis_base_mdt %>%
 ################################################################################
 # Mode share for similar distances
 ################################################################################
+
 pct_calculator(tpurp_analysis_base_mdt %>% 
                  # Keep only travelers assigned to Chicago, Suburban Cook, or
                  # Rest of region
