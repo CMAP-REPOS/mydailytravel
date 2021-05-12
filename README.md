@@ -10,7 +10,7 @@ The primary data sources for these Policy Briefs are the trip diaries and survey
 
 The posted datasets are supplemented by three files that provide additional detail to enable geographic and trip purpose breakdowns. These are available in the [sources](/source) folder.
 
-The analysis of bike-share also leverages publicly available data from Divvy on system ridership. That data is automatically downloaded when executing these scripts, but can also be accessed [here](https://www.divvybikes.com/system-data).
+The analyses also leverage several outside data sources. For example, the analysis of bike-share uses publicly available data from Divvy on system ridership. That data is automatically downloaded when executing these scripts, but can also be accessed [here](https://www.divvybikes.com/system-data). Similarly, the analysis of TNCs refers to the City of Chicago's Transportation Network Provider data, which was extracted from the city's data portal, [here](https://data.cityofchicago.org/Transportation/Transportation-Network-Providers-Trips/m6dm-c72p/data).
 
 ## Data notes
 
@@ -33,6 +33,7 @@ This repo includes several helper scripts that import, recode, and clean the dat
 There are also individuals scripts that support various analyses and graphics in the Policy Briefs:
 - [average_resident.R](/R/average_resident.R): This script calculates average travel behavior for MDT and TT. It includes general figures and breakdowns by demographic characteristics.
 - [divvy.R](/R/divvy.R): This script produces a trips-in-motion graph for Divvy ridership during the MDT survey period.
+- [mdt_dates.R](/R/mdt_dates.R): This script includes date intervals used to filter non-household travel survey data for comparability with MDT (e.g., analyses of Divvy).
 - [mode_analysis.R](/R/tpurps_of_modes.R): This script analyzes the trip purpose patterns of specific modes.
 - [mode_share.R](/R/mode_share.R): This script calculates the mode share in the CMAP region by home location and demographic characteristics.
 - [racial_disparities.R](/R/racial_disparities.R): This script analyzes racial disparities in travel times in the region.
