@@ -781,7 +781,7 @@ finalize_plot(mode_share_p4,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "mode_share_p4",
-              mode = c("png","pdf"),
+              # mode = c("png","pdf"),
               overwrite = T)
 
 ################################################################################
@@ -807,18 +807,83 @@ mdt_transit_chain_income <-
     # Keep all respondents with a reported household income
     mode_share_base_mdt %>% filter(hhinc > 0) %>% 
       # Keep only transit trips
-      filter(mode_c == "transit") %>% 
-      # Recode chains
-      mutate(chain_c = fct_collapse(chain,
-                                    work = c("Work trip","Return home (work)"),
-                                    shop = c("Shopping trip","Return home (shopping)"),
-                                    other = "Other trip")),
+      filter(mode_c == "transit"),
     # Execute the rest of the function
     breakdown_by = "chain_c",
     second_breakdown = "income_c",
     weight = "wtperfin") %>% 
-  mutate(pct = round(pct,2)) %>% 
   arrange(chain_c)
+
+
+# Create chart of transit use by income and trip chain
+mode_share_p4a <-
+  # Get data
+  mdt_transit_chain_income %>% 
+  # Rename for presentation
+  mutate(chain_c = recode_factor(chain_c,
+                                 "work" = "Work",
+                                 "shop" = "Shopping",
+                                 "other" = "Other"),
+         income_c = recode_factor(income_c,
+                                  "high" = "$100K or more",
+                                  "middle-high" = "$60K to $99K",
+                                  "middle-low" = "$35K to $59K",
+                                  "low" = "Less than $35K")) %>%
+  
+  # Create ggplot object
+  ggplot(aes(x = pct, y = income_c, fill = chain_c,
+             # Only label bars that round to at least 5 percent
+             label = ifelse(pct >=.05,scales::label_percent(accuracy = 1)(pct),""))) + 
+  geom_col(position = position_stack(reverse = T)) +
+  geom_text(aes(group = chain_c), 
+            position = position_stack(reverse = T,vjust = 0.5),
+            color = "white") +
+  
+  # Add CMAP theme
+  theme_cmap(xlab = "Share of transit trips by household income and trip chain purpose",
+             gridlines = "v") +
+  cmap_fill_discrete(palette = "friday") +
+  
+  # Adjust axis
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1))
+
+mode_share_p4a_samplesize <-
+  mdt_transit_chain_income %>% 
+  ungroup() %>% 
+  select(income_c,n = total_n) %>% 
+  distinct()
+
+finalize_plot(mode_share_p4a,
+              "Travelers from low-income households use transit for a much wider 
+              range of trips than those from other households.",
+              paste0(
+                "Note: Includes trips by residents aged 5 and older of the 
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              trips that were within, to, and/or from one of those counties. 
+              Unlabeled bars are less than 5%.
+              <br><br>
+              Sample size:
+              <br>- <$35K (",
+                mode_share_p4a_samplesize %>% filter(income_c == "low") %>% select(n),
+                ")
+              <br>- <$35-59K (",
+                mode_share_p4a_samplesize %>% filter(income_c == "middle-low") %>% select(n),
+                ")
+              <br>- <$60-99K (",
+                mode_share_p4a_samplesize %>% filter(income_c == "middle-high") %>% select(n),
+                ")
+              <br>- >$100K (",
+                mode_share_p4a_samplesize %>% filter(income_c == "high") %>% select(n),
+                ")
+                <br><br>
+                Source: Chicago Metropolitan Agency for Planning analysis of My 
+                Daily Travel data."),
+              filename = "mode_share_p4a",
+              mode = c("png","pdf"),
+              overwrite = T)
+
+
 
 ################################################################################
 # Chart of mode share by age
