@@ -79,6 +79,7 @@ work_time_race_mdt <-
   # # BACKUP - for prose, group by race, ethnicity, and mode
   # group_by(race_eth,tpurp,mode_c) %>% 
   summarize(travtime = weighted.mean(travtime_pg_calc, w = wtperfin),
+            travtime_uw = mean(travtime_pg_calc),
             n = n())
 
 
@@ -107,6 +108,7 @@ other_time_race_mdt <-
   # Calculate weighted mean of trip times by race and ethnicity
   group_by(race_eth,tpurp) %>%
   summarize(travtime = weighted.mean(travtime_pg_calc,w = wtperfin),
+            travtime_uw = mean(travtime_pg_calc),
             n = n())
 
 # Combine results
@@ -221,9 +223,14 @@ finalize_plot(racial_disparities_p1,
                        sep = "/"),
                      ").
               <br><br>
+              Although sample sizes for 'Other' and 'Asian' health care trips 
+              are lower than desired, the estimates are similar for both
+              weighted and unweighted totals and are consistent with broader 
+              trends.
+              <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "racial_disparities_p1",
               mode = c("png","pdf"),
-              sidebar_width = 2.5,
+              sidebar_width = 3,
               overwrite = T)
