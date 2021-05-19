@@ -533,10 +533,13 @@ finalize_plot(average_resident_p1,
               Distances are calculated as point-to-point ('haversine') and do 
               not account for additional distance traveled along the route. 
               'Latino' includes respondents who identified as Latino or Hispanic, 
-              regardless of racial category. Other categories are non-Latino. For the 
-              categorization by sex, the survey asked respondents whether they
-              were male or female. A small number of respondents chose not to 
-              answer and are excluded based on small sample sizes.
+              regardless of racial category. Other categories are non-Latino. 
+              For the categorization by sex, the survey only asked respondents 
+              whether they were male or female. A small number of respondents 
+              chose not to answer, either because the available options were not 
+              sufficient or for some other reason. Due to low sample sizes and 
+              weighting concerns, average travel behavior statistics are 
+              unavailable for this population.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(distinct_daily_travelers_mdt),big.mark = ","),
@@ -647,9 +650,12 @@ finalize_plot(average_resident_p2,
               in the CMAP region. 
               'Latino' includes respondents who identified as Latino or Hispanic, 
               regardless of racial category. Other categories are non-Latino.
-              For the categorization by sex, the survey asked respondents 
+              For the categorization by sex, the survey only asked respondents 
               whether they were male or female. A small number of respondents 
-              chose not to answer and are excluded based on small sample sizes. 
+              chose not to answer, either because the available options were not 
+              sufficient or for some other reason. Due to low sample sizes and 
+              weighting concerns, average travel behavior statistics are 
+              unavailable for this population.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(distinct_residents_mdt),big.mark = ","),
@@ -757,10 +763,13 @@ finalize_plot(average_resident_p3,
               that region and between that region and the Indiana counties of 
               Lake, LaPorte, and Porter. 
               Distances are calculated as point-to-point ('haversine') and do 
-              not account for additional distance traveled along the route. For 
-              the categorization by sex, the survey asked respondents whether 
-              they were male or female. A small number of respondents chose not 
-              to answer and are excluded based on small sample sizes.
+              not account for additional distance traveled along the route. 
+              For the categorization by sex, the survey only asked respondents 
+              whether they were male or female. A small number of respondents 
+              chose not to answer, either because the available options were not 
+              sufficient or for some other reason. Due to low sample sizes and 
+              weighting concerns, average travel behavior statistics are 
+              unavailable for this population.
               Finally, note that household incomes are not adjusted for 
               inflation, and so there may be some households from Travel Tracker 
               that should be compared to the next-highest household income 

@@ -408,10 +408,12 @@ finalize_plot(wfh_p1,
               Will), as well as Grundy and DeKalb. 
               'Latino' includes respondents who identified as Latino or Hispanic, 
               regardless of racial category. Other categories are non-Latino.
-              For the 
-              categorization by sex, the survey asked respondents whether they 
-              were male or female. A small number of respondents chose not to 
-              answer and are excluded based on small sample sizes.
+              For the categorization by sex, the survey only asked respondents 
+              whether they were male or female. A small number of respondents 
+              chose not to answer, either because the available options were not 
+              sufficient or for some other reason. Due to low sample sizes and 
+              weighting concerns, average travel behavior statistics are 
+              unavailable for this population.
               <br><br>
               Sample size:
               <br>- <i>Age</i>: 18-29 (",
@@ -453,7 +455,7 @@ finalize_plot(wfh_p1,
               Daily Travel data."),
               filename = "wfh_p1",
               mode = c("png","pdf"),
-              sidebar_width = 2.6,
+              sidebar_width = 3,
               overwrite = T)
 
 
