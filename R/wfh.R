@@ -328,7 +328,7 @@ tc_summaries <-
            factor(subtype,
                   levels = c("Overall",
                              "Male","Female",
-                             "Asian","White","Other","Black","Hispanic",
+                             "Asian","White","Other","Black","Latino",
                              "5 to 17","18 to 29","30 to 49","50 to 69",
                                 "70 and above",
                              "Less than $35K","$35K to $59K","$60K to $99K",
@@ -400,14 +400,15 @@ wfh_p1_samplesize <-
 
 # Export finalized graphic
 finalize_plot(wfh_p1,
-              "Lower-income, Black, and Hispanic residents were the least likely 
+              "Lower-income, Black, and Latino residents were the least likely 
               to telecommute prior to COVID-19.",
               caption = 
               paste0("Note: Includes only employed residents from the CMAP seven 
               county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 
-              Will), as well as Grundy and DeKalb. 'Hispanic' 
-              includes respondents who identified as Hispanic of any racial 
-              category. Other categories are non-Hispanic. For the 
+              Will), as well as Grundy and DeKalb. 
+              'Latino' includes respondents who identified as Latino or Hispanic, 
+              regardless of racial category. Other categories are non-Latino.
+              For the 
               categorization by sex, the survey asked respondents whether they 
               were male or female. A small number of respondents chose not to 
               answer and are excluded based on small sample sizes.
@@ -439,8 +440,8 @@ finalize_plot(wfh_p1,
                      wfh_p1_samplesize %>% filter(subtype == "Other") %>% select(n),
                      "); Black (",
                      wfh_p1_samplesize %>% filter(subtype == "Black") %>% select(n),
-                     "); Hispanic (",
-                     wfh_p1_samplesize %>% filter(subtype == "Hispanic") %>% select(n),
+                     "); Latino (",
+                     wfh_p1_samplesize %>% filter(subtype == "Latino") %>% select(n),
                      ").
               <br>- <i>Sex</i>: Male (",
                      wfh_p1_samplesize %>% filter(subtype == "Male") %>% select(n),
