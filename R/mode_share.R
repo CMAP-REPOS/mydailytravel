@@ -964,8 +964,7 @@ mode_share_p5 <-
                                                           "#0084ac"),
                                                  pattern = "none")))
 finalize_plot(mode_share_p5,
-              title = "The region's younger travelers disproportionately relied on 
-              non-car modes.",
+              title = "Children and young adults relied more on non-car modes.",
               caption = 
               paste0("Note: Includes trips by residents aged 5 and older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
