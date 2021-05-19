@@ -217,7 +217,7 @@ mode_analysis_p1_samplesize <-
 # Export finalized graphic
 finalize_plot(mode_analysis_p1,
               "While taxi ridership fell significantly between 2008 and 2019, 
-              Transportation Network Company (TNC) more than made up the
+              Transportation Network Company (TNC) trips more than made up the
               difference.",
               paste0("Note: Includes trips by residents of the CMAP seven 
               county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 

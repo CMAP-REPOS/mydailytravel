@@ -766,21 +766,28 @@ finalize_plot(wfh_p3,
 ################################################################################
 
 # Calculate averages for all trips
-wfh_alltraveler_trips_general <-
+wfh_alltraveler_trips <-
   # Start with the universe of all relevant respondents in MDT
   wfh_mdt_all %>% 
   # Add distances traveled by individuals who had trips
   left_join(wfh_trips_person_level_mdt %>%
               # Combine work and non-work trips
               group_by(sampno,perno) %>%
-              summarize(distance_pg = sum(distance_pg)) %>% 
+              summarize(distance_pg = sum(distance_pg),
+                        wfh_today = first(wfh_today),
+                        wfo_today = first(wfo_today)) %>% 
               ungroup(),
             by = c("sampno","perno")) %>% 
   # Add trips for everyone who didn't travel today (these are included
   # in the averages as 0 distance)
-  replace_na(list(distance_pg = 0)) %>%
+  replace_na(list(distance_pg = 0,
+                  wfh_today = 0,
+                  wfo_today = 0)) %>%
   # Remove travelers with homes in multiple counties
-  filter(home_county != "999") %>% # 82772 records
+  filter(home_county != "999") # 82772 records
+
+wfh_alltraveler_trips_summary <-
+  wfh_alltraveler_trips %>% 
   # Calculate average distances
   group_by(tc_frequency,geog) %>%
   summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
@@ -791,7 +798,7 @@ wfh_alltraveler_trips_general <-
 # Create chart
 wfh_p4 <-
   # Get data
-  wfh_alltraveler_trips_general %>%
+  wfh_alltraveler_trips_summary %>%
   # Reformat and reorder
   mutate(flag = recode_factor(factor(flag,levels = c(0,1,2)),
                               "0" = "Does not regularly telecommute",
@@ -894,6 +901,36 @@ finalize_plot(wfh_p4,
               filename = "wfh_p4",
               mode = c("png","pdf"),
               overwrite = T)
+
+
+################################################################################
+# Backup - summary of work from home / outside the home behavior by TC/WFH frequency
+################################################################################
+
+wfh_alltraveler_trips %>% 
+  mutate(flag = case_when(
+    tc_freq_or_wfh %in% c(2,3) ~ 2,
+    TRUE ~ tc_freq_or_wfh
+  )) %>% 
+  count(flag,wfo_today,wt = wtperfin) %>% 
+  group_by(flag) %>% 
+  mutate(pct = n / sum(n))
+# 74% of non-TC/WFHers worked outside the home, while only 67% of part-time TCers
+# did and 21% of 4+ TCers/WFHers did.
+
+wfh_alltraveler_trips %>% 
+  mutate(flag = case_when(
+    tc_freq_or_wfh %in% c(2,3) ~ 2,
+    TRUE ~ tc_freq_or_wfh
+  )) %>% 
+  count(flag,wfh_today,wt = wtperfin) %>% 
+  group_by(flag) %>% 
+  mutate(pct = n / sum(n))
+# 2% of non-TCers reported working from home. 16% of part-time TCers did and 32%
+# of 4+ TCers did. This does not capture individuals who may have worked from
+# home but did not record any trips and are thus excluded from the trip-based
+# analyses.
+
 
 ################################################################################
 # Backup - summary of non-work chain trips (for prose)
