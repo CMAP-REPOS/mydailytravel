@@ -289,7 +289,7 @@ tc_race_eth <-
   mutate(type = "Race and ethnicity",
          subtype = recode_factor(race_eth,
                                  "white" = "White",
-                                 "hispanic" = "Hispanic",
+                                 "latino" = "Latino",
                                  "black" = "Black",
                                  "asian" = "Asian",
                                  "other" = "Other")) %>%

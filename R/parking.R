@@ -42,30 +42,30 @@ household_vehicles_mdt <-
   mutate(
     household_race_eth = case_when(
       grepl("white",household_race_eth_concat, fixed = TRUE) & 
-        !(grepl("hispanic",household_race_eth_concat, fixed = TRUE) |
+        !(grepl("latino",household_race_eth_concat, fixed = TRUE) |
             grepl("other",household_race_eth_concat, fixed = TRUE) |
             grepl("asian",household_race_eth_concat, fixed = TRUE) |
             grepl("black",household_race_eth_concat, fixed = TRUE)) ~ "white",
-      grepl("hispanic",household_race_eth_concat, fixed = TRUE) & 
+      grepl("latino",household_race_eth_concat, fixed = TRUE) & 
         !(grepl("white",household_race_eth_concat, fixed = TRUE) |
             grepl("other",household_race_eth_concat, fixed = TRUE) |
             grepl("asian",household_race_eth_concat, fixed = TRUE) |
-            grepl("black",household_race_eth_concat, fixed = TRUE)) ~ "hispanic",
+            grepl("black",household_race_eth_concat, fixed = TRUE)) ~ "latino",
       grepl("other",household_race_eth_concat, fixed = TRUE) & 
         !(grepl("white",household_race_eth_concat, fixed = TRUE) |
-            grepl("hispanic",household_race_eth_concat, fixed = TRUE) |
+            grepl("latino",household_race_eth_concat, fixed = TRUE) |
             grepl("asian",household_race_eth_concat, fixed = TRUE) |
             grepl("black",household_race_eth_concat, fixed = TRUE)) ~ "other",
       grepl("asian",household_race_eth_concat, fixed = TRUE) & 
         !(grepl("white",household_race_eth_concat, fixed = TRUE) |
             grepl("other",household_race_eth_concat, fixed = TRUE) |
-            grepl("hispanic",household_race_eth_concat, fixed = TRUE) |
+            grepl("latino",household_race_eth_concat, fixed = TRUE) |
             grepl("black",household_race_eth_concat, fixed = TRUE)) ~ "asian",
       grepl("black",household_race_eth_concat, fixed = TRUE) & 
         !(grepl("white",household_race_eth_concat, fixed = TRUE) |
             grepl("other",household_race_eth_concat, fixed = TRUE) |
             grepl("asian",household_race_eth_concat, fixed = TRUE) |
-            grepl("hispanic",household_race_eth_concat, fixed = TRUE)) ~ "black",
+            grepl("latino",household_race_eth_concat, fixed = TRUE)) ~ "black",
       TRUE ~ "mixed"
     ))
   

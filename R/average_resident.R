@@ -380,7 +380,7 @@ travel_race_eth <-
   mutate(type = "Race and ethnicity",
          subtype = recode_factor(race_eth,
                                  "white" = "White",
-                                 "hispanic" = "Hispanic",
+                                 "latino" = "Latino",
                                  "black" = "Black",
                                  "asian" = "Asian",
                                  "other" = "Other")) %>%
@@ -409,7 +409,7 @@ travel_summaries <-
   mutate(subtype = factor(subtype,
                           levels = c("Overall",
                                      "Male","Female",
-                                     "White","Asian","Black","Hispanic","Other",
+                                     "White","Asian","Black","Latino","Other",
                                      "5 to 17","18 to 29","30 to 49","50 to 69","70 and above",
                                      "Less than $35K","$35K to $59K","$60K to $99K","$100K or more"
                                      ))) %>% 
@@ -532,8 +532,8 @@ finalize_plot(average_resident_p1,
               Lake, LaPorte, and Porter. 
               Distances are calculated as point-to-point ('haversine') and do 
               not account for additional distance traveled along the route. 
-              'Hispanic' includes respondents who identified as Hispanic of any 
-              racial category. Other categories are non-Hispanic. For the 
+              'Latino' includes respondents who identified as Latino or Hispanic, 
+              regardless of racial category. Other categories are non-Latino. For the 
               categorization by sex, the survey asked respondents whether they
               were male or female. A small number of respondents chose not to 
               answer and are excluded based on small sample sizes.
@@ -644,9 +644,9 @@ finalize_plot(average_resident_p2,
               and DeKalb.
               Individuals were counted as 'traveling' if they had at least one 
               trip on their assigned travel day, no matter whether that trip was 
-              in the CMAP region. 'Hispanic' includes respondents who identified 
-              as Hispanic of any racial category. Other categories are 
-              non-Hispanic. 
+              in the CMAP region. 
+              'Latino' includes respondents who identified as Latino or Hispanic, 
+              regardless of racial category. Other categories are non-Latino.
               For the categorization by sex, the survey asked respondents 
               whether they were male or female. A small number of respondents 
               chose not to answer and are excluded based on small sample sizes. 

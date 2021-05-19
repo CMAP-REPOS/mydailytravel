@@ -80,7 +80,7 @@ tnc <-
            TRUE ~ 0
          ),
          hispa = case_when(
-           race_eth == "hispanic" ~ 1,
+           race_eth == "latino" ~ 1,
            TRUE ~ 0
          ),
          other = case_when(
@@ -147,9 +147,9 @@ tnc_use_lm <-
        smrtphn + # Do they have a smartphone?
        pertrips + # How many trips did they take on their travel day?
        # Are they: 
-       white + # White (non-Hispanic)?
+       white + # White (non-Latino)?
        black + # Black?
-       hispa + # Hispanic (of any race)?
+       hispa + # Latino (of any race)?
        asian, # Asian?
       .,
       # We use the weights to better represent the regional trends (vs. raw
@@ -204,7 +204,7 @@ tnc_purpose_race <-
   rbind(tnc_purpose_overall %>% mutate(race_eth = "CMAP region")) %>% 
   # Adjust factors
   mutate(race_eth = factor(race_eth,
-                           levels = c("black","asian","other","hispanic","white","CMAP region")))
+                           levels = c("black","asian","other","latino","white","CMAP region")))
 
 
 tnc_p1_labels <-
@@ -227,7 +227,7 @@ tnc_p1 <-
   # Capitalize
   mutate(race_eth = recode_factor(race_eth,
                                   "other" = "Other",
-                                  "hispanic" = "Hispanic",
+                                  "latino" = "Latino",
                                   "black" = "Black",
                                   "asian" = "Asian",
                                   "CMAP region" = "CMAP region",
@@ -282,8 +282,9 @@ finalize_plot(tnc_p1,
               Transportation Network Companies (TNCs) for non-work trips.",
               caption = 
               paste0(
-              "Note: 'Hispanic' includes respondents who identified as 
-              Hispanic of any racial category. Other categories are non-Hispanic. 
+              "Note:
+              'Latino' includes respondents who identified as Latino or Hispanic, 
+              regardless of racial category. Other categories are non-Latino.
               Excludes travelers 18 and younger, who were not asked about 
               TNC usage.
               <br><br>
@@ -297,8 +298,8 @@ finalize_plot(tnc_p1,
               <br>- Black (",
                        tnc_p1_samplesize %>% filter(race_eth == "black") %>% select(n),
                        ");
-              <br>- Hispanic (",
-                       tnc_p1_samplesize %>% filter(race_eth == "hispanic") %>% select(n),
+              <br>- Latino (",
+                       tnc_p1_samplesize %>% filter(race_eth == "latino") %>% select(n),
                        ");
               <br>- Other (",
                        tnc_p1_samplesize %>% filter(race_eth == "other") %>% select(n),

@@ -124,7 +124,7 @@ mdt_mode_race <-
                                   "other" = "Other",
                                   "black" = "Black",
                                   "asian" = "Asian",
-                                  "hispanic" = "Hispanic",
+                                  "latino" = "Latino",
                                   "white" = "White",
                                   "CMAP region" = "CMAP region")) %>% 
   ungroup()
@@ -662,8 +662,8 @@ finalize_plot(mode_share_p3,
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
-              'Hispanic' includes respondents who identified as 
-              Hispanic of any racial category. Other categories are non-Hispanic. 
+              'Latino' includes respondents who identified as 
+              Latino or Hispanic, regardless of racial category. Other categories are non-Latino. 
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(mode_share_base_mdt),big.mark = ","),

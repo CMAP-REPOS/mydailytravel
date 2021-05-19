@@ -150,10 +150,10 @@ school_trips_p1 <-
   rename(stat = travtime_mean) %>% 
   # Capitalize
   mutate(race_eth = recode_factor(factor(race_eth,
-                                         levels = c("black","hispanic","other","white",
+                                         levels = c("black","latino","other","white",
                                                     "asian","Non-white")),
                            "black" = "Black", 
-                           "hispanic" = "Hispanic","other" = "Other",
+                           "latino" = "Latino","other" = "Other",
                            "white" = "White","asian" = "Asian",
                            "Non-white" = "Non-white"
                            )) %>%
@@ -174,7 +174,7 @@ school_trips_p1 <-
   theme_cmap(gridlines = "h",legend.position = "None",
              xlab = "Mean travel time to school (minutes)") +
   scale_fill_discrete(type = c("#84c87e", # Black
-                               "#d8ba39", # Hispanic
+                               "#d8ba39", # Latino
                                "#607b88", # Other
                                "#75a5d8", # White
                                # "#77008c", # Non-white (archived for high school)
@@ -193,17 +193,16 @@ finalize_plot(school_trips_p1,
               longer than two and a half hours, and any trips that did not start
               or end between 7:00 A.M. and 9:00 A.M.
               <br><br>
-              'Hispanic' represents travelers who identify as Hispanic 
-              regardless of racial identity. Other categories, e.g., 'White', 
-              represent non-Hispanic travelers.
+              'Latino' includes respondents who identified as Latino or Hispanic, 
+              regardless of racial category. Other categories are non-Latino.
               <br><br>
               Sample size: 
               <br>- Black (",
                      school_trips_p1_samplesize %>% 
                      filter(race_eth == "black") %>% select(n),");
-              <br>- Hispanic (",
+              <br>- Latino (",
                      school_trips_p1_samplesize %>% 
-                       filter(race_eth == "hispanic") %>% select(n),");
+                       filter(race_eth == "latino") %>% select(n),");
               <br>- Other (",
                      school_trips_p1_samplesize %>% 
                        filter(race_eth == "other") %>% select(n),");
@@ -266,7 +265,7 @@ school_trips_output <-
            (race_eth == "black" & travtime_pg_calc >= 14.5 & travtime_pg_calc < 15.5) |
            (race_eth == "asian" & travtime_pg_calc >= 10.5 & travtime_pg_calc < 11.5) | 
            (race_eth == "white" & travtime_pg_calc >= 10.5 & travtime_pg_calc < 11.5) |
-           (race_eth == "hispanic" & travtime_pg_calc >= 9.5 & travtime_pg_calc < 10.5) |
+           (race_eth == "latino" & travtime_pg_calc >= 9.5 & travtime_pg_calc < 10.5) |
            (race_eth == "other" & travtime_pg_calc >= 9.5 & travtime_pg_calc < 10.5)) |
            (k12 == "High school" &
               ((race_eth == "Non-white" & travtime_pg_calc >= 16.5 & travtime_pg_calc < 17.5) |
@@ -329,8 +328,8 @@ all_school_mdt_lm <-
     asian = case_when(
       race_eth == "asian" ~ 1,
       TRUE ~ 0),
-    hispa = case_when(
-      race_eth == "hispanic" ~ 1,
+    latino = case_when(
+      race_eth == "latino" ~ 1,
       TRUE ~ 0),
     high_inc = case_when(
       income_c == "high" | income_c == "middle-high" ~ 1,
@@ -356,7 +355,7 @@ all_school_mdt_lm <-
 
 school_trips_regression <-
   lm(travtime_lm ~ 
-       white + black + asian + hispa +
+       white + black + asian + latino +
        high_inc +
        distance_pg + chicago + car_trip + school_bus + transit +
        walk + bike ,

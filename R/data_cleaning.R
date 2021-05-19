@@ -833,7 +833,7 @@ mdt <- mdt %>%
                            "-8" = "missing",
                            "-7" = "missing")) %>%
   mutate(race_eth = case_when(
-    hisp == 1 ~ "hispanic",
+    hisp == 1 ~ "latino",
     TRUE ~ race_eth)) %>%
   select(-race,-hisp)
 
@@ -849,7 +849,7 @@ mdt_all_respondents <- mdt_all_respondents %>%
                            "-8" = "missing",
                            "-7" = "missing")) %>%
   mutate(race_eth = case_when(
-    hisp == 1 ~ "hispanic",
+    hisp == 1 ~ "latino",
     TRUE ~ race_eth)) 
 
 # Recode into race and ethnicity groups
@@ -862,7 +862,7 @@ tt <- tt %>%
                            "7" = "other",
                            "9" = "missing")) %>%
   mutate(race_eth = case_when(
-    HISP == 1 ~ "hispanic",
+    HISP == 1 ~ "latino",
     TRUE ~ race_eth)) %>%
   select(-RACE,-HISP)
 
@@ -875,7 +875,7 @@ tt_all_respondents <- tt_all_respondents %>%
                            "7" = "other",
                            "9" = "missing")) %>%
   mutate(race_eth = case_when(
-    HISP == 1 ~ "hispanic",
+    HISP == 1 ~ "latino",
     TRUE ~ race_eth))
 
 # Recode trip chains in MDT data
