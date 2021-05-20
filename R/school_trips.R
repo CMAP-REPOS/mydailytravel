@@ -118,6 +118,8 @@ school_time_race_person_level_mdt <-
 school_time_race_mdt <-
   school_time_race_person_level_mdt %>%
   filter(k12 != "High school") %>% 
+  # # Archived code - enables taking a random subset
+  # sample_frac(.5) %>% 
   group_by(race_eth) %>% 
   # # Commented code allows for faceting by home jurisdiction
   # group_by(race_eth,home_county_chi) %>% 
