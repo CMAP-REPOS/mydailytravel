@@ -310,8 +310,85 @@ finalize_plot(trips_in_motion_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries."),
               filename = "trips_in_motion_p2",
-              # mode = c("png","pdf"),
+              mode = c("png","pdf"),
               overwrite = TRUE)
+
+################################################################################
+# Health
+################################################################################
+
+tim_mdt_health <-
+  tim_mdt_wip %>%
+  # Filter to just the purpose in question
+  filter(tpurp == "Health care visit for self")
+
+trip_times_health_and_mode_mdt <-
+  tim_calculator(data = tim_mdt_health,
+                 weights = "wtperfin",
+                 criteria = "mode_c",
+                 rolling_window = 55)
+
+trips_in_motion_p3 <-
+  trip_times_health_and_mode_mdt %>%
+  # Collapse school buses into other and sum
+  mutate(mode_c = as.character(mode_c)) %>%
+  mutate(mode_c = case_when(
+    mode_c == "schoolbus" ~ "other",
+    TRUE ~ mode_c)) %>%
+  mutate(mode_c = recode_factor(factor(mode_c,levels = mode_c_levels),
+                                "driver" = "Driver",
+                                "passenger" = "Passenger",
+                                "transit" = "Transit",
+                                "walk" = "Walk",
+                                "bike" = "Bicycle",
+                                "other" = "Other")) %>%
+  group_by(mode_c,time_band) %>%
+  summarize(rolling_count = sum(rolling_count)) %>%
+  # Remove missing modes
+  filter(mode_c != "missing") %>%
+  
+  # Create ggplot object
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = mode_c),position = position_stack(reverse = T)) +
+  
+  # Adjust axes
+  scale_x_datetime(labels = scales::date_format("%H:%M",
+                                                tz = "America/Chicago"),
+                   breaks = tim_breaks) +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
+  
+  # Manually add colors
+  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
+                               "#efa7a7","#0084ac")) +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"),
+             legend.max.columns = 6,
+             xlab = "Weekday personal health care trips in motion by time of day")
+
+finalize_plot(trips_in_motion_p3,
+              "Personal health care trips also have a morning and afternoon peak, but
+              these are much more concentrated around, but not during, the
+              lunch hour.",
+              paste0("Note: Trips in motion are 55-minute rolling averages. Trips 
+              analyzed include weekday personal health care trips by residents age 5 and older 
+              of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
+              Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
+              only trips that were within, to, and/or from one of those counties.
+              Excludes trips longer than 100 miles or greater than 15 hours long.
+              <br><br>
+              Sample size: Figures are based on a total of ",
+                     format(nrow(tim_mdt_health),big.mark = ","),
+                     " records.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel trip diaries."),
+              # height = 6.3,
+              # width = 11.3,
+              mode = c("pdf","png"),
+              filename = "trips_in_motion_p3",
+              overwrite = T)
 
 ################################################################################
 # Bikes (personal)
@@ -336,7 +413,7 @@ trip_times_bike_and_chain_mdt <-
                  rolling_window = 55)
 
 # Graph output of trips in motion by purpose for bike trips (personal bike only)
-trips_in_motion_p3 <-
+trips_in_motion_p4 <-
   # Get data
   trip_times_bike_and_chain_mdt %>%
   # Sort chains for ordering
@@ -363,7 +440,7 @@ trips_in_motion_p3 <-
              panel.grid.major.x = element_line(color = "light gray"),
              xlab = "Personal bike trips")
 
-finalize_plot(trips_in_motion_p3,
+finalize_plot(trips_in_motion_p4,
               "Personal bike usage has a strong morning peak, with PM usage spread more evenly across the afternoon and evening.",
               "Note: Trips in motion are 55-minute rolling averages. Trips 
               analyzed include weekday trips by residents age 5 and older 
@@ -374,7 +451,7 @@ finalize_plot(trips_in_motion_p3,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries.",
-              filename = "trips_in_motion_p3",
+              filename = "trips_in_motion_p4",
               # mode = c("png","pdf"),
               overwrite = TRUE,
               # height = 2.25,
