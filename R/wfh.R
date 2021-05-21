@@ -403,7 +403,7 @@ finalize_plot(wfh_p1,
               "Lower-income, Black, and Latino residents were the least likely 
               to telecommute prior to COVID-19.",
               caption = 
-              paste0("Note: Includes only employed residents from the CMAP seven 
+              paste0("Note: Includes only employed residents age 16 and older from the CMAP seven 
               county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 
               Will), as well as Grundy and DeKalb. 
               'Latino' includes respondents who identified as Latino or Hispanic, 
@@ -577,7 +577,7 @@ finalize_plot(wfh_p2,
               "Part-time telecommuters who lived outside Chicago had 
               significantly longer journeys to and from work on days when they 
               worked outside the home.",
-              paste0("Note: Figures are for trips by employed residents from the 
+              paste0("Note: Figures are for trips by employed residents age 16 and older from the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. Includes only 
               trips within, to, and/or from those counties. Mean mileage 
@@ -709,7 +709,7 @@ finalize_plot(wfh_p3,
               "Suburban part-time telecommuters were much more 
               likely to use transit on days when they worked outside the home, 
               while those in Chicago were more likely to walk to work.",
-              paste0("Note: Figures are for trips by employed residents from the 
+              paste0("Note: Figures are for trips by employed residents age 16 and older from the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. Includes only 
               trips within, to, and/or from those counties. Mode share
@@ -843,7 +843,7 @@ wfh_p4 <-
 finalize_plot(wfh_p4,
               "On average, part-time telecommuters living outside Chicago 
               traveled the greatest distances every day.",
-              paste0("Note: Figures are for trips by employed residents from the 
+              paste0("Note: Figures are for trips by employed residents age 16 and older from the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. Includes only 
               trips within, to, and/or from those counties. These 

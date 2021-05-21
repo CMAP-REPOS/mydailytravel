@@ -168,7 +168,7 @@ finalize_plot(tpurp_analysis_p1,
               Chicago residents.",
               caption = 
               paste0(
-              "Note: Includes trips made by residents aged 5 or older of the 
+              "Note: Includes trips made by residents age 5 or older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb.
               'By car' includes trips as either a driver of a passenger of a personal 
@@ -334,7 +334,7 @@ finalize_plot(tpurp_analysis_p3,
               "Walking and other non-car modes were significantly more common for 
               trips to socialize with friends than with relatives.",
               paste0(
-              "Note: Includes trips made by residents aged 5 or older of the 
+              "Note: Includes trips made by residents age 5 or older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. 
               'By car' includes trips as either a driver of a passenger

@@ -658,7 +658,7 @@ finalize_plot(mode_share_p3,
               title = "White residents of the region were the likeliest to rely 
               on personal automobiles for their transportation.",
               caption = 
-              paste0("Note: Includes trips by residents aged 5 and older of the 
+              paste0("Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
@@ -763,7 +763,7 @@ finalize_plot(mode_share_p4,
               reliant  on non-car modes, but the highest-income households also
               exceeded the regional average.",
               caption = 
-              paste0("Note: Includes trips by residents aged 5 and older of the 
+              paste0("Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
@@ -857,7 +857,7 @@ finalize_plot(mode_share_p4a,
               "Travelers from low-income households use transit for a much wider 
               range of trips than those from other households.",
               paste0(
-                "Note: Includes trips by residents aged 5 and older of the 
+                "Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties. 
@@ -966,7 +966,7 @@ mode_share_p5 <-
 finalize_plot(mode_share_p5,
               title = "Children and young adults relied more on non-car modes.",
               caption = 
-              paste0("Note: Includes trips by residents aged 5 and older of the 
+              paste0("Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.

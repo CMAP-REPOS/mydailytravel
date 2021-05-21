@@ -219,7 +219,7 @@ finalize_plot(mode_analysis_p1,
               "While taxi ridership fell significantly between 2008 and 2019, 
               Transportation Network Company (TNC) trips more than made up the
               difference.",
-              paste0("Note: Includes trips by residents of the CMAP seven 
+              paste0("Note: Includes trips by residents age 5 and older of the CMAP seven 
               county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 
               Will), as well as Grundy and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.

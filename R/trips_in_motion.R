@@ -173,7 +173,7 @@ finalize_plot(trips_in_motion_p1,
               travel patterns remains uncertain.",
               paste0(
               "Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include weekday trips by residents aged 5 and older 
+              analyzed include weekday trips by residents age 5 and older 
               of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
               Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
               only trips that were within, to, and/or from one of those counties.
@@ -290,7 +290,7 @@ finalize_plot(trips_in_motion_p2,
               from work vs. other trip purposes.",
               paste0(
               "Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include weekday trips by residents aged 5 and older 
+              analyzed include weekday trips by residents age 5 and older 
               of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
               Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
               only trips that were within, to, and/or from one of those counties.
@@ -366,7 +366,7 @@ trips_in_motion_p3 <-
 finalize_plot(trips_in_motion_p3,
               "Personal bike usage has a strong morning peak, with PM usage spread more evenly across the afternoon and evening.",
               "Note: Trips in motion are 55-minute rolling averages. Trips 
-              analyzed include weekday trips by residents aged 5 and older 
+              analyzed include weekday trips by residents age 5 and older 
               of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
               Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
               only trips that were within, to, and/or from one of those counties.

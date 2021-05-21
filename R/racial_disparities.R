@@ -160,7 +160,7 @@ finalize_plot(racial_disparities_p1,
               work, health care, and routine shopping than those of 
               other residents.",
               caption = 
-              paste0("Note: Includes trips by residents aged 5 and older of the 
+              paste0("Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties. 

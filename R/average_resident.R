@@ -31,7 +31,7 @@ avgtravel_mdt <-
   mdt %>%                    # 125463 records
   filter(
     # Keep only trips with travelers at least 5 years old.
-    # - note the "sampno" selections have no information but are school-aged
+    # - note the "sampno" selections have no information but are school-age
     # based on place. age < 0 are all respondents without a numeric age value.
     age >= 5 |               # 125459 records
       (age < 0 & aage %in% c(2,3,4,5,6,7)) |
@@ -76,7 +76,7 @@ avgtravel_all_respondents_mdt <-
   mdt_all_respondents %>%  # 30683
   filter(
     # Keep only trips with travelers at least 5 years old.
-    # - note the "sampno" selections have no information but are school-aged
+    # - note the "sampno" selections have no information but are school-age
     # based on place. age < 0 are all respondents without a numeric age value.
     age >= 5 |               # 125459 records
       (age < 0 & aage %in% c(2,3,4,5,6,7)) |
@@ -518,9 +518,9 @@ finalize_plot(average_resident_p1,
               paste0("Note: Figures are calculated based only on individuals 
               who traveled and thus exclude individuals with zero trips. 
               Non-travelers are disproportionately low-income, non-white, and 
-              aged between 18 and 29 or older than 70.
+              between 18 and 29 or older than 70 years old.
               <br><br>
-              Includes trips by travelers aged 5 and older who live in the 
+              Includes trips by travelers age 5 and older who live in the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy. For comparability with 
               Travel Tracker survey results, only includes trips within 
@@ -638,7 +638,7 @@ finalize_plot(average_resident_p2,
               to travel on a weekday.",
               caption = 
               paste0("Note: Figures are based on the travel behavior of 
-              residents aged 5 or older of the CMAP seven county region (Cook, 
+              residents age 5 or older of the CMAP seven county region (Cook, 
               DuPage, Kane, Kendall, Lake, McHenry, and Will), as well as Grundy 
               and DeKalb.
               Individuals were counted as 'traveling' if they had at least one 
@@ -753,7 +753,7 @@ finalize_plot(average_resident_p3,
               older travelers reported more travel in 2019 than in 2008.",
               caption = 
               paste0(
-              "Note: Includes trips by travelers aged 5 and older who live in the 
+              "Note: Includes trips by travelers age 5 and older who live in the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy. Only includes trips within 
               that region and between that region and the Indiana counties of 
@@ -770,7 +770,7 @@ finalize_plot(average_resident_p3,
                      " travelers for My Daily Travel and ",
                      format(nrow(distinct_daily_travelers_tt),big.mark = ","),
                      " for Travel Tracker. Across all categories 
-              and both surveys, travelers aged 70 and above in My Daily Travel 
+              and both surveys, travelers age 70 and above in My Daily Travel 
               have the lowest sample size, with ",
                      format(
                        distinct_daily_travelers %>% 

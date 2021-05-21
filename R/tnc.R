@@ -285,7 +285,7 @@ finalize_plot(tnc_p1,
               "Note:
               'Latino' includes respondents who identified as Latino or Hispanic, 
               regardless of racial category. Other categories are non-Latino.
-              Excludes travelers 18 and younger, who were not asked about 
+              Excludes travelers age 18 and younger, who were not asked about 
               TNC usage.
               <br><br>
               Sample size:
@@ -381,7 +381,7 @@ finalize_plot(tnc_p2,
               trip diaries. The CMAP region average includes usage by residents 
               of the seven county region (Cook, DuPage, 
               Kane, Kendall, Lake, McHenry, and Will), as well as residents of 
-              Grundy and DeKalb. Excludes travelers 18 and younger, who were 
+              Grundy and DeKalb. Excludes travelers age 18 and younger, who were 
               not asked about TNC usage. 
               <br><br>
               Sample size:
@@ -495,7 +495,7 @@ finalize_plot(tnc_p3,
               "Usage of Transportation Network Companies (TNCs) decreased by age, 
               while the average cost per trip increased with age.",
               paste0("Note: These figures are based on survey responses and are 
-              not derived from trip diaries. Excludes travelers 18 and younger, 
+              not derived from trip diaries. Excludes travelers age 18 and younger, 
               as they were not asked about TNC usage.
               <br><br>
               Sample size (Usage/Cost): 
