@@ -539,7 +539,7 @@ finalize_plot(mode_share_p2a,
               Distances are 'network distances' and 
               capture the total distance traveled along the route, not just the 
               distance from origin to destination. Unlabeled bars have less than 
-              5 percent mode share.
+              five percent mode share.
               <br><br>
               Sample size: Figures are based on a total of ",
                        format(nrow(mode_share_base_mdt),big.mark = ","),

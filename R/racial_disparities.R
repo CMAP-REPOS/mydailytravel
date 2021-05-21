@@ -169,7 +169,7 @@ finalize_plot(racial_disparities_p1,
               'Latino' includes respondents who identified as Latino or Hispanic, 
               regardless of racial category. Other categories are non-Latino.
               <br><br>
-              Sample size (Black/Latino/Other/ Asian/White): 
+              Sample size (Black/Latino/Other/Asian/White): 
               <br>- Work (",
                      paste(
                        work_time_race_mdt %>% ungroup() %>%  
