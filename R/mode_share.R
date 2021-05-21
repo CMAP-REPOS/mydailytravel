@@ -296,7 +296,7 @@ finalize_plot(mode_share_p1,
               title = "Residents of Chicago and Cook County had by far the highest non-car 
               mode share in the CMAP region.",
               caption = 
-              paste0("Note: Includes trips by residents aged 5 and older of the 
+              paste0("Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
@@ -399,7 +399,7 @@ finalize_plot(mode_share_p2,
               title = "Travelers relied most on non-car modes for the shortest and 
               the longest trips.",
               caption = 
-              paste0("Note: Includes trips by residents aged 5 and older of the 
+              paste0("Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
@@ -428,9 +428,9 @@ finalize_plot(mode_share_p2,
 ################################################################################
 
 # Mileage bins
-mileage_breaks2 <- c(-1,.25,.5,1,2.5,5,10,25,50)
+mileage_breaks2 <- c(-1,.25,.5,1,2.5,5,10,25,50,100)
 mileage_labels2 <- c("<0.25","0.25 to 0.5","0.5 to 1","1 to 2.5","2.5 to 5",
-                     "5 to 10","10 to 25","25 to 50")
+                     "5 to 10","10 to 25","25 to 50","50 to 100")
 
 mdt_mode_mileage2 <-
   pct_calculator(
@@ -482,7 +482,7 @@ mode_share_p2a <-
   ggplot(aes(x = mileage_bin,y = pct,
          # Only label bars that are at least 5 percent
          label = ifelse(abs(pct) >=.05,scales::label_percent(accuracy = 1)(abs(pct)),""))) +
-  geom_col(aes(fill = mode_c),width = 10,position = position_stack(reverse = T)) +
+  geom_col(aes(fill = mode_c),width = 11,position = position_stack(reverse = T)) +
   geom_text(aes(group = mode_c),
             position = position_stack(vjust = 0.5,reverse = T),
             color = "white") +
@@ -503,20 +503,22 @@ mode_share_p2a <-
                      ) +
   
   scale_x_discrete(limits = c("<0.25",
-                              rep("",12),
+                              rep("",13),
                               "0.25 to 0.5",
                               rep("",14),
                               "0.5 to 1",
-                              rep("",16),
+                              rep("",15),
                               "1 to 2.5",
-                              rep("",18),
+                              rep("",16),
                               "2.5 to 5",
-                              rep("",19),
+                              rep("",17),
                               "5 to 10",
-                              rep("",20),
+                              rep("",18),
                               "10 to 25",
-                              rep("",21),
-                              "25 to 50"))
+                              rep("",19),
+                              "25 to 50",
+                              rep("",20),
+                              "50 to 100"))
   
   #+
   
@@ -530,20 +532,21 @@ mode_share_p2a <-
 finalize_plot(mode_share_p2a,
               title = "Travelers relied most on non-car modes for the shortest trips.",
               caption = 
-                paste0("<br>Note: Includes trips by residents aged 5 and older of the 
+                paste0("<br>Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
               Distances are 'network distances' and 
               capture the total distance traveled along the route, not just the 
-              distance from origin to destination.
+              distance from origin to destination. Unlabeled bars have less than 
+              5 percent mode share.
               <br><br>
               Sample size: Figures are based on a total of ",
                        format(nrow(mode_share_base_mdt),big.mark = ","),
                        " recorded trips.
-              Trips of less than 0.25 miles have the lowest sample size, with ",
+              Trips of 50 to 100 miles have the lowest sample size, with ",
                        format(mdt_mode_mileage2 %>% 
-                                filter(mileage_bin == "<0.25") %>% 
+                                filter(mileage_bin == "50 to 100") %>% 
                                 select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
                        " records.
               <br><br>
@@ -553,7 +556,7 @@ finalize_plot(mode_share_p2a,
               sidebar_width = 0,
               height = 8,
               # width = 6,
-              # mode = c("png","pdf"),
+              mode = c("png","pdf"),
               overwrite = T)
 
 
