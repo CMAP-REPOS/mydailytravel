@@ -32,32 +32,25 @@ tim_mdt_wip <-
   mdt %>%        # 125463 records
   # Remove beginning trips
   filter(mode != "beginning") %>% # 97374 records
-  # Manually calculate trip beginning times for remaining NA trips with nonzero
-  # travel time (36 records)
-  mutate(start_time_calc = arrtime_pg - 60 * travtime_pg) %>%
-  mutate(start_times_pg = case_when(
-    is.na(start_times_pg) ~ start_time_calc,
-    TRUE ~ start_times_pg)) %>%
-  select(-start_time_calc) %>%
-  # Remove trip with departure time in 1900
-  filter(start_times_pg > ymd_hms("2017-01-01 00:00:00") # 97373 records
-  ) %>%
   # Remove all trips where the arrival time comes before the start time (there
   # are 10 records where this is a problem)
-  filter(start_times_pg <= arrtime_pg) %>% # 97363 records
-  # Add calculated travel time for validation
-  mutate(travtime_calc = (arrtime_pg - start_times_pg)/60) %>%
+  mutate(ends_before_begins = case_when(
+    is.na(start_times_pg) ~ 0,
+    start_times_pg <= arrtime_pg ~ 0,
+    TRUE ~ 1)) %>%
+  filter(ends_before_begins == 0) %>% # 97364
+  select(-ends_before_begins) %>%  
   # Filter out unwanted trips
   filter(
     # Remove trips > 15 hours
-    travtime_calc < 15 * 60,     # 97355 records
+    travtime_pg_calc < 15 * 60,     # 97356 records
     # Remove trips with zero travel time
-    travtime_calc > 0,           # 97331 records
+    travtime_pg_calc > 0,           # 97331 records
     # Remove trips with 0 place group distance
     distance_pg > 0              # 97273 records
   ) %>%
   # Exclude improbable walk trips
-  filter(improbable_walk == 0) %>% 
+  filter(improbable_walk == 0) %>% # 97233
   
   # Make every trip on the same day (for analysis and graphing). I used January
   # 1, 2020 (arbitrarily). The code below extracts the time element of the

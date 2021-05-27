@@ -402,14 +402,24 @@ mdt_wip2 <- mdt_wip1 %>%
     # Otherwise, it is 1 (outside the TT region)
     TRUE ~ 1
   )) %>% 
+  # Impute trip start times for those missing them that are not beginning trips
+  mutate(start_times_pg = case_when(
+    mode == -1 ~ start_times_pg,
+    is.na(start_times_pg) ~ arrtime_pg - 60 * travtime_pg,
+    TRUE ~ start_times_pg
+  )) %>% 
   # Calculate travel time based on actual departure and arrival
   mutate(travtime_pg_calc = case_when(
-    # If the trip start time is NA, use original figure
+    # If the trip is a beginning trip, and thus has an NA start time, use
+    # original figure
     is.na(start_times_pg) ~ travtime_pg,
+    # If the trip is coded as having a start time in 1900, set travel time to 0
+    start_times_pg < ymd_hms("2017-01-01 00:00:00") ~ 0,
     # If the trip start time is after the arrival time, use original figure
     arrtime_pg < start_times_pg ~ travtime_pg,
     # Otherwise, calculate travel time based on trip start time and trip arrival time
     TRUE ~ as.numeric((arrtime_pg - start_times_pg)/60))) %>%
+  # Remove unneeded variables
   select(-c(out_region_lag,outside_tt,outside_tt_lag))
 
 mdt <- 
