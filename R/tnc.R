@@ -8,9 +8,10 @@
 #################################################
 
 library(tidyverse)
-library(ggplot2)
 library(cmapplot)
 library(ggpattern)
+library(lubridate)
+library(RSocrata)
 
 #################################################
 #                                               #
@@ -573,24 +574,48 @@ tnc_daily_totals %>%
 # weeks of holidays documented in `mdt_dates.R`.)
 
 
-# # Load TNC Trips during the My Daily Travel period (September 4, 2018 to May 9,
-# # 2019 - the dates begin and end at 3am Central Time). The City of Chicago only
-# # began releasing TNP data as of November 1, 2019, so the beginning date is
-# # coded as November 1st. NOTE: This will take a long time to download, even
-# # using these restricted dates. It is archived because of long data processing times.
-# nov18_tnc_trips <-
-#   read.socrata("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between '2018-11-01T00:00:01' and '2018-11-17T02:59:59'")
-# dec18_tnc_trips <-
-#   read.socrata("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between '2018-11-26T03:00:00' and '2018-12-22T02:59:59'")
-# jan19_tnc_trips <-
-#   read.socrata("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between '2019-01-05T03:00:00' and '2019-02-01T02:59:59'")
-# feb19_tnc_trips <-
-#   read.socrata("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between '2019-02-01T03:00:00' and '2019-03-01T02:59:59'")
-# mar_apr19_tnc_trips <-
-#   read.socrata("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between '2019-03-01T03:00:00' and '2019-04-13T02:59:59'")
-# apr_may19_tnc_trips <-
-#   read.socrata("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between '2019-04-22T03:00:00' and '2019-05-10T02:59:59'")
-# 
-# actual_tnc_trips <-
-#   rbind(nov18_tnc_trips,dec18_tnc_trips,jan19_tnc_trips,
-#     feb19_tnc_trips,mar_apr19_tnc_trips,apr_may19_tnc_trips)
+# Load TNC Trips during the My Daily Travel period (September 4, 2018 to May 9,
+# 2019 - the dates begin and end at 3am Central Time). The City of Chicago only
+# began releasing TNP data as of November 1, 2019, so the beginning date is
+# coded as November 1st. NOTE: This will take a long time to download, even
+# using these restricted dates. It is archived because of long data processing times.
+
+mdt_socrata_dates <-
+  tibble(date = 
+           c(seq.Date(from = as.Date("2018-11-01"),
+                        to = as.Date("2019-05-09"),
+                        by = "1 day"))) %>% 
+  # Identify the day of the week of the trip using the `wday` function from the
+  # lubridate package.
+  mutate(wday = wday(date)) %>%
+  # Keep out trips that are either Saturday (7) or Sunday (1)
+  filter(!(wday %in% c(1,7))) %>%
+  # Remove holidays (individually - note that %within% does not currently work
+  # on a list of time intervals)
+  filter(!(date %within% int_shift(mlk,duration(hours = -3)) |
+             date %within% int_shift(pres,duration(hours = -3)) |
+             date %within% int_shift(columbus,duration(hours = -3)) |
+             date %within% int_shift(vets,duration(hours = -3)) |
+             date %within% int_shift(xgiving,duration(hours = -3)) |
+             date %within% int_shift(xmas,duration(hours = -3)) |
+             date %within% int_shift(springb,duration(hours = -3)))) %>% 
+  mutate(next_day = date + 1) %>% 
+  mutate(socrata = paste0("'",date,"T03:00:00' and '",next_day,"T02:59:59'"))
+
+actual_tnc_trips_1_to_40 <- 
+  map_dfr(mdt_socrata_dates$socrata[1:40],
+          ~read.socrata(
+            paste0("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between ",
+                   .)))
+
+actual_tnc_trips_41_to_80 <- 
+  map_dfr(mdt_socrata_dates$socrata[41:80],
+          ~read.socrata(
+            paste0("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between ",
+                   .)))
+
+actual_tnc_trips_81_to_116 <- 
+  map_dfr(mdt_socrata_dates$socrata[81:116],
+          ~read.socrata(
+            paste0("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between ",
+                   .)))
