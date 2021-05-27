@@ -58,3 +58,6 @@ R/archive_wfh.R
 R/archive_tpurp_analysis.R
 R/archive_school.R
 .RDataTmp1
+outputs/mdt_tnc_1.csv
+outputs/mdt_tnc_2.csv
+outputs/mdt_tnc_3.csv
