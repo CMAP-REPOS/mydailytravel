@@ -103,13 +103,13 @@ all_school_mdt <-
 
 # Filter data for MDT
 school_time_race_person_level_mdt <-
-  all_school_mdt %>%                # 3179 records
+  all_school_mdt %>%                # 3531 records
   # Only include trips that are more than 0 minutes
-  filter(travtime_pg_calc > 0) %>%  # 3177 records
+  filter(travtime_pg_calc > 0) %>%  # 3529 records
   # Only include trips that are less than 2.5 hours
-  filter(travtime_pg_calc < 150) %>% 
+  filter(travtime_pg_calc < 150) %>% # 3529 records
   # Exclude households with missing race and ethnicity information
-  filter(race_eth != "missing") %>% # 3167 records
+  filter(race_eth != "missing") %>% # 3518 records
   # Add breakdown between K-8 and 9-12
   mutate(k12 = ifelse(schol == 3,
                       "Elementary and middle school",
@@ -218,7 +218,7 @@ finalize_plot(school_trips_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "school_trips_p1",
-              mode = c("png","pdf"),
+              # mode = c("png","pdf"),
               sidebar_width = 2.5,
               overwrite = T)
 
