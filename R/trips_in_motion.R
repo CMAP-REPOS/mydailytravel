@@ -113,6 +113,13 @@ trip_times_mode_c_and_chain_c_mdt_25 <-
                  criteria = c("mode_c","chain_c"),
                  weights = "wtperfin")
 
+# Trips in motion by purpose (25 minute rolling average)
+trip_times_tpurp_c_chain_c_mdt <-
+  tim_calculator(data = tim_mdt_wip %>%
+                   filter(tpurp_c != "missing"),
+                 criteria = c("tpurp_c","chain_c"),
+                 weights = "wtperfin")
+
 #################################################################
 #                                                               #
 #                        Charts                                 #
@@ -457,3 +464,85 @@ finalize_plot(trips_in_motion_p4,
               # height = 2.25,
               # width = 8
               )
+
+
+################################################################################
+# Other chains by trip purpose
+################################################################################
+
+trips_in_motion_p5 <-
+  # Get data
+  trip_times_tpurp_c_chain_c_mdt %>%
+  # Capitalize for presentation
+  mutate(chain_c = recode_factor(chain_c,
+                                 "work" = "Work",
+                                 "shop" = "Shopping",
+                                 "other" = "Other")) %>% 
+  # Capitalize and group low-number trips into "Other" bucket
+  mutate(tpurp_c = recode_factor(tpurp_c,
+                                 "school" = "School",
+                                 "transport" = "Transporting others",
+                                 "dining" = "Dining",
+                                 "health" = "Health care",
+                                 "community" = "Community and socializing",
+                                 "recreation/fitness" = "Recreation and fitness",
+                                 "shopping/errands" = "Other purpose",
+                                 "transfer" = "Other purpose",
+                                 "other" = "Other purpose",
+                                 "home" = "Going home")) %>% 
+  group_by(tpurp_c,chain_c,time_band) %>% 
+  summarize(rolling_count = sum(rolling_count)) %>% 
+  
+  # Keep only other trips
+  filter(chain_c == "Other") %>%
+  # Exclude very small number of work trips that somehow are excluded from work chains
+  filter(tpurp_c != "work") %>% 
+  
+  # Create ggplot object
+  ggplot(aes(x = time_band,y = rolling_count)) +
+  geom_area(aes(fill = tpurp_c), position = position_stack(reverse = T)) +
+  
+  # Adjust axes
+  scale_x_datetime(labels = scales::date_format("%H:%M",
+                                                tz = "America/Chicago"),
+                   breaks = tim_breaks) +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
+  
+  scale_fill_brewer(type = "qual") +
+  
+  # Add CMAP style
+  theme_cmap(gridlines = "hv",
+             panel.grid.major.x = element_line(color = "light gray"),
+             legend.max.columns = 3,
+             xlab = "Trip purposes for 'Other' trip chains by time of day") #+
+# facet_wrap(~chain_c, ncol = 1)
+
+
+finalize_plot(trips_in_motion_p5,
+              "School trips and transporting others represented most of the 
+              trips in non-work and shopping chains, but there were also many 
+              other reasons why regional residents traveled.",
+              paste0("Note: Trips in motion are 25-minute rolling averages. Trips 
+              analyzed include weekday trips by residents age 5 and older 
+              of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
+              Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
+              only trips that were within, to, and/or from one of those counties.
+              Excludes trips longer than 100 miles or greater than 15 hours long.
+              <br><br>
+              Sample size: Figures are based on a total of ",
+                     format(nrow(tim_mdt_wip %>% filter(chain_c == "other")),big.mark = ","),
+                     " records.
+              <br><br>
+              'Other purpose' includes transfers, shopping and errands not 
+              captured in the 'Shopping' trip chains, and other trip purposes 
+              like volunteering and major special events.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel trip diaries."),
+              filename = "trips_in_motion_p5",
+              mode = c("png"),
+              sidebar_width = 3,
+              overwrite = TRUE,
+              # height = 6.3,
+              # width = 11.3
+)
