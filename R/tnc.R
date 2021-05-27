@@ -582,10 +582,10 @@ tnc_daily_totals %>%
 # # processing times.
 # 
 # mdt_socrata_dates <-
-#   tibble(date = 
+#   tibble(date =
 #            c(seq.Date(from = as.Date("2018-11-01"),
 #                         to = as.Date("2019-05-09"),
-#                         by = "1 day"))) %>% 
+#                         by = "1 day"))) %>%
 #   # Identify the day of the week of the trip using the `wday` function from the
 #   # lubridate package.
 #   mutate(wday = wday(date)) %>%
@@ -599,23 +599,23 @@ tnc_daily_totals %>%
 #              date %within% int_shift(vets,duration(hours = -3)) |
 #              date %within% int_shift(xgiving,duration(hours = -3)) |
 #              date %within% int_shift(xmas,duration(hours = -3)) |
-#              date %within% int_shift(springb,duration(hours = -3)))) %>% 
-#   mutate(next_day = date + 1) %>% 
+#              date %within% int_shift(springb,duration(hours = -3)))) %>%
+#   mutate(next_day = date + 1) %>%
 #   mutate(socrata = paste0("'",date,"T03:00:00' and '",next_day,"T02:59:59'"))
 # 
-# actual_tnc_trips_1_to_40 <- 
+# actual_tnc_trips_1_to_40 <-
 #   map_dfr(mdt_socrata_dates$socrata[1:40],
 #           ~read.socrata(
 #             paste0("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between ",
 #                    .)))
 # 
-# actual_tnc_trips_41_to_80 <- 
+# actual_tnc_trips_41_to_80 <-
 #   map_dfr(mdt_socrata_dates$socrata[41:80],
 #           ~read.socrata(
 #             paste0("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between ",
 #                    .)))
 # 
-# actual_tnc_trips_81_to_116 <- 
+# actual_tnc_trips_81_to_116 <-
 #   map_dfr(mdt_socrata_dates$socrata[81:116],
 #           ~read.socrata(
 #             paste0("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between ",
