@@ -2,6 +2,8 @@
 # Dates for MDT survey period
 ################################################################################
 
+library(lubridate)
+
 # We want to keep all weekdays from September 4th, 2018 to May 9th, 2019. This
 # represents the time period during which the main phase of the travel survey
 # was being actively completed. However, several weeks were excluded that need
