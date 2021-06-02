@@ -58,7 +58,7 @@ tnc <-
            (age < 0 & aage %in% c(5,6,7)) |
            (age < 0 & age18 == 1)) %>% # 22957
   # Select relevant variables
-  select(sampno,perno,wtperfin,home_county,home_county_chi,
+  select(sampno,perno,weight,home_county,home_county_chi,
          race_eth,age,income_c,hhveh,pertrips,smrtphn,
          tnc_use,tnc_cost,tnc_purp) %>% 
   # Add information on active travel from above
@@ -155,7 +155,7 @@ tnc_use_lm <-
       .,
       # We use the weights to better represent the regional trends (vs. raw
       # responses)
-      weights = wtperfin
+      weights = weight
      )
 
 summary(tnc_use_lm)
@@ -194,13 +194,13 @@ tnc_for_purposes <-
 tnc_purpose_overall <-
   pct_calculator(tnc_for_purposes,
                  breakdown_by = "tnc_purp",
-                 weight = "wtperfin")
+                 weight = "weight")
 
 tnc_purpose_race <-
   pct_calculator(tnc_for_purposes %>% filter(race_eth != "missing"),
                  breakdown_by = "tnc_purp",
                  second_breakdown = "race_eth",
-                 weight = "wtperfin") %>% 
+                 weight = "weight") %>% 
   # Add baseline totals
   rbind(tnc_purpose_overall %>% mutate(race_eth = "CMAP region")) %>% 
   # Adjust factors
@@ -329,13 +329,13 @@ converter <- 1
 overall_usage <-
   tnc_wide %>%
   filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
-  summarize(tnc_use = converter*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+  summarize(tnc_use = converter*weighted.mean(tnc_use,weight, na.rm = TRUE),
             n = n())
 
 overall_cost <-
   tnc_wide %>%
   filter(tnc_cost > 0) %>% 
-  summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
+  summarize(tnc_cost = weighted.mean(tnc_cost,weight, na.rm = TRUE),
             n = n())
 
 ################################################################################
@@ -350,7 +350,7 @@ home_usage <-
   # are included in regional averages.
   filter(home_county %in% cmap_seven_counties) %>%
   group_by(home_county_chi) %>%
-  summarize(tnc_use = converter*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+  summarize(tnc_use = converter*weighted.mean(tnc_use,weight, na.rm = TRUE),
             n = n()) %>% 
   rbind(overall_usage %>% mutate(home_county_chi = "CMAP region"))
 
@@ -427,7 +427,7 @@ age_usage <-
   filter(!(tnc_use %in% c(-9,-8,-7,-1)),
          !(is.na(age_bin))) %>%
   group_by(age_bin) %>%
-  summarize(tnc_use = converter*weighted.mean(tnc_use,wtperfin, na.rm = TRUE),
+  summarize(tnc_use = converter*weighted.mean(tnc_use,weight, na.rm = TRUE),
             n = n())
 
 # Cost by age
@@ -436,7 +436,7 @@ age_cost <-
   filter(tnc_cost > 0,
          !(is.na(age_bin))) %>%
   group_by(age_bin) %>%
-  summarize(tnc_cost = weighted.mean(tnc_cost,wtperfin, na.rm = TRUE),
+  summarize(tnc_cost = weighted.mean(tnc_cost,weight, na.rm = TRUE),
             n = n())
 
 # Combine age data for cost and usage

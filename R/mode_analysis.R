@@ -109,7 +109,7 @@ all_tnc_tpurp_c_mdt <-
                  subset = c("rideshare","shared rideshare","taxi"),
                  subset_of = "mode",
                  breakdown_by = "tpurp_c",
-                 weight = "wtperfin",
+                 weight = "weight",
                  survey = "mdt")
 
 ### Join MDT and TT
@@ -136,7 +136,7 @@ detailed_tnc_tpurp_c_mdt <-
                  subset_of = "mode",
                  breakdown_by = "tpurp_c",
                  second_breakdown = "mode",
-                 weight = "wtperfin",
+                 weight = "weight",
                  survey = "mdt")
 
 all_tnc_tpurp_c <-
@@ -275,7 +275,7 @@ pct_calculator(
   subset_of = "mode",
   breakdown_by = "chicago_tnc",
   # second_breakdown = "mode",
-  weight = "wtperfin")
+  weight = "weight")
 
 # Suburb-to-suburb trips represent 12.9 percent of all TNC trips, with a higher
 # share of rideshare (14.3%) than shared rideshare (9.5%). Chicago to suburb
@@ -312,5 +312,5 @@ detailed_bike_tpurp_c_mdt <-
                  # # # to other modes)
                  # breakdown_by = "tpurp_c",
                  second_breakdown = "mode",
-                 weight = "wtperfin",
+                 weight = "weight",
                  survey = "mdt")

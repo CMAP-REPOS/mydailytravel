@@ -67,7 +67,7 @@ all_school_mdt <-
   # # all tied values.
   # ungroup() %>%
   # group_by(cluster) %>%
-  # arrange(cluster,wtperfin) %>%
+  # arrange(cluster,weight) %>%
   # # Identify the ranked order of this record by weight
   # mutate(rank = row_number()) %>%
   # # Find the total number of records in the cluster
@@ -77,7 +77,7 @@ all_school_mdt <-
   # ungroup() %>% 
   # # Since there are ties in weights, find the highest and lowest percent for a
   # # given weight
-  # group_by(cluster,wtperfin) %>% 
+  # group_by(cluster,weight) %>% 
   # mutate(max_wt_pct = max(pct_rank),
   #        min_wt_pct = min(pct_rank)) %>% 
   # filter(min_wt_pct >= 0.05,
@@ -129,13 +129,13 @@ school_time_race_mdt <-
   # )) %>% 
   # group_by(race_eth,k12) %>% 
   # Summarize travel time by race/ethnicity and school enrollment
-  summarize(travtime25 = MetricsWeighted::weighted_quantile(x = travtime_pg_calc, probs = .25, w = wtperfin),
-            travtime50 = MetricsWeighted::weighted_median(x = travtime_pg_calc, w = wtperfin),
-            travtime_mean = weighted.mean(x = travtime_pg_calc,w = wtperfin),
+  summarize(travtime25 = MetricsWeighted::weighted_quantile(x = travtime_pg_calc, probs = .25, w = weight),
+            travtime50 = MetricsWeighted::weighted_median(x = travtime_pg_calc, w = weight),
+            travtime_mean = weighted.mean(x = travtime_pg_calc,w = weight),
             travtime_mean_uw = mean(travtime_pg_calc),
-            travtime75 = MetricsWeighted::weighted_quantile(x = travtime_pg_calc, probs = .75, w = wtperfin),
-            travtime90 = MetricsWeighted::weighted_quantile(x = travtime_pg_calc, probs = .9, w = wtperfin),
-            distance = MetricsWeighted::weighted_median(distance_pg, w = wtperfin),
+            travtime75 = MetricsWeighted::weighted_quantile(x = travtime_pg_calc, probs = .75, w = weight),
+            travtime90 = MetricsWeighted::weighted_quantile(x = travtime_pg_calc, probs = .9, w = weight),
+            distance = MetricsWeighted::weighted_median(distance_pg, w = weight),
             n = n()) 
 
 school_trips_p1_samplesize <-
@@ -231,7 +231,7 @@ time_disparity <-
   )) %>% 
   group_by(race_eth) %>% 
   # Summarize travel time by race/ethnicity and school enrollment
-  summarize(travtime_mean = weighted.mean(x = travtime_pg_calc,w = wtperfin),
+  summarize(travtime_mean = weighted.mean(x = travtime_pg_calc,w = weight),
             n = n())
 
 # Calculate the difference in mean travel times
@@ -255,8 +255,8 @@ school_time_race_mode_mdt <-
   )) %>%
   group_by(race_eth,k12) %>%
   # Summarize travel time by race/ethnicity and school enrollment
-  summarize(travtime = as.numeric(weighted.mean(travtime_pg_calc, w = wtperfin)),
-            distance = weighted.mean(distance_pg, w = wtperfin),
+  summarize(travtime = as.numeric(weighted.mean(travtime_pg_calc, w = weight)),
+            distance = weighted.mean(distance_pg, w = weight),
             n = n())
 
 # Export school trips for examination in ArcGIS
@@ -361,7 +361,7 @@ school_trips_regression <-
        distance_pg + chicago + car_trip + school_bus + transit +
        walk + bike ,
      all_school_mdt_lm,
-     weights = wtperfin)
+     weights = weight)
 
 summary(school_trips_regression)
 

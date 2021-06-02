@@ -58,7 +58,7 @@ mode_share_base_mdt <-
 mdt_mode_all <-
   pct_calculator(mode_share_base_mdt,
                  breakdown_by = "mode_c",
-                 weight = "wtperfin") %>% 
+                 weight = "weight") %>% 
   ungroup()
 
 ## Export overall mode share for prose
@@ -76,7 +76,7 @@ mdt_mode_counties <-
       filter(home_county %in% cmap_seven_counties),
     breakdown_by = "mode_c",
     second_breakdown = "home_county_chi",
-    weight = "wtperfin") %>% 
+    weight = "weight") %>% 
   # Add the regional total calculated above
   rbind(mdt_mode_all %>% mutate(home_county_chi = "CMAP region")) %>% 
   ungroup()
@@ -89,7 +89,7 @@ mdt_mode_income <-
     # Execute the rest of the function
     breakdown_by = "mode_c",
     second_breakdown = "hhinc",
-    weight = "wtperfin") %>%
+    weight = "weight") %>%
   # Add baseline totals
   rbind(mdt_mode_all %>% mutate(hhinc = 99)) %>% 
   # Recode for publication
@@ -115,7 +115,7 @@ mdt_mode_race <-
     # Execute the rest of the function
     breakdown_by = "mode_c",
     second_breakdown = "race_eth",
-    weight = "wtperfin") %>%
+    weight = "weight") %>%
   # Add baseline totals
   rbind(mdt_mode_all %>% mutate(race_eth = "CMAP region")) %>% 
   # Recode for publication
@@ -143,7 +143,7 @@ mdt_mode_age <-
     # Execute the rest of the function
     breakdown_by = "mode_c",
     second_breakdown = "age_bin",
-    weight = "wtperfin") %>%
+    weight = "weight") %>%
   # Add baseline totals
   rbind(mdt_mode_all %>% mutate(age_bin = "CMAP region")) %>% 
   # Reorder factors for publication
@@ -173,7 +173,7 @@ mdt_mode_mileage <-
     # Execute the rest of the function
     breakdown_by = "mode_c",
     second_breakdown = "mileage_bin",
-    weight = "wtperfin") %>%
+    weight = "weight") %>%
   # Add baseline totals
   rbind(mdt_mode_all %>% mutate(mileage_bin = "CMAP region")) %>% 
   # Reorder factors for publication
@@ -189,7 +189,7 @@ mdt_mode_sex <-
     mode_share_base_mdt,
     breakdown_by = "mode_c",
     second_breakdown = "sex",
-    weight = "wtperfin") %>% 
+    weight = "weight") %>% 
   # Remove DK/RF
   filter(sex > 0) %>%
   # Recode sex
@@ -440,7 +440,7 @@ mdt_mode_mileage2 <-
     # Execute the rest of the function
     breakdown_by = "mode_c",
     second_breakdown = "mileage_bin",
-    weight = "wtperfin") %>%
+    weight = "weight") %>%
   mutate(mileage_bin = factor(mileage_bin)) %>% 
   ungroup()
 
@@ -573,7 +573,7 @@ detailed_transit_mileage <-
   subset_of = "mode_c",
   breakdown_by = "chain",
   second_breakdown = "mileage_bin",
-  weight = "wtperfin")
+  weight = "weight")
 
 # Note: The significant increase in transit for 25+ mile trips is primarily
 # driven by increased work chain trips
@@ -798,7 +798,7 @@ mdt_mode_income_detailed <-
     # Execute the rest of the function
     breakdown_by = "mode",
     second_breakdown = "income_c",
-    weight = "wtperfin") %>% 
+    weight = "weight") %>% 
   mutate(pct = round(pct,2)) %>% 
   arrange(mode)
 
@@ -813,7 +813,7 @@ mdt_transit_chain_income <-
     # Execute the rest of the function
     breakdown_by = "chain_c",
     second_breakdown = "income_c",
-    weight = "wtperfin") %>% 
+    weight = "weight") %>% 
   arrange(chain_c)
 
 
@@ -1003,7 +1003,7 @@ mdt_mode_age_detailed <-
     # Execute the rest of the function
     breakdown_by = "mode",
     second_breakdown = "age_bin",
-    weight = "wtperfin") %>% 
+    weight = "weight") %>% 
   mutate(pct = round(pct,4)) %>% 
   arrange(age_bin,-pct)
 
@@ -1016,7 +1016,7 @@ pct_calculator(
   mode_share_base_mdt,
   breakdown_by = "mode",
   # second_breakdown = "geog",
-  weight = "wtperfin") %>% 
+  weight = "weight") %>% 
   mutate(pct = round(pct,4)) %>% 
   filter(mode %in% c("bike share","personal bike")) 
 

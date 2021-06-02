@@ -97,20 +97,20 @@ tim_mdt_wip <-
 trip_times_mode_c_mdt <-
   tim_calculator(data = tim_mdt_wip,
                  criteria = "mode_c",
-                 weights = "wtperfin")
+                 weights = "weight")
 
 # Trips in motion by trip chain and mode category (25 minute rolling average)
 trip_times_mode_c_and_chain_c_mdt_25 <-
   tim_calculator(data = tim_mdt_wip,
                  criteria = c("mode_c","chain_c"),
-                 weights = "wtperfin")
+                 weights = "weight")
 
 # Trips in motion by purpose (25 minute rolling average)
 trip_times_tpurp_c_chain_c_mdt <-
   tim_calculator(data = tim_mdt_wip %>%
                    filter(tpurp_c != "missing"),
                  criteria = c("tpurp_c","chain_c"),
-                 weights = "wtperfin")
+                 weights = "weight")
 
 #################################################################
 #                                                               #
@@ -323,7 +323,7 @@ tim_mdt_health <-
 
 trip_times_health_and_mode_mdt <-
   tim_calculator(data = tim_mdt_health,
-                 weights = "wtperfin",
+                 weights = "weight",
                  criteria = "mode_c",
                  rolling_window = 55)
 
@@ -407,7 +407,7 @@ tim_mdt_bike <-
 
 trip_times_bike_and_chain_mdt <-
   tim_calculator(data = tim_mdt_bike,
-                 weights = "wtperfin",
+                 weights = "weight",
                  criteria = "chain",
                  rolling_window = 55)
 

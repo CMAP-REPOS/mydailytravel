@@ -188,12 +188,12 @@ wfh_tt_all <-
 
 # Overview of telecommuting
 wfh_mdt_all %>%
-  summarize(tc_pct = weighted.mean(x=tc,w=wtperfin),
-            wfh_pct = weighted.mean(x=wfh,w=wtperfin),
-            tc_or_wfh_pct = weighted.mean(x=tc_or_wfh,w=wtperfin),
-            tc = sum(wtperfin*tc),
-            wfh = sum(wtperfin*wfh),
-            tc_or_wfh = format(sum(wtperfin*tc_or_wfh),scientific = F))
+  summarize(tc_pct = weighted.mean(x=tc,w=weight),
+            wfh_pct = weighted.mean(x=wfh,w=weight),
+            tc_or_wfh_pct = weighted.mean(x=tc_or_wfh,w=weight),
+            tc = sum(weight*tc),
+            wfh = sum(weight*wfh),
+            tc_or_wfh = format(sum(weight*tc_or_wfh),scientific = F))
 
 wfh_tt_all %>%
   summarize(tc_pct = weighted.mean(x=tc,w=WGTP),
@@ -206,7 +206,7 @@ wfh_tt_all %>%
 # Backup for prose - Summarize TC without working from home
 wfh_mdt_all %>% 
   filter(wfh == 0) %>% 
-  summarize(tc = weighted.mean(tc,wtperfin))
+  summarize(tc = weighted.mean(tc,weight))
 
 wfh_tt_all %>% 
   filter(wfh == 0) %>% 
@@ -216,10 +216,10 @@ wfh_tt_all %>%
 # Overall baseline statistics for plot
 tc_overall <-
   wfh_mdt_all %>% 
-  summarize(pct = weighted.mean(tc,wtperfin),
+  summarize(pct = weighted.mean(tc,weight),
             uw_pct = mean(tc),
             n = n(),
-            w_n = sum(wtperfin),
+            w_n = sum(weight),
             tcwfhers = w_n * pct) %>% 
   mutate(type = "Overall",
          subtype = "Overall")
@@ -229,10 +229,10 @@ tc_income <-
   wfh_mdt_all %>% # 17,656 records
   filter(income_c != "missing") %>% # 17,516 records
   group_by(income_c) %>%
-  summarize(pct = weighted.mean(tc,wtperfin),
+  summarize(pct = weighted.mean(tc,weight),
             uw_pct = mean(tc),
             n = n(),
-            w_n = sum(wtperfin),
+            w_n = sum(weight),
             tcwfhers = w_n * pct) %>% 
   # Recode for ease of understanding
   mutate(type = "Household income",
@@ -248,10 +248,10 @@ tc_sex <-
   wfh_mdt_all %>% # 17,656 records
   filter(sex >0) %>% # 17,516 records
   group_by(sex) %>%
-  summarize(pct = weighted.mean(tc,wtperfin),
+  summarize(pct = weighted.mean(tc,weight),
             uw_pct = mean(tc),
             n = n(),
-            w_n = sum(wtperfin),
+            w_n = sum(weight),
             tcwfhers = w_n * pct) %>% 
   # Recode for ease of understanding
   mutate(type = "Sex",
@@ -264,10 +264,10 @@ tc_sex <-
 tc_home <-
   wfh_mdt_all %>% # 17,656 records
   group_by(home_county_chi) %>%
-  summarize(pct = weighted.mean(tc,wtperfin),
+  summarize(pct = weighted.mean(tc,weight),
             uw_pct = mean(tc),
             n = n(),
-            w_n = sum(wtperfin),
+            w_n = sum(weight),
             tcwfhers = w_n * pct) %>% 
   # Remove individuals in DeKalb, Grundy, or those with 2+ homes (for presentation)
   filter(!(home_county_chi %in% c("DeKalb","Grundy","Homes in multiple jurisdictions (Chicago/Cook)"))) %>% 
@@ -278,10 +278,10 @@ tc_home <-
 tc_race_eth <-
   wfh_mdt_all %>% # 17,656 records
   group_by(race_eth) %>%
-  summarize(pct = weighted.mean(tc,wtperfin),
+  summarize(pct = weighted.mean(tc,weight),
             uw_pct = mean(tc),
             n = n(),
-            w_n = sum(wtperfin),
+            w_n = sum(weight),
             tcwfhers = w_n * pct) %>% 
   filter(race_eth != "missing") %>% 
   # Recode for ease of understanding
@@ -298,10 +298,10 @@ tc_race_eth <-
 tc_age <-
   wfh_mdt_all %>% # 17,656 records
   group_by(age_bin) %>%
-  summarize(pct = weighted.mean(tc,wtperfin),
+  summarize(pct = weighted.mean(tc,weight),
             uw_pct = mean(tc),
             n = n(),
-            w_n = sum(wtperfin),
+            w_n = sum(weight),
             tcwfhers = w_n * pct) %>% 
   # Remove individuals without a response
   filter(!is.na(age_bin),
@@ -508,7 +508,7 @@ wfh_trips_person_level_mdt <-
             wfo_today = first(wfo_today),
             distance_pg = sum(distance_pg, na.rm = TRUE),
             travtime_pg = sum(travtime_pg, na.rm = TRUE),
-            wtperfin = first(wtperfin)) %>%
+            weight = first(weight)) %>%
   ungroup()
 
 # Calculate summary statistics for work trips
@@ -516,7 +516,7 @@ wfh_worktrips_summary <-
   wfh_trips_person_level_mdt %>%
   # Calculate based on TC status, work trip status, and geography
   group_by(tc_frequency,worktrip,geog) %>%
-  summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
+  summarize(distance_pg = weighted.mean(distance_pg, w = weight),
             n = n()) %>%
   rename(flag = tc_frequency)
 
@@ -650,7 +650,7 @@ wfh_mode_share <-
     breakdown_by = "mode_c",
     second_breakdown = "tc_frequency",
     third_breakdown = "geog",
-    weight = "wtperfin")
+    weight = "weight")
 
 wfh_p3 <-
   wfh_mode_share %>% 
@@ -792,7 +792,7 @@ wfh_alltraveler_trips_summary <-
   wfh_alltraveler_trips %>% 
   # Calculate average distances
   group_by(tc_frequency,geog) %>%
-  summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
+  summarize(distance_pg = weighted.mean(distance_pg, w = weight),
             n = n()) %>%
   rename(flag = tc_frequency) %>% 
   ungroup()
@@ -914,7 +914,7 @@ wfh_alltraveler_trips %>%
     tc_freq_or_wfh %in% c(2,3) ~ 2,
     TRUE ~ tc_freq_or_wfh
   )) %>% 
-  count(flag,wfo_today,wt = wtperfin) %>% 
+  count(flag,wfo_today,wt = weight) %>% 
   group_by(flag) %>% 
   mutate(pct = n / sum(n))
 # 74% of non-TC/WFHers worked outside the home, while only 67% of part-time TCers
@@ -925,7 +925,7 @@ wfh_alltraveler_trips %>%
     tc_freq_or_wfh %in% c(2,3) ~ 2,
     TRUE ~ tc_freq_or_wfh
   )) %>% 
-  count(flag,wfh_today,wt = wtperfin) %>% 
+  count(flag,wfh_today,wt = weight) %>% 
   group_by(flag) %>% 
   mutate(pct = n / sum(n))
 # 2% of non-TCers reported working from home. 16% of part-time TCers did and 32%
@@ -956,7 +956,7 @@ wfh_mdt_all %>%
   filter(home_county != "999") %>% # 82772 records
   # Calculate median distances
   group_by(combined_tc_wfh,geog) %>%
-  summarize(distance_pg = weighted.mean(distance_pg, w = wtperfin),
+  summarize(distance_pg = weighted.mean(distance_pg, w = weight),
             n = n()) %>%
   rename(flag = combined_tc_wfh) %>% 
   ungroup() %>% 
@@ -971,7 +971,7 @@ wfh_mdt_all %>%
 # Count the workers by tc/wfh behavior by home county
 wfh_trips_person_level_mdt %>%
   group_by(combined_tc_wfh,home_county) %>%
-  summarize(n = sum(wtperfin)) %>%
+  summarize(n = sum(weight)) %>%
   mutate(total = sum(n)) %>%
   mutate(pct = n/total) %>%
   View()
@@ -995,7 +995,7 @@ tc_od <-
 # tc-ers that live outside of Cook County
 tc_od_average <-
   tc_od %>% 
-  mutate(average = weighted.mean(distance_pg,wtperfin)) %>% 
+  mutate(average = weighted.mean(distance_pg,weight)) %>% 
   mutate(variance = distance_pg / average) %>% 
   filter(variance > .95 & variance < 1.05) %>% 
   mutate(id = paste(sampno,perno,sep = "_"))

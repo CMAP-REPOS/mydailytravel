@@ -70,14 +70,14 @@ detailed_allpurps_mode_c_mdt <-
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
                  third_breakdown = "geog",
-                 weight = "wtperfin",
+                 weight = "weight",
                  survey = "mdt")
 
 # Identify trip purposes by car share
 pct_calculator(tpurp_analysis_base_mdt,
                breakdown_by = "mode_c",
                second_breakdown = "tpurp",
-               weight = "wtperfin") %>% 
+               weight = "weight") %>% 
   mutate(by_car = case_when(
     mode_c %in% c("driver","passenger") ~ "By car",
     TRUE ~ "Not by car")) %>% 
@@ -214,7 +214,7 @@ detailed_health_race_mode_c_mdt <-
                  subset_of = "tpurp",
                  breakdown_by = "mode_c",
                  second_breakdown = "race_eth",
-                 weight = "wtperfin",
+                 weight = "weight",
                  survey = "mdt")
 
 # Mode share by race and ethnicity, focusing on transit
@@ -244,7 +244,7 @@ health_mode_c_vehs_mdt <-
                  # # has a particularly high 0-vehicle household, but the sample
                  # # is very small. 
                  # second_breakdown = "mode",
-                 weight = "wtperfin",
+                 weight = "weight",
                  survey = "mdt")
 
 # Display outputs
@@ -261,7 +261,7 @@ pct_calculator(tpurp_analysis_base_mdt %>%
                         tpurp == "Health care visit for self"),
                breakdown_by = "mode",
                second_breakdown = "geog",
-               weight = "wtperfin",
+               weight = "weight",
                survey = "mdt") %>% 
   filter(mode %in% c("paratransit", "private shuttle",
                      "taxi", "private limo", "private car", "rideshare",
@@ -385,7 +385,7 @@ community_employed_mdt <-
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
                  # third_breakdown = "geog",
-                 weight = "wtperfin",
+                 weight = "weight",
                  survey = "employed")
 
 community_unemployed_mdt <-
@@ -398,7 +398,7 @@ community_unemployed_mdt <-
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
                  # third_breakdown = "geog",
-                 weight = "wtperfin",
+                 weight = "weight",
                  survey = "unemployed")
 
 community_with_employment_status_mdt <-
@@ -433,18 +433,18 @@ tpurp_analysis_base_mdt %>%
   filter(tpurp %in% c("Socialized with friends","Socialized with relatives"),
          geog != "Other") %>%
   group_by(tpurp) %>%
-  summarize(distance = MetricsWeighted::weighted_median(distance_pg,wtperfin),
+  summarize(distance = MetricsWeighted::weighted_median(distance_pg,weight),
             n = n(),
-            wt = sum(wtperfin)) 
+            wt = sum(weight)) 
 
 # Median distance and proportion by geography
 tpurp_analysis_base_mdt %>%
   filter(tpurp %in% c("Socialized with friends","Socialized with relatives"),
          geog != "Other") %>%
   group_by(tpurp,geog) %>%
-  summarize(distance = MetricsWeighted::weighted_median(distance_pg,wtperfin),
+  summarize(distance = MetricsWeighted::weighted_median(distance_pg,weight),
             n = n(),
-            wt = sum(wtperfin)) %>% 
+            wt = sum(weight)) %>% 
   ungroup() %>% 
   group_by(tpurp) %>% 
   mutate(total = sum(wt),
@@ -468,7 +468,7 @@ pct_calculator(tpurp_analysis_base_mdt %>%
                  filter(distance_pg < 1.5 & distance_pg > 0.5),
                breakdown_by = "by_car",
                second_breakdown = "tpurp",
-               weight = "wtperfin",
+               weight = "weight",
                survey = "mdt")
 
 
@@ -481,7 +481,7 @@ tpurp_analysis_base_mdt %>%
   filter(tpurp %in% c("Socialized with friends","Socialized with relatives")) %>% 
   group_by(sampno,locno_pg,tpurp,arrtime_pg,start_times_pg) %>% 
   summarize(n = n(),
-            wt = sum(wtperfin)) %>% 
+            wt = sum(weight)) %>% 
   group_by(tpurp) %>% 
   mutate(total = sum(wt)) %>% 
   group_by(tpurp,n,total) %>% 
@@ -494,7 +494,7 @@ tpurp_analysis_base_mdt %>%
          age > 0) %>% 
   group_by(sampno,locno_pg,tpurp,arrtime_pg,start_times_pg) %>% 
   summarize(n = n(),
-            wt = sum(wtperfin),
+            wt = sum(weight),
             age = mean(age)) %>% 
 group_by(tpurp) %>% 
   mutate(total = sum(wt)) %>% 

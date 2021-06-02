@@ -130,7 +130,7 @@ ppl <- read.csv(unzip(mdt_zip,files = "person.csv")) %>%
          tnc_purp,   # For what type of trip do you use the service most?
          
          
-         wtperfin    # The weight for the respondent.
+         weight = wtperfin    # The weight for the respondent.
          )
 
 veh <- read.csv(unzip(mdt_zip,files = "vehicle.csv")) %>% 

@@ -67,7 +67,7 @@ avgtravel_mdt <-
   # Keep only variables of interest
   select(sampno,perno,age_bin,sex,income_c,race_eth,home_county_chi,
          hdist = hdist_pg, distance = distance_pg, travtime = travtime_pg,
-         weight = wtperfin) %>% 
+         weight) %>% 
   mutate(survey = "mdt")
 
 # Create a similarly filtered list of all respondents (With age filters but not travel)
@@ -103,7 +103,7 @@ ineligible_travelers_mdt <-
   mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels),
          survey = "mdt") %>% 
   # Keep relevant variables and rename weight for merging with TT
-  select(sampno,perno,weight = wtperfin,race_eth,sex,income_c,
+  select(sampno,perno,weight,race_eth,sex,income_c,
          home_county_chi,age_bin,survey)
 
 # Add back the ineligible travelers for the purpose of travel percent calculation
@@ -118,7 +118,7 @@ distinct_residents_mdt <-
   mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels)) %>%
   mutate(survey = "mdt") %>%
   # Keep relevant variables and rename weights for merging with TT
-  select(sampno,perno,weight = wtperfin,race_eth,sex,income_c,
+  select(sampno,perno,weight,race_eth,sex,income_c,
          home_county_chi,age_bin,survey)
   
 
