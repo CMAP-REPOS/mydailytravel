@@ -8,7 +8,6 @@
 
 library(tidyverse)
 library(cmapplot)
-library(forcats)
 library(ggpattern)
 
 #################################################

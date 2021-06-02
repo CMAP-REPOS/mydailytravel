@@ -7,7 +7,6 @@
 #                                               #
 #################################################
 
-library(ggplot2)
 library(tidyverse)
 library(slider)
 library(cmapplot)
