@@ -402,7 +402,13 @@ mdt_wip2 <- mdt_wip1 %>%
     # Otherwise, it is 1 (outside the TT region)
     TRUE ~ 1
   )) %>% 
-  # Impute trip start times for those missing them that are not beginning trips
+  mutate(flag = mode != -1 & is.na(start_times_pg)) %>% 
+  # Impute trip start times for those missing them that are not beginning trips.
+  # There are 36 of these records: 35 of these are the first recorded trip of
+  # travelers whose recorded trip days start after 3am and thus are missing
+  # "beginning" trips to assign a starting location and trip departure time, and
+  # the remaining traveler includes their "beginning" trip as part of the first
+  # placeGroup.
   mutate(start_times_pg = case_when(
     mode == -1 ~ start_times_pg,
     is.na(start_times_pg) ~ arrtime_pg - 60 * travtime_pg,
@@ -421,6 +427,28 @@ mdt_wip2 <- mdt_wip1 %>%
     TRUE ~ as.numeric((arrtime_pg - start_times_pg)/60))) %>%
   # Remove unneeded variables
   select(-c(out_region_lag,outside_tt,outside_tt_lag))
+
+# # Confirm that trip times are being correctly assigned out of placeGroups, using
+# # hard-coded values from a trip that we examined in the data
+# pg_validator <- 
+#   tibble(
+#     sampno = 20001516,
+#     perno = 1,
+#     placeGroup = 7,
+#     start_times_pg = "2017-10-05 16:22:00",
+#     arrtime_pg = "2017-10-05 17:20:00",
+#     tpurp = 27,
+#     mode = 505,
+#     county_chi_name = filter(location,sampno == 20001516, locno == 10000) %>% 
+#                         select(county_chi_name),
+#     county_chi_name_lag = filter(location,sampno == 20001516, locno == 10002) %>% 
+#                             select(county_chi_name)
+#   )
+# 
+# pg_validator == mdt_wip2 %>% 
+#   semi_join(pg_validator %>% 
+#               select(sampno,perno,placeGroup)) %>% 
+#   select(sampno,perno,placeGroup,start_times_pg,arrtime_pg,tpurp,mode,county_chi_name,county_chi_name_lag)
 
 mdt <- 
   mdt_wip2 %>% # 127333 records
