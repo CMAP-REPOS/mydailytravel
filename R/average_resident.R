@@ -70,7 +70,8 @@ avgtravel_mdt <-
          weight) %>% 
   mutate(survey = "mdt")
 
-# Create a similarly filtered list of all respondents (With age filters but not travel)
+# Create a similarly filtered list of all respondents (with age filters but not
+# travel)
 avgtravel_all_respondents_mdt <-
   mdt_all_respondents %>%  # 30683
   filter(
@@ -132,8 +133,6 @@ avgtravel_tt <-
            (AGEB == 2 & AGE == 99)) %>% # 132676 records
   # Filter out the first record for each traveler (PLANO == 1)
   filter(PLANO != 1) %>%    # 105568 records
-  # Include only travelers who made at least one trip
-  filter(pertrips > 0) %>%  # 105568 records
   # Exclude zero distance trips (note that TT did not capture distances for
   # trips outside the seven counties, Illinois' Grundy County, and Lake,
   # LaPorte, and Porter Counties in Indiana, so this means that travelers who
@@ -188,12 +187,24 @@ ineligible_travelers_tt <-
   # had trips on their first day for all non-Sunday surveys, or trips on their
   # second day for all non-Friday surveys.
   filter(((PTRIPS1 > 0 & DAY != 7) | (PTRIPS2 > 0 & DAY != 5))) %>% # 382
+  # Adjust weights to reflect two-day travel behavior, if applicable
+  mutate(weight = case_when(
+    # Any one-day surveys should be kept at full weight
+    SURVEY == 1 ~ WGTP,
+    # Two day surveys that are both weekdays that have travel are also full
+    # weight
+    DAY %in% c(1,2,3,4) & PTRIPS1 > 0 & PTRIPS2 > 0 ~ WGTP,
+    # Other two day weekday surveys should be half weight
+    DAY %in% c(1,2,3,4) ~ WGTP/2,
+    # And any weekday/weekend surveys included had weekday travel, so they
+    # should be full weight
+    DAY %in% c(5,7) ~ WGTP)) %>% 
   # Add age bins
   mutate(age_bin=cut(AGE,breaks=age_breaks,labels=age_labels),
          survey = "tt") %>% 
   rename(sampno = SAMPN,
          perno = PERNO) %>% 
-  select(sampno,perno,weight = WGTP,race_eth,sex = GEND,income_c,
+  select(sampno,perno,weight,race_eth,sex = GEND,income_c,
          home_county_chi,age_bin,survey)
 
 # Add back the ineligible travelers for the purpose of travel percent calculation
@@ -268,17 +279,29 @@ travel_calculator <- function(data = avgtravel,grouping,chosen_distance) {
       avg_trip_time_uw = total_time_uw / total_trips_uw,
       n = n()
     )  %>% 
-  # Add total number of travelers (only eligible travelers)
-  left_join(distinct_daily_travelers %>%
-              group_by(across(all_of(grouping))) %>% 
-              summarize(total_eligible_travelers = sum(weight),
-                        total_eligible_travelers_uw = n()),
-            by = c(grouping)) %>%  
+    # Add total number of travelers (only eligible travelers)
+    left_join(distinct_daily_travelers %>%
+                group_by(across(all_of(grouping))) %>% 
+                summarize(total_eligible_travelers = sum(weight)),
+              by = c(grouping)) %>%  
+    # Add unweighted number of travelers (only eligible)
+    left_join(distinct_daily_travelers %>% 
+                # Remove double entries for multi-day surveys
+                distinct() %>% 
+                group_by(across(all_of(grouping))) %>% 
+                summarize(total_eligible_travelers_uw = n()),
+              by = c(grouping)) %>% 
     # Add total number of travelers (all travelers)
     left_join(total_travel_universe %>%
                 group_by(across(all_of(grouping))) %>% 
-                summarize(total_travelers = sum(weight),
-                          total_travelers_uw = n()),
+                summarize(total_travelers = sum(weight)),
+              by = c(grouping)) %>%
+    # Add total number of unweighted travelers (all travelers)
+    left_join(total_travel_universe %>%
+                # Remove double  entries for multi-day surveys
+                distinct() %>% 
+                group_by(across(all_of(grouping))) %>% 
+                summarize(total_travelers_uw = n()),
               by = c(grouping)) %>%
     # Add total number of residents
     left_join(distinct_residents %>% 
