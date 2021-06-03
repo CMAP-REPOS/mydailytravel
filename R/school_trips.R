@@ -115,8 +115,8 @@ school_time_race_person_level_mdt <-
                       "High school")) 
 
 school_time_race_mdt <-
-  school_time_race_person_level_mdt %>%
-  filter(k12 != "High school") %>% 
+  school_time_race_person_level_mdt %>% # 3518
+  filter(k12 != "High school") %>% # 2619
   # # Archived code - enables taking a random subset
   # sample_frac(.5) %>% 
   group_by(race_eth) %>% 
@@ -223,8 +223,8 @@ finalize_plot(school_trips_p1,
 
 # Backup - differences over a month (for prose)
 time_disparity <- 
-  school_time_race_person_level_mdt %>% 
-  filter(k12 != "High school") %>% 
+  school_time_race_person_level_mdt %>% # 3518 records
+  filter(k12 != "High school") %>% # 2619 records
   mutate(race_eth = case_when(
     race_eth == "black" ~ "black",
     TRUE ~ "not black"

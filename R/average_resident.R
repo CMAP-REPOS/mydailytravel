@@ -29,38 +29,36 @@ age_labels <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
 avgtravel_mdt <-
   mdt %>%                    # 125463 records
   filter(
-    # Keep only trips with travelers at least 5 years old.
-    # - note the "sampno" selections have no information but are school-age
-    # based on place. age < 0 are all respondents without a numeric age value.
-    age >= 5 |               # 125459 records
+    # Keep only trips with travelers at least 5 years old. age < 0 are all
+    # respondents without a numeric age value.
+    age >= 5 |               # 125447 records
       (age < 0 & aage %in% c(2,3,4,5,6,7)) |
-      (age < 0 & schol %in% c(4,5,6,7,8)) |
-      sampno %in% c(70038312, 70051607)) %>%
+      (age < 0 & schol %in% c(4,5,6,7,8))) %>%
   # Filter out "beginning" trips
-  filter(mode != "beginning") %>% # 97374 records
+  filter(mode != "beginning") %>% # 97365 records
   # Keep only people who traveled
-  filter(pertrips > 0) %>%   # 97373 records
+  filter(pertrips > 0) %>%   # 97364 records
   # Keep only trips < 15 hours
-  filter(travtime_pg_calc < 15*60) %>%  # 97364 records
+  filter(travtime_pg_calc < 15*60) %>%  # 97354 records
   # Keep only trips > 0 minutes
-  filter(travtime_pg_calc > 0) %>% # 97330 records
+  filter(travtime_pg_calc > 0) %>% # 97321 records
   
   ###### RUN ONE OF THE TWO BELOW (MDT-only vs. MDT + TT comparison)
   
   # ### MDT ONLY
   # # Eliminate 0 distance trips (network - use for MDT-specific analyses)
-  # filter(distance_pg > 0) %>%   # 97273 records
+  # filter(distance_pg > 0) %>%   # 97264 records
 
   ### MDT VS TT
   # Eliminate 0 distance trips (haversine - only use for comparisons with TT)
-  filter(hdist_pg > 0) %>%   # 96343 records
+  filter(hdist_pg > 0) %>%   # 96334 records
   # Filter out trips that were not within the TT travel region (only for
   # comparisons with TT - see explanation in TT data prep below)
-  filter(out_tt_trip == 0) %>% # 94531 records
+  filter(out_tt_trip == 0) %>% # 94522 records
   # Keep only residents of the seven counties, Grundy (63) and double-home
   # residents in the seven county region (999) for comparability with TT. This
   # excludes residents of DeKalb.
-  filter(home_county %in% c(cmap_seven_counties,63,999)) %>% # 94431 records
+  filter(home_county %in% c(cmap_seven_counties,63,999)) %>% # 94422 records
   
   # Add age bins
   mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels)) %>% 
@@ -76,12 +74,9 @@ avgtravel_all_respondents_mdt <-
   mdt_all_respondents %>%  # 30683
   filter(
     # Keep only trips with travelers at least 5 years old.
-    # - note the "sampno" selections have no information but are school-age
-    # based on place. age < 0 are all respondents without a numeric age value.
-    age >= 5 |               # 125459 records
+    age >= 5 |               
       (age < 0 & aage %in% c(2,3,4,5,6,7)) |
-      (age < 0 & schol %in% c(4,5,6,7,8)) |
-      sampno %in% c(70038312, 70051607)) # 28573
+      (age < 0 & schol %in% c(4,5,6,7,8))) # 28570
 
 # Identify distinct list of travelers that took at least one trip to enable
 # summing by different demographic characteristics
@@ -114,7 +109,7 @@ total_traveler_universe_mdt <-
 
 # Identify list of residents (includes ineligible travelers)
 distinct_residents_mdt <-
-  avgtravel_all_respondents_mdt %>% # 28573
+  avgtravel_all_respondents_mdt %>% # 28570
   # And add age bins
   mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels)) %>%
   mutate(survey = "mdt") %>%

@@ -29,27 +29,32 @@ day_value <- 60*60*24
 # Filter and process data into working file for calculations
 tim_mdt_wip <-
   mdt %>%        # 125463 records
+  # Keep only travelers >= 5 years old, either through age, age bucket, or
+  # school enrollment
+  filter(age >= 5 |                                  
+           (age < 0 & aage %in% c(2,3,4,5,6,7)) |
+           (age < 0 & schol %in% c(4,5,6,7,8))) %>% # 125447 records
   # Remove beginning trips
-  filter(mode != "beginning") %>% # 97374 records
+  filter(mode != "beginning") %>% # 97365 records
   # Remove all trips where the arrival time comes before the start time (there
   # are 10 records where this is a problem)
   mutate(ends_before_begins = case_when(
     is.na(start_times_pg) ~ 0,
     start_times_pg <= arrtime_pg ~ 0,
     TRUE ~ 1)) %>%
-  filter(ends_before_begins == 0) %>% # 97364
+  filter(ends_before_begins == 0) %>% # 97355 records
   select(-ends_before_begins) %>%  
   # Filter out unwanted trips
   filter(
     # Remove trips > 15 hours
-    travtime_pg_calc < 15 * 60,     # 97356 records
+    travtime_pg_calc < 15 * 60,     # 97270 records
     # Remove trips with zero travel time
-    travtime_pg_calc > 0,           # 97331 records
+    travtime_pg_calc > 0,           # 97322 records
     # Remove trips with 0 place group distance
-    distance_pg > 0              # 97273 records
+    distance_pg > 0                 # 97264 records
   ) %>%
   # Exclude improbable walk trips
-  filter(improbable_walk == 0) %>% # 97233
+  filter(improbable_walk == 0) %>%  # 97224 records
   
   # Make every trip on the same day (for analysis and graphing). I used January
   # 1, 2020 (arbitrarily). The code below extracts the time element of the
@@ -317,9 +322,9 @@ finalize_plot(trips_in_motion_p2,
 ################################################################################
 
 tim_mdt_health <-
-  tim_mdt_wip %>%
+  tim_mdt_wip %>% # 97224 records
   # Filter to just the purpose in question
-  filter(tpurp == "Health care visit for self")
+  filter(tpurp == "Health care visit for self") # 1440 records
 
 trip_times_health_and_mode_mdt <-
   tim_calculator(data = tim_mdt_health,
@@ -394,9 +399,9 @@ finalize_plot(trips_in_motion_p3,
 ################################################################################
 
 tim_mdt_bike <-
-  tim_mdt_wip %>%
+  tim_mdt_wip %>% # 97224 records
   # Filter to just the purpose in question
-  filter(mode == "personal bike") %>% 
+  filter(mode == "personal bike") %>% # 1513 records
   # Recode chains to just be work and other
   mutate(chain = recode_factor(chain,
                                "Work trip" = "Work trip",

@@ -26,21 +26,21 @@ source("R/data_cleaning.R")
 
 tpurp_analysis_base_mdt <-
   mdt %>%                             # 125463 records
-  # Keep only travelers >= 16 years old, either through age, age bucket, or
+  # Keep only travelers >= 5 years old, either through age, age bucket, or
   # school enrollment
-  filter(age >= 5 |                   # 108622
+  filter(age >= 5 |                   # 125447
            (age < 0 & aage %in% c(2,3,4,5,6,7)) |
            (age < 0 & schol %in% c(4,5,6,7,8))) %>%
   # Exclude beginning trips
-  filter(mode_c != "beginning") %>%  # 97312
+  filter(mode_c != "beginning") %>%  # 97365
   # Exclude trips with no travel distance. Note this is a different difference
   # calculation than that used in TT (great circle vs. actual travel distance).
   # We chose to do this since the published graphics do not involve any
   # comparison between TT and MDT. However, if we instead filter out those trips
   # that have a nonzero haversine distance from MDT, the results are similar.
-  filter(distance_pg > 0) %>%        # 97254
+  filter(distance_pg > 0) %>%        # 97307
   # Exclude trips with no mode
-  filter(mode_c != "missing") %>%    # 97217
+  filter(mode_c != "missing") %>%    # 97270
   # Put school bus back into "other" category
   mutate(mode_c = as.character(mode_c)) %>%
   mutate(mode_c = case_when(

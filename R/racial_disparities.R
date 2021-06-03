@@ -28,7 +28,7 @@ all_trips_mdt <-
     # Keep only:                     # 125447
     # Those 5 or older
     age >= 5 |
-      # or those in an age category from 5 to 44
+      # or those in an age category 5+
       (age < 0 & aage %in% c(2,3,4,5,6,7)) |
       # Or those enrolled in school grades we know are 5+
       (age < 0 & schol %in% c(4,5,6,7,8))) %>%

@@ -26,7 +26,7 @@ source("R/data_cleaning.R")
 # Calculate the number of trips taken by travelers on active modes like transit,
 # biking, and walking, as well as TNC trips
 active_travel <-
-  mdt %>%
+  mdt %>% # 125463 records
   # Exclude beginning trips
   filter(mode_c != "beginning") %>%  # 97374
   # Exclude trips with no travel distance.
