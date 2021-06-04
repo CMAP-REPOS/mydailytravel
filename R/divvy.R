@@ -21,7 +21,7 @@ library(cmapplot)
 
 setwd("~/GitHub/mydailytravel")
 source("R/helper_fns.R")
-source("mdt_dates.R")
+source("R/mdt_dates.R")
 
 # Download 2018-2019 data (split into four quarters across the survey collection period)
 divvy_zip <- tempfile()

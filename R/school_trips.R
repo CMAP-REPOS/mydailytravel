@@ -23,7 +23,7 @@ source("R/data_cleaning.R")
 
 
 ### Filter data
-all_school_mdt <-
+school_base_mdt <-
   mdt %>%                            # 125463 records
   # Keep records of travelers enrolled in K-12
   filter(schol %in% c(3,4)) %>%      # 19044 records
@@ -102,7 +102,7 @@ all_school_mdt <-
 
 # Filter data for MDT
 school_time_race_person_level_mdt <-
-  all_school_mdt %>%                # 3531 records
+  school_base_mdt %>%                # 3531 records
   # Only include trips that are more than 0 minutes
   filter(travtime_pg_calc > 0) %>%  # 3529 records
   # Only include trips that are less than 2.5 hours
@@ -286,7 +286,7 @@ write.csv(school_trips_output ,
 
 # Backup - specific trips for Black elementary school children (for prose)
 
-all_school_mdt %>% filter(race_eth == "black",
+school_base_mdt %>% filter(race_eth == "black",
                age %in% c(8,9,10,11),
                mode_c %in% c("transit","walk","schoolbus")) %>% 
   select(sampno,
@@ -313,8 +313,8 @@ all_school_mdt %>% filter(race_eth == "black",
 
 ##### Run regressions on income and race and ethnicity
 
-all_school_mdt_lm <-
-  all_school_mdt %>%
+school_base_mdt_lm <-
+  school_base_mdt %>%
   mutate(travtime_lm = as.double(travtime_pg_calc)) %>%
   filter(travtime_lm < 150,
          travtime_lm > 0,
@@ -360,12 +360,12 @@ school_trips_regression <-
        high_inc +
        distance_pg + chicago + car_trip + school_bus + transit +
        walk + bike ,
-     all_school_mdt_lm,
+     school_base_mdt_lm,
      weights = weight)
 
 summary(school_trips_regression)
 
 # Box plot of trip times
-all_school_mdt_lm %>%
+school_base_mdt_lm %>%
   ggplot(aes(x = travtime_lm, y = race_eth)) +
   geom_boxplot()

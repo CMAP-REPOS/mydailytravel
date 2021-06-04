@@ -155,7 +155,7 @@ all_tnc_tpurp_c <-
 # changes, rather than absolute figures.
 
 # Extract 2008 total for taxis as a baseline
-taxi_2008_total <- unique(all_tnc_tpurp_c_tt$total)
+taxi_total_tt <- unique(all_tnc_tpurp_c_tt$total)
 
 # Create chart. 
 mode_analysis_p1 <-
@@ -167,7 +167,7 @@ mode_analysis_p1 <-
   # Group into mode and survey categories to enable summaries (instead of by
   # trip purpose category)
   group_by(survey,mode) %>%
-  summarize(total = sum(breakdown_total)/taxi_2008_total) %>%
+  summarize(total = sum(breakdown_total)/taxi_total_tt) %>%
   
   # Add factor levels and format for chart ordering
   mutate(mode = recode_factor(factor(mode, levels = c("taxi",

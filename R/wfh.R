@@ -37,7 +37,7 @@ age_breaks <- c(-1,17,29, 49, 69, 150)
 age_labels <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
 
 # Create base dataset (includes individuals with no trips)
-wfh_mdt_all <-
+wfh_base_mdt <-
   mdt_all_respondents %>% # 30683 records
   # Keep only employed respondents (either those who report having 1+ jobs or
   # those who report being employed)
@@ -94,7 +94,7 @@ wfh_mdt_all <-
   mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels))
 
 # Create working dataset for charts (relies on individuals with trips)
-wfh_mdt <-
+wfh_trips_mdt <-
   mdt %>% # 125463 records
   # Add a flag for whether the respondent worked from home or in general today
   left_join(mdt %>%
@@ -118,7 +118,7 @@ wfh_mdt <-
   # Remove trips by individuals that do not appear in the filtered list of
   # employed individuals above. For those that are in the list, add the flags we
   # developed on telecommuting and working from home.
-  inner_join(wfh_mdt_all %>% # 83291 records
+  inner_join(wfh_base_mdt %>% # 83291 records
                select(sampno,perno,tc,wfh,tc_frequency,tc_freq_or_wfh,
                       combined_tc_wfh,age_bin),
              by = c("sampno","perno")) %>% 
@@ -132,7 +132,7 @@ wfh_mdt <-
 
 # Summarize data at the traveler level
 wfh_person_level <-
-  wfh_mdt %>% # 83291 records
+  wfh_trips_mdt %>% # 83291 records
   group_by(sampno,perno) %>% # 17524 groups
   summarize(wfh_today = first(wfh_today),
             wfo_today = first(wfo_today),
@@ -188,7 +188,7 @@ wfh_tt_all <-
 ################################################################################
 
 # Overview of telecommuting
-wfh_mdt_all %>%
+wfh_base_mdt %>%
   summarize(tc_pct = weighted.mean(x=tc,w=weight),
             wfh_pct = weighted.mean(x=wfh,w=weight),
             tc_or_wfh_pct = weighted.mean(x=tc_or_wfh,w=weight),
@@ -205,7 +205,7 @@ wfh_tt_all %>%
             tc_or_wfh = format(sum(WGTP*tc_or_wfh),scientific = F))
 
 # Backup for prose - Summarize TC without working from home
-wfh_mdt_all %>% 
+wfh_base_mdt %>% 
   filter(wfh == 0) %>% 
   summarize(tc = weighted.mean(tc,weight))
 
@@ -216,7 +216,7 @@ wfh_tt_all %>%
 
 # Overall baseline statistics for plot
 tc_overall <-
-  wfh_mdt_all %>% 
+  wfh_base_mdt %>% 
   summarize(pct = weighted.mean(tc,weight),
             uw_pct = mean(tc),
             n = n(),
@@ -227,7 +227,7 @@ tc_overall <-
 
 # Breakdown of tc behavior by household income
 tc_income <-
-  wfh_mdt_all %>% # 17,656 records
+  wfh_base_mdt %>% # 17,656 records
   filter(income_c != "missing") %>% # 17,516 records
   group_by(income_c) %>%
   summarize(pct = weighted.mean(tc,weight),
@@ -246,7 +246,7 @@ tc_income <-
 
 # Breakdown of tc behavior by sex
 tc_sex <-
-  wfh_mdt_all %>% # 17656 records
+  wfh_base_mdt %>% # 17656 records
   filter(sex > 0) %>% # 17655 records
   group_by(sex) %>%
   summarize(pct = weighted.mean(tc,weight),
@@ -263,7 +263,7 @@ tc_sex <-
 
 # Breakdown of tc behavior by home jurisdiction
 tc_home <-
-  wfh_mdt_all %>% # 17656 records
+  wfh_base_mdt %>% # 17656 records
   filter(!(home_county_chi %in% c("DeKalb","Grundy",
                                   "Homes in multiple jurisdictions (Chicago/Cook)")
   )) %>% # 17344 records
@@ -279,7 +279,7 @@ tc_home <-
 
 # Breakdown of tc behavior by race and ethnicity
 tc_race_eth <-
-  wfh_mdt_all %>% # 17656 records
+  wfh_base_mdt %>% # 17656 records
   filter(race_eth != "missing") %>% # 17516
   group_by(race_eth) %>%
   summarize(pct = weighted.mean(tc,weight),
@@ -299,7 +299,7 @@ tc_race_eth <-
 
 # Breakdown of tc behavior by race and ethnicity
 tc_age <-
-  wfh_mdt_all %>% # 17,656 records
+  wfh_base_mdt %>% # 17,656 records
   # Remove individuals without a response
   filter(!is.na(age_bin)) %>% # 17626
   # Remove 5-17 year olds 
@@ -469,7 +469,7 @@ finalize_plot(wfh_p1,
 # Specific analysis of work trips vs. non-work trips for individuals who report
 # telecommuting or working from home (survey)
 wfh_worktrip_status <-
-  wfh_mdt %>% # 83291 records
+  wfh_trips_mdt %>% # 83291 records
   # Flag trips that were part of a work trip chain
   mutate(worktrip = case_when(
     # Assign any work chain trips that don't have an associated out-of-home work
@@ -774,7 +774,7 @@ finalize_plot(wfh_p3,
 # Calculate averages for all trips
 wfh_alltraveler_trips <-
   # Start with the universe of all relevant respondents in MDT
-  wfh_mdt_all %>% # 17656
+  wfh_base_mdt %>% # 17656
   # Add distances traveled by individuals who had trips
   left_join(wfh_trips_person_level_mdt %>%
               # Combine work and non-work trips
@@ -947,7 +947,7 @@ wfh_alltraveler_trips %>%
 # jurisdiction
 
 # Start with the universe of all relevant respondents in MDT
-wfh_mdt_all %>% 
+wfh_base_mdt %>% 
   # Add travel statistics for those with trips
   left_join(wfh_trips_person_level_mdt %>% 
               # Keep only non-work trips
@@ -1007,7 +1007,7 @@ tc_od_average <-
 
 # Extract the work trips with lat/long for locations
 df <-
-  wfh_mdt %>% 
+  wfh_trips_mdt %>% 
   mutate(id = paste(sampno,perno,sep = "_")) %>% 
   filter(id %in% tc_od_average$id)
   

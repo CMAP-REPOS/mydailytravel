@@ -27,7 +27,7 @@ threshold <- as.numeric(ymd_hms("2020-01-01 03:00:00", tz = "America/Chicago"))
 day_value <- 60*60*24
 
 # Filter and process data into working file for calculations
-tim_mdt_wip <-
+tim_wip_mdt <-
   mdt %>%        # 125463 records
   # Keep only travelers >= 5 years old, either through age, age bucket, or
   # school enrollment
@@ -100,19 +100,19 @@ tim_mdt_wip <-
 
 # Trips in motion by mode category (25 minute rolling average)
 trip_times_mode_c_mdt <-
-  tim_calculator(data = tim_mdt_wip,
+  tim_calculator(data = tim_wip_mdt,
                  criteria = "mode_c",
                  weights = "weight")
 
 # Trips in motion by trip chain and mode category (25 minute rolling average)
-trip_times_mode_c_and_chain_c_mdt_25 <-
-  tim_calculator(data = tim_mdt_wip,
+trip_times_mode_c_and_chain_c_mdt <-
+  tim_calculator(data = tim_wip_mdt,
                  criteria = c("mode_c","chain_c"),
                  weights = "weight")
 
 # Trips in motion by purpose (25 minute rolling average)
 trip_times_tpurp_c_chain_c_mdt <-
-  tim_calculator(data = tim_mdt_wip %>%
+  tim_calculator(data = tim_wip_mdt %>%
                    filter(tpurp_c != "missing"),
                  criteria = c("tpurp_c","chain_c"),
                  weights = "weight")
@@ -184,7 +184,7 @@ finalize_plot(trips_in_motion_p1,
               Excludes trips longer than 100 miles or greater than 15 hours long.
               <br><br>
               Sample size: Figures are based on a total of ",
-                     format(nrow(tim_mdt_wip),big.mark = ","),
+                     format(nrow(tim_wip_mdt),big.mark = ","),
                      " records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
@@ -242,7 +242,7 @@ trip_times_mode_c_mdt %>%
 
 trips_in_motion_p2 <-
   # Get data
-  trip_times_mode_c_and_chain_c_mdt_25 %>%
+  trip_times_mode_c_and_chain_c_mdt %>%
   # Factor for ordering
   mutate(mode_c = recode_factor(factor(mode_c, levels = mode_c_levels),
                                 "driver" = "Driver",
@@ -285,7 +285,7 @@ trips_in_motion_p2 <-
              xlab = "Weekday trips in motion by time of day and trip chain type")
 
 trips_in_motion_p2_samplesize <-
-  tim_mdt_wip %>% 
+  tim_wip_mdt %>% 
   ungroup() %>% 
   count(chain_c)
 
@@ -321,13 +321,13 @@ finalize_plot(trips_in_motion_p2,
 # Health
 ################################################################################
 
-tim_mdt_health <-
-  tim_mdt_wip %>% # 97224 records
+tim_health_mdt <-
+  tim_wip_mdt %>% # 97224 records
   # Filter to just the purpose in question
   filter(tpurp == "Health care visit for self") # 1440 records
 
 trip_times_health_and_mode_mdt <-
-  tim_calculator(data = tim_mdt_health,
+  tim_calculator(data = tim_health_mdt,
                  weights = "weight",
                  criteria = "mode_c",
                  rolling_window = 55)
@@ -383,7 +383,7 @@ finalize_plot(trips_in_motion_p3,
               Excludes trips longer than 100 miles or greater than 15 hours long.
               <br><br>
               Sample size: Figures are based on a total of ",
-                     format(nrow(tim_mdt_health),big.mark = ","),
+                     format(nrow(tim_health_mdt),big.mark = ","),
                      " records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
@@ -398,8 +398,8 @@ finalize_plot(trips_in_motion_p3,
 # Bikes (personal)
 ################################################################################
 
-tim_mdt_bike <-
-  tim_mdt_wip %>% # 97224 records
+tim_bike_mdt <-
+  tim_wip_mdt %>% # 97224 records
   # Filter to just the purpose in question
   filter(mode == "personal bike") %>% # 1513 records
   # Recode chains to just be work and other
@@ -411,7 +411,7 @@ tim_mdt_bike <-
                                "Other trip" = "Other trip")) 
 
 trip_times_bike_and_chain_mdt <-
-  tim_calculator(data = tim_mdt_bike,
+  tim_calculator(data = tim_bike_mdt,
                  weights = "weight",
                  criteria = "chain",
                  rolling_window = 55)
@@ -527,7 +527,7 @@ finalize_plot(trips_in_motion_p5,
               Excludes trips longer than 100 miles or greater than 15 hours long.
               <br><br>
               Sample size: Figures are based on a total of ",
-                     format(nrow(tim_mdt_wip %>% filter(chain_c == "other")),big.mark = ","),
+                     format(nrow(tim_wip_mdt %>% filter(chain_c == "other")),big.mark = ","),
                      " records.
               <br><br>
               'Other purpose' includes transfers, shopping and errands not 

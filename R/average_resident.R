@@ -22,8 +22,8 @@ source("R/data_cleaning.R")
 
 
 # Age bins
-age_breaks <- c(-1,17,29, 49, 69, 150)
-age_labels <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
+age_breaks_avg_res <- c(-1,17,29, 49, 69, 150)
+age_labels_avg_res <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
 
 # filter out trips we don't want to evaluate
 avgtravel_mdt <-
@@ -61,7 +61,7 @@ avgtravel_mdt <-
   filter(home_county %in% c(cmap_seven_counties,63,999)) %>% # 94422 records
   
   # Add age bins
-  mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels)) %>% 
+  mutate(age_bin=cut(age,breaks=age_breaks_avg_res,labels=age_labels_avg_res)) %>% 
   # Keep only variables of interest
   select(sampno,perno,age_bin,sex,income_c,race_eth,home_county_chi,
          hdist = hdist_pg, distance = distance_pg, travtime = travtime_pg,
@@ -96,7 +96,7 @@ ineligible_travelers_mdt <-
   # the list of distinct travelers based on some other condition
   filter(pertrips > 0) %>% # 696
   # add age bins and survey ID
-  mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels),
+  mutate(age_bin=cut(age,breaks=age_breaks_avg_res,labels=age_labels_avg_res),
          survey = "mdt") %>% 
   # Keep relevant variables and rename weight for merging with TT
   select(sampno,perno,weight,race_eth,sex,income_c,
@@ -111,7 +111,7 @@ total_traveler_universe_mdt <-
 distinct_residents_mdt <-
   avgtravel_all_respondents_mdt %>% # 28570
   # And add age bins
-  mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels)) %>%
+  mutate(age_bin=cut(age,breaks=age_breaks_avg_res,labels=age_labels_avg_res)) %>%
   mutate(survey = "mdt") %>%
   # Keep relevant variables and rename weights for merging with TT
   select(sampno,perno,weight,race_eth,sex,income_c,
@@ -138,7 +138,7 @@ avgtravel_tt <-
   # Exclude trips with 0 travel time or more than 15 hours
   filter(TRPDUR > 0 & TRPDUR < 15 * 60) %>%  # 100573 records
   # Add age bins
-  mutate(age_bin=cut(AGE,breaks=age_breaks,labels=age_labels)) %>% 
+  mutate(age_bin=cut(AGE,breaks=age_breaks_avg_res,labels=age_labels_avg_res)) %>% 
   # Add blank column for non-haversine distances
   mutate(distance = 0) %>% 
   # Keep only variables of interest and rename to match MDT variables
@@ -195,7 +195,7 @@ ineligible_travelers_tt <-
     # should be full weight
     DAY %in% c(5,7) ~ WGTP)) %>% 
   # Add age bins
-  mutate(age_bin=cut(AGE,breaks=age_breaks,labels=age_labels),
+  mutate(age_bin=cut(AGE,breaks=age_breaks_avg_res,labels=age_labels_avg_res),
          survey = "tt") %>% 
   rename(sampno = SAMPN,
          perno = PERNO) %>% 
@@ -212,7 +212,7 @@ total_traveler_universe_tt <-
 distinct_residents_tt <-
   avgtravel_all_respondents_tt %>% #22
   # Add age bins
-  mutate(age_bin=cut(AGE,breaks=age_breaks,labels=age_labels)) %>%
+  mutate(age_bin=cut(AGE,breaks=age_breaks_avg_res,labels=age_labels_avg_res)) %>%
   mutate(survey = "tt") %>%
   select(sampno = SAMPN,perno = PERNO,weight = WGTP,
          race_eth,sex = GEND,income_c,home_county_chi,age_bin,survey)

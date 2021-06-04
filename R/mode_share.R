@@ -55,19 +55,19 @@ mode_share_base_mdt <-
 ################################################################################
 
 # Create baseline totals for percentage calculations
-mdt_mode_all <-
+mode_all_mdt <-
   pct_calculator(mode_share_base_mdt,
                  breakdown_by = "mode_c",
                  weight = "weight") %>% 
   ungroup()
 
 ## Export overall mode share for prose
-mdt_mode_all %>% select(mode_c,pct)
+mode_all_mdt %>% select(mode_c,pct)
 
 
 
 # Analyze percents at the county and region-wide level
-mdt_mode_counties <-
+mode_counties_mdt <-
   pct_calculator(
     mode_share_base_mdt %>% 
       # For percentage calculations (for display) only calculate the seven
@@ -78,11 +78,11 @@ mdt_mode_counties <-
     second_breakdown = "home_county_chi",
     weight = "weight") %>% 
   # Add the regional total calculated above
-  rbind(mdt_mode_all %>% mutate(home_county_chi = "CMAP region")) %>% 
+  rbind(mode_all_mdt %>% mutate(home_county_chi = "CMAP region")) %>% 
   ungroup()
 
 # Analyze percents by household income
-mdt_mode_income <-
+mode_income_mdt <-
   pct_calculator(
     # Keep all respondents with a reported household income
     mode_share_base_mdt %>% filter(hhinc > 0),
@@ -91,7 +91,7 @@ mdt_mode_income <-
     second_breakdown = "hhinc",
     weight = "weight") %>%
   # Add baseline totals
-  rbind(mdt_mode_all %>% mutate(hhinc = 99)) %>% 
+  rbind(mode_all_mdt %>% mutate(hhinc = 99)) %>% 
   # Recode for publication
   mutate(hhinc = recode_factor(factor(hhinc),
                              "10" = "$150,000 or more",
@@ -108,7 +108,7 @@ mdt_mode_income <-
   ungroup()
 
 # Do the same again, but for race and ethnicity
-mdt_mode_race <-
+mode_race_mdt <-
   pct_calculator(
     # Keep all respondents with a reported race and ethnicity...
     mode_share_base_mdt %>% filter(race_eth != "missing"),
@@ -117,7 +117,7 @@ mdt_mode_race <-
     second_breakdown = "race_eth",
     weight = "weight") %>%
   # Add baseline totals
-  rbind(mdt_mode_all %>% mutate(race_eth = "CMAP region")) %>% 
+  rbind(mode_all_mdt %>% mutate(race_eth = "CMAP region")) %>% 
   # Recode for publication
   mutate(race_eth = recode_factor(factor(race_eth),
                                   "other" = "Other",
@@ -134,7 +134,7 @@ mdt_mode_race <-
 age_breaks <- c(-1,17,29, 49, 69, 150)
 age_labels <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
 
-mdt_mode_age <-
+mode_age_mdt <-
   pct_calculator(
     # Add age bins
     mode_share_base_mdt %>% 
@@ -145,7 +145,7 @@ mdt_mode_age <-
     second_breakdown = "age_bin",
     weight = "weight") %>%
   # Add baseline totals
-  rbind(mdt_mode_all %>% mutate(age_bin = "CMAP region")) %>% 
+  rbind(mode_all_mdt %>% mutate(age_bin = "CMAP region")) %>% 
   # Reorder factors for publication
   mutate(age_bin = factor(age_bin,levels = c("70 and above",
                                              "50 to 69",
@@ -165,7 +165,7 @@ mileage_labels <- c("0.50 miles or less","0.51 to 1.0 miles", "1.01 to 2.50 mile
                  "2.51 to 5.00 miles","5.01 to 25.00 miles","More than 25 miles")
 
 
-mdt_mode_mileage <-
+mode_mileage_mdt <-
   pct_calculator(
     # Add mileage bins
     mode_share_base_mdt %>% 
@@ -175,7 +175,7 @@ mdt_mode_mileage <-
     second_breakdown = "mileage_bin",
     weight = "weight") %>%
   # Add baseline totals
-  rbind(mdt_mode_all %>% mutate(mileage_bin = "CMAP region")) %>% 
+  rbind(mode_all_mdt %>% mutate(mileage_bin = "CMAP region")) %>% 
   # Reorder factors for publication
   mutate(mileage_bin = fct_relevel(mileage_bin,"CMAP region")) %>%
   mutate(mileage_bin = fct_rev(factor(mileage_bin))) %>% 
@@ -184,7 +184,7 @@ mdt_mode_mileage <-
 
 
 # Do the same for sex
-mdt_mode_sex <-
+mode_sex_mdt <-
   pct_calculator(
     mode_share_base_mdt,
     breakdown_by = "mode_c",
@@ -197,7 +197,7 @@ mdt_mode_sex <-
                       "1" = "Male",
                       "2" = "Female")) %>% 
   # Add the regional total calculated above
-  rbind(mdt_mode_all %>% mutate(sex = "CMAP region")) %>% 
+  rbind(mode_all_mdt %>% mutate(sex = "CMAP region")) %>% 
   ungroup()
 
 
@@ -219,7 +219,7 @@ mdt_mode_sex <-
 
 # Create labels
 mode_share_p1_labels <-
-  mdt_mode_counties %>%
+  mode_counties_mdt %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(home_county_chi) %>%
   summarize(label = sum(pct))
@@ -227,7 +227,7 @@ mode_share_p1_labels <-
 # Create plot
 mode_share_p1 <-
   # Get data
-  mdt_mode_counties %>%
+  mode_counties_mdt %>%
   # Add labels
   left_join(mode_share_p1_labels, by = "home_county_chi") %>%
   # Make changes for graphing
@@ -306,7 +306,7 @@ finalize_plot(mode_share_p1,
                      format(nrow(mode_share_base_mdt),big.mark = ","),
                      " recorded trips. 
               McHenry County has the lowest sample size, with ",
-                     format(mdt_mode_counties %>% 
+                     format(mode_counties_mdt %>% 
                               filter(home_county_chi == "McHenry") %>% 
                               select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
                      " records.
@@ -323,7 +323,7 @@ finalize_plot(mode_share_p1,
 
 # Create labels
 mode_share_p2_labels <-
-  mdt_mode_mileage %>%
+  mode_mileage_mdt %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(mileage_bin) %>%
   summarize(label = sum(pct))
@@ -331,7 +331,7 @@ mode_share_p2_labels <-
 # Create plot
 mode_share_p2 <-
   # Get data
-  mdt_mode_mileage %>%
+  mode_mileage_mdt %>%
   # Add labels
   left_join(mode_share_p2_labels, by = "mileage_bin") %>%
   # Make changes for graphing
@@ -410,7 +410,7 @@ finalize_plot(mode_share_p2,
                        format(nrow(mode_share_base_mdt),big.mark = ","),
                        " recorded trips.
               Trips of 25 miles or more have the lowest sample size, with ",
-                       format(mdt_mode_mileage %>% 
+                       format(mode_mileage_mdt %>% 
                                 filter(mileage_bin == "More than 25 miles") %>% 
                                 select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
                        " records.
@@ -431,7 +431,7 @@ mileage_breaks2 <- c(-1,.25,.5,1,2.5,5,10,25,50,100)
 mileage_labels2 <- c("<0.25","0.25 to 0.5","0.5 to 1","1 to 2.5","2.5 to 5",
                      "5 to 10","10 to 25","25 to 50","50 to 100")
 
-mdt_mode_mileage2 <-
+mode_mileage_mdt2 <-
   pct_calculator(
     # Add mileage bins
     mode_share_base_mdt %>% 
@@ -446,7 +446,7 @@ mdt_mode_mileage2 <-
 
 # Create labels
 mode_share_p2a_labels <-
-  mdt_mode_mileage2 %>%
+  mode_mileage_mdt2 %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(mileage_bin) %>%
   summarize(label = sum(pct))
@@ -456,7 +456,7 @@ mode_share_p2a_labels <-
 # Create plot
 mode_share_p2a <-
   # Get data
-  mdt_mode_mileage2 %>%
+  mode_mileage_mdt2 %>%
   # Make changes for graphing
   mutate(
     # Reorder factors and capitalize
@@ -544,7 +544,7 @@ finalize_plot(mode_share_p2a,
                        format(nrow(mode_share_base_mdt),big.mark = ","),
                        " recorded trips.
               Trips of 50 to 100 miles have the lowest sample size, with ",
-                       format(mdt_mode_mileage2 %>% 
+                       format(mode_mileage_mdt2 %>% 
                                 filter(mileage_bin == "50 to 100") %>% 
                                 select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
                        " records.
@@ -584,7 +584,7 @@ detailed_transit_mileage <-
 
 # Create labels
 mode_share_p3_labels <-
-  mdt_mode_race %>%
+  mode_race_mdt %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(race_eth) %>%
   summarize(label = sum(pct))
@@ -592,7 +592,7 @@ mode_share_p3_labels <-
 # Create plot
 mode_share_p3 <-
   # Get data
-  mdt_mode_race %>%
+  mode_race_mdt %>%
   # Add labels
   left_join(mode_share_p3_labels, by = "race_eth") %>%
   # Make changes for graphing
@@ -671,7 +671,7 @@ finalize_plot(mode_share_p3,
                      format(nrow(mode_share_base_mdt),big.mark = ","),
                      " recorded trips. 
               'Other' travelers have the lowest sample size, with ",
-                     format(mdt_mode_race %>% 
+                     format(mode_race_mdt %>% 
                               filter(race_eth == "Other") %>% 
                               select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
                      " records.
@@ -688,7 +688,7 @@ finalize_plot(mode_share_p3,
 
 # Create labels
 mode_share_p4_labels <-
-  mdt_mode_income %>%
+  mode_income_mdt %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(hhinc) %>%
   summarize(label = sum(pct))
@@ -696,7 +696,7 @@ mode_share_p4_labels <-
 # Create plot
 mode_share_p4 <-
   # Get data
-  mdt_mode_income %>%
+  mode_income_mdt %>%
   # Add labels
   left_join(mode_share_p4_labels, by = "hhinc") %>%
   # Make changes for graphing
@@ -775,7 +775,7 @@ finalize_plot(mode_share_p4,
                   " recorded trips. 
               Travelers with household incomes from $25,000 to $25,999 have the 
               lowest sample size, with ",
-                  format(mdt_mode_income %>% 
+                  format(mode_income_mdt %>% 
                            filter(hhinc == "$25,000 to $29,999") %>% 
                            select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
                   " records.
@@ -791,7 +791,7 @@ finalize_plot(mode_share_p4,
 ################################################################################
 
 # Analyze percents by household income for transit ridership
-mdt_mode_income_detailed <-
+mode_income_detailed_mdt <-
   pct_calculator(
     # Keep all respondents with a reported household income
     mode_share_base_mdt %>% filter(hhinc > 0) %>% filter(mode_c == "transit"),
@@ -804,7 +804,7 @@ mdt_mode_income_detailed <-
 
 
 # Analyze percents by household income for trip chain
-mdt_transit_chain_income <-
+transit_chain_income_mdt <-
   pct_calculator(
     # Keep all respondents with a reported household income
     mode_share_base_mdt %>% filter(hhinc > 0) %>% 
@@ -820,7 +820,7 @@ mdt_transit_chain_income <-
 # Create chart of transit use by income and trip chain
 mode_share_p4a <-
   # Get data
-  mdt_transit_chain_income %>% 
+  transit_chain_income_mdt %>% 
   # Rename for presentation
   mutate(chain_c = recode_factor(chain_c,
                                  "work" = "Work",
@@ -850,7 +850,7 @@ mode_share_p4a <-
   scale_x_continuous(labels = scales::label_percent(accuracy = 1))
 
 mode_share_p4a_samplesize <-
-  mdt_transit_chain_income %>% 
+  transit_chain_income_mdt %>% 
   ungroup() %>% 
   select(income_c,n = total_n) %>% 
   distinct()
@@ -893,7 +893,7 @@ finalize_plot(mode_share_p4a,
 
 # Create labels
 mode_share_p5_labels <-
-  mdt_mode_age %>%
+  mode_age_mdt %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(age_bin) %>%
   summarize(label = sum(pct))
@@ -901,7 +901,7 @@ mode_share_p5_labels <-
 # Create plot
 mode_share_p5 <-
   # Get data
-  mdt_mode_age %>%
+  mode_age_mdt %>%
   # Add labels
   left_join(mode_share_p5_labels, by = "age_bin") %>%
   # Make changes for graphing
@@ -977,7 +977,7 @@ finalize_plot(mode_share_p5,
                      format(nrow(mode_share_base_mdt),big.mark = ","),
                      " recorded trips. 
               Travelers 70 and older have the lowest sample size, with ",
-                     format(mdt_mode_age %>% 
+                     format(mode_age_mdt %>% 
                               filter(age_bin == "70 and above") %>% 
                               select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
                      " records.
@@ -994,7 +994,7 @@ finalize_plot(mode_share_p5,
 ################################################################################
 
 
-mdt_mode_age_detailed <-
+mode_age_detailed_mdt <-
   pct_calculator(
     # Add age bins
     mode_share_base_mdt %>% 

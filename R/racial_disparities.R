@@ -22,7 +22,7 @@ source("R/data_cleaning.R")
 
 
 ### Filter data
-all_trips_mdt <-
+racial_disparities_base_mdt <-
   mdt %>%                            # 125463 records
   filter(
     # Keep only:                     # 125447
@@ -54,7 +54,7 @@ all_trips_mdt <-
 
 # Filter data
 work_time_race_mdt <-
-  all_trips_mdt %>%                  # 97270 records
+  racial_disparities_base_mdt %>%                  # 97270 records
   filter(
     # Keep only trips of employed respondents (either those who report having 1+
     # jobs or those who report being employed)
@@ -84,7 +84,7 @@ work_time_race_mdt <-
 
 # Filter data
 other_time_race_mdt <-
-  all_trips_mdt %>%                  # 97270 records
+  racial_disparities_base_mdt %>%                  # 97270 records
   filter(tpurp %in% c("Health care visit for self",
                       "Health care visit for someone else",
                       "Visited a person staying at the hospital",
