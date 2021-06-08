@@ -105,8 +105,10 @@ all_tnc_tpurp_c_tt <-
 
 ### Calculate proportions for MDT
 all_tnc_tpurp_c_mdt <-
-  pct_calculator(mode_analysis_base_mdt,
-                 subset = c("rideshare","shared rideshare","taxi"),
+  pct_calculator(mode_analysis_base_mdt %>% mutate(mode = recode_factor(mode,
+                                                          "rideshare" = "TNC",
+                                                          "shared rideshare" = "TNC")),
+                 subset = c("TNC","taxi"),
                  subset_of = "mode",
                  breakdown_by = "tpurp_c",
                  weight = "weight",
@@ -126,13 +128,16 @@ total_tnc_tpurp_c <-
 ### "second_breakdown" argument of pct_calculator)
 detailed_tnc_tpurp_c_mdt <-
   pct_calculator(mode_analysis_base_mdt %>%
+                   mutate(mode = recode_factor(mode,
+                                               "rideshare" = "TNC",
+                                               "shared rideshare" = "TNC")) %>% 
                    # Collapse low-percentage modes into "all other" for chart
                    mutate(tpurp_c =
                             fct_collapse(tpurp_c,
                                          "all other" = c("health","recreation/fitness",
                                                          "school","transport",
                                                          "transfer","other"))),
-                 subset = c("rideshare","shared rideshare","taxi"),
+                 subset = c("TNC","taxi"),
                  subset_of = "mode",
                  breakdown_by = "tpurp_c",
                  second_breakdown = "mode",
@@ -170,12 +175,9 @@ mode_analysis_p1 <-
   summarize(total = sum(breakdown_total)/taxi_total_tt) %>%
   
   # Add factor levels and format for chart ordering
-  mutate(mode = recode_factor(factor(mode, levels = c("taxi",
-                                                      "rideshare",
-                                                      "shared rideshare")),
+  mutate(mode = recode_factor(factor(mode),
                               "taxi" = "Taxi",
-                              "rideshare" = "TNC (regular)",
-                              "shared rideshare" = "TNC (shared)")) %>%
+                              "TNC" = "TNC")) %>%
   
   # Create ggplot object
   ggplot(aes(x = mode, y = total)) +
@@ -190,7 +192,7 @@ mode_analysis_p1 <-
   
   # Adjust axis
   scale_y_continuous(labels = scales::label_percent(accuracy = 1),
-                     limits = c(0,2)) +
+                     limits = c(0,3.2)) +
   
   # Add hline for 100%
   geom_hline(yintercept = 1,color = "dark gray", size = 2) +
@@ -205,7 +207,7 @@ mode_analysis_p1 <-
   theme_cmap(hline = 0,show.legend = FALSE,
              xlab = "Taxi and TNC ridership in 2019 as a share of 2008 taxi ridership") +
   # Manually include CMAP colors
-  scale_fill_discrete(type = c("#3f0030","#36d8ca","#006b8c"))
+  scale_fill_discrete(type = c("#3f0030","#36d8ca"))
 
 mode_analysis_p1_samplesize <-
   all_tnc_tpurp_c %>% 
@@ -222,14 +224,15 @@ finalize_plot(mode_analysis_p1,
               county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 
               Will), as well as Grundy and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
-              'TNC (regular)' includes trips reported as 
-              'rideshare', while 'TNC (shared)' includes trips reported as 
-              'shared rideshare.' 
+              'TNC' includes trips reported as either 'rideshare'or 'shared 
+              rideshare.' 
               <br><br> 
-              The reported regional totals for both taxi and 
-              TNC trips in My Daily Travel are similar to but slightly less than 
+              The reported regional totals for both taxi and TNC trips in My
+              Daily Travel are less than 
               those captured in the City of Chicago's data on TNC and taxi trips, 
-              which may be due to the exclusion of non-resident and weekend 
+              even though the My Daily Travel survey covers a larger universe 
+              of trips (including trips in the region that do not start or end 
+              in Chicago). This may be due to the exclusion of non-resident 
               trips and/or other survey design factors.
               <br><br>
               Sample size:
@@ -239,11 +242,8 @@ finalize_plot(mode_analysis_p1,
               <br>- Taxi, 2019 (",
                      mode_analysis_p1_samplesize %>% filter(mode == "taxi" & survey == "mdt") %>% select(n),
                      ");
-              <br>- Regular TNC (",
-                     mode_analysis_p1_samplesize %>% filter(mode == "rideshare") %>% select(n),
-                     ");
-              <br>- Shared TNC (",
-                     mode_analysis_p1_samplesize %>% filter(mode == "shared rideshare") %>% select(n),
+              <br>- TNC, 2019 (",
+                     mode_analysis_p1_samplesize %>% filter(mode == "TNC") %>% select(n),
                      ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
@@ -277,9 +277,9 @@ pct_calculator(
   # second_breakdown = "mode",
   weight = "weight")
 
-# Suburb-to-suburb trips represent 12.9 percent of all TNC trips, with a higher
-# share of rideshare (14.3%) than shared rideshare (9.5%). Chicago to suburb
-# trips represent 9.4% of all trips.
+# Suburb-to-suburb trips represent 12.0 percent of all TNC trips, with a higher
+# share of rideshare (14.0%) than shared rideshare (8.1%). Chicago to suburb
+# trips represent 9.0% of all trips.
 
 
 ################################################################################

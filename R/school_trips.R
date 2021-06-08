@@ -151,11 +151,11 @@ school_trips_p1 <-
   rename(stat = travtime_mean) %>% 
   # Capitalize
   mutate(race_eth = recode_factor(factor(race_eth,
-                                         levels = c("black","latino","other","white",
-                                                    "asian","Non-white")),
+                                         levels = c("black","latino","asian","other",
+                                                    "white","Non-white")),
                            "black" = "Black", 
-                           "latino" = "Latino","other" = "Other",
-                           "white" = "White","asian" = "Asian",
+                           "latino" = "Latino","asian" = "Asian",
+                           "other" = "Other","white" = "White",
                            "Non-white" = "Non-white"
                            )) %>%
   
@@ -176,10 +176,10 @@ school_trips_p1 <-
              xlab = "Mean travel time to school (minutes)") +
   scale_fill_discrete(type = c("#84c87e", # Black
                                "#d8ba39", # Latino
+                               "#e77272", # Asian
                                "#607b88", # Other
-                               "#75a5d8", # White
+                               "#75a5d8"  # White
                                # "#77008c", # Non-white (archived for high school)
-                               "#e77272"  # Asian
                                )) 
   # scale_y_continuous(limits = c(0,16))
 
@@ -204,20 +204,20 @@ finalize_plot(school_trips_p1,
               <br>- Latino (",
                      school_trips_p1_samplesize %>% 
                        filter(race_eth == "latino") %>% select(n),");
+              <br>- Asian (",
+                     school_trips_p1_samplesize %>% 
+                       filter(race_eth == "asian") %>% select(n),");
               <br>- Other (",
                      school_trips_p1_samplesize %>% 
                        filter(race_eth == "other") %>% select(n),");
               <br>- White (",
                      school_trips_p1_samplesize %>% 
-                       filter(race_eth == "white") %>% select(n),");
-              <br>- Asian (",
-                     school_trips_p1_samplesize %>% 
-                       filter(race_eth == "asian") %>% select(n),").
+                       filter(race_eth == "white") %>% select(n),").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "school_trips_p1",
-              # mode = c("png","pdf"),
+              mode = c("png","pdf"),
               sidebar_width = 2.5,
               overwrite = T)
 
@@ -284,26 +284,13 @@ school_trips_output <-
 write.csv(school_trips_output ,
           "outputs/schooltrips.csv")
 
-# Backup - specific trips for Black elementary school children (for prose)
-
-school_base_mdt %>% filter(race_eth == "black",
-               age %in% c(8,9,10,11),
-               mode_c %in% c("transit","walk","schoolbus")) %>% 
-  select(sampno,
-         perno,race_eth,
-         tpurp_c,
-         mode,
-         age,
-         sex,
-         travtime_pg_calc,
-         county_fips,
-         tract_fips,
-         home_county,
-         home_tract) %>% 
-  View()
-
-# We identified traveler #3 from household #70032831 as an 11-year-old girl from
-# North Lawndale with a 45 minute bus ride to school.
+# Backup - mode share by race
+pct_calculator(school_time_race_person_level_mdt,
+               subset = "Elementary and middle school",
+               subset_of = "k12",
+               breakdown_by = "mode_c",
+               second_breakdown = "race_eth",
+               weight = "weight") %>% View()
 
 
 ################################################################################

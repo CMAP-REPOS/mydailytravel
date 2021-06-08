@@ -235,7 +235,7 @@ tnc_p1 <-
                                   "white" = "White")) %>% 
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = race_eth, fill = tnc_purp)) +
+  ggplot(aes(x = pct, y = reorder(race_eth,label), fill = tnc_purp)) +
   # Use "geom_col_pattern" to add texture to a subset of columns
   ggpattern::geom_col_pattern(aes(pattern = type),
                               pattern_color = "white",
@@ -260,9 +260,9 @@ tnc_p1 <-
   
   
   # Adjust axis
-  scale_x_continuous(breaks = seq(-.75,.75,by = .25), 
-                     labels = scales::label_percent()(abs(seq(-.75,.75,by = .25))),
-                     limits = c(-.75,.85)) +
+  scale_x_continuous(breaks = seq(-.5,.75,by = .25), 
+                     labels = scales::label_percent()(abs(seq(-.5,.75,by = .25))),
+                     limits = c(-.5,.85)) +
   
   # Add CMAP themes
   theme_cmap(gridlines = "v",
@@ -296,14 +296,14 @@ finalize_plot(tnc_p1,
               <br>- Asian (",
                        tnc_p1_samplesize %>% filter(race_eth == "asian") %>% select(n),
                        ");
-              <br>- Black (",
-                       tnc_p1_samplesize %>% filter(race_eth == "black") %>% select(n),
-                       ");
               <br>- Latino (",
                        tnc_p1_samplesize %>% filter(race_eth == "latino") %>% select(n),
                        ");
               <br>- Other (",
                        tnc_p1_samplesize %>% filter(race_eth == "other") %>% select(n),
+                       ");
+              <br>- Black (",
+                       tnc_p1_samplesize %>% filter(race_eth == "black") %>% select(n),
                        ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning 
@@ -373,7 +373,7 @@ tnc_p2 <-
   cmap_fill_highlight(home_usage$home_county_chi,"CMAP region") +
   
   # Adjust axes
-  scale_x_continuous(limits = c(0,0.8))
+  scale_x_continuous(limits = c(0,.85))
 
 finalize_plot(tnc_p2,
               "Usage of Transportation Network Companies (TNCs) was greatest by 
@@ -463,7 +463,7 @@ tnc_p3 <-
   # Create values to allow for axis adjustments on the faceted graph
   mutate(blank = case_when(
     name == "Average cost per trip" ~ 20.5,
-    TRUE ~ 1
+    TRUE ~ 1.05
   )) %>% 
   
   # Create ggplot object
@@ -484,7 +484,8 @@ tnc_p3 <-
   theme_cmap(gridlines = "v",hline = 0,legend.position = "none",
              panel.spacing.x = unit(30,"bigpts"),
              xlab = "TNC usage characteristics by age",
-             strip.text = element_text(face = "bold",hjust = 0.5,vjust = 1)) +
+             strip.text = element_text(family = "Whitney Semibold",
+                                       hjust = 0.5,vjust = 1)) +
   cmap_fill_highlight(age_cost_and_usage$age_bin,"CMAP region")
 
 tnc_p3_samplesize <-

@@ -39,7 +39,20 @@ mode_share_base_mdt <-
   # that have a nonzero haversine distance from MDT, the results are similar.
   filter(distance_pg > 0) %>%         # 97307
   # Exclude trips with a "missing" mode
-  filter(mode_c != "missing") %>%     # 97270
+  filter(mode_c != "missing") %>%     # 97270 
+  # Recode income buckets for publication
+  mutate(hhinc_c = recode(hhinc,
+                        "10" = "$150K or more",
+                        "9" = "$100K to $149K",
+                        "8" = "$60K to $99K",
+                        "7" = "$60K to $99K",
+                        "6" = "$35K to $59K",
+                        "5" = "$35K to $59K",
+                        "4" = "$15K to $34K",
+                        "3" = "$15K to $34K",
+                        "2" = "$15K to $34K",
+                        "1" = "Less than $15K",
+                        .default = "")) %>% 
   # Exclude improbable walk trips
   filter(improbable_walk == 0)        # 97230
 
@@ -58,6 +71,12 @@ mode_share_base_mdt <-
 mode_all_mdt <-
   pct_calculator(mode_share_base_mdt,
                  breakdown_by = "mode_c",
+                 weight = "weight") %>% 
+  ungroup()
+
+mode_detailed_all_mdt <-
+  pct_calculator(mode_share_base_mdt,
+                 breakdown_by = "mode",
                  weight = "weight") %>% 
   ungroup()
 
@@ -88,24 +107,18 @@ mode_income_mdt <-
     mode_share_base_mdt %>% filter(hhinc > 0),
     # Execute the rest of the function
     breakdown_by = "mode_c",
-    second_breakdown = "hhinc",
+    second_breakdown = "hhinc_c",
     weight = "weight") %>%
   # Add baseline totals
-  rbind(mode_all_mdt %>% mutate(hhinc = 99)) %>% 
-  # Recode for publication
-  mutate(hhinc = recode_factor(factor(hhinc),
-                             "10" = "$150,000 or more",
-                             "9" = "$100,000 to $149,999",
-                             "8" = "$75,000 to $99,999",
-                             "7" = "$60,000 to $74,999",
-                             "6" = "$50,000 to $59,999",
-                             "5" = "$35,000 to $49,999",
-                             "4" = "$30,000 to $34,999",
-                             "3" = "$25,000 to $29,999",
-                             "2" = "$15,000 to $24,999",
-                             "1" = "Less than $15,000",
-                             "99" = "CMAP region")) %>% 
-  ungroup()
+  rbind(mode_all_mdt %>% mutate(hhinc_c = "CMAP region")) %>% 
+  ungroup() %>% 
+  mutate(hhinc_c = factor(hhinc_c,levels = c("$150K or more",
+                                         "$100K to $149K",
+                                         "$60K to $99K",
+                                         "$35K to $59K",
+                                         "$15K to $34K",
+                                         "Less than $15K",
+                                         "CMAP region")))
 
 # Do the same again, but for race and ethnicity
 mode_race_mdt <-
@@ -567,11 +580,11 @@ detailed_transit_mileage <-
   pct_calculator(
   # Add mileage bins
   mode_share_base_mdt %>% 
-    mutate(mileage_bin=cut(distance_pg,breaks=mileage_breaks,labels=mileage_labels)),
+    mutate(mileage_bin=cut(distance_pg,breaks=mileage_breaks2,labels=mileage_labels2)),
   # Execute the rest of the function
   subset = "transit",
   subset_of = "mode_c",
-  breakdown_by = "chain",
+  breakdown_by = "chain_c",
   second_breakdown = "mileage_bin",
   weight = "weight")
 
@@ -690,7 +703,7 @@ finalize_plot(mode_share_p3,
 mode_share_p4_labels <-
   mode_income_mdt %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
-  group_by(hhinc) %>%
+  group_by(hhinc_c) %>%
   summarize(label = sum(pct))
 
 # Create plot
@@ -698,7 +711,7 @@ mode_share_p4 <-
   # Get data
   mode_income_mdt %>%
   # Add labels
-  left_join(mode_share_p4_labels, by = "hhinc") %>%
+  left_join(mode_share_p4_labels, by = "hhinc_c") %>%
   # Make changes for graphing
   mutate(
     # Reorder factors and capitalize
@@ -716,10 +729,10 @@ mode_share_p4 <-
     # Make driver/passenger go on the left-hand-side of the graph
     pct = ifelse(mode_c %in% c("Driver","Passenger"),-1 *pct,pct),
     # Add flag for CMAP region for pattern in display
-    type = ifelse(hhinc == "CMAP region","1","0")) %>%
+    type = ifelse(hhinc_c == "CMAP region","1","0")) %>%
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = hhinc)) +
+  ggplot(aes(x = pct, y = hhinc_c)) +
   # Use "geom_col_pattern" to add texture to a subset of columns
   ggpattern::geom_col_pattern(aes(fill = mode_c,pattern = type),
                               pattern_color = "white",
@@ -737,7 +750,7 @@ mode_share_p4 <-
   
   # Add labels
   geom_label(aes(label = scales::label_percent(accuracy = 0.1)(label),
-                 x = label, y = hhinc),
+                 x = label, y = hhinc_c),
              label.size = 0,
              hjust = -.02,
              fill = "white") +
@@ -761,9 +774,9 @@ mode_share_p4 <-
                                                  pattern = "none")))
 # Export finalized graphic
 finalize_plot(mode_share_p4,
-              title = "Households with less than $30,000 in income were the most
+              title = "Households with less than $35,000 in income were the most
               reliant  on non-car modes, but the highest-income households also
-              exceeded the regional average.",
+              neared the regional average.",
               caption = 
               paste0("Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
@@ -773,10 +786,10 @@ finalize_plot(mode_share_p4,
               Sample size: Figures are based on a total of ",
                   format(nrow(mode_share_base_mdt),big.mark = ","),
                   " recorded trips. 
-              Travelers with household incomes from $25,000 to $25,999 have the 
+              Travelers with household incomes below $15,000 have the 
               lowest sample size, with ",
                   format(mode_income_mdt %>% 
-                           filter(hhinc == "$25,000 to $29,999") %>% 
+                           filter(hhinc_c == "Less than $15,000") %>% 
                            select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
                   " records.
               <br><br>
@@ -797,7 +810,7 @@ mode_income_detailed_mdt <-
     mode_share_base_mdt %>% filter(hhinc > 0) %>% filter(mode_c == "transit"),
     # Execute the rest of the function
     breakdown_by = "mode",
-    second_breakdown = "income_c",
+    second_breakdown = "hhinc_c",
     weight = "weight") %>% 
   mutate(pct = round(pct,2)) %>% 
   arrange(mode)
@@ -812,9 +825,17 @@ transit_chain_income_mdt <-
       filter(mode_c == "transit"),
     # Execute the rest of the function
     breakdown_by = "chain_c",
-    second_breakdown = "income_c",
+    second_breakdown = "hhinc_c",
     weight = "weight") %>% 
-  arrange(chain_c)
+  arrange(chain_c) %>% 
+  # Reorder
+  mutate(hhinc_c = factor(hhinc_c,levels = c("$150K or more",
+                                             "$100K to $149K",
+                                             "$60K to $99K",
+                                             "$35K to $59K",
+                                             "$15K to $34K",
+                                             "Less than $15K")))
+
 
 
 # Create chart of transit use by income and trip chain
@@ -825,15 +846,10 @@ mode_share_p4a <-
   mutate(chain_c = recode_factor(chain_c,
                                  "work" = "Work",
                                  "shop" = "Shopping",
-                                 "other" = "Other"),
-         income_c = recode_factor(income_c,
-                                  "high" = "$100K or more",
-                                  "middle-high" = "$60K to $99K",
-                                  "middle-low" = "$35K to $59K",
-                                  "low" = "Less than $35K")) %>%
+                                 "other" = "Other")) %>%
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = income_c, fill = chain_c,
+  ggplot(aes(x = pct, y = hhinc_c, fill = chain_c,
              # Only label bars that round to at least 5 percent
              label = ifelse(pct >=.05,scales::label_percent(accuracy = 1)(pct),""))) + 
   geom_col(position = position_stack(reverse = T)) +
@@ -852,7 +868,7 @@ mode_share_p4a <-
 mode_share_p4a_samplesize <-
   transit_chain_income_mdt %>% 
   ungroup() %>% 
-  select(income_c,n = total_n) %>% 
+  select(hhinc_c,n = total_n) %>% 
   distinct()
 
 finalize_plot(mode_share_p4a,
@@ -866,17 +882,23 @@ finalize_plot(mode_share_p4a,
               Unlabeled bars are less than 5%.
               <br><br>
               Sample size:
-              <br>- <$35K (",
-                mode_share_p4a_samplesize %>% filter(income_c == "low") %>% select(n),
+              <br>- <$15K (",
+                mode_share_p4a_samplesize %>% filter(hhinc_c == "Less than $15K") %>% select(n),
+                ")
+              <br>- <$15-34K (",
+                mode_share_p4a_samplesize %>% filter(hhinc_c == "$15K to $34K") %>% select(n),
                 ")
               <br>- <$35-59K (",
-                mode_share_p4a_samplesize %>% filter(income_c == "middle-low") %>% select(n),
+                mode_share_p4a_samplesize %>% filter(hhinc_c == "$35K to $59K") %>% select(n),
                 ")
               <br>- <$60-99K (",
-                mode_share_p4a_samplesize %>% filter(income_c == "middle-high") %>% select(n),
+                mode_share_p4a_samplesize %>% filter(hhinc_c == "$60K to $99K") %>% select(n),
                 ")
-              <br>- >$100K (",
-                mode_share_p4a_samplesize %>% filter(income_c == "high") %>% select(n),
+              <br>- <$199-149K (",
+                mode_share_p4a_samplesize %>% filter(hhinc_c == "$100K to $149K") %>% select(n),
+                ")
+              <br>- >$150K (",
+                mode_share_p4a_samplesize %>% filter(hhinc_c == "$150K or more") %>% select(n),
                 ")
                 <br><br>
                 Source: Chicago Metropolitan Agency for Planning analysis of My 

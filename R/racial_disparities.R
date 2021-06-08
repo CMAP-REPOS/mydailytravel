@@ -76,7 +76,7 @@ work_time_race_mdt <-
   # Calculate weighted median of trip times by race and ethnicity
   group_by(race_eth,tpurp) %>%
   # # BACKUP - for prose, group by race, ethnicity, and mode
-  # group_by(race_eth,tpurp,mode_c) %>% 
+  group_by(race_eth,tpurp,mode_c) %>%
   summarize(travtime = weighted.mean(travtime_pg_calc, w = weight),
             travtime_uw = mean(travtime_pg_calc),
             n = n())
@@ -119,9 +119,10 @@ racial_disparities_p1 <-
   # Get data
   all_time_race_mdt %>%
   # Recode labels for publication
-  mutate(race_eth = recode_factor(factor(race_eth,levels = c("black","latino","other","asian","white")),
-                           "black" = "Black","latino" = "Latino",
-                           "other" = "Other","asian" = "Asian",
+  mutate(race_eth = recode_factor(
+    factor(race_eth,levels = c("black","other","latino","asian","white")),
+                           "black" = "Black","other" = "Other",
+                           "latino" = "Latino","asian" = "Asian",
                            "white" = "White")) %>%
   mutate(tpurp_disp = as.character(tpurp)) %>% 
   mutate(tpurp_disp = 
@@ -143,12 +144,12 @@ racial_disparities_p1 <-
   # Add CMAP style
   theme_cmap(gridlines = "h", legend.position = "None",
              xlab = "Mean travel times for various trip purposes (minutes)",
-             strip.text = element_text(face = "bold",hjust = 0.5,vjust = 1)) +
+             strip.text = element_text(family = "Whitney Semibold",hjust = 0.5,vjust = 1)) +
   cmap_fill_race(white = "White", black = "Black", hispanic = "Latino", 
                  asian = "Asian", other = "Other") +
   
   # Adjust axes
-  scale_y_continuous(limits = c(0,43)) +
+  scale_y_continuous(limits = c(0,46)) +
   
   # Add faceting by trip purpose
   facet_wrap(~tpurp_disp,ncol = 1)
@@ -168,15 +169,15 @@ finalize_plot(racial_disparities_p1,
               'Latino' includes respondents who identified as Latino or Hispanic, 
               regardless of racial category. Other categories are non-Latino.
               <br><br>
-              Sample size (Black/Latino/Other/Asian/White): 
+              Sample size (Black/Other/Latino/Asian/White): 
               <br>- Work (",
                      paste(
                        work_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "black") %>% select(n) %>% as.numeric(),
                        work_time_race_mdt %>% ungroup() %>%  
-                         filter(race_eth == "latino") %>% select(n) %>% as.numeric(),
-                       work_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "other") %>% select(n) %>% as.numeric(),
+                       work_time_race_mdt %>% ungroup() %>%  
+                         filter(race_eth == "latino") %>% select(n) %>% as.numeric(),
                        work_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "asian") %>% select(n) %>% as.numeric(),
                        work_time_race_mdt %>% ungroup() %>%  
@@ -189,10 +190,10 @@ finalize_plot(racial_disparities_p1,
                          filter(race_eth == "black",tpurp == "Health care") %>% 
                          select(n) %>% as.numeric(),
                        other_time_race_mdt %>% ungroup() %>%  
-                         filter(race_eth == "latino",tpurp == "Health care") %>% 
+                         filter(race_eth == "other",tpurp == "Health care") %>% 
                          select(n) %>% as.numeric(),
                        other_time_race_mdt %>% ungroup() %>%  
-                         filter(race_eth == "other",tpurp == "Health care") %>% 
+                         filter(race_eth == "latino",tpurp == "Health care") %>% 
                          select(n) %>% as.numeric(),
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "asian",tpurp == "Health care") %>% 
@@ -208,10 +209,10 @@ finalize_plot(racial_disparities_p1,
                          filter(race_eth == "black",tpurp == "Shopped (routine like grocery, clothing)") %>% 
                          select(n) %>% as.numeric(),
                        other_time_race_mdt %>% ungroup() %>%  
-                         filter(race_eth == "latino",tpurp == "Shopped (routine like grocery, clothing)") %>% 
+                         filter(race_eth == "other",tpurp == "Shopped (routine like grocery, clothing)") %>% 
                          select(n) %>% as.numeric(),
                        other_time_race_mdt %>% ungroup() %>%  
-                         filter(race_eth == "other",tpurp == "Shopped (routine like grocery, clothing)") %>% 
+                         filter(race_eth == "latino",tpurp == "Shopped (routine like grocery, clothing)") %>% 
                          select(n) %>% as.numeric(),
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "asian",tpurp == "Shopped (routine like grocery, clothing)") %>% 

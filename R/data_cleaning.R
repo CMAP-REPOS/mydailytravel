@@ -62,6 +62,8 @@ source("R/recoding.R")
 # Load My Daily Travel (from source)
 mdt_zip <- "./source/MyDailyTravelData.zip"
 
+# Load final weights (from source, provided by RAP)
+mdt_weights <- read.csv("source/Final_MyDailyTravel_weights.csv")
 
 # trips
 trips <- read.csv(unzip(mdt_zip,files = "place.csv")) %>%
@@ -130,8 +132,10 @@ ppl <- read.csv(unzip(mdt_zip,files = "person.csv")) %>%
          tnc_purp,   # For what type of trip do you use the service most?
          
          
-         weight = wtperfin    # The weight for the respondent.
-         )
+         orig_weight = wtperfin    # The original weight for the respondent.
+         ) %>% 
+  # Add revised weights
+  left_join(mdt_weights, by = c("sampno","perno")) %>% rename(weight = wtperfin)
 
 veh <- read.csv(unzip(mdt_zip,files = "vehicle.csv")) %>% 
   select(sampno,     # Household and vehicle identifiers
@@ -174,7 +178,7 @@ location_raw <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
   )
 
 file.remove("place.csv","person.csv","household.csv","location.csv","vehicle.csv")
-rm(mdt_zip)
+rm(mdt_zip,mdt_weights)
 
 # Travel zones (provided by CMAP RAP staff).
 zones <- read_csv("source/zones.csv") %>%
@@ -299,12 +303,12 @@ home <- home_wip %>%
   mutate(geog = case_when(
     home_county_chi %in% c("Chicago","Suburban Cook",
                            "Homes in multiple jurisdictions (Chicago/Cook)") ~ home_county_chi,
-    # Assign the rest as "Other suburban counties".
-    TRUE ~ "Other suburban counties"
+    # Assign the rest as "Collar and adjacent".
+    TRUE ~ "Collar and adjacent"
   )) %>% 
   mutate(geog = factor(geog, 
                        levels = c("Chicago","Suburban Cook",
-                                  "Other suburban counties",
+                                  "Collar and adjacent",
                                   "Homes in multiple jurisdictions (Chicago/Cook)"))) %>% 
   # Remove unnecessary variable
   select(-county_chi_name)
@@ -645,7 +649,7 @@ tt_home <- tt_location %>%
     home_county_chi == "Chicago" ~ "Chicago",
     home_county_chi == "Suburban Cook" ~ "Suburban Cook",
     is.na(home_county_chi) ~ "Other - NA",
-    TRUE ~ "Other suburban counties")) %>% 
+    TRUE ~ "Collar and adjacent")) %>% 
   # Extract FIPS for state from larger FIPS code
   mutate(home_state = as.integer(substr(FIPS,1,2))) %>%
   # Extract FIPS for county from larger FIPS code

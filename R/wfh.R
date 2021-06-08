@@ -207,11 +207,12 @@ wfh_tt_all %>%
 # Backup for prose - Summarize TC without working from home
 wfh_base_mdt %>% 
   filter(wfh == 0) %>% 
-  summarize(tc = weighted.mean(tc,weight))
-
-wfh_tt_all %>% 
+  summarize(tc = weighted.mean(tc,weight)) - 
+  
+  wfh_tt_all %>% 
   filter(wfh == 0) %>% 
   summarize(tc = weighted.mean(tc,WGTP))
+
 
 
 # Overall baseline statistics for plot
@@ -542,14 +543,13 @@ wfh_p2 <-
   mutate(flag = recode_factor(factor(flag),
                        "0" = "Does not regularly telecommute",
                        "1" = "Sometimes telecommutes (1-3 days/week)"),
-         geog = recode_factor(geog,
-                              "Other suburban counties" = "Other counties",
-                              "Suburban Cook" = "Suburban Cook",
-                              "Chicago" = "Chicago")) %>%
+         geog = factor(geog, levels = c("Collar and adjacent",
+                                        "Suburban Cook",
+                                        "Chicago"))) %>%
   
   
   # Create ggplot object
-  ggplot(aes(x = distance_pg, y = geog)) +
+  ggplot(aes(x = distance_pg, str_wrap_factor(geog,18))) +
   geom_col(aes(fill = flag), position = position_dodge2(reverse = T)) +
   geom_label(aes(label = scales::label_number(accuracy = 0.1)(distance_pg),
                  group = flag),
@@ -602,7 +602,7 @@ finalize_plot(wfh_p2,
                              select(n) %>% 
                              as.numeric(),
                            wfh_p2_samplesize %>% 
-                             filter(geog == "Other suburban counties",
+                             filter(geog == "Collar and adjacent",
                                     flag == 0) %>% 
                              select(n) %>% 
                              as.numeric(),
@@ -620,7 +620,7 @@ finalize_plot(wfh_p2,
                              select(n) %>% 
                              as.numeric(),
                            wfh_p2_samplesize %>% 
-                             filter(geog == "Other suburban counties", 
+                             filter(geog == "Collar and adjacent", 
                                     flag == 1) %>% 
                              select(n) %>% 
                              as.numeric(),
@@ -632,7 +632,7 @@ finalize_plot(wfh_p2,
               filename = "wfh_p2",
               mode = c("png","pdf"),
               overwrite = T,
-              sidebar_width = 2.6)
+              sidebar_width = 2.65)
 
 
 ################################################################################
@@ -662,10 +662,6 @@ wfh_p3 <-
   mutate(tc_frequency = recode_factor(factor(tc_frequency,levels = c(0,1)),
                               "1" = "1-3 days/wk",
                               "0" = "0 days/wk"),
-         geog = recode_factor(geog,
-                              "Chicago" = "Chicago",
-                              "Suburban Cook" = "Suburban Cook",
-                              "Other suburban counties" = "Other counties"),
          mode_c = recode_factor(factor(mode_c,levels = mode_c_levels),
                                 "driver" = "By car",
                                 "passenger" = "By car",
@@ -694,7 +690,8 @@ wfh_p3 <-
              vline = 0,
              xlab = "Work trips mode share by home jurisdiction and telecommute status \n(excluding travelers with no trips to a work location)",
              axis.title.x = element_text(hjust = 0.5),
-             strip.text = element_text(hjust = 0.5,vjust = 1)) +
+             strip.text = element_text(hjust = 0.5,vjust = 1,
+                                       family = "Whitney Semibold")) +
   # Manually add colors
   scale_fill_discrete(type = c("#00665c","#6d8692","#36d8ca",
                                "#efa7a7","#0084ac")) +
@@ -722,7 +719,7 @@ finalize_plot(wfh_p3,
               telecommute 4+ days per week due to low sample sizes. Unlabeled 
               bars have less than 5% mode share.
               <br><br>
-              Sample size (Chicago/Suburban Cook/Other):
+              Sample size (Chicago/Suburban Cook/Collar and adjacent):
               <br>- 0 days/wk. (",
               paste(wfh_p3_samplesize %>% 
                       filter(geog == "Chicago", 
@@ -735,7 +732,7 @@ finalize_plot(wfh_p3,
                       select(total_n) %>% 
                       as.numeric(),
                     wfh_p3_samplesize %>% 
-                      filter(geog == "Other suburban counties", 
+                      filter(geog == "Collar and adjacent", 
                              mode_c == "driver", tc_frequency == 0) %>% 
                       select(total_n) %>% 
                       as.numeric(),
@@ -753,7 +750,7 @@ finalize_plot(wfh_p3,
                       select(total_n) %>% 
                       as.numeric(),
                     wfh_p3_samplesize %>% 
-                      filter(geog == "Other suburban counties", 
+                      filter(geog == "Collar and adjacent", 
                              mode_c == "driver", tc_frequency == 1) %>% 
                       select(total_n) %>% 
                       as.numeric(),
@@ -812,14 +809,13 @@ wfh_p4 <-
                               "1" = "Sometimes telecommutes (1-3 days/week)",
                               "2" = "Almost always telecommutes (4+ days/week)"),
          
-         geog = recode_factor(geog,
-                              "Other suburban counties" = "Other counties",
-                              "Suburban Cook" = "Suburban Cook",
-                              "Chicago" = "Chicago")) %>%
+         geog = factor(geog, levels = c("Collar and adjacent",
+                                        "Suburban Cook",
+                                        "Chicago"))) %>%
   
   
   # Create ggplot object
-  ggplot(aes(x = distance_pg, y = geog, 
+  ggplot(aes(x = distance_pg, y = str_wrap_factor(geog,18), 
              label = scales::label_number(accuracy = .1)(distance_pg))) +
   geom_col(aes(fill = flag),
            position = position_dodge2(reverse = T,width = 0.9)) +
@@ -832,7 +828,7 @@ wfh_p4 <-
              hjust = -.02) +
   
   # Adjust axis
-  scale_x_continuous(limits = c(0,48)) +
+  scale_x_continuous(limits = c(0,50)) +
   
   # Add CMAP style
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
@@ -856,48 +852,48 @@ finalize_plot(wfh_p4,
               worked from home and did not travel outside the home on that day). 
               Those individuals are included as having zero travel distance.
               <br><br>
-              Sample size (Chicago/Suburban Cook/Other):
+              Sample size (Chicago/Suburban Cook/Collar and adjacent):
               <br>- Not regular (",
-                     paste(wfh_alltraveler_trips_general %>% 
+                     paste(wfh_alltraveler_trips_summary %>% 
                              filter(geog == "Chicago", flag == 0) %>% 
                              select(n) %>% 
                              as.numeric(),
-                           wfh_alltraveler_trips_general %>% 
+                           wfh_alltraveler_trips_summary %>% 
                              filter(geog == "Suburban Cook", flag == 0) %>% 
                              select(n) %>% 
                              as.numeric(),
-                           wfh_alltraveler_trips_general %>% 
-                             filter(geog == "Other suburban counties", flag == 0) %>% 
+                           wfh_alltraveler_trips_summary %>% 
+                             filter(geog == "Collar and adjacent", flag == 0) %>% 
                              select(n) %>% 
                              as.numeric(),
                            sep = "/"),
                      ");
               <br>- Sometimes (",
-                     paste(wfh_alltraveler_trips_general %>% 
+                     paste(wfh_alltraveler_trips_summary %>% 
                              filter(geog == "Chicago", flag == 1) %>% 
                              select(n) %>% 
                              as.numeric(),
-                           wfh_alltraveler_trips_general %>% 
+                           wfh_alltraveler_trips_summary %>% 
                              filter(geog == "Suburban Cook", flag == 1) %>% 
                              select(n) %>% 
                              as.numeric(),
-                           wfh_alltraveler_trips_general %>% 
-                             filter(geog == "Other suburban counties", flag == 1) %>% 
+                           wfh_alltraveler_trips_summary %>% 
+                             filter(geog == "Collar and adjacent", flag == 1) %>% 
                              select(n) %>% 
                              as.numeric(),
                            sep = "/"),
                      ");
               <br>- Almost always (",
-                     paste(wfh_alltraveler_trips_general %>% 
+                     paste(wfh_alltraveler_trips_summary %>% 
                              filter(geog == "Chicago", flag == 2) %>% 
                              select(n) %>% 
                              as.numeric(),
-                           wfh_alltraveler_trips_general %>% 
+                           wfh_alltraveler_trips_summary %>% 
                              filter(geog == "Suburban Cook", flag == 2) %>% 
                              select(n) %>% 
                              as.numeric(),
-                           wfh_alltraveler_trips_general %>% 
-                             filter(geog == "Other suburban counties", flag == 2) %>% 
+                           wfh_alltraveler_trips_summary %>% 
+                             filter(geog == "Collar and adjacent", flag == 2) %>% 
                              select(n) %>% 
                              as.numeric(),
                            sep = "/"),
@@ -922,7 +918,7 @@ wfh_alltraveler_trips %>%
   count(flag,wfo_today,wt = weight) %>% 
   group_by(flag) %>% 
   mutate(pct = n / sum(n))
-# 74% of non-TC/WFHers worked outside the home, while only 67% of part-time TCers
+# 76% of non-TC/WFHers worked outside the home, while only 70% of part-time TCers
 # did and 21% of 4+ TCers/WFHers did.
 
 wfh_alltraveler_trips %>% 
@@ -933,7 +929,7 @@ wfh_alltraveler_trips %>%
   count(flag,wfh_today,wt = weight) %>% 
   group_by(flag) %>% 
   mutate(pct = n / sum(n))
-# 2% of non-TCers reported working from home. 16% of part-time TCers did and 32%
+# 2% of non-TCers reported working from home. 17% of part-time TCers did and 38%
 # of 4+ TCers did. This does not capture individuals who may have worked from
 # home but did not record any trips and are thus excluded from the trip-based
 # analyses.
@@ -1009,7 +1005,8 @@ tc_od_average <-
 df <-
   wfh_trips_mdt %>% 
   mutate(id = paste(sampno,perno,sep = "_")) %>% 
-  filter(id %in% tc_od_average$id)
+  filter(id %in% tc_od_average$id) %>% 
+  select(sampno,perno,tpurp,mode,tpurp_c,mode_c,city)
   
 # Export to csv for mapping
 write.csv(df,"outputs/average_suburban_tc13_trips.csv")

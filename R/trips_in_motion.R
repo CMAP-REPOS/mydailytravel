@@ -221,7 +221,7 @@ trip_times_mode_c_mdt %>%
   scale_x_datetime(labels = scales::date_format("%H:%M",
                                                 tz = "America/Chicago"),
                    breaks = tim_breaks) +
-  scale_y_continuous(label = scales::comma,breaks = waiver()) +
+  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 10) +
   
   # Manually add colors
   scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
@@ -281,7 +281,9 @@ trips_in_motion_p2 <-
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray",),
              legend.max.columns = 7,
-             strip.text = element_text(hjust = 0.5,face = "bold",vjust = 1),
+             strip.text = element_text(hjust = 0.5,
+                                       family = "Whitney Semibold",
+                                       vjust = 1),
              xlab = "Weekday trips in motion by time of day and trip chain type")
 
 trips_in_motion_p2_samplesize <-

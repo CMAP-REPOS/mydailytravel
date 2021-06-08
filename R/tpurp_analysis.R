@@ -65,8 +65,8 @@ tpurp_analysis_base_mdt <-
 detailed_allpurps_mode_c_mdt <-
   pct_calculator(tpurp_analysis_base_mdt %>% filter(geog != "Other") %>% 
                  # Keep only travelers assigned to Chicago, Suburban Cook, or
-                 # Other suburban counties (for display purposes)
-                 filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties")),
+                 # Collar and adjacent (for display purposes)
+                 filter(geog %in% c("Chicago","Suburban Cook","Collar and adjacent")),
                  breakdown_by = "mode_c",
                  second_breakdown = "tpurp",
                  third_breakdown = "geog",
@@ -84,7 +84,7 @@ pct_calculator(tpurp_analysis_base_mdt,
   group_by(by_car,tpurp) %>% 
   summarize(pct = sum(pct)) %>% 
   filter(by_car == "Not by car") %>% 
-  arrange(-pct)
+  arrange(-pct) %>% View()
 
 ################################################################################
 # Table of all trips by mode
@@ -172,9 +172,8 @@ finalize_plot(tpurp_analysis_p1,
               McHenry, and Will), as well as Grundy and DeKalb.
               'By car' includes trips as either a driver of a passenger of a personal 
               vehicle (not including services like taxis or TNCs). 'Other modes' 
-              includes all other modes, but is predominantly composed of 
-              paratransit, private shuttles, and personal bicycles. Unlabeled 
-              bars have less than five percent mode share.
+              includes all other modes, including paratransit, private shuttles, 
+              and bicycles. Unlabeled bars have less than five percent mode share.
               <br><br>
               Sample size:
               <br>- Chicago (",
@@ -187,9 +186,9 @@ finalize_plot(tpurp_analysis_p1,
                 filter(geog == "Suburban Cook") %>% 
                 select(n),
                      ");
-              <br>- Other suburban counties (",
+              <br>- Collar and adjacent (",
               tpurp_analysis_p1_samplesize %>% 
-                filter(geog == "Other suburban counties") %>% 
+                filter(geog == "Collar and adjacent") %>% 
                 select(n),
                      ").
               <br><br>
@@ -253,14 +252,12 @@ health_mode_c_vehs_mdt %>% arrange(hhveh,pct) %>%
 
 
 ################################################################################
-# Backup - detail on "other" mode share for Chicago healthcare
+# Backup - detail on "other" mode share for healthcare
 ################################################################################
 
 pct_calculator(tpurp_analysis_base_mdt %>% 
-                 filter(geog %in% c("Chicago","Suburban Cook"),
-                        tpurp == "Health care visit for self"),
+                 filter(tpurp == "Health care visit for self"),
                breakdown_by = "mode",
-               second_breakdown = "geog",
                weight = "weight",
                survey = "mdt") %>% 
   filter(mode %in% c("paratransit", "private shuttle",
@@ -268,7 +265,7 @@ pct_calculator(tpurp_analysis_base_mdt %>%
                      "shared rideshare", "airplane", "other",
                      "school bus",
                      "personal bike", "bike share")) %>%
-  arrange(geog,-pct)
+  arrange(-pct)
 
 ################################################################################
 #
@@ -311,7 +308,8 @@ tpurp_analysis_p2 <-
   # Add CMAP style
   theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
              xlab = "Mode share for socializing trips by home jurisdiction",
-             strip.text = element_text(hjust = 0.5,vjust = 1,face = "bold")) +
+             strip.text = element_text(hjust = 0.5,vjust = 1,
+                                       family = "Whitney Semibold")) +
   scale_fill_discrete(type = c("#00665c","#36d8ca","#6d8692","#006b8c")) +
   
   # Adjust axis
@@ -339,7 +337,7 @@ finalize_plot(tpurp_analysis_p2,
               'By car' includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
               <br><br>
-              Sample size (Chicago/Suburban Cook/Other suburban counties): 
+              Sample size (Chicago/Suburban Cook/Collar and adjacent): 
               <br>- Friends (",
               paste(tpurp_analysis_p2_samplesize %>% 
                       filter(geog == "Chicago",tpurp == "Socialized with friends") %>%
@@ -348,7 +346,7 @@ finalize_plot(tpurp_analysis_p2,
                        filter(geog == "Suburban Cook",tpurp == "Socialized with friends") %>%
                        select(n),
                      tpurp_analysis_p2_samplesize %>% 
-                        filter(geog == "Other suburban counties",tpurp == "Socialized with friends") %>%
+                        filter(geog == "Collar and adjacent",tpurp == "Socialized with friends") %>%
                         select(n),
                     sep = "/"),
                     ");
@@ -360,7 +358,7 @@ finalize_plot(tpurp_analysis_p2,
                       filter(geog == "Suburban Cook",tpurp == "Socialized with relatives") %>%
                       select(n),
                     tpurp_analysis_p2_samplesize %>% 
-                      filter(geog == "Other suburban counties",tpurp == "Socialized with relatives") %>%
+                      filter(geog == "Collar and adjacent",tpurp == "Socialized with relatives") %>%
                       select(n),
                     sep = "/"),
               ").
@@ -378,8 +376,8 @@ finalize_plot(tpurp_analysis_p2,
 community_employed_mdt <-
   pct_calculator(tpurp_analysis_base_mdt %>% filter(geog != "Other") %>% 
                    # Keep only travelers assigned to Chicago, Suburban Cook, or
-                   # Other suburban counties (for display purposes)
-                   filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties"),
+                   # Collar and adjacent (for display purposes)
+                   filter(geog %in% c("Chicago","Suburban Cook","Collar and adjacent"),
                           emply_ask == 1,
                           tpurp %in% c("Socialized with friends","Socialized with relatives")),
                  breakdown_by = "mode_c",
@@ -391,8 +389,8 @@ community_employed_mdt <-
 community_unemployed_mdt <-
   pct_calculator(tpurp_analysis_base_mdt %>% filter(geog != "Other") %>% 
                    # Keep only travelers assigned to Chicago, Suburban Cook, or
-                   # Other suburban counties (for display purposes)
-                   filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties"),
+                   # Collar and adjacent (for display purposes)
+                   filter(geog %in% c("Chicago","Suburban Cook","Collar and adjacent"),
                           emply_ask == 2,
                           tpurp %in% c("Socialized with friends","Socialized with relatives")),
                  breakdown_by = "mode_c",
@@ -458,7 +456,7 @@ tpurp_analysis_base_mdt %>%
 pct_calculator(tpurp_analysis_base_mdt %>% 
                  # Keep only travelers assigned to Chicago, Suburban Cook, or
                  # Rest of region
-                 filter(geog %in% c("Chicago","Suburban Cook","Other suburban counties"),
+                 filter(geog %in% c("Chicago","Suburban Cook","Collar and adjacent"),
                         tpurp %in% c("Socialized with friends","Socialized with relatives")) %>% 
                  # Recode car vs non-car
                  mutate(by_car = case_when(

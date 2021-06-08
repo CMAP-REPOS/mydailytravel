@@ -55,6 +55,7 @@ avgtravel_mdt <-
   # Filter out trips that were not within the TT travel region (only for
   # comparisons with TT - see explanation in TT data prep below)
   filter(out_tt_trip == 0) %>% # 94522 records
+  
   # Keep only residents of the seven counties, Grundy (63) and double-home
   # residents in the seven county region (999) for comparability with TT. This
   # excludes residents of DeKalb.
@@ -471,7 +472,7 @@ average_resident_p1 <-
   mutate(blank = case_when(
     name == "trips_per_capita" ~ 5,
     name == "avg_trip_length" ~ 6,
-    name == "avg_trip_time" ~ 31,
+    name == "avg_trip_time" ~ 32,
   )) %>% 
   # Rename variables we are keeping
   mutate(name = recode_factor(factor(name,levels = c("trips_per_capita",
@@ -513,7 +514,8 @@ average_resident_p1 <-
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
              xlab = "Average behavior for residents who traveled on their assigned travel day",
-             strip.text.x = element_text(hjust = 0.5,vjust = 1),
+             strip.text.x = element_text(family = "Whitney Semibold",
+                                         hjust = 0.5,vjust = 1),
              strip.text.y = element_blank()) +
   cmap_fill_discrete(palette = "legislation") +
   scale_color_discrete(type = "black") +
@@ -757,7 +759,8 @@ average_resident_p3 <-
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
              xlab = "Distance per day for residents who traveled (miles)",
-             strip.text = element_text(face = "bold",hjust = 0.5,vjust = 1)) +
+             strip.text = element_text(family = "Whitney Semibold",
+                                       hjust = 0.5,vjust = 1)) +
   cmap_fill_discrete(palette = "friday",reverse = T) +
   
   # Adjust legend for formatting
@@ -766,8 +769,8 @@ average_resident_p3 <-
 
 # Export finalized graphic
 finalize_plot(average_resident_p3,
-              "In contrast to the overall regional decline, lower-income and 
-              older travelers reported more travel in 2019 than in 2008.",
+              "In contrast to the overall regional decline, lower-income 
+              travelers reported more travel in 2019 than in 2008.",
               caption = 
               paste0(
               "Note: Includes trips by travelers age 5 and older who live in the 
