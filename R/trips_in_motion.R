@@ -537,7 +537,7 @@ finalize_plot(trips_in_motion_p5,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries."),
               filename = "trips_in_motion_p5",
-              mode = c("png"),
+              mode = c("pdf","png"),
               sidebar_width = 3,
               overwrite = TRUE,
               # height = 6.3,

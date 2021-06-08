@@ -279,7 +279,7 @@ pct_calculator(tpurp_analysis_base_mdt %>%
 # Chart of community sub-purposes by mode
 ################################################################################
 
-tpurp_analysis_p3 <-
+tpurp_analysis_p2 <-
   # Get data
   detailed_allpurps_mode_c_mdt %>% 
   # Recode names
@@ -320,7 +320,7 @@ tpurp_analysis_p3 <-
   # Add faceting
   facet_wrap(~geog,ncol = 1)
 
-tpurp_analysis_p3_samplesize <-
+tpurp_analysis_p2_samplesize <-
   detailed_allpurps_mode_c_mdt %>%
   ungroup() %>% 
   filter(tpurp %in% c("Socialized with friends",
@@ -329,7 +329,7 @@ tpurp_analysis_p3_samplesize <-
   distinct()
   
 # Export graphic
-finalize_plot(tpurp_analysis_p3,
+finalize_plot(tpurp_analysis_p2,
               "Walking and other non-car modes were significantly more common for 
               trips to socialize with friends than with relatives.",
               paste0(
@@ -341,25 +341,25 @@ finalize_plot(tpurp_analysis_p3,
               <br><br>
               Sample size (Chicago/Suburban Cook/Other suburban counties): 
               <br>- Friends (",
-              paste(tpurp_analysis_p3_samplesize %>% 
+              paste(tpurp_analysis_p2_samplesize %>% 
                       filter(geog == "Chicago",tpurp == "Socialized with friends") %>%
                       select(n),
-                    tpurp_analysis_p3_samplesize %>% 
+                    tpurp_analysis_p2_samplesize %>% 
                        filter(geog == "Suburban Cook",tpurp == "Socialized with friends") %>%
                        select(n),
-                     tpurp_analysis_p3_samplesize %>% 
+                     tpurp_analysis_p2_samplesize %>% 
                         filter(geog == "Other suburban counties",tpurp == "Socialized with friends") %>%
                         select(n),
                     sep = "/"),
                     ");
               <br>- Relatives (",
-              paste(tpurp_analysis_p3_samplesize %>% 
+              paste(tpurp_analysis_p2_samplesize %>% 
                       filter(geog == "Chicago",tpurp == "Socialized with relatives") %>%
                       select(n),
-                    tpurp_analysis_p3_samplesize %>% 
+                    tpurp_analysis_p2_samplesize %>% 
                       filter(geog == "Suburban Cook",tpurp == "Socialized with relatives") %>%
                       select(n),
-                    tpurp_analysis_p3_samplesize %>% 
+                    tpurp_analysis_p2_samplesize %>% 
                       filter(geog == "Other suburban counties",tpurp == "Socialized with relatives") %>%
                       select(n),
                     sep = "/"),
@@ -369,7 +369,7 @@ finalize_plot(tpurp_analysis_p3,
               Daily Travel data."),
               overwrite = T,
               mode = c("png","pdf"),
-              filename = "tpurp_analysis_p3")
+              filename = "tpurp_analysis_p2")
 
 ################################################################################
 # Backup behavior for employed vs. unemployed

@@ -783,7 +783,7 @@ finalize_plot(mode_share_p4,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "mode_share_p4",
-              # mode = c("png","pdf"),
+              mode = c("png","pdf"),
               overwrite = T)
 
 ################################################################################
