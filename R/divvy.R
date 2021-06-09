@@ -184,14 +184,14 @@ finalize_plot(divvy_p1,
 
 # This requires running the code for the MDT bike ridership plot in
 # 'trips_in_motion.R'
-bike_p1 <- ggpubr::ggarrange(trips_in_motion_p3,divvy_p1,
+bike_p1 <- ggpubr::ggarrange(trips_in_motion_p4,divvy_p1,
                      ncol = 2,nrow = 1)
 
 finalize_plot(bike_p1,
               sidebar_width = 0,
               title = "Personal bike trips peaked in the morning, while Divvy 
               trips peaked in the afternoon.",
-              paste0("Note: Trips in motion are 55-minute rolling averages for
+              paste0("Note: Trips in motion are 115-minute rolling averages for
               personal bikes and 25-minute rolling averages for Divvy.
               'One-time user' refers to Divvy customers that purchased a
               single ride or a day pass. Personal bike trips anlyzed include
@@ -204,7 +204,7 @@ finalize_plot(bike_p1,
               motion as of 3:00 A.M. on the left side of the graph.
               <br><br>
               Sample size: Personal bike trips are based on ",
-                     format(nrow(tim_mdt_bike),big.mark = ","),
+                     format(nrow(tim_bike_mdt),big.mark = ","),
                      " records. Divvy trips are actual ridership numbers.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 

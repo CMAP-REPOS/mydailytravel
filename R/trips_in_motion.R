@@ -416,7 +416,7 @@ trip_times_bike_and_chain_mdt <-
   tim_calculator(data = tim_bike_mdt,
                  weights = "weight",
                  criteria = "chain",
-                 rolling_window = 55)
+                 rolling_window = 115)
 
 # Graph output of trips in motion by purpose for bike trips (personal bike only)
 trips_in_motion_p4 <-
@@ -436,10 +436,14 @@ trips_in_motion_p4 <-
   scale_x_datetime(labels = scales::date_format("%H:%M",
                                                 tz = "America/Chicago"),
                    breaks = tim_breaks_less) +
-  scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
+  scale_y_continuous(label = scales::comma,breaks = c(0,3000,6000,9000,12000,15000),
+                     limits = c(0,15000),expand = expansion(mult = c(.05,.01))) +
   
   # Add colors
   scale_fill_discrete(type = c("#72cae5","#3d6600")) +
+  
+  # # # Archived - facet by chain
+  # facet_wrap(~chain,ncol = 1) +
   
   # Add CMAP style
   theme_cmap(gridlines = "hv",legend.max.columns = 3,
@@ -448,7 +452,7 @@ trips_in_motion_p4 <-
 
 finalize_plot(trips_in_motion_p4,
               "Personal bike usage has a strong morning peak, with PM usage spread more evenly across the afternoon and evening.",
-              "Note: Trips in motion are 55-minute rolling averages. Trips 
+              "Note: Trips in motion are 115-minute rolling averages. Trips 
               analyzed include weekday trips by residents age 5 and older 
               of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
               Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
