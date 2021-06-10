@@ -243,9 +243,12 @@ location <-
   # And add a flag for whether the location is in the set of locations that were
   # coded in TT (and thus have distances associated with them) - Cook, DuPage,
   # Grundy, Kane, Kendall, Lake, McHenry, and/or Will in Illinois, and Lake,
-  # LaPorte, and Porter in Indiana
+  # LaPorte, and Porter in Indiana. Since the MDT survey also covered DeKalb, we
+  # add that to the list as well - while this is not directly comparable with
+  # TT, it allows us to understand how regional travel patterns have changed
+  # given the inclusion of more of NE IL in the CMAP travel models.
   mutate(outside_tt = case_when(
-    state_fips == 17 & county_fips %in% c(cmap_seven_counties,63) ~ 0,
+    state_fips == 17 & county_fips %in% c(cmap_nine_counties) ~ 0,
     state_fips == 18 & county_fips %in% c(89,91,127) ~ 0,
     TRUE ~ 1
     ))
