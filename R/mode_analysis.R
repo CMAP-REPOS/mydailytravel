@@ -298,16 +298,10 @@ pct_calculator(
 
 ### Calculate proportions for subcategories for biking in MDT
 detailed_bike_tpurp_c_mdt <-
-  pct_calculator(mode_analysis_base_mdt %>%
-                   mutate(chain = recode_factor(chain,
-                                                "Work trip" = "Work",
-                                                "Return home (work)" = "Work",
-                                                "Shopping trip" = "Shopping",
-                                                "Return home (shopping)" = "Shopping",
-                                                "Other trip" = "Other")) ,
+  pct_calculator(mode_analysis_base_mdt,
                  subset = "bike",
                  subset_of = "mode_c",
-                 breakdown_by = "chain",
+                 breakdown_by = "chain_c",
                  # # # Alternative - breakdown by trip purpose (reveals connection
                  # # # to other modes)
                  # breakdown_by = "tpurp_c",

@@ -33,8 +33,8 @@ extra_wfhers <-
   select(identifier)
 
 # Age bins
-age_breaks <- c(-1,17,29, 49, 69, 150)
-age_labels <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
+age_breaks_wfh <- c(-1,15,29, 49, 69, 150)
+age_labels_wfh <- c("5 to 15","16 to 29", "30 to 49",  "50 to 69", "70 and above")
 
 # Create base dataset (includes individuals with no trips)
 wfh_base_mdt <-
@@ -91,7 +91,7 @@ wfh_base_mdt <-
            )) %>%
   ungroup() %>% 
   # And add age bins
-  mutate(age_bin=cut(age,breaks=age_breaks,labels=age_labels))
+  mutate(age_bin=cut(age,breaks=age_breaks_wfh,labels=age_labels_wfh))
 
 # Create working dataset for charts (relies on individuals with trips)
 wfh_trips_mdt <-
@@ -175,7 +175,7 @@ wfh_tt_all <-
   ) %>%
   ungroup() %>% 
   # And add age bins
-  mutate(age_bin=cut(AGE,breaks=age_breaks,labels=age_labels))
+  mutate(age_bin=cut(AGE,breaks=age_breaks_wfh,labels=age_labels_wfh))
 
 #################################################
 #                                               #
@@ -194,6 +194,7 @@ wfh_base_mdt %>%
             tc_or_wfh_pct = weighted.mean(x=tc_or_wfh,w=weight),
             tc = sum(weight*tc),
             wfh = sum(weight*wfh),
+            wfh_not_tc = tc_or_wfh_pct - tc_pct,
             tc_or_wfh = format(sum(weight*tc_or_wfh),scientific = F))
 
 wfh_tt_all %>%
@@ -333,7 +334,7 @@ tc_summaries <-
                   levels = c("Overall",
                              "Male","Female",
                              "Asian","White","Other","Black","Latino",
-                             "5 to 17","18 to 29","30 to 49","50 to 69",
+                             "5 to 15","16 to 29","30 to 49","50 to 69",
                                 "70 and above",
                              "Less than $35K","$35K to $59K","$60K to $99K",
                                 "$100K or more",
@@ -420,8 +421,8 @@ finalize_plot(wfh_p1,
               unavailable for this population.
               <br><br>
               Sample size:
-              <br>- <i>Age</i>: 18-29 (",
-                     wfh_p1_samplesize %>% filter(subtype == "18 to 29") %>% select(n),
+              <br>- <i>Age</i>: 16-29 (",
+                     wfh_p1_samplesize %>% filter(subtype == "16 to 29") %>% select(n),
                      "); 30-49 (",
                      wfh_p1_samplesize %>% filter(subtype == "30 to 49") %>% select(n),
                      "); 50-69 (",

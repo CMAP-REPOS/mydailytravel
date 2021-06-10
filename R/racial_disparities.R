@@ -76,7 +76,7 @@ work_time_race_mdt <-
   # Calculate weighted median of trip times by race and ethnicity
   group_by(race_eth,tpurp) %>%
   # # BACKUP - for prose, group by race, ethnicity, and mode
-  group_by(race_eth,tpurp,mode_c) %>%
+  # group_by(race_eth,tpurp,mode_c) %>%
   summarize(travtime = weighted.mean(travtime_pg_calc, w = weight),
             travtime_uw = mean(travtime_pg_calc),
             n = n())

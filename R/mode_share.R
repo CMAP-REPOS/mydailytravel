@@ -81,7 +81,7 @@ mode_detailed_all_mdt <-
   ungroup()
 
 ## Export overall mode share for prose
-mode_all_mdt %>% select(mode_c,pct)
+mode_all_mdt %>% select(mode_c,pct) %>% mutate(pct = round(pct * 100))
 
 
 
@@ -885,16 +885,16 @@ finalize_plot(mode_share_p4a,
               <br>- <$15K (",
                 mode_share_p4a_samplesize %>% filter(hhinc_c == "Less than $15K") %>% select(n),
                 ")
-              <br>- <$15-34K (",
+              <br>- $15-34K (",
                 mode_share_p4a_samplesize %>% filter(hhinc_c == "$15K to $34K") %>% select(n),
                 ")
-              <br>- <$35-59K (",
+              <br>- $35-59K (",
                 mode_share_p4a_samplesize %>% filter(hhinc_c == "$35K to $59K") %>% select(n),
                 ")
-              <br>- <$60-99K (",
+              <br>- $60-99K (",
                 mode_share_p4a_samplesize %>% filter(hhinc_c == "$60K to $99K") %>% select(n),
                 ")
-              <br>- <$199-149K (",
+              <br>- $100-149K (",
                 mode_share_p4a_samplesize %>% filter(hhinc_c == "$100K to $149K") %>% select(n),
                 ")
               <br>- >$150K (",

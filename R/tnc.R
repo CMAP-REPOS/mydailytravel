@@ -44,8 +44,8 @@ active_travel <-
   mutate(takes_active = min(sum(takes_transit,takes_bike,takes_walk),1))
 
 # Age bins
-age_breaks <- c(-1, 9, 18, 29, 39, 49, 59, 150)
-age_labels <- c("5 to 9", "10 to 18", "19 to 29", "30 to 39", "40 to 49",
+age_breaks_tnc <- c(-1, 9, 18, 29, 39, 49, 59, 150)
+age_labels_tnc <- c("5 to 9", "10 to 18", "19 to 29", "30 to 39", "40 to 49",
                 "50 to 59", "60 and above")
 
 # Create working dataset based on variables pulled above and person/hh
@@ -92,8 +92,8 @@ tnc <-
            income_c %in% c("high","middle-high") ~ 1,
            TRUE ~ 0
          )) %>% 
-  mutate(age_bin = cut(age, breaks = age_breaks,
-                       labels = age_labels))
+  mutate(age_bin = cut(age, breaks = age_breaks_tnc,
+                       labels = age_labels_tnc))
 
 # Reshape data to add flags for each county as individual columns
 tnc_wide <- tnc %>%
@@ -175,14 +175,14 @@ summary(tnc_use_lm)
 ################################################################################
 
 # Age bins
-age_breaks_large <- c(-1, 9, 18, 39, 59, 150)
-age_labels_large <- c("5 to 9", "10 to 18", "19 to 39", "40 to 59",
+age_breaks_tnc_large <- c(-1, 9, 18, 39, 59, 150)
+age_labels_tnc_large <- c("5 to 9", "10 to 18", "19 to 39", "40 to 59",
                       "60 and above")
 
 tnc_for_purposes <-
   tnc %>% # 22957
-  mutate(age_bin = cut(age, breaks = age_breaks_large,
-                       labels = age_labels_large)) %>%
+  mutate(age_bin = cut(age, breaks = age_breaks_tnc_large,
+                       labels = age_labels_tnc_large)) %>%
   filter(tnc_purp > 0) %>% # 7175
   mutate(tnc_purp = recode(factor(tnc_purp,levels = c(1,2,3,5,4)),
                            "1" = "Commute (whole or part)",
