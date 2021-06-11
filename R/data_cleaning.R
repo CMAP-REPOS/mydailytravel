@@ -324,7 +324,7 @@ rm(home_wip, two_homes, location_raw)
 # the trip with the longest distance as the primary record for mode and purpose,
 # but extracting the total distance, travel time, and start/end times and
 # locations.
-placeGroupStats <- trips %>%
+placeGroup_stats <- trips %>%
   mutate(
     # Replace negative hdist, distance, and time values (indicating no data)
     # with 0.
@@ -373,7 +373,7 @@ mdt_wip2 <- mdt_wip1 %>%
   distinct(sampno, perno, placeGroup, .keep_all = TRUE) %>% # 127333 records
   # Add combined distance and time values calculated above (note some trips are
   # missing one or more records)
-  left_join(placeGroupStats, by = c("sampno","perno","placeGroup")) %>% # 127333 records
+  left_join(placeGroup_stats, by = c("sampno","perno","placeGroup")) %>% # 127333 records
   # Fill NAs in locno_pg
   mutate(locno_pg = case_when(
     is.na(locno_pg) ~ locno,
@@ -489,7 +489,7 @@ mdt <-
     hdist,distance,travtime))
 
 # Remove placegroup stats
-rm(placeGroupStats,mdt_wip1,mdt_wip2)
+rm(placeGroup_stats,mdt_wip1,mdt_wip2)
 
 # Create a dataset for all respondents (regardless of whether they traveled on
 # survey day)
