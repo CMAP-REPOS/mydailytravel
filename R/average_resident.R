@@ -61,7 +61,7 @@ avgtravel_mdt <-
   # Keep only variables of interest
   select(sampno,perno,age_bin,sex,income_c,race_eth,home_county_chi,
          hdist = hdist_pg, distance = distance_pg, travtime = travtime_pg,
-         weight) %>% 
+         weight,orig_weight) %>% 
   mutate(survey = "mdt")
 
 # Create a similarly filtered list of all respondents (with age filters but not
@@ -78,7 +78,8 @@ avgtravel_all_respondents_mdt <-
 # summing by different demographic characteristics
 distinct_daily_travelers_mdt <-
   avgtravel_mdt %>% # 95872
-  select(sampno,perno,weight,race_eth,sex,income_c,home_county_chi,age_bin,survey) %>%
+  select(sampno,perno,weight,orig_weight,race_eth,sex,income_c,
+         home_county_chi,age_bin,survey) %>%
   distinct() # 24625
 
 # Identify individuals who did travel in the survey, but are excluded based on 
@@ -95,7 +96,7 @@ ineligible_travelers_mdt <-
   mutate(age_bin=cut(age,breaks=age_breaks_avg_res,labels=age_labels_avg_res),
          survey = "mdt") %>% 
   # Keep relevant variables and rename weight for merging with TT
-  select(sampno,perno,weight,race_eth,sex,income_c,
+  select(sampno,perno,weight,orig_weight,race_eth,sex,income_c,
          home_county_chi,age_bin,survey)
 
 # Add back the ineligible travelers for the purpose of travel percent calculation
@@ -110,7 +111,7 @@ distinct_residents_mdt <-
   mutate(age_bin=cut(age,breaks=age_breaks_avg_res,labels=age_labels_avg_res)) %>%
   mutate(survey = "mdt") %>%
   # Keep relevant variables and rename weights for merging with TT
-  select(sampno,perno,weight,race_eth,sex,income_c,
+  select(sampno,perno,weight,orig_weight,race_eth,sex,income_c,
          home_county_chi,age_bin,survey)
   
 
@@ -146,7 +147,8 @@ avgtravel_tt <-
          sex = GEND,
          age_bin,income_c,race_eth,home_county_chi,weight,
          DAYNO) %>% 
-  mutate(survey = "tt")
+  mutate(survey = "tt",
+         orig_weight = weight)
 
 # Create a similar list of all TT respondents with age filters
 avgtravel_all_respondents_tt <-
@@ -163,7 +165,7 @@ avgtravel_all_respondents_tt <-
 # variable to capture respondents who had a two-day weekday survey.
 distinct_daily_travelers_tt <-
   avgtravel_tt %>% # 100573
-  select(sampno,perno,weight,race_eth,sex,income_c,
+  select(sampno,perno,weight,orig_weight,race_eth,sex,income_c,
          home_county_chi,age_bin,survey,DAYNO) %>%
   distinct() %>% # 24065
   select(-DAYNO)
@@ -192,10 +194,11 @@ ineligible_travelers_tt <-
     DAY %in% c(5,7) ~ WGTP)) %>% 
   # Add age bins
   mutate(age_bin=cut(AGE,breaks=age_breaks_avg_res,labels=age_labels_avg_res),
-         survey = "tt") %>% 
+         survey = "tt",
+         orig_weight = weight) %>% 
   rename(sampno = SAMPN,
          perno = PERNO) %>% 
-  select(sampno,perno,weight,race_eth,sex = GEND,income_c,
+  select(sampno,perno,weight,orig_weight,race_eth,sex = GEND,income_c,
          home_county_chi,age_bin,survey)
 
 # Add back the ineligible travelers for the purpose of travel percent calculation
@@ -209,8 +212,9 @@ distinct_residents_tt <-
   avgtravel_all_respondents_tt %>% #22
   # Add age bins
   mutate(age_bin=cut(AGE,breaks=age_breaks_avg_res,labels=age_labels_avg_res)) %>%
-  mutate(survey = "tt") %>%
-  select(sampno = SAMPN,perno = PERNO,weight = WGTP,
+  mutate(survey = "tt",
+         orig_weight = WGTP) %>%
+  select(sampno = SAMPN,perno = PERNO,weight = WGTP,orig_weight,
          race_eth,sex = GEND,income_c,home_county_chi,age_bin,survey)
 
 # Combine TT and MDT data
@@ -254,15 +258,15 @@ distinct_residents <-
 ################################################################################
 
 # Helper function to calculate summary statistics
-travel_calculator <- function(data = avgtravel,grouping,chosen_distance) {
+travel_calculator <- function(data = avgtravel,grouping,chosen_distance,weight = "weight") {
   data %>% 
     group_by(across(all_of(grouping))) %>% 
     summarize(
-      total_distance = sum(.data[[chosen_distance]] * weight),
+      total_distance = sum(.data[[chosen_distance]] * .data[[weight]]),
       total_distance_uw = sum(.data[[chosen_distance]]),
-      total_time = sum(travtime * weight),
+      total_time = sum(travtime * .data[[weight]]),
       total_time_uw = sum(travtime),
-      total_trips = sum(weight),
+      total_trips = sum(.data[[weight]]),
       total_trips_uw = n(),
       avg_trip_length = total_distance / total_trips,
       avg_trip_length_uw = total_distance_uw / total_trips_uw,
@@ -273,7 +277,7 @@ travel_calculator <- function(data = avgtravel,grouping,chosen_distance) {
     # Add total number of travelers (only eligible travelers)
     left_join(distinct_daily_travelers %>%
                 group_by(across(all_of(grouping))) %>% 
-                summarize(total_eligible_travelers = sum(weight)),
+                summarize(total_eligible_travelers = sum(.data[[weight]])),
               by = c(grouping)) %>%  
     # Add unweighted number of travelers (only eligible)
     left_join(distinct_daily_travelers %>% 
@@ -285,7 +289,7 @@ travel_calculator <- function(data = avgtravel,grouping,chosen_distance) {
     # Add total number of travelers (all travelers)
     left_join(total_travel_universe %>%
                 group_by(across(all_of(grouping))) %>% 
-                summarize(total_travelers = sum(weight)),
+                summarize(total_travelers = sum(.data[[weight]])),
               by = c(grouping)) %>%
     # Add total number of unweighted travelers (all travelers)
     left_join(total_travel_universe %>%
@@ -297,7 +301,7 @@ travel_calculator <- function(data = avgtravel,grouping,chosen_distance) {
     # Add total number of residents
     left_join(distinct_residents %>% 
                 group_by(across(all_of(grouping))) %>% 
-                summarize(total_residents = sum(weight),
+                summarize(total_residents = sum(.data[[weight]]),
                           total_residents_uw = n()),
               by = c(grouping)) %>% 
     # Calculate distance and trips per capita using total travelers
@@ -315,7 +319,7 @@ travel_calculator <- function(data = avgtravel,grouping,chosen_distance) {
 
 # Calculate summary statistics (code reused below for variations by demography)
 travel_overall <-
-  travel_calculator(avgtravel,"survey","hdist") %>% 
+  travel_calculator(avgtravel,"survey","hdist","weight") %>% 
   # Add variables for combining with other calculations
   mutate(type = "Overall",
          subtype = "Overall")
@@ -339,7 +343,7 @@ travel_overall %>% select(survey,avg_trip_length)
 
 # Calculate summary statistics by gender (reusing overall code)
 travel_sex <-
-  travel_calculator(avgtravel,c("survey","sex"),"hdist") %>% 
+  travel_calculator(avgtravel,c("survey","sex"),"hdist","weight") %>% 
   ungroup() %>% 
   mutate(type = "Sex") %>% 
   # Remove individuals without a response
@@ -352,7 +356,7 @@ travel_sex <-
 
 # Calculate summary statistics by income (reusing overall code)
 travel_income <- 
-  travel_calculator(avgtravel,c("survey","income_c"),"hdist") %>% 
+  travel_calculator(avgtravel,c("survey","income_c"),"hdist","weight") %>% 
   ungroup() %>% 
   # Remove individuals without a response
   filter(income_c != "missing") %>% 
@@ -367,7 +371,7 @@ travel_income <-
 
 # Calculate summary statistics by age (reusing overall code)
 travel_age <-
-  travel_calculator(avgtravel,c("survey","age_bin"),"hdist") %>% 
+  travel_calculator(avgtravel,c("survey","age_bin"),"hdist","weight") %>% 
   ungroup() %>% 
   # Remove individuals without a response
   filter(!is.na(age_bin)) %>% 
@@ -376,7 +380,7 @@ travel_age <-
 
 # Calculate summary statistics by home jurisdiction (reusing overall code)
 travel_home <-
-  travel_calculator(avgtravel,c("survey","home_county_chi"),"hdist") %>% 
+  travel_calculator(avgtravel,c("survey","home_county_chi"),"hdist","weight") %>% 
   ungroup() %>% 
   # Keep the nine counties but remove those that span multiple counties
   filter(home_county_chi %in% c("Cook","DeKalb","DuPage","Grundy","Kane",
@@ -388,7 +392,7 @@ travel_home <-
 # this analysis only uses MDT since TT did not have race/ethnicity for all
 # household members
 travel_race_eth <- 
-  travel_calculator(avgtravel,c("survey","race_eth"),"hdist") %>% 
+  travel_calculator(avgtravel,c("survey","race_eth"),"hdist","weight") %>% 
   ungroup() %>% 
   # Remove missing 
   filter(race_eth != "missing") %>% 
