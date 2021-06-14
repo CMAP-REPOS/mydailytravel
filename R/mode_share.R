@@ -279,7 +279,7 @@ mode_share_p1 <-
                        guide = "none") +
   
   geom_label(data = mode_share_p1_labels,
-             aes(label = scales::label_percent(accuracy = 0.1)(label),
+             aes(label = scales::label_percent(accuracy = 1)(label),
                  x = label, y = home_county_chi),
              label.size = 0,
              hjust = -.02,
@@ -382,7 +382,7 @@ mode_share_p2 <-
   scale_pattern_manual(values = c("1" = "stripe",
                                   "0" = "none"),
                        guide = "none") +
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(label),
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(label),
                  x = label, y = mileage_bin),
              label.size = 0,
              hjust = -.02,
@@ -645,7 +645,7 @@ mode_share_p3 <-
                        guide = "none") +
   
   # Add labels
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(label),
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(label),
                  x = label, y = race_eth),
              label.size = 0,
              hjust = -.02,
@@ -749,7 +749,7 @@ mode_share_p4 <-
                        guide = "none") +
   
   # Add labels
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(label),
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(label),
                  x = label, y = hhinc_c),
              label.size = 0,
              hjust = -.02,
@@ -963,7 +963,7 @@ mode_share_p5 <-
                        guide = "none") +
   
   # Add labels
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(label),
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(label),
                  x = label, y = age_bin),
              label.size = 0,
              hjust = -.02,
