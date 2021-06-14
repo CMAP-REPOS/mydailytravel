@@ -105,7 +105,9 @@ ppl <- read.csv(unzip(mdt_zip,files = "person.csv")) %>%
          age18,      # Either younger than 18 (2) or 18 or older (1)
          
          sex,        # Either male (1) or female (2)
-
+         
+         disab,      # Does this person have a disability? 1 is Yes, 2 is No
+         
          schol,      # School enrollment status.
          smode,      # Regular mode used to get to school.
 
@@ -540,6 +542,8 @@ tt_ppl <- sqlFetch(con,"per_public") %>%
 
          SCHOL,      # Status of school enrollment.
          SMODE,      # Mode regularly used to get to school.
+         
+         DISAB,      # Does this person have a disability? 1 is Yes, 2 is No
          
          EMPLY,      # Is this person employed? 1 is full-time, 2 is part-time
          WLOC,       # Work location?

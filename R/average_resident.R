@@ -59,7 +59,7 @@ avgtravel_mdt <-
   # Add age bins
   mutate(age_bin=cut(age,breaks=age_breaks_avg_res,labels=age_labels_avg_res)) %>% 
   # Keep only variables of interest
-  select(sampno,perno,age_bin,sex,income_c,race_eth,home_county_chi,
+  select(sampno,perno,age_bin,sex,income_c,race_eth,home_county_chi,disab,
          hdist = hdist_pg, distance = distance_pg, travtime = travtime_pg,
          weight,orig_weight) %>% 
   mutate(survey = "mdt")
@@ -78,7 +78,7 @@ avgtravel_all_respondents_mdt <-
 # summing by different demographic characteristics
 distinct_daily_travelers_mdt <-
   avgtravel_mdt %>% # 95872
-  select(sampno,perno,weight,orig_weight,race_eth,sex,income_c,
+  select(sampno,perno,weight,orig_weight,race_eth,sex,income_c,disab,
          home_county_chi,age_bin,survey) %>%
   distinct() # 24625
 
@@ -96,7 +96,7 @@ ineligible_travelers_mdt <-
   mutate(age_bin=cut(age,breaks=age_breaks_avg_res,labels=age_labels_avg_res),
          survey = "mdt") %>% 
   # Keep relevant variables and rename weight for merging with TT
-  select(sampno,perno,weight,orig_weight,race_eth,sex,income_c,
+  select(sampno,perno,weight,orig_weight,race_eth,sex,income_c,disab,
          home_county_chi,age_bin,survey)
 
 # Add back the ineligible travelers for the purpose of travel percent calculation
@@ -111,7 +111,7 @@ distinct_residents_mdt <-
   mutate(age_bin=cut(age,breaks=age_breaks_avg_res,labels=age_labels_avg_res)) %>%
   mutate(survey = "mdt") %>%
   # Keep relevant variables and rename weights for merging with TT
-  select(sampno,perno,weight,orig_weight,race_eth,sex,income_c,
+  select(sampno,perno,weight,orig_weight,race_eth,sex,income_c,disab,
          home_county_chi,age_bin,survey)
   
 
@@ -145,6 +145,7 @@ avgtravel_tt <-
          sampno = SAMPN,
          perno = PERNO,
          sex = GEND,
+         disab = DISAB,
          age_bin,income_c,race_eth,home_county_chi,weight,
          DAYNO) %>% 
   mutate(survey = "tt",
@@ -165,7 +166,7 @@ avgtravel_all_respondents_tt <-
 # variable to capture respondents who had a two-day weekday survey.
 distinct_daily_travelers_tt <-
   avgtravel_tt %>% # 100573
-  select(sampno,perno,weight,orig_weight,race_eth,sex,income_c,
+  select(sampno,perno,weight,orig_weight,race_eth,sex,income_c,disab,
          home_county_chi,age_bin,survey,DAYNO) %>%
   distinct() %>% # 24065
   select(-DAYNO)
@@ -198,7 +199,7 @@ ineligible_travelers_tt <-
          orig_weight = weight) %>% 
   rename(sampno = SAMPN,
          perno = PERNO) %>% 
-  select(sampno,perno,weight,orig_weight,race_eth,sex = GEND,income_c,
+  select(sampno,perno,weight,orig_weight,race_eth,sex = GEND,income_c,disab = DISAB,
          home_county_chi,age_bin,survey)
 
 # Add back the ineligible travelers for the purpose of travel percent calculation
@@ -214,7 +215,7 @@ distinct_residents_tt <-
   mutate(age_bin=cut(AGE,breaks=age_breaks_avg_res,labels=age_labels_avg_res)) %>%
   mutate(survey = "tt",
          orig_weight = WGTP) %>%
-  select(sampno = SAMPN,perno = PERNO,weight = WGTP,orig_weight,
+  select(sampno = SAMPN,perno = PERNO,weight = WGTP,orig_weight,disab = DISAB,
          race_eth,sex = GEND,income_c,home_county_chi,age_bin,survey)
 
 # Combine TT and MDT data
@@ -405,6 +406,19 @@ travel_race_eth <-
                                  "asian" = "Asian",
                                  "other" = "Other")) %>%
   select(-race_eth)
+
+# Calculate summary statistics by disability status
+travel_disability <- 
+  travel_calculator(avgtravel,c("survey","disab"),"hdist","weight") %>% 
+  ungroup() %>% 
+  # Remove missing 
+  # filter(disab %in% c(1,2)) %>% 
+  # Recode for ease of understanding
+  mutate(type = "Disability",
+         subtype = recode_factor(disab,
+                                 "1" = "Has a disability",
+                                 "2" = "Does not have a disability")) %>%
+  select(-disab)
 
 ################################################################################
 # Plot summary statistics
