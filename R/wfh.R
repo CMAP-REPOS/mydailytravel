@@ -208,13 +208,12 @@ wfh_tt_all %>%
 # Backup for prose - Summarize TC without working from home
 wfh_base_mdt %>% 
   filter(wfh == 0) %>% 
-  summarize(tc = weighted.mean(tc,weight)) - 
+  summarize(tc = weighted.mean(tc,weight)) / 
   
   wfh_tt_all %>% 
   filter(wfh == 0) %>% 
   summarize(tc = weighted.mean(tc,WGTP))
-
-
+# Result: Total number of TCers has increased by 1.48X (excluding those who WFH)
 
 # Overall baseline statistics for plot
 tc_overall <-
