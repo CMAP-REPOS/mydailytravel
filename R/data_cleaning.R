@@ -529,9 +529,9 @@ tt_hh <- sqlFetch(con,'hh_public') %>%
 tt_ppl <- sqlFetch(con,"per_public") %>%
   select(SAMPN,PERNO,# The identifier for households (SAMPN) and person (PERNO).
 
-         PTRIPS1, PTRIPS2, # The number of trips taken by the traveler on the
-                     # first day of the travel diary (PTRIPS1) and, if
-                     # applicable, on the second day (PTRIPS2).
+         PTRIPS1,    # The number of trips taken by the traveler on the first
+         PTRIPS2,    # day of the travel diary (PTRIPS1) and, if applicable, on 
+                     # the second day (PTRIPS2).
 
          AGE,        # Age (in years). 99 is "Don't know/refused."
          AGEB,       # Range of ages (for those who did not provide an age).
