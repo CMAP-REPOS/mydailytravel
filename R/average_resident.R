@@ -419,13 +419,13 @@ travel_summaries <-
         travel_race_eth) %>% 
   # Add levels
   mutate(type = factor(type,
-                       levels = c("Sex","Race and ethnicity","Household income","Age","Overall","Home jurisdiction"))) %>% 
+                       levels = c("Race and ethnicity","Household income","Age","Sex","Overall","Home jurisdiction"))) %>% 
   mutate(subtype = factor(subtype,
                           levels = c("Overall",
                                      "Male","Female",
-                                     "White","Asian","Black","Latino","Other",
                                      "5 to 17","18 to 29","30 to 49","50 to 69","70 and above",
-                                     "Less than $35K","$35K to $59K","$60K to $99K","$100K or more"
+                                     "Less than $35K","$35K to $59K","$60K to $99K","$100K or more",
+                                     "White","Asian","Black","Latino","Other"
                                      ))) %>% 
   # Pivot longer
   pivot_longer(cols = c(total_distance:traveling_pct_uw))
@@ -465,8 +465,7 @@ average_resident_p1 <-
                      "avg_trip_length",
                      "avg_trip_time")) %>% 
   # Reverse factors
-  mutate(subtype = factor(subtype,levels = rev(levels(subtype))),
-         type = factor(type,levels = rev(levels(type)))) %>% 
+  mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>% 
   # Add blank for label positioning
   mutate(blank = case_when(
     name == "trips_per_capita" ~ 5,
@@ -522,7 +521,8 @@ average_resident_p1 <-
   guides(color = guide_legend(order = 2),fill = guide_legend(order = 1)) +
   
   # Add faceting
-  facet_grid(type~name,
+  facet_grid(factor(type, 
+                    levels = c("Race and ethnicity","Household income","Age","Sex"))~name,
              # ncol = 3,
              scales = "free",
              )
@@ -597,8 +597,7 @@ average_resident_p2 <-
   # Exclude total distances
   filter(name %in% c("traveling_pct")) %>% 
   # Reverse factors
-  mutate(subtype = factor(subtype,levels = rev(levels(subtype))),
-         type = factor(type,levels = rev(levels(type)))) %>% 
+  mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>% 
   # Exclude overall and geography
   filter(!(type %in% c("Overall"))) %>%
   # Mutate name to match
@@ -642,7 +641,8 @@ average_resident_p2 <-
   scale_color_discrete(type = "black") +
   
   # Add faceting
-  facet_wrap(~type,
+  facet_wrap(~factor(type, 
+                     levels = c("Race and ethnicity","Household income","Age","Sex")),
              ncol = 1,
              scale = "free") +
   
