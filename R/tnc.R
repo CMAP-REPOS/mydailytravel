@@ -279,8 +279,8 @@ tnc_p1_samplesize <-
   distinct()
 
 finalize_plot(tnc_p1,
-              title = "White travelers were much more likely to report using 
-              Transportation Network Companies (TNCs) for non-work trips.",
+              title = "Non-White travelers were much more likely to report using 
+              Transportation Network Companies (TNCs) for work-related trips.",
               caption = 
               paste0(
               "Note:
