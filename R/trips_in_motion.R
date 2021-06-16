@@ -110,7 +110,7 @@ trip_times_mode_c_and_chain_c_mdt <-
                  criteria = c("mode_c","chain_c"),
                  weights = "weight")
 
-# Trips in motion by purpose (25 minute rolling average)
+# Trips in motion by trip chain and purpose (25 minute rolling average)
 trip_times_tpurp_c_chain_c_mdt <-
   tim_calculator(data = tim_wip_mdt %>%
                    filter(tpurp_c != "missing"),
@@ -470,7 +470,7 @@ finalize_plot(trips_in_motion_p4,
 
 
 ################################################################################
-# Other chains by trip purpose
+# Backup for prose - Other chains by trip purpose
 ################################################################################
 
 trips_in_motion_p5 <-
@@ -522,30 +522,28 @@ trips_in_motion_p5 <-
 
 
 finalize_plot(trips_in_motion_p5,
-              "School trips and transporting others represented most of the 
-              trips in non-work and shopping chains, but there were also many 
-              other reasons why regional residents traveled.",
-              paste0("Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include weekday trips by residents age 5 and older 
-              of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
-              Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
-              only trips that were within, to, and/or from one of those counties.
-              Excludes trips longer than 100 miles or greater than 15 hours long.
-              <br><br>
-              Sample size: Figures are based on a total of ",
-                     format(nrow(tim_wip_mdt %>% filter(chain_c == "other")),big.mark = ","),
-                     " records.
-              <br><br>
-              'Other purpose' includes transfers, shopping and errands not 
-              captured in the 'Shopping' trip chains, and other trip purposes 
-              like volunteering and major special events.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries."),
-              filename = "trips_in_motion_p5",
-              mode = c("pdf","png"),
-              sidebar_width = 3,
-              overwrite = TRUE,
-              # height = 6.3,
-              # width = 11.3
+              sidebar_width = 0,
+              overwrite = TRUE
 )
+
+# Calculate the share of the morning peak taken up by School and Transporting others
+trip_times_tpurp_c_chain_c_mdt %>%
+  # Remove interval
+  select(-time_band_interval) %>% 
+  # Keep only other trips in the morning
+  filter(chain_c == "other",
+         time_band < "2020-01-01 12:00:00 CST") %>% 
+  # Group by time band and create totals + percents of totals by purpose
+  group_by(time_band) %>% 
+  mutate(total = sum(rolling_count),
+         pct = rolling_count / total) %>% 
+  # Keep two purposes of interest
+  filter(tpurp_c %in% c("school","transport")) %>% 
+  # Remove unneeded variables
+  select(-count,-rolling_count,-chain_c) %>% 
+  # Pivot
+  pivot_wider(names_from = tpurp_c,values_from = c(pct)) %>% 
+  mutate(transport_school_pct = transport+school) %>% 
+  # Show the percent at the peak
+  arrange(-total) %>% 
+  View()
