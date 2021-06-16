@@ -302,9 +302,11 @@ detailed_bike_tpurp_c_mdt <-
                  subset = "bike",
                  subset_of = "mode_c",
                  breakdown_by = "chain_c",
-                 # # # Alternative - breakdown by trip purpose (reveals connection
-                 # # # to other modes)
+                 # # Alternative - breakdown by trip purpose (reveals connection
+                 # # to other modes)
                  # breakdown_by = "tpurp_c",
                  second_breakdown = "mode",
+                 # # Breakdown to enable geographic considerations
+                 # third_breakdown = "geog",
                  weight = "weight",
                  survey = "mdt")
