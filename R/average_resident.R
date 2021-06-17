@@ -946,7 +946,7 @@ average_resident_p4 <- ggpubr::ggarrange(disability_wip_1,blank,disability_wip_2
                              ncol = 3,nrow = 1,widths = c(1,.25,2),common.legend = TRUE)
 
 finalize_plot(average_resident_p4,
-              "Residents with disabilities were more likely not to travel than 
+              "Residents with disabilities were less likely to travel than were
               others in the region. When they did, their trips were shorter 
               distance but lasted longer than those of other residents.",
               caption = 
@@ -971,7 +971,7 @@ finalize_plot(average_resident_p4,
               Daily Travel data."),
               sidebar_width = 0,
               filename = "average_resident_p4",
-              mode = c("png","pdf"),
+              # mode = c("png","pdf"),
               # height = 6,
               overwrite = T)
 
