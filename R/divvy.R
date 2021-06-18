@@ -53,7 +53,7 @@ divvy <- rbind(divvy_18q3,divvy_18q4,divvy_19q1,divvy_19q2)
 # Create helper values
 
 # 3am day threshold (since our day starts at 3am)
-threshold <- as.numeric(ymd_hms("2020-01-01 03:00:00", tz = "America/Chicago"))
+threshold_divvy <- as.numeric(ymd_hms("2020-01-01 03:00:00", tz = "America/Chicago"))
 # The number of seconds in a day (used to add days)
 day_value <- 60*60*24
 
@@ -98,7 +98,7 @@ divvy_wip <-
   # begin at midnight, make trips that start before 3am into trips on the next
   # day.
   mutate(trip_start = case_when(
-    trip_start < threshold ~ trip_start + day_value,
+    trip_start < threshold_divvy ~ trip_start + day_value,
     TRUE ~ trip_start)
   ) %>%
   # Add trip end based on trip duration

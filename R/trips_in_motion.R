@@ -23,7 +23,7 @@ source("R/data_cleaning.R")
 source("R/helper_fns.R")
 
 # Create helper values for date identification and modification
-threshold <- as.numeric(ymd_hms("2020-01-01 03:00:00", tz = "America/Chicago"))
+threshold_tim <- as.numeric(ymd_hms("2020-01-01 03:00:00", tz = "America/Chicago"))
 day_value <- 60*60*24
 
 # Filter and process data into working file for calculations
@@ -75,11 +75,11 @@ tim_wip_mdt <-
   # into trips on the next day.
   mutate(
     trip_end = case_when(
-      trip_end < threshold ~ trip_end + day_value,
+      trip_end < threshold_tim ~ trip_end + day_value,
       TRUE ~ trip_end
     ),
     trip_start = case_when(
-      trip_start < threshold ~ trip_start + day_value,
+      trip_start < threshold_tim ~ trip_start + day_value,
       TRUE ~ trip_start
     )) %>%
   # Create trip interval - this can be used to identify whether a trip is within
@@ -547,3 +547,4 @@ trip_times_tpurp_c_chain_c_mdt %>%
   # Show the percent at the peak
   arrange(-total) %>% 
   View()
+
