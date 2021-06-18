@@ -384,7 +384,7 @@ wfh_p1 <-
              hjust = -0.02) +
   
   # Adjust axes
-  scale_x_continuous(limits = c(0,.32),labels = scales::label_percent(accuracy = 1)) +
+  scale_x_continuous(limits = c(0,.26),labels = scales::label_percent(accuracy = 1)) +
   
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
