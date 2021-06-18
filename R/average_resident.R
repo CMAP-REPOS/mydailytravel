@@ -575,7 +575,7 @@ finalize_plot(average_resident_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "average_resident_p1",
-              # mode = c("png","pdf"),
+              mode = c("png","pdf"),
               height = 8,
               overwrite = T)
   
@@ -808,7 +808,7 @@ finalize_plot(average_resident_p3,
               Daily Travel and Travel Tracker data."),
               filename = "average_resident_p3",
               sidebar_width = 3,
-              # mode = c("png","pdf"),
+              mode = c("png","pdf"),
               height = 6,
               overwrite = T)
 
@@ -826,7 +826,7 @@ distinct_daily_travelers %>% count(survey,sex)
 travel_disability <- 
   travel_calculator(avgtravel,c("survey","disab"),"hdist","weight") %>% 
   ungroup() %>% 
-  # Remove missing 
+  # Remove missing (and effectively filter out all <16)
   filter(disab %in% c(1,2)) %>%
   # Recode for ease of understanding
   mutate(type = "Disability",
@@ -839,7 +839,7 @@ travel_disability <-
 
 
 # Create travel percentages
-disability_wip_1 <-
+average_resident_p4 <-
   # Get data
   travel_disability %>%
   # Keep MDT
@@ -852,7 +852,7 @@ disability_wip_1 <-
   mutate(name = "Percent traveling") %>% 
   
   # Create ggplot object
-  ggplot(aes(y = 1 - value, x = str_wrap_factor(subtype,18), fill = subtype)) +
+  ggplot(aes(y = 1 - value, x = str_wrap_factor(subtype,30), fill = subtype)) +
   # Add columns
   geom_col(width = .8) +
   
@@ -861,7 +861,8 @@ disability_wip_1 <-
                  group = name),
              position = position_dodge2(width = .9,reverse = T),
              fill = "white",
-             label.size = 0,label.padding = unit(1.5,"bigpts"),
+             label.size = 0,
+             # label.padding = unit(1.5,"bigpts"),
              vjust = -.02) +
   
   # Adjust scale
@@ -872,106 +873,37 @@ disability_wip_1 <-
   # Add CMAP theme
   theme_cmap(gridlines = "h",hline = 0,
              xlab = "Percent of residents who did not travel",
-             strip.text.x = element_blank(),
-             strip.text.y = element_blank(),
-             axis.text.x = element_blank(),
+             legend.position = "none",
              legend.max.columns = 1) +
   
   cmap_fill_discrete(palette = "div_blue_yellow")
 
-# Generate travel statistics plot
-disability_wip_2 <-
-  # Get data
-  travel_disability %>%
-  # Keep MDT
-  filter(survey == "mdt") %>% 
-  # Keep relevant values
-  filter(name %in% c("trips_per_capita",
-                     "avg_trip_length",
-                     "avg_trip_time")) %>% 
-  # Reverse factors
-  # mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>%
-  # Add blank for label positioning
-  mutate(blank = case_when(
-    name == "trips_per_capita" ~ 5,
-    name == "avg_trip_length" ~ 6,
-    name == "avg_trip_time" ~ 32,
-  )) %>% 
-  # Rename variables we are keeping
-  mutate(name = recode_factor(factor(name,levels = c("trips_per_capita",
-                                                     "avg_trip_length",
-                                                     "avg_trip_time")),
-                              "trips_per_capita" = "Trips/day",
-                              "avg_trip_length" = "Distance/trip (mi.)",
-                              "avg_trip_time" = "Time/trip (min.)")) %>% 
-  
-  # Create ggplot object
-  ggplot(aes(x = value, y = str_wrap_factor(subtype,15), fill = subtype)) +
-  # Add columns
-  geom_col(width = .8) +
-  
-  # Add labels
-  geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
-                 group = name),
-             position = position_dodge2(width = .9,reverse = T),
-             fill = "white",
-             label.size = 0,label.padding = unit(1.5,"bigpts"),
-             hjust = -.02) +
-  
-  # Add geom_blank for positioning
-  geom_blank(aes(x = blank)) +
-  
-  # Add CMAP theme
-  theme_cmap(gridlines = "v",vline = 0,
-             xlab = "Average behavior for residents who traveled",
-             strip.text.x = element_text(family = "Whitney Semibold",
-                                         hjust = 0.5,vjust = 1),
-             strip.text.y = element_blank(),
-             axis.text.y = element_blank(),
-             legend.position = "none") +
-  
-  # Add faceting
-  facet_grid(~name,
-             scales = "free") +
-  
-  cmap_fill_discrete(palette = "div_blue_yellow",reverse = T)
-
-
-
-
-# finalize_plot(disability_wip_2)
-blank <- grid::grid.rect(gp=grid::gpar(col="white"))
-
-average_resident_p4 <- ggpubr::ggarrange(disability_wip_1,blank,disability_wip_2,
-                             ncol = 3,nrow = 1,widths = c(1,.25,2),common.legend = TRUE)
-
 finalize_plot(average_resident_p4,
               "Residents with disabilities were less likely to travel than were
-              others in the region. When they did, their trips were shorter 
-              distance but lasted longer than those of other residents.",
+              others in the region.",
               caption = 
               paste0("Note: Includes trips by travelers age 16 and older who live in the 
               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
               McHenry, and Will), as well as Grundy and DeKalb. 
-              For comparability with Travel Tracker survey results, 
-              only includes trips within that region and between that region and 
-              the Indiana counties of Lake, LaPorte, and Porter. 
-              Distances are calculated as point-to-point ('haversine') and do 
-              not account for additional distance traveled along the route. 
               These figures do not include residents younger than 16 because
               they were not asked about their disability status.
+              Individuals were counted as 'traveling' if they had at least one 
+              trip on their assigned travel day, no matter whether that trip was 
+              in the CMAP region.
               <br><br>
-              Sample size: With disability (",
-                avgtravel_all_respondents_mdt %>% count(disab) %>% filter(disab == 1) %>% select(n),
-                "); Without disability (",
+              Sample size: 
+              <br>- Without disability (",
                 avgtravel_all_respondents_mdt %>% count(disab) %>% filter(disab == 2) %>% select(n),
+                "); 
+                <br>- With disability (",
+                avgtravel_all_respondents_mdt %>% count(disab) %>% filter(disab == 1) %>% select(n),
                 ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              sidebar_width = 0,
+              # sidebar_width = 0,
               filename = "average_resident_p4",
-              # mode = c("png","pdf"),
+              mode = c("png","pdf"),
               # height = 6,
               overwrite = T)
 
