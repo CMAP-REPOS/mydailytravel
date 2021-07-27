@@ -61,3 +61,6 @@ R/archive_school.R
 outputs/mdt_tnc_1.csv
 outputs/mdt_tnc_2.csv
 outputs/mdt_tnc_3.csv
+wfh_t1.csv
+tnc_t1.csv
+mode_share_t1.csv
