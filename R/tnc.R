@@ -309,9 +309,37 @@ finalize_plot(tnc_p1,
               Source: Chicago Metropolitan Agency for Planning 
               Analysis of My Daily Travel data."),
               filename = "tnc_p1",
+              height = 4.5,
+              width = 8,
+              sidebar_width = 2.5,
               mode = c("png","pdf"),
               overwrite = T)
 
+
+################################################################################
+# Backup - Purpose and home location
+################################################################################
+
+tnc_purpose_homeloc <-
+  pct_calculator(tnc_for_purposes %>% filter(!(home_county_chi %in% c("Grundy","DeKalb"))),
+                 breakdown_by = "tnc_purp",
+                 second_breakdown = "home_county_chi",
+                 weight = "weight") %>% 
+  # Add baseline totals
+  rbind(tnc_purpose_overall %>% mutate(home_county_chi = "CMAP region")) %>% 
+  select(tnc_purp,home_county_chi,total_n,pct) %>% 
+  pivot_wider(names_from = tnc_purp,values_from = pct) %>% 
+  rename(Jurisdiction = home_county_chi,
+         "Sample size" = total_n) %>% 
+  mutate(work_total = .$'Commute (whole or part)' + .$'Daytime (work)',
+         nonwork_total = .$'Late-night (non-work)' + .$'Daytime (non-work)') %>% 
+  arrange(desc(work_total)) %>% 
+  mutate(across("Commute (whole or part)":nonwork_total,
+                ~scales::percent(.,accuracy = 0.1))) %>% 
+  rename("Total: Work" = work_total,
+         "Total: Non-work" = nonwork_total)
+
+write.csv(tnc_purpose_homeloc,"tnc_t1.csv")
 
 ################################################################################
 # Usage and cost
@@ -373,7 +401,7 @@ tnc_p2 <-
   cmap_fill_highlight(home_usage$home_county_chi,"CMAP region") +
   
   # Adjust axes
-  scale_x_continuous(limits = c(0,.85))
+  scale_x_continuous(limits = c(0,.87))
 
 finalize_plot(tnc_p2,
               "Usage of Transportation Network Companies (TNCs) was greatest by 
@@ -415,6 +443,9 @@ finalize_plot(tnc_p2,
               Daily Travel data."),
               filename = "tnc_p2",
               mode = c("png","pdf"),
+              height = 4.5,
+              width = 8,
+              sidebar_width = 3.25,
               overwrite = T)
 
 ################################################################################
@@ -530,9 +561,9 @@ finalize_plot(tnc_p3,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "tnc_p3",
-              # width = 8,
-              # height = 4.5,
-              # sidebar_width = 2.3,
+              width = 8,
+              height = 4.5,
+              sidebar_width = 2.3,
               mode = c("png","pdf"),
               overwrite = T)
 
