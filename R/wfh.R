@@ -278,6 +278,18 @@ tc_home <-
   mutate(type = "Home jurisdiction") %>% 
   rename(subtype = home_county_chi)
 
+### Backup - export for Q&A
+wfh_t1 <-
+  tc_home %>% 
+  rbind(tc_overall) %>% 
+  arrange(desc(pct)) %>% 
+  mutate(pct = scales::percent(pct,accuracy = 0.1)) %>% 
+  select(Jurisdiction = subtype,
+         'Telecommute pct.' = pct,
+         'Sample size' = n) 
+
+write.csv(wfh_t1,"wfh_t1.csv")
+
 # Breakdown of tc behavior by race and ethnicity
 tc_race_eth <-
   wfh_base_mdt %>% # 17656 records
@@ -409,14 +421,14 @@ finalize_plot(wfh_p1,
               caption = 
               paste0("Note: Includes only employed residents age 16 and older from the CMAP seven 
               county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 
-              Will), as well as Grundy and DeKalb. 
-              'Latino' includes respondents who identified as Latino or Hispanic, 
+              Will), as well as Grundy and DeKalb.
+              'Latino' includes respondents who identified as Latino or Hispanic,
               regardless of racial category. Other categories are non-Latino.
-              For the categorization by sex, the survey only asked respondents 
-              whether they were male or female. A small number of respondents 
-              chose not to answer, either because the available options were not 
-              sufficient or for some other reason. Due to low sample sizes and 
-              weighting concerns, average travel behavior statistics are 
+              For the categorization by sex, the survey only asked respondents
+              whether they were male or female. A small number of respondents
+              chose not to answer, either because the available options were not
+              sufficient or for some other reason. Due to low sample sizes and
+              weighting concerns, average travel behavior statistics are
               unavailable for this population.
               <br><br>
               Sample size:
@@ -459,6 +471,9 @@ finalize_plot(wfh_p1,
               Daily Travel data."),
               filename = "wfh_p1",
               mode = c("png","pdf"),
+              # height = 4.5,
+              # width = 8,
+              # sidebar_width = 1.9,
               sidebar_width = 3,
               overwrite = T)
 
@@ -502,6 +517,7 @@ wfh_trips_person_level_mdt <-
   summarize(pertrips = n(),
             income_c = first(income_c),
             geog = first(geog),
+            home_county_chi = first(home_county_chi),
             home_county = first(home_county),
             home_tract = first(home_tract),
             home_long = first(home_long),
@@ -566,7 +582,7 @@ wfh_p2 <-
              vline = 0,
              xlab = "Mean total miles traveled on work trips by home jurisdiction
              (excluding travelers with no trips to a work location)",
-             axis.title.x = element_text(hjust = 0.5)) +
+             axis.title.x = element_text(hjust = 1)) +
   cmap_fill_discrete(palette = "legislation")
 
 wfh_p2_samplesize <-
@@ -589,40 +605,40 @@ finalize_plot(wfh_p2,
               non-fixed). Excludes work trips for travelers that
               telecommute 4+ days per week due to low sample sizes.
               <br><br>
-              Sample size (Chicago/Suburban Cook/Other):
+              Sample size (Chicago/Suburban Cook/Collar and adjacent):
               <br>- Does not regularly telecommute (",
-                     paste(wfh_p2_samplesize %>% 
-                             filter(geog == "Chicago", 
-                                    flag == 0) %>% 
-                             select(n) %>% 
+                     paste(wfh_p2_samplesize %>%
+                             filter(geog == "Chicago",
+                                    flag == 0) %>%
+                             select(n) %>%
                              as.numeric(),
-                           wfh_p2_samplesize %>% 
-                             filter(geog == "Suburban Cook", 
-                                    flag == 0) %>% 
-                             select(n) %>% 
+                           wfh_p2_samplesize %>%
+                             filter(geog == "Suburban Cook",
+                                    flag == 0) %>%
+                             select(n) %>%
                              as.numeric(),
-                           wfh_p2_samplesize %>% 
+                           wfh_p2_samplesize %>%
                              filter(geog == "Collar and adjacent",
-                                    flag == 0) %>% 
-                             select(n) %>% 
+                                    flag == 0) %>%
+                             select(n) %>%
                              as.numeric(),
                            sep = "/"),
                      ");
               <br>- Sometimes telecommutes (",
-                     paste(wfh_p2_samplesize %>% 
-                             filter(geog == "Chicago", 
-                                    flag == 1) %>% 
-                             select(n) %>% 
+                     paste(wfh_p2_samplesize %>%
+                             filter(geog == "Chicago",
+                                    flag == 1) %>%
+                             select(n) %>%
                              as.numeric(),
-                           wfh_p2_samplesize %>% 
-                             filter(geog == "Suburban Cook", 
-                                    flag == 1) %>% 
-                             select(n) %>% 
+                           wfh_p2_samplesize %>%
+                             filter(geog == "Suburban Cook",
+                                    flag == 1) %>%
+                             select(n) %>%
                              as.numeric(),
-                           wfh_p2_samplesize %>% 
-                             filter(geog == "Collar and adjacent", 
-                                    flag == 1) %>% 
-                             select(n) %>% 
+                           wfh_p2_samplesize %>%
+                             filter(geog == "Collar and adjacent",
+                                    flag == 1) %>%
+                             select(n) %>%
                              as.numeric(),
                            sep = "/"),
                      ").
@@ -631,8 +647,10 @@ finalize_plot(wfh_p2,
               Daily Travel data."),
               filename = "wfh_p2",
               mode = c("png","pdf"),
-              overwrite = T,
-              sidebar_width = 2.65)
+              # height = 4.5,
+              # width = 8,
+              sidebar_width = 2.65,
+              overwrite = T)
 
 
 ################################################################################
@@ -760,7 +778,7 @@ finalize_plot(wfh_p3,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "wfh_p3",
-              mode = c("png","pdf"),
+              # mode = c("png","pdf"),
               overwrite = T,
               sidebar_width = 2.7)
 
@@ -789,7 +807,7 @@ wfh_alltraveler_trips <-
   # Remove travelers with homes in multiple counties
   filter(home_county != "999") # 17654 records
 
-# Calculate average distances
+# Calculate average distances by Chicago/Suburban Cook/Other
 wfh_alltraveler_trips_summary <-
   wfh_alltraveler_trips %>%
   # Calculate average distances
