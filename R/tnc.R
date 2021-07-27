@@ -309,9 +309,6 @@ finalize_plot(tnc_p1,
               Source: Chicago Metropolitan Agency for Planning 
               Analysis of My Daily Travel data."),
               filename = "tnc_p1",
-              height = 4.5,
-              width = 8,
-              sidebar_width = 2.5,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -401,7 +398,7 @@ tnc_p2 <-
   cmap_fill_highlight(home_usage$home_county_chi,"CMAP region") +
   
   # Adjust axes
-  scale_x_continuous(limits = c(0,.87))
+  scale_x_continuous(limits = c(0,.85))
 
 finalize_plot(tnc_p2,
               "Usage of Transportation Network Companies (TNCs) was greatest by 
@@ -443,9 +440,6 @@ finalize_plot(tnc_p2,
               Daily Travel data."),
               filename = "tnc_p2",
               mode = c("png","pdf"),
-              height = 4.5,
-              width = 8,
-              sidebar_width = 3.25,
               overwrite = T)
 
 ################################################################################
@@ -561,9 +555,6 @@ finalize_plot(tnc_p3,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "tnc_p3",
-              width = 8,
-              height = 4.5,
-              sidebar_width = 2.3,
               mode = c("png","pdf"),
               overwrite = T)
 
