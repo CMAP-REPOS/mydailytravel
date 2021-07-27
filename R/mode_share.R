@@ -215,7 +215,7 @@ mode_sex_mdt <-
 
 
 ################################################################################
-# Chart of mode share by home county
+# Mode share by home county
 ################################################################################
 
 # NOTE: County-level estimates should be treated with some caution for outer
@@ -229,6 +229,29 @@ mode_sex_mdt <-
 # Counties, as well as Grundy and DeKalb (which are only partially covered). As
 # a result, minor differences between overlapping zones, e.g., Kane and Kendall
 # County, are unlikely to be significant.
+
+###### TABLE
+
+mode_share_t1 <-
+  mode_counties_mdt %>% 
+  select(mode_c,home_county_chi,total_n,pct) %>% 
+  pivot_wider(names_from =mode_c,
+              values_from = pct) %>% 
+  select(Jurisdiction = home_county_chi,
+         Driver = driver,
+         Passenger = passenger,
+         Walk = walk,
+         Transit = transit,
+         "School bus" = schoolbus,
+         Bike = bike,
+         Other = other,
+         "Sample size" = total_n
+         ) %>% 
+  mutate(across(Driver:Other,~scales::percent(.,accuracy = 0.1)))
+
+write.csv(mode_share_t1,"mode_share_t1.csv")
+
+###### CHART
 
 # Create labels
 mode_share_p1_labels <-
@@ -544,30 +567,31 @@ mode_share_p2a <-
 finalize_plot(mode_share_p2a,
               title = "Travelers relied most on non-car modes for the shortest trips.",
               caption = 
-                paste0("<br>Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+                paste0(
+              "<br>Note: Includes trips by residents age 5 and older of the
+              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake,
+              McHenry, and Will), as well as Grundy and DeKalb. Includes only
               trips that were within, to, and/or from one of those counties.
-              Distances are 'network distances' and 
-              capture the total distance traveled along the route, not just the 
-              distance from origin to destination. Unlabeled bars have less than 
+              Distances are 'network distances' and
+              capture the total distance traveled along the route, not just the
+              distance from origin to destination. Unlabeled bars have less than
               five percent mode share.
               <br><br>
               Sample size: Figures are based on a total of ",
-                       format(nrow(mode_share_base_mdt),big.mark = ","),
-                       " recorded trips.
+              format(nrow(mode_share_base_mdt),big.mark = ","),
+              " recorded trips.
               Trips of 50 to 100 miles have the lowest sample size, with ",
-                       format(mode_mileage_mdt2 %>% 
-                                filter(mileage_bin == "50 to 100") %>% 
-                                select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
-                       " records.
+              format(mode_mileage_mdt2 %>%
+              filter(mileage_bin == "50 to 100") %>%
+              select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
+              " records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "mode_share_p2a",
               sidebar_width = 0,
               height = 8,
-              # width = 6,
+              width = 6,
               mode = c("png","pdf"),
               overwrite = T)
 
