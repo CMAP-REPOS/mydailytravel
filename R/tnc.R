@@ -252,7 +252,7 @@ tnc_p1 <-
                        guide = "none") +
   
   # Add labels
-  geom_label(aes(label = scales::label_percent(accuracy = 0.1)(label),
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(label),
                  x = label, y = race_eth),
              label.size = 0,
              hjust = -.02,
@@ -390,7 +390,7 @@ tnc_p2 <-
   # Create ggplot object
   ggplot(aes(x = tnc_use, y = reorder(home_county_chi,tnc_use), fill = home_county_chi)) +
   geom_col() +
-  geom_label(aes(label = scales::label_number(accuracy = 0.01)(tnc_use)),
+  geom_label(aes(label = scales::label_number(accuracy = 0.1)(tnc_use)),
              hjust = -0.02,
              label.size = 0,
              fill = "white") +
@@ -501,7 +501,7 @@ tnc_p3 <-
   ggplot(aes(x = value, y = factor(age_bin,levels = rev(levels(age_bin))), fill = age_bin)) +
   geom_col() +
   geom_label(aes(label = ifelse(name == "Average weekly trips",
-                                scales::label_number(accuracy = 0.01)(value),
+                                scales::label_number(accuracy = 0.1)(value),
                                 scales::label_dollar(accuracy = 1)(value))),
              hjust = -.02,
              label.size = 0,
