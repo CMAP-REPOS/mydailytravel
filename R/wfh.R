@@ -315,8 +315,8 @@ tc_age <-
   wfh_base_mdt %>% # 17,656 records
   # Remove individuals without a response
   filter(!is.na(age_bin)) %>% # 17626
-  # Remove 5-17 year olds 
-  filter(age_bin != "5 to 17") %>% # 17462
+  # Remove 5-15 year olds 
+  filter(age_bin != "5 to 15") %>% # 17462
   group_by(age_bin) %>%
   summarize(pct = weighted.mean(tc,weight),
             uw_pct = mean(tc),
@@ -567,7 +567,7 @@ wfh_p2 <-
   # Create ggplot object
   ggplot(aes(x = distance_pg, str_wrap_factor(geog,18))) +
   geom_col(aes(fill = flag), position = position_dodge2(reverse = T)) +
-  geom_label(aes(label = scales::label_number(accuracy = 0.1)(distance_pg),
+  geom_label(aes(label = scales::label_number(accuracy = 1)(distance_pg),
                  group = flag),
              hjust = -.02,
              label.size = 0,
