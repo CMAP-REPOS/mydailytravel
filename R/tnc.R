@@ -240,33 +240,35 @@ tnc_p1 <-
   ggpattern::geom_col_pattern(aes(pattern = type),
                               pattern_color = "white",
                               pattern_fill = "white",
-                              pattern_angle = 30,
-                              pattern_density = 0.25,
-                              pattern_spacing = 0.0125,
-                              pattern_key_scale_factor = 0.6,
+                              pattern_angle = 45,
+                              pattern_density = 0.125,
+                              pattern_spacing = 0.02,
+                              # pattern_key_scale_factor = 0.6,
                               position = position_stack(reverse = T),
-                              width = 0.8) +
+                              width = 0.8) +  
   # Re-assign patterns manually
   scale_pattern_manual(values = c("1" = "stripe",
                                   "0" = "none"),
                        guide = "none") +
   
-  # Add labels
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(label),
-                 x = label, y = race_eth),
-             label.size = 0,
-             hjust = -.02,
-             fill = "white") +
+  # # Add labels
+  # geom_label(aes(label = scales::label_percent(accuracy = 1)(label),
+  #                x = label, y = race_eth),
+  #            label.size = 0,
+  #            hjust = -.02,
+  #            fill = "white") +
   
   
   # Adjust axis
   scale_x_continuous(breaks = seq(-.5,.75,by = .25), 
                      labels = scales::label_percent()(abs(seq(-.5,.75,by = .25))),
-                     limits = c(-.5,.85)) +
+                     # limits = c(-.5,.85)
+                     limits = c(-.5,.75)
+                     ) +
   
   # Add CMAP themes
   theme_cmap(gridlines = "v",
-             xlab = "Typical reason for using a TNC by race and ethnicity") +
+             xlab = "Work travel                              Non-work travel\nTypical reason for using a TNC") +
   scale_fill_discrete(type = c("#8c0000","#efa7a7","#00093f","#006b8c")) +
   
   # Adjust legend for formatting
@@ -309,6 +311,7 @@ finalize_plot(tnc_p1,
               Source: Chicago Metropolitan Agency for Planning 
               Analysis of My Daily Travel data."),
               filename = "tnc_p1",
+              height = 4.5,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -403,11 +406,16 @@ tnc_p2 <-
 finalize_plot(tnc_p2,
               "Usage of Transportation Network Companies (TNCs) was greatest by 
               residents of Chicago and suburban Cook County.",
-              paste0("Note: These figures are based on survey responses and not 
-              trip diaries. The CMAP region average includes usage by residents 
-              of the seven county region (Cook, DuPage, 
-              Kane, Kendall, Lake, McHenry, and Will), as well as residents of 
-              Grundy and DeKalb. Excludes travelers age 18 and younger, who were 
+              paste0(
+              # "Note: These figures are based on survey responses and not 
+              # trip diaries. The CMAP region average includes usage by residents 
+              # of the seven county region (Cook, DuPage, 
+              # Kane, Kendall, Lake, McHenry, and Will), as well as residents of 
+              # Grundy and DeKalb. Excludes travelers age 18 and younger, who were 
+              # not asked about TNC usage. 
+                "Note: These figures are based on survey responses and not 
+              trip diaries. 
+              Excludes travelers age 18 and younger, who were 
               not asked about TNC usage. 
               <br><br>
               Sample size:
@@ -439,6 +447,7 @@ finalize_plot(tnc_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "tnc_p2",
+              height = 4.5,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -555,6 +564,7 @@ finalize_plot(tnc_p3,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "tnc_p3",
+              height = 4,
               mode = c("png","pdf"),
               overwrite = T)
 

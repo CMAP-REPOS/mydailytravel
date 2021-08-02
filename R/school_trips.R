@@ -173,7 +173,7 @@ school_trips_p1 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "h",legend.position = "None",
-             xlab = "Mean travel time to school (minutes)") +
+             ylab = "Mean travel time to school (minutes)") +
   scale_fill_discrete(type = c("#84c87e", # Black
                                "#d8ba39", # Latino
                                "#e77272", # Asian
@@ -187,11 +187,17 @@ finalize_plot(school_trips_p1,
               "Black elementary and middle school students had longer trips to 
               school than those of other children.",
               caption = 
-              paste0("Note: Includes school trips for travelers enrolled in K-8, at 
-              least 5 years old, and residents of the CMAP seven county region 
-              (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will), as well as 
-              Grundy and DeKalb. Excludes trips to non-school locations, trips 
-              longer than two and a half hours, and any trips that did not start
+              paste0(
+              # "Note: Includes school trips for travelers enrolled in K-8, at
+              # least 5 years old, and residents of the CMAP seven county region
+              # (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will), as well as
+              # Grundy and DeKalb. Excludes trips to non-school locations, trips
+              # longer than two and a half hours, and any trips that did not start
+              # or end between 7:00 A.M. and 9:00 A.M.
+              "Note: Includes school trips for travelers enrolled in K-8, at
+              least 5 years old, and residents of the CMAP seven county region,
+              Grundy, and DeKalb. Excludes trips to non-school locations, 
+              longer than two and a half hours, and that did not start
               or end between 7:00 A.M. and 9:00 A.M.
               <br><br>
               'Latino' includes respondents who identified as Latino or Hispanic, 
@@ -217,8 +223,8 @@ finalize_plot(school_trips_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "school_trips_p1",
-              mode = c("png","pdf"),
-              sidebar_width = 2.5,
+              # mode = c("png","pdf"),
+              # sidebar_width = 2.5,
               overwrite = T)
 
 # Backup - differences over a month (for prose)

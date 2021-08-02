@@ -84,7 +84,7 @@ pct_calculator(tpurp_analysis_base_mdt,
   group_by(by_car,tpurp) %>% 
   summarize(pct = sum(pct)) %>% 
   filter(by_car == "Not by car") %>% 
-  arrange(-pct) %>% View()
+  arrange(-pct) # %>% View()
 
 ################################################################################
 # Table of all trips by mode
@@ -366,7 +366,7 @@ finalize_plot(tpurp_analysis_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               overwrite = T,
-              mode = c("png","pdf"),
+              # mode = c("png","pdf"),
               filename = "tpurp_analysis_p2")
 
 ################################################################################

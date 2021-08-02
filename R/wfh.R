@@ -338,18 +338,15 @@ tc_summaries <-
   select(type,subtype,pct,uw_pct,n,tcwfhers) %>% 
   # Add levels
   mutate(type = factor(type,
-                       levels = c("Sex","Race and ethnicity","Household income",
-                                  "Age","Home jurisdiction","Overall"))) %>% 
-  mutate(subtype = 
-           factor(subtype,
-                  levels = c("Overall",
-                             "Male","Female",
-                             "Asian","White","Other","Black","Latino",
-                             "5 to 15","16 to 29","30 to 49","50 to 69",
-                                "70 and above",
-                             "Less than $35K","$35K to $59K","$60K to $99K",
-                                "$100K or more",
-                             "Chicago","Suburban Cook","DuPage","Kane","Kendall",
+                       levels = c("Race and ethnicity","Household income",
+                                  "Age","Sex","Overall","Home jurisdiction"))) %>% 
+  mutate(subtype = factor(subtype,
+                          levels = c("Overall",
+                                     "White","Asian","Black","Latino","Other",
+                                     "Less than $35K","$35K to $59K","$60K to $99K","$100K or more",
+                                     "16 to 29","30 to 49","50 to 69","70 and above",
+                                     "Male","Female",
+                                     "Chicago","Suburban Cook","DuPage","Kane","Kendall",
                                 "McHenry","Lake","Will"
                   ))) %>% 
   # Pivot longer
@@ -378,7 +375,7 @@ wfh_p1 <-
   # Create ggplot object
   ggplot(aes(x = value, y = subtype, fill = type)) +
   # Add columns
-  geom_col(width = .8,show.legend = FALSE) +
+  geom_col(width = .8) +
   # Add lines for average trips per day and average distance per trip
   geom_vline(data = tc_summaries_vlines,
              mapping = aes(xintercept = value, 
@@ -396,17 +393,19 @@ wfh_p1 <-
              hjust = -0.02) +
   
   # Adjust axes
-  scale_x_continuous(limits = c(0,.26),labels = scales::label_percent(accuracy = 1)) +
+  scale_x_continuous(limits = c(0,.21),
+                     # limits = c(0,.26), 
+                     labels = scales::label_percent(accuracy = 1)) +
   
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
              xlab = "Share of residents who telecommute at least once a week",
              strip.text = element_text(hjust = 0.5,vjust = 1)) +
   cmap_fill_discrete(palette = "legislation") +
-  scale_color_discrete(type = "#181f22") +
+  scale_color_discrete(type = "#181f22") # +
   
-  # Add faceting
-  facet_wrap(~type,ncol = 2,scales = "free_y")
+  # # Add faceting
+  # facet_wrap(~type,ncol = 2,scales = "free_y")
 
 wfh_p1_samplesize <-
   tc_summaries %>% 
@@ -419,54 +418,71 @@ finalize_plot(wfh_p1,
               "Lower-income, Black, and Latino residents were the least likely 
               to telecommute prior to COVID-19.",
               caption = 
-              paste0("Note: Includes only employed residents age 16 and older from the CMAP seven 
-              county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 
-              Will), as well as Grundy and DeKalb.
+              paste0(
+              #   "Note: Includes only employed residents age 16 and older from the CMAP seven 
+              # county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 
+              # Will), as well as Grundy and DeKalb.
+              # 'Latino' includes respondents who identified as Latino or Hispanic,
+              # regardless of racial category. Other categories are non-Latino.
+              # For the categorization by sex, the survey only asked respondents
+              # whether they were male or female. A small number of respondents
+              # chose not to answer, either because the available options were not
+              # sufficient or for some other reason. Due to low sample sizes and
+              # weighting concerns, average travel behavior statistics are
+              # unavailable for this population.
+                "Note: Includes only employed residents age 16 and older from the CMAP seven 
+              county region, Grundy, and DeKalb.
               'Latino' includes respondents who identified as Latino or Hispanic,
               regardless of racial category. Other categories are non-Latino.
               For the categorization by sex, the survey only asked respondents
-              whether they were male or female. A small number of respondents
-              chose not to answer, either because the available options were not
-              sufficient or for some other reason. Due to low sample sizes and
-              weighting concerns, average travel behavior statistics are
-              unavailable for this population.
-              <br><br>
-              Sample size:
-              <br>- <i>Age</i>: 16-29 (",
-                     wfh_p1_samplesize %>% filter(subtype == "16 to 29") %>% select(n),
-                     "); 30-49 (",
-                     wfh_p1_samplesize %>% filter(subtype == "30 to 49") %>% select(n),
-                     "); 50-69 (",
-                     wfh_p1_samplesize %>% filter(subtype == "50 to 69") %>% select(n),
-                     "); 70+ (",
-                     wfh_p1_samplesize %>% filter(subtype == "70 and above") %>% select(n),
-                     ").
-              <br>- <i>Income</i>: <$35K (",
-                     wfh_p1_samplesize %>% filter(subtype == "Less than $35K") %>% select(n),
-                     "); $35-59K (",
-                     wfh_p1_samplesize %>% filter(subtype == "$35K to $59K") %>% select(n),
-                     "); $60-99K (",
-                     wfh_p1_samplesize %>% filter(subtype == "$60K to $99K") %>% select(n),
-                     "); $100K+ (",
-                     wfh_p1_samplesize %>% filter(subtype == "$100K or more") %>% select(n),
-                     ").
-              <br>- <i>Race/Ethnicity</i>: Asian (",
-                     wfh_p1_samplesize %>% filter(subtype == "Asian") %>% select(n),
-                     "); White (",
-                     wfh_p1_samplesize %>% filter(subtype == "White") %>% select(n),
-                     "); Other (",
-                     wfh_p1_samplesize %>% filter(subtype == "Other") %>% select(n),
-                     "); Black (",
-                     wfh_p1_samplesize %>% filter(subtype == "Black") %>% select(n),
-                     "); Latino (",
-                     wfh_p1_samplesize %>% filter(subtype == "Latino") %>% select(n),
-                     ").
-              <br>- <i>Sex</i>: Male (",
-                     wfh_p1_samplesize %>% filter(subtype == "Male") %>% select(n),
-                     "); Female (",
-                     wfh_p1_samplesize %>% filter(subtype == "Female") %>% select(n),
-                     ").
-              <br><br>
+              whether they were male or female.
+              <br><br>",
+              # Sample size:
+              # <br>- <i>Age</i>: 16-29 (",
+              #        wfh_p1_samplesize %>% filter(subtype == "16 to 29") %>% select(n),
+              #        "); 30-49 (",
+              #        wfh_p1_samplesize %>% filter(subtype == "30 to 49") %>% select(n),
+              #        "); 50-69 (",
+              #        wfh_p1_samplesize %>% filter(subtype == "50 to 69") %>% select(n),
+              #        "); 70+ (",
+              #        wfh_p1_samplesize %>% filter(subtype == "70 and above") %>% select(n),
+              #        ").
+              # <br>- <i>Income</i>: <$35K (",
+              #        wfh_p1_samplesize %>% filter(subtype == "Less than $35K") %>% select(n),
+              #        "); $35-59K (",
+              #        wfh_p1_samplesize %>% filter(subtype == "$35K to $59K") %>% select(n),
+              #        "); $60-99K (",
+              #        wfh_p1_samplesize %>% filter(subtype == "$60K to $99K") %>% select(n),
+              #        "); $100K+ (",
+              #        wfh_p1_samplesize %>% filter(subtype == "$100K or more") %>% select(n),
+              #        ").
+              # <br>- <i>Race/Ethnicity</i>: Asian (",
+              #        wfh_p1_samplesize %>% filter(subtype == "Asian") %>% select(n),
+              #        "); White (",
+              #        wfh_p1_samplesize %>% filter(subtype == "White") %>% select(n),
+              #        "); Other (",
+              #        wfh_p1_samplesize %>% filter(subtype == "Other") %>% select(n),
+              #        "); Black (",
+              #        wfh_p1_samplesize %>% filter(subtype == "Black") %>% select(n),
+              #        "); Latino (",
+              #        wfh_p1_samplesize %>% filter(subtype == "Latino") %>% select(n),
+              #        ").
+              # <br>- <i>Sex</i>: Male (",
+              #        wfh_p1_samplesize %>% filter(subtype == "Male") %>% select(n),
+              #        "); Female (",
+              #        wfh_p1_samplesize %>% filter(subtype == "Female") %>% select(n),
+              #        ").
+              # <br><br>
+              "Sample size: Figures are based on a total of ",
+              format(wfh_p1_samplesize %>% filter(subtype == "Overall") %>% 
+                select(n) %>% as.numeric(),big.mark =","),
+              " residents. 
+              Across all categories, residents age 70 and above have the lowest 
+              sample size, with ",
+              format(wfh_p1_samplesize %>% filter(subtype == "70 and above") %>% 
+                       select(n) %>% as.numeric(),big.mark =","),
+              " individual residents.
+                 <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "wfh_p1",
@@ -474,9 +490,13 @@ finalize_plot(wfh_p1,
               # height = 4.5,
               # width = 8,
               # sidebar_width = 1.9,
-              sidebar_width = 3,
+              # sidebar_width = 3,
               overwrite = T)
 
+# Identify sample sizes ("Other" race/eth has the lowest)
+
+wfh_p1_samplesize %>% 
+  arrange(n)
 
 ################################################################################
 # Data prep for charts of WFH/TC travel characteristics
@@ -580,9 +600,10 @@ wfh_p2 <-
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
              legend.max.columns = 1,
              vline = 0,
-             xlab = "Mean total miles traveled on work trips by home jurisdiction
-             (excluding travelers with no trips to a work location)",
-             axis.title.x = element_text(hjust = 1)) +
+             ylab = "Home jurisdiction",
+             xlab = "Mean total miles traveled on work trips",
+             # axis.title.x = element_text(hjust = 1)
+             ) +
   cmap_fill_discrete(palette = "legislation")
 
 wfh_p2_samplesize <-
@@ -596,14 +617,20 @@ finalize_plot(wfh_p2,
               "Part-time telecommuters who lived outside Chicago had 
               significantly longer journeys to and from work on days when they 
               worked outside the home.",
-              paste0("Note: Figures are for trips by employed residents age 16 and older from the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              paste0(
+              #   "Note: Figures are for trips by employed residents age 16 and older from the 
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              # McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              # trips within, to, and/or from those counties. Mean mileage 
+              # accounts for all trips associated with a work trip chain 
+              # that included a work destination outside the home (both fixed and 
+              # non-fixed). Excludes work trips for travelers that
+              # telecommute 4+ days per week due to low sample sizes.
+              "Note: Figures are for trips by employed residents age 16 and older from the 
+              CMAP seven county region, Grundy, and DeKalb. Includes only 
               trips within, to, and/or from those counties. Mean mileage 
               accounts for all trips associated with a work trip chain 
-              that included a work destination outside the home (both fixed and 
-              non-fixed). Excludes work trips for travelers that
-              telecommute 4+ days per week due to low sample sizes.
+              that included a non-home work destination. 
               <br><br>
               Sample size (Chicago/Suburban Cook/Collar and adjacent):
               <br>- Does not regularly telecommute (",
@@ -649,7 +676,7 @@ finalize_plot(wfh_p2,
               mode = c("png","pdf"),
               # height = 4.5,
               # width = 8,
-              sidebar_width = 2.65,
+              # sidebar_width = 2.65,
               overwrite = T)
 
 
@@ -706,7 +733,8 @@ wfh_p3 <-
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
              legend.max.columns = 7,
              vline = 0,
-             xlab = "Work trips mode share by home jurisdiction and telecommute status \n(excluding travelers with no trips to a work location)",
+             ylab = "Telecommute status",
+             xlab = "Mode share for work trips by home location",
              axis.title.x = element_text(hjust = 0.5),
              strip.text = element_text(hjust = 0.5,vjust = 1,
                                        family = "Whitney Semibold")) +
@@ -727,15 +755,22 @@ finalize_plot(wfh_p3,
               "Suburban part-time telecommuters were much more 
               likely to use transit on days when they worked outside the home, 
               while those in Chicago were more likely to walk to work.",
-              paste0("Note: Figures are for trips by employed residents age 16 and older from the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              paste0(
+              #   "Note: Figures are for trips by employed residents age 16 and older from the 
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              # McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              # trips within, to, and/or from those counties. Mode share
+              # accounts for all trips associated with a work trip chain 
+              # that included a work destination outside the home (both fixed and 
+              # non-fixed). Excludes work trips for travelers that
+              # telecommute 4+ days per week due to low sample sizes. 
+              # Unlabeled bars have less than 5% mode share.
+                "Note: Figures are for trips by employed residents age 16 and older from the 
+              CMAP seven county region, Grundy, and DeKalb. Includes only 
               trips within, to, and/or from those counties. Mode share
-              accounts for all trips associated with a work trip chain 
-              that included a work destination outside the home (both fixed and 
-              non-fixed). Excludes work trips for travelers that
-              telecommute 4+ days per week due to low sample sizes. Unlabeled 
-              bars have less than 5% mode share.
+              accounts for all work chain trips
+              that included a non-home work destination. 
+              Unlabeled bars have less than 5% mode share.
               <br><br>
               Sample size (Chicago/Suburban Cook/Collar and adjacent):
               <br>- 0 days/wk. (",
@@ -778,9 +813,10 @@ finalize_plot(wfh_p3,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "wfh_p3",
-              # mode = c("png","pdf"),
+              mode = c("png","pdf"),
               overwrite = T,
-              sidebar_width = 2.7)
+              # sidebar_width = 2.7
+              )
 
 ################################################################################
 # Chart of all mileage for trips for individuals by TC status
@@ -861,14 +897,19 @@ wfh_p4 <-
 finalize_plot(wfh_p4,
               "On average, part-time telecommuters living outside Chicago 
               traveled the greatest distances every day.",
-              paste0("Note: Figures are for trips by employed residents age 16 and older from the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
-              trips within, to, and/or from those counties. These 
-              averages also account for employed individuals who did not travel 
-              in the region on their assigned travel day (i.e., individuals who 
-              worked from home and did not travel outside the home on that day). 
-              Those individuals are included as having zero travel distance.
+              paste0(
+              # "Note: Figures are for trips by employed residents age 16 and older from the
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake,
+              # McHenry, and Will), as well as Grundy and DeKalb. Includes only
+              # trips within, to, and/or from those counties. These
+              # averages also account for employed individuals who did not travel
+              # in the region on their assigned travel day (i.e., individuals who
+              # worked from home and did not travel outside the home on that day).
+              # Those individuals are included as having zero travel distance.
+              "Note: Figures are for trips by employed residents age 16 and older from the
+              CMAP seven county region, Grundy, and DeKalb. Includes only
+              trips within, to, and/or from those counties. Individuals who did 
+              not travel are included as having zero travel distance.
               <br><br>
               Sample size (Chicago/Suburban Cook/Collar and adjacent):
               <br>- Not regular (",

@@ -181,6 +181,9 @@ mode_analysis_p1 <-
   
   # Create ggplot object
   ggplot(aes(x = mode, y = total)) +
+  
+  
+  geom_hline(yintercept = c(2,3),size = 0.3) +
   geom_col(aes(fill = mode)) +
   # Add labels above the bars
   geom_label(aes(label = scales::label_percent(accuracy = 1)(total)),
@@ -195,7 +198,7 @@ mode_analysis_p1 <-
                      limits = c(0,3.2)) +
   
   # Add hline for 100%
-  geom_hline(yintercept = 1,color = "dark gray", size = 2) +
+  geom_hline(yintercept = 1, size = 1,linetype = "dashed") +
   annotate(
     geom = "text",
     x = 1,y = 1.05,
@@ -205,7 +208,8 @@ mode_analysis_p1 <-
   
   # Add CMAP style
   theme_cmap(hline = 0,show.legend = FALSE,
-             xlab = "Taxi and TNC ridership in 2019 as a share of 2008 taxi ridership") +
+             gridlines = "none",
+             ylab = "2019 ridership as a share of 2008 taxi ridership") +
   # Manually include CMAP colors
   scale_fill_discrete(type = c("#3f0030","#36d8ca"))
 
@@ -220,19 +224,27 @@ finalize_plot(mode_analysis_p1,
               "While taxi ridership fell significantly between 2008 and 2019, 
               Transportation Network Company (TNC) trips more than made up the
               difference.",
-              paste0("Note: Includes trips by residents age 5 and older of the CMAP seven 
-              county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 
-              Will), as well as Grundy and DeKalb. Includes only 
-              trips that were within, to, and/or from one of those counties.
-              'TNC' includes trips reported as either 'rideshare'or 'shared 
-              rideshare.' 
-              <br><br> 
-              The reported regional totals for both taxi and TNC trips in My
+              paste0(
+              # "Note: Includes trips by residents age 5 and older of the CMAP seven 
+              # county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 
+              # Will), as well as Grundy and DeKalb. Includes only 
+              # trips that were within, to, and/or from one of those counties.
+              # 'TNC' includes trips reported as either 'rideshare'or 'shared 
+              # rideshare.' 
+              # <br><br> 
+              # The reported regional totals for both taxi and TNC trips in My
+              # Daily Travel are less than 
+              # those captured in the City of Chicago's data on TNC and taxi trips, 
+              # even though the My Daily Travel survey covers a larger universe 
+              # of trips (including trips in the region that do not start or end 
+              # in Chicago). This may be due to the exclusion of non-resident 
+              # trips and/or other survey design factors.
+                "Note: Includes 'rideshare' and 'shared rideshare' trips by residents 
+                age 5 and older of the CMAP seven county region, Grundy, and DeKalb. 
+                The reported regional totals for both taxi and TNC trips in My
               Daily Travel are less than 
-              those captured in the City of Chicago's data on TNC and taxi trips, 
-              even though the My Daily Travel survey covers a larger universe 
-              of trips (including trips in the region that do not start or end 
-              in Chicago). This may be due to the exclusion of non-resident 
+              those captured in the City of Chicago's data on TNC and taxi trips. 
+              This may be due to the exclusion of non-resident 
               trips and/or other survey design factors.
               <br><br>
               Sample size:
@@ -249,7 +261,7 @@ finalize_plot(mode_analysis_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel and Travel Tracker data."),
               filename = "mode_analysis_p1",
-              sidebar_width = 3.25,
+              # sidebar_width = 3.25,
               mode = c("png","pdf"),
               # height = 6.3,
               # width = 11.3,

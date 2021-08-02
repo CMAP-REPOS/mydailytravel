@@ -143,7 +143,7 @@ racial_disparities_p1 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "h", legend.position = "None",
-             xlab = "Mean travel times for various trip purposes (minutes)",
+             ylab = "Mean travel times for various trip purposes (minutes)",
              strip.text = element_text(family = "Whitney Semibold",hjust = 0.5,vjust = 1)) +
   cmap_fill_race(white = "White", black = "Black", hispanic = "Latino", 
                  asian = "Asian", other = "Other") +
@@ -152,7 +152,7 @@ racial_disparities_p1 <-
   scale_y_continuous(limits = c(0,46)) +
   
   # Add faceting by trip purpose
-  facet_wrap(~tpurp_disp,ncol = 1)
+  facet_wrap(~tpurp_disp,ncol = 1,scales = "free_x")
 
 # Export finalized graphic
 finalize_plot(racial_disparities_p1,
@@ -160,77 +160,89 @@ finalize_plot(racial_disparities_p1,
               work, health care, and routine shopping than those of 
               other residents.",
               caption = 
-              paste0("Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
-              trips that were within, to, and/or from one of those counties. 
-              In all categories, trips with no travel time and those lasting 
-              more than two and a half hours are excluded. 
+              paste0(
+              # "Note: Includes trips by residents age 5 and older of the 
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              # McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              # trips that were within, to, and/or from one of those counties. 
+              # In all categories, trips with no travel time and those lasting 
+              # more than two and a half hours are excluded. 
+              "Note: Includes trips by residents age 5 and older of the 
+              CMAP seven county region, Grundy, and DeKalb. 
               'Latino' includes respondents who identified as Latino or Hispanic, 
               regardless of racial category. Other categories are non-Latino.
               <br><br>
-              Sample size (Black/Other/Latino/Asian/White): 
+              Sample size (Black/Other/Latino/ Asian/White): 
               <br>- Work (",
-                     paste(
+                     paste0(
                        work_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "black") %>% select(n) %>% as.numeric(),
+                       "/",
                        work_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "other") %>% select(n) %>% as.numeric(),
+                       "/",
                        work_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "latino") %>% select(n) %>% as.numeric(),
+                       "/",
                        work_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "asian") %>% select(n) %>% as.numeric(),
+                       "/ ",
                        work_time_race_mdt %>% ungroup() %>%  
-                         filter(race_eth == "white") %>% select(n) %>% as.numeric(),
-                       sep = "/"),
+                         filter(race_eth == "white") %>% select(n) %>% as.numeric()),
                        "); 
               <br>- Health (",
-                     paste(
+                     paste0(
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "black",tpurp == "Health care") %>% 
                          select(n) %>% as.numeric(),
+                       "/",
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "other",tpurp == "Health care") %>% 
                          select(n) %>% as.numeric(),
+                       "/",
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "latino",tpurp == "Health care") %>% 
                          select(n) %>% as.numeric(),
+                       "/",
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "asian",tpurp == "Health care") %>% 
                          select(n) %>% as.numeric(),
+                       "/",
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "white",tpurp == "Health care") %>% 
-                         select(n) %>% as.numeric(),
-                       sep = "/"),
+                         select(n) %>% as.numeric()),
                      "); 
               <br>- Shop (",
-                     paste(
+                     paste0(
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "black",tpurp == "Shopped (routine like grocery, clothing)") %>% 
                          select(n) %>% as.numeric(),
+                       "/",
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "other",tpurp == "Shopped (routine like grocery, clothing)") %>% 
                          select(n) %>% as.numeric(),
+                       "/",
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "latino",tpurp == "Shopped (routine like grocery, clothing)") %>% 
                          select(n) %>% as.numeric(),
+                       "/",
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "asian",tpurp == "Shopped (routine like grocery, clothing)") %>% 
                          select(n) %>% as.numeric(),
+                       "/ ",
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "white",tpurp == "Shopped (routine like grocery, clothing)") %>% 
-                         select(n) %>% as.numeric(),
-                       sep = "/"),
+                         select(n) %>% as.numeric()),
                      ").
-              <br><br>
-              Although sample sizes for 'Other' and 'Asian' health care trips 
-              are lower than desired, the estimates are similar for both
-              weighted and unweighted totals and are consistent with broader 
-              trends.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My
+              <br><br>",
+              # Although sample sizes for 'Other' and 'Asian' health care trips 
+              # are lower than desired, the estimates are similar for both
+              # weighted and unweighted totals and are consistent with broader 
+              # trends.
+              # <br><br>
+              "Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "racial_disparities_p1",
-              mode = c("png","pdf"),
-              sidebar_width = 3,
+              # mode = c("png","pdf"),
+              # sidebar_width = 3,
               overwrite = T)

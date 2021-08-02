@@ -128,7 +128,9 @@ trip_times_divvy_counts <-
 # Define breaks
 divvy_breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 06:00:00"),
                      to = as.POSIXct("2020-01-02 03:00:00"),
-                     by = "6 hours")
+                     # by = "6 hours"
+                     by = "3 hours"
+                     )
 # Create chart
 divvy_p1 <-
   # Get data
@@ -143,36 +145,40 @@ divvy_p1 <-
   geom_area(position = position_stack(reverse = TRUE)) +
   
   # Reformat axes
-  scale_x_datetime(labels = scales::date_format("%H:%M", tz = "America/Chicago"),
+  scale_x_datetime(labels = scales::date_format("%l:%M%p", # Time without leading zero
+                                                tz = "America/Chicago"),
                     breaks = divvy_breaks) +
-  scale_y_continuous(limits = c(0,500),expand = expansion(mult = c(.05,.01))) +
+  # scale_y_continuous(limits = c(0,500),expand = expansion(mult = c(.05,.01))) +
 
   # Add CMAP style
   scale_fill_discrete(type = c("#475c66","#ac8c00")) +
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
-             xlab = "Divvy trips")
+             # xlab = "Divvy trips"
+             xlab = "Time of day",
+             ylab = "Divvy trips in motion on an average weekday"
+             )
 
 # Export plot
 finalize_plot(divvy_p1,
-              title = "Divvy ridership was significantly higher in the afternoon, 
+              title = "Divvy ridership was significantly higher in the PM peak, 
               especially for non-subscribers.",
               caption = "Note: Trips in motion are 25-minute rolling averages.
               \"One-time user\" refers to Divvy customers that purchased a
               single ride or a day pass. Trips that were in motion as of 2:55
-              A.M. and ended after 3:00 A.M. are captured on the right side
-              of the graph, and are not included in the totals of trips in
-              motion as of 3:00 A.M. on the left side of the graph.
+              A.M. and ended after 3:00AM are captured only on the right side
+              of the graph.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of Divvy
               ridership data for weekdays during the My Daily Travel survey
               collection period, between September 4, 2018 and May 9, 2019
-              (excluding all federal holidays and the weeks of November 19,
-              December 24, December 31, and April 15).",
+              (excluding all federal holidays and the weeks of Nov. 19,
+              Dec. 24, Dec. 31, and Apr. 15).",
               filename = "divvy_p1",
+              height = 4.5,
               # sidebar_width = 0,
               # caption_align = 1,
-              # mode = c("png","pdf"),
+              mode = c("png","pdf"),
               # height = 2.25,
               # width = 8,
               # overrides = list(margin_plot_l = 30),
