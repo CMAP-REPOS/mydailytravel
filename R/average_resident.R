@@ -23,7 +23,6 @@ setwd("~/GitHub/mydailytravel")
 source("R/helper_fns.R")
 source("R/data_cleaning.R")
 
-
 # Age bins
 age_breaks_avg_res <- c(-1,17,29, 49, 69, 150)
 age_labels_avg_res <- c("5 to 17","18 to 29", "30 to 49",  "50 to 69", "70 and above")
@@ -481,9 +480,9 @@ average_resident_p1 <-
   mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>%
   # Add blank for label positioning
   mutate(blank = case_when(
-    name == "trips_per_capita" ~ 4.99,
+    name == "trips_per_capita" ~ 5.5,
     name == "avg_trip_length" ~ 5.9,
-    name == "avg_trip_time" ~ 33,
+    name == "avg_trip_time" ~ 36,
   )) %>%
   # Rename variables we are keeping
   mutate(name = recode_factor(factor(name,levels = c("trips_per_capita",
@@ -634,10 +633,10 @@ finalize_plot(average_resident_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "average_resident_p1",
-              # sidebar_width = 0,
+              sidebar_width = 1.75,
               mode = c("png","pdf"),
-              # height = 8,
-              height = 5.35,
+              height = 6.5,
+              # height = 5.35,
               overwrite = T)
 
 
@@ -873,7 +872,7 @@ finalize_plot(average_resident_p2,
               filename = "average_resident_p2",
               mode = c("png","pdf"),
               # sidebar_width = 3,
-              height = 5.25,
+              # height = 5.25,
               overwrite = T)
 
 
@@ -951,7 +950,8 @@ average_resident_p3 <-
   
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
-             xlab = "Distance per day for residents who traveled by household income (miles)",
+             xlab = "Distance per day for residents who traveled (miles)",
+             ylab = "Household income"
              # strip.text = element_text(family = "Whitney Semibold",
                                        # hjust = 0.5,vjust = 1)
              ) +
@@ -1009,7 +1009,7 @@ finalize_plot(average_resident_p3,
               filename = "average_resident_p3",
               # sidebar_width = 3,
               mode = c("png","pdf"),
-              height = 5.75,
+              # height = 5.75,
               overwrite = T)
 
 # Identify sample sizes - 70 and above from MDT has the lowest
@@ -1109,6 +1109,6 @@ finalize_plot(average_resident_p4,
               # sidebar_width = 0,
               filename = "average_resident_p4",
               mode = c("png","pdf"),
-              height = 3.25,
+              height = 4,
               overwrite = T)
 
