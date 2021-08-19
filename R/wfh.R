@@ -1096,3 +1096,26 @@ df <-
   
 # Export to csv for mapping
 write.csv(df,"outputs/average_suburban_tc13_trips.csv")
+
+##### LINEAR REGRESSION
+
+wfh_lm_base <-
+  wfh_base_mdt %>% 
+  filter(age > 0,income_c != "missing", race_eth != "missing",educ > 0) %>% 
+  select(age,income_c,tc,race_eth,hhsize,educ,sampno,perno,weight) %>% 
+  mutate(race_eth = factor(race_eth,levels = c("white","asian","black","latino","other")),
+         educ = factor(educ)) %>% 
+  distinct()
+
+
+wfh_lm <-
+  glm(tc ~ age + 
+        income_c +
+        race_eth +
+        educ + 
+        hhsize,
+   wfh_lm_base,
+   # weights = weight,
+   family = "binomial")
+
+summary(wfh_lm)
