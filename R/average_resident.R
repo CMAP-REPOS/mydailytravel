@@ -9,9 +9,6 @@
 library(tidyverse)
 library(cmapplot)
 library(ggpattern)
-# library(flextable)
-# library(officer)
-
 
 #################################################
 #                                               #
@@ -646,94 +643,6 @@ distinct_daily_travelers_mdt %>% count(age_bin)
 distinct_daily_travelers_mdt %>% count(income_c)
 distinct_daily_travelers_mdt %>% count(race_eth)
 distinct_daily_travelers_mdt %>% count(sex)
-
-################################################################################
-# Table of trips and distances by demographic characteristics for MDT
-################################################################################
-# 
-# travel_overall_mdt <-
-#   travel_overall %>% 
-#   filter(survey == "mdt") %>% 
-#   select(trips_per_capita,
-#          avg_trip_length,
-#          avg_trip_time)
-# 
-# 
-# average_resident_t1 <-
-#   # Get data
-#   travel_summaries %>%
-#   # Keep MDT
-#   filter(survey == "mdt") %>%
-#   # Exclude total distances
-#   filter(name %in% c("trips_per_capita",
-#                      "avg_trip_length",
-#                      "avg_trip_time")) %>%
-#   # Reverse factors
-#   mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>%
-# 
-#     # Rename variables we are keeping
-#   # mutate(name = recode_factor(factor(name,levels = c("trips_per_capita",
-#   #                                                    "avg_trip_length",
-#   #                                                    "avg_trip_time")),
-#   #                      "trips_per_capita" = "Trips/day",
-#   #                      "avg_trip_length" = "Distance/trip (mi.)",
-#   #                      "avg_trip_time" = "Time/trip (min.)")) %>%
-#   # Exclude overall and geography
-#   filter(!(type %in% c("Home jurisdiction"))) %>% 
-#   ungroup() %>% 
-#   select(-survey) %>% 
-#   arrange(subtype) %>% 
-#   map_df(rev) %>% 
-#   pivot_wider(names_from = name, values_from = value) %>% 
-#   group_by(type) %>% 
-#   mutate(max_trips_per_capita = trips_per_capita == max(trips_per_capita),
-#          max_avg_trip_time = avg_trip_time == max(avg_trip_time),
-#          max_avg_trip_length = avg_trip_length == max(avg_trip_length)) %>% 
-#   mutate(across(max_trips_per_capita:max_avg_trip_length, 
-#                 ~ case_when(subtype == "Overall" ~ FALSE,
-#                             TRUE ~ .)))
-# 
-# average_resident_t1a <-
-#   flextable(average_resident_t1,
-#             col_keys = c("type","subtype","trips_per_capita",
-#                          "avg_trip_length","avg_trip_time")) %>% 
-#   colformat_double(digits = 1) %>% 
-#   set_header_labels(type = "Category",subtype = "",
-#                     trips_per_capita = "Trips/Person",
-#                     avg_trip_length = "Distance/Trip (mi.)",
-#                     avg_trip_time = "Time/Trip (min.)") %>% 
-#   set_table_properties(width = 0.65,layout = "autofit") %>%
-#   fontsize(size = 10) %>% 
-#   footnote(i = 1, j = 1, 
-#            value = as_paragraph("Note: Shaded cells have the highest value within their comparison group. Figures in blue text are greater than regional averages. "),
-#            ref_symbols = "") %>%
-#   footnote(i = 1, j = 1,
-#            value = as_paragraph("Source: Chicago Metropolitan Agency for Planning analysis of My Daily Travel data."),
-#            ref_symbols = "") %>% 
-#   fontsize(size = 8, part = "footer") %>% 
-#   font(fontname = "Whitney Book", part = "all") %>% 
-#   font(fontname = "Whitney Semibold",part = "header") %>% 
-#                     
-#   color(~ trips_per_capita > travel_overall_mdt$trips_per_capita, 
-#         color = "#00b0f0", ~ trips_per_capita) %>% 
-#   color(~ avg_trip_time > travel_overall_mdt$avg_trip_time, 
-#         color = "#00b0f0", ~ avg_trip_time) %>% 
-#   color(~ avg_trip_length > travel_overall_mdt$avg_trip_length, 
-#         color = "#00b0f0", ~ avg_trip_length) %>% 
-#   bg(~ max_trips_per_capita == T, bg = "light gray", ~ trips_per_capita) %>% 
-#   bg(~ max_avg_trip_time == T, bg = "light gray", ~ avg_trip_time) %>% 
-#   bg(~ max_avg_trip_length == T, bg = "light gray", ~ avg_trip_length) %>% 
-#   italic(i = 1) %>% 
-#   border_outer() %>% 
-#   border_inner() %>% 
-#   border_inner_v() %>% 
-#   merge_v(j = c("type","subtype")) %>%
-#   merge_h(i = 1) %>%
-#   theme_vanilla()
-# 
-# read_docx() %>% 
-#   body_add_flextable(value = average_resident_t1a) %>% 
-#   print(target = "average_resident_t1a.docx")
 
 ################################################################################
 # Plot of percent traveling for MDT
