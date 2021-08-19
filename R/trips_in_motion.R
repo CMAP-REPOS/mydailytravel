@@ -183,12 +183,16 @@ finalize_plot(trips_in_motion_p1,
               pronounced, although the COVID-19 pandemic's impact on these 
               travel patterns remains uncertain.",
               paste0(
-              "Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include weekday trips by residents age 5 and older 
-              of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
-              Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
+              # "Note: Trips in motion are 25-minute rolling averages. Trips 
+              # analyzed include weekday trips by residents age 5 and older 
+              # of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
+              # Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
+              # only trips that were within, to, and/or from one of those counties.
+              # Excludes trips longer than 100 miles or greater than 15 hours long.
+                "Note: Trips in motion are 25-minute rolling averages. Includes 
+                trips by residents age 5 and older 
+              of the CMAP seven county region, Grundy, and DeKalb. Includes
               only trips that were within, to, and/or from one of those counties.
-              Excludes trips longer than 100 miles or greater than 15 hours long.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(tim_wip_mdt),big.mark = ","),
@@ -197,11 +201,11 @@ finalize_plot(trips_in_motion_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries."),
               filename = "trips_in_motion_p1",
-              # mode = c("png","pdf"),
+              mode = c("png","pdf"),
               # sidebar_width = 2.3,
-              overwrite = TRUE,
-              # height = 4.5,
-              # width = 8
+              height = 4.25,
+              # width = 8,
+              overwrite = TRUE
               )
 
 # Backup - trips in motion by mode, faceted (for prose)
@@ -284,12 +288,16 @@ finalize_plot(trips_in_motion_p2,
               "Travelers relied on substantially different modes for trips to and 
               from work vs. other trip purposes.",
               paste0(
-              "Note: Trips in motion are 25-minute rolling averages. Trips 
-              analyzed include weekday trips by residents age 5 and older 
-              of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
-              Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
-              only trips that were within, to, and/or from one of those counties.
-              Excludes trips longer than 100 miles or greater than 15 hours long.
+              # "Note: Trips in motion are 25-minute rolling averages. Trips 
+              # analyzed include weekday trips by residents age 5 and older 
+              # of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
+              # Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
+              # only trips that were within, to, and/or from one of those counties.
+              # Excludes trips longer than 100 miles or greater than 15 hours long.
+              "Note: Trips in motion are 25-minute rolling averages. Includes 
+              trips by residents age 5 and older of the CMAP seven county region, 
+              Grundy, and DeKalb. Includes only trips that were within, to, 
+              and/or from one of those counties.
               <br><br>
               Sample size: 
               <br>- Work (",
@@ -305,7 +313,7 @@ finalize_plot(trips_in_motion_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries."),
               filename = "trips_in_motion_p2",
-              height = 5,
+              height = 4,
               mode = c("png","pdf"),
               overwrite = TRUE)
 
@@ -361,7 +369,8 @@ trips_in_motion_p2a <-
             color = "white") +
   
   # Adjust axis
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1)) +
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+                     expand = expansion(mult = c(.05,0))) +
   
   # Add CMAP style
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
@@ -388,12 +397,18 @@ trips_in_motion_p2a_samplesize <-
 # Export finalized graphic
 finalize_plot(trips_in_motion_p2a,
               "Travel choices differ significantly between peak and off-peak trips.",
-              paste0("Note: Trips 
-              analyzed include weekday trips by residents age 5 and older 
-              of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
-              Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
+              paste0(
+              # "Note: Trips 
+              # analyzed include weekday trips by residents age 5 and older 
+              # of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
+              # Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
+              # only trips that were within, to, and/or from one of those counties.
+              # Excludes trips longer than 100 miles or greater than 15 hours long.
+              # Peak trips include all trips that were in motion between 6:00am 
+              # and 9:00am or between 3:00pm and 7:00pm.
+                "Note: Includes trips by residents age 5 and older 
+              of the CMAP seven county region, Grundy, and DeKalb. Includes
               only trips that were within, to, and/or from one of those counties.
-              Excludes trips longer than 100 miles or greater than 15 hours long.
               Peak trips include all trips that were in motion between 6:00am 
               and 9:00am or between 3:00pm and 7:00pm.
               <br><br>
@@ -440,6 +455,7 @@ finalize_plot(trips_in_motion_p2a,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries."),
               filename = "trips_in_motion_p2a",
+              height = 4.5,
               # sidebar_width = 2.7,
               mode = c("png","pdf"),
               overwrite = T)
@@ -503,12 +519,17 @@ finalize_plot(trips_in_motion_p3,
               "Personal health care trips also have a morning and afternoon peak, but
               these are much more concentrated around, but not during, the
               lunch hour.",
-              paste0("Note: Trips in motion are 55-minute rolling averages. Trips 
-              analyzed include weekday personal health care trips by residents age 5 and older 
-              of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
-              Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
+              paste0(
+              # "Note: Trips in motion are 55-minute rolling averages. Trips 
+              # analyzed include weekday personal health care trips by residents age 5 and older 
+              # of the CMAP seven county region (Cook, DuPage, Kane, Kendall, 
+              # Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
+              # only trips that were within, to, and/or from one of those counties.
+              # Excludes trips longer than 100 miles or greater than 15 hours long.
+                "Note: Trips in motion are 55-minute rolling averages. Includes
+                weekday personal health care trips by residents age 5 and older 
+              of the CMAP seven county region, Grundy, and DeKalb. Includes
               only trips that were within, to, and/or from one of those counties.
-              Excludes trips longer than 100 miles or greater than 15 hours long.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(tim_health_mdt),big.mark = ","),
@@ -519,6 +540,7 @@ finalize_plot(trips_in_motion_p3,
               # height = 6.3,
               # width = 11.3,
               mode = c("pdf","png"),
+              height = 4.5,
               filename = "trips_in_motion_p3",
               overwrite = T)
 
@@ -586,8 +608,8 @@ finalize_plot(trips_in_motion_p4,
               # Lake, McHenry, and Will), as well as Grundy and DeKalb. Includes
               # only trips that were within, to, and/or from one of those counties.
               # Excludes trips longer than 100 miles or greater than 15 hours long.
-              "Note: Trips in motion are 85-minute rolling averages. Trips 
-              analyzed include weekday trips by residents age 5 and older 
+              "Note: Trips in motion are 85-minute rolling averages. Includes 
+              trips by residents age 5 and older 
               of the CMAP seven county region, Grundy, and DeKalb. Includes
               only trips that were within, to, and/or from one of those counties.
               <br><br>

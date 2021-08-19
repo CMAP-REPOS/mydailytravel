@@ -184,10 +184,10 @@ tnc_for_purposes <-
   mutate(age_bin = cut(age, breaks = age_breaks_tnc_large,
                        labels = age_labels_tnc_large)) %>%
   filter(tnc_purp > 0) %>% # 7175
-  mutate(tnc_purp = recode(factor(tnc_purp,levels = c(1,2,3,5,4)),
+  mutate(tnc_purp = recode(factor(tnc_purp,levels = c(2,3,1,4,5)),
+                           "3" = "Daytime (work)",
                            "1" = "Commute (whole or part)",
                            "2" = "Commute (whole or part)",
-                           "3" = "Daytime (work)",
                            "4" = "Daytime (non-work)",
                            "5" = "Late-night (non-work)"))
 
@@ -256,6 +256,7 @@ tnc_p1 <-
   #                x = label, y = race_eth),
   #            label.size = 0,
   #            hjust = -.02,
+  #            label.r = grid::unit(0,"lines"),
   #            fill = "white") +
   
   
@@ -263,16 +264,22 @@ tnc_p1 <-
   scale_x_continuous(breaks = seq(-.5,.75,by = .25), 
                      labels = scales::label_percent()(abs(seq(-.5,.75,by = .25))),
                      # limits = c(-.5,.85)
-                     limits = c(-.5,.75)
+                     limits = c(-.5,.75),
+                     expand = expansion(mult = c(0.05,0))
                      ) +
   
   # Add CMAP themes
   theme_cmap(gridlines = "v",
              xlab = "Work travel                              Non-work travel\nTypical reason for using a TNC") +
-  scale_fill_discrete(type = c("#8c0000","#efa7a7","#00093f","#006b8c")) +
+  scale_fill_manual(values = c("#8c0000","#efa7a7","#00093f","#006b8c"),
+                    labels = c("Daytime (work)","Commute (whole or part)",
+                               "Daytime (non-work)","Late-night (non-work)")) +
   
   # Adjust legend for formatting
-  guides(fill = guide_legend(ncol = 3,override.aes = list(pattern = "none")))
+  guides(fill = guide_legend(ncol = 3,
+                             override.aes = list(fill = c("#efa7a7","#8c0000",
+                                                          "#00093f","#006b8c"),
+                                                 pattern = "none")))
 
 tnc_p1_samplesize <-
   tnc_purpose_race %>% 
@@ -311,7 +318,7 @@ finalize_plot(tnc_p1,
               Source: Chicago Metropolitan Agency for Planning 
               Analysis of My Daily Travel data."),
               filename = "tnc_p1",
-              height = 4.5,
+              height = 4.25,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -393,6 +400,7 @@ tnc_p2 <-
   geom_label(aes(label = scales::label_number(accuracy = 0.1)(tnc_use)),
              hjust = -0.02,
              label.size = 0,
+             label.r = grid::unit(0,"lines"),
              fill = "white") +
   
   # Add CMAP style
@@ -401,7 +409,8 @@ tnc_p2 <-
   cmap_fill_highlight(home_usage$home_county_chi,"CMAP region") +
   
   # Adjust axes
-  scale_x_continuous(limits = c(0,.85))
+  scale_x_continuous(limits = c(0,.85),
+                     expand = expansion(mult = c(0.05,0)))
 
 finalize_plot(tnc_p2,
               "Usage of Transportation Network Companies (TNCs) was greatest by 
@@ -508,11 +517,14 @@ tnc_p3 <-
                                 scales::label_dollar(accuracy = 1)(value))),
              hjust = -.02,
              label.size = 0,
+             label.r = grid::unit(0,"lines"),
              fill = "white") +
   geom_blank(aes(x = blank)) +
   
   # Add faceting
   facet_wrap(~name, scales = "free_x") +
+  
+  scale_x_continuous(expand = expansion(mult = c(0.05,0))) +
   
   # Add CMAP style
   theme_cmap(gridlines = "v",hline = 0,legend.position = "none",

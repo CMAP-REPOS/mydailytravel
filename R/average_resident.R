@@ -9,8 +9,8 @@
 library(tidyverse)
 library(cmapplot)
 library(ggpattern)
-library(flextable)
-library(officer)
+# library(flextable)
+# library(officer)
 
 
 #################################################
@@ -424,7 +424,8 @@ travel_summaries <-
         travel_race_eth) %>% 
   # Add levels
   mutate(type = factor(type,
-                       levels = c("Race and ethnicity","Household income","Age","Sex","Overall","Home jurisdiction"))) %>% 
+                       levels = c("Race and ethnicity","Household income",
+                                  "Age","Sex","Overall","Home jurisdiction"))) %>% 
   mutate(subtype = factor(subtype,
                           levels = c("Overall",
                                      "White","Asian","Black","Latino","Other",
@@ -455,154 +456,19 @@ travel_summaries_vlines <-
                               "avg_trip_time" = "Time/trip (min.)",
                               "traveling_pct" = "Percent traveling"))
 
+regional_averages <-
+  travel_summaries_vlines %>% 
+  filter(survey == "mdt") %>%
+  ungroup() %>% 
+  select(-survey) %>% 
+  distinct()
+
 ################################################################################
 # Plot of trips and distances by demographic characteristics for MDT
 ################################################################################
 
-# # Plot
-# average_resident_p1 <-
-#   # Get data
-#   travel_summaries %>%
-#   # Keep MDT
-#   filter(survey == "mdt") %>% 
-#   # Exclude total distances
-#   filter(name %in% c("trips_per_capita",
-#                      "avg_trip_length",
-#                      "avg_trip_time")) %>% 
-#   # Reverse factors
-#   mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>% 
-#   # Add blank for label positioning
-#   mutate(blank = case_when(
-#     name == "trips_per_capita" ~ 5,
-#     name == "avg_trip_length" ~ 6,
-#     name == "avg_trip_time" ~ 32,
-#   )) %>% 
-#   # Rename variables we are keeping
-#   mutate(name = recode_factor(factor(name,levels = c("trips_per_capita",
-#                                                      "avg_trip_length",
-#                                                      "avg_trip_time")),
-#                        "trips_per_capita" = "Trips/day",
-#                        "avg_trip_length" = "Distance/trip (mi.)",
-#                        "avg_trip_time" = "Time/trip (min.)")) %>% 
-#   # Exclude overall and geography
-#   filter(!(type %in% c("Overall","Home jurisdiction"))) %>%
-#   
-#   # Create ggplot object
-#   ggplot(aes(x = value, y = str_wrap_factor(subtype,18), fill = type)) +
-#   # Add columns
-#   geom_col(width = .8) +
-#   
-#   # Add lines for average trips per day and average distance per trip
-#   geom_vline(data = travel_summaries_vlines %>% 
-#                filter(survey == "mdt") %>%
-#                filter(name != "Percent traveling") %>% 
-#                mutate(color = "Regional average"),
-#              mapping = aes(xintercept = value,
-#                            color = color),
-#              linetype = "dashed",
-#              size = .33
-#   ) +
-#   
-#   # Add labels
-#   geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
-#                  group = name),
-#              position = position_dodge2(width = .9,reverse = T),
-#              fill = "white",
-#              label.size = 0,label.padding = unit(1.5,"bigpts"),
-#              hjust = -.02) +
-#   
-#   # Add geom_blank for positioning
-#   geom_blank(aes(x = blank)) +
-#   
-#   # Add CMAP theme
-#   theme_cmap(gridlines = "v",vline = 0,
-#              xlab = "Average behavior for residents who traveled",
-#              strip.text.x = element_text(family = "Whitney Semibold",
-#                                          hjust = 0.5,vjust = 1),
-#              strip.text.y = element_blank()) +
-#   cmap_fill_discrete(palette = "legislation") +
-#   scale_color_discrete(type = "black") +
-#   # Reorder legends
-#   guides(color = guide_legend(order = 2),fill = guide_legend(order = 1)) +
-#   
-#   # Add faceting
-#   facet_grid(factor(type, 
-#                     levels = c("Race and ethnicity","Household income",
-#                                "Age","Sex"))~name,
-#              # ncol = 3,
-#              scales = "free",
-#              )
-# 
-# # Export finalized graphic
-# finalize_plot(average_resident_p1,
-#               sidebar_width = 0,
-#               "Average travel patterns vary significantly based on demographic
-#               characteristics.",
-#               caption = 
-#               paste0("Note: Figures are calculated based only on individuals 
-#               who traveled and thus exclude individuals with zero trips. 
-#               Non-travelers are disproportionately low-income, non-white, 
-#               between 18 and 29 or older than 70 years old, and/or have a disability.
-#               <br><br>
-#               Includes trips by travelers age 5 and older who live in the 
-#               CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-#               McHenry, and Will), as well as Grundy and DeKalb. 
-#               For comparability with Travel Tracker survey results, 
-#               only includes trips within that region and between that region and 
-#               the Indiana counties of Lake, LaPorte, and Porter. 
-#               Distances are calculated as point-to-point ('haversine') and do 
-#               not account for additional distance traveled along the route. 
-#               'Latino' includes respondents who identified as Latino or Hispanic, 
-#               regardless of racial category. Other categories are non-Latino. 
-#               For the categorization by sex, the survey only asked respondents 
-#               whether they were male or female. A small number of respondents 
-#               chose not to answer, either because the available options were not 
-#               sufficient or for some other reason. Due to low sample sizes and 
-#               weighting concerns, average travel behavior statistics are 
-#               unavailable for this population.
-#               <br><br>
-#               Sample size: Figures are based on a total of ",
-#                      format(nrow(distinct_daily_travelers_mdt),big.mark = ","),
-#                      " travelers. 
-#               Across all categories, travelers with an 'Other' race and 
-#               ethnicity have the lowest sample size, with ",
-#                      format(
-#                        distinct_daily_travelers_mdt %>% 
-#                          filter(race_eth == "other") %>% 
-#                          count() %>% 
-#                          select(n) %>% 
-#                          as.numeric(),
-#                        big.mark = ","),
-#                      " individual travelers.
-#               <br><br>
-#               Source: Chicago Metropolitan Agency for Planning analysis of My 
-#               Daily Travel data."),
-#               filename = "average_resident_p1",
-#               # mode = c("png","pdf"),
-#               height = 8,
-#               overwrite = T)
-#   
-# 
-# # Identify sample sizes ("Other" race/eth has the lowest)
-# 
-# distinct_daily_travelers_mdt %>% count(age_bin)
-# distinct_daily_travelers_mdt %>% count(income_c)
-# distinct_daily_travelers_mdt %>% count(race_eth)
-# distinct_daily_travelers_mdt %>% count(sex)
-
-################################################################################
-# Table of trips and distances by demographic characteristics for MDT
-################################################################################
-
-travel_overall_mdt <-
-  travel_overall %>% 
-  filter(survey == "mdt") %>% 
-  select(trips_per_capita,
-         avg_trip_length,
-         avg_trip_time)
-
-
-average_resident_t1 <-
+# Plot
+average_resident_p1 <-
   # Get data
   travel_summaries %>%
   # Keep MDT
@@ -613,41 +479,262 @@ average_resident_t1 <-
                      "avg_trip_time")) %>%
   # Reverse factors
   mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>%
-
-    # Rename variables we are keeping
-  # mutate(name = recode_factor(factor(name,levels = c("trips_per_capita",
-  #                                                    "avg_trip_length",
-  #                                                    "avg_trip_time")),
-  #                      "trips_per_capita" = "Trips/day",
-  #                      "avg_trip_length" = "Distance/trip (mi.)",
-  #                      "avg_trip_time" = "Time/trip (min.)")) %>%
+  # Add blank for label positioning
+  mutate(blank = case_when(
+    name == "trips_per_capita" ~ 4.99,
+    name == "avg_trip_length" ~ 5.9,
+    name == "avg_trip_time" ~ 33,
+  )) %>%
+  # Rename variables we are keeping
+  mutate(name = recode_factor(factor(name,levels = c("trips_per_capita",
+                                                     "avg_trip_length",
+                                                     "avg_trip_time")),
+                       "trips_per_capita" = "Trips/day",
+                       "avg_trip_length" = "Distance/trip (mi.)",
+                       "avg_trip_time" = "Time/trip (min.)")) %>%
   # Exclude overall and geography
-  filter(!(type %in% c("Home jurisdiction"))) %>% 
-  # mutate(value = round(value,1)) %>% 
-  select(-survey) %>% 
-  arrange(subtype) %>% 
-  map_df(rev) %>% 
-  pivot_wider(names_from = name, values_from = value)
+  filter(!(type %in% c("Overall","Home jurisdiction"))) %>%
 
-average_resident_t1a <- 
-  flextable(average_resident_t1) %>% 
-  colformat_double(digits = 1) %>% 
-  color(~ trips_per_capita > travel_overall_mdt$trips_per_capita, 
-        color = "#00b0f0", ~ trips_per_capita) %>% 
-  color(~ avg_trip_time > travel_overall_mdt$avg_trip_time, 
-        color = "#00b0f0", ~ avg_trip_time) %>% 
-  color(~ avg_trip_length > travel_overall_mdt$avg_trip_length, 
-        color = "#00b0f0", ~ avg_trip_length) %>% 
-  italic(i = 1) %>% 
-  border_outer() %>% 
-  border_inner() %>% 
-  border_inner_v() %>% 
-  merge_v(j = c("type","subtype")) %>%
-  theme_vanilla()
+  # Create ggplot object
+  ggplot(aes(x = value, y = subtype, fill = type)) +
+  # Add columns
+  geom_col(width = .8) +
+  
+  scale_y_discrete(limits = c("Female","Male", 
+                              "",
+                              "70 and above","50 to 69","30 to 49","18 to 29","5 to 17",
+                              "",
+                              "$100K or more","$60K to $99K","$35K to $59K","Less than $35K",
+                              "",
+                              "Other","Latino","Black","Asian","White","")) +
+  scale_x_continuous(expand = expansion(mult = c(0.05,0))) +
+  
+  # Add lines for average trips per day and average distance per trip
+  geom_vline(data = regional_averages %>%
+               filter(name != "Percent traveling"), # %>%
+               # mutate(color = "Regional average"),
+             mapping = aes(xintercept = value,
+                           # color = color
+                           ),
+             linetype = "dashed",
+             size = .33
+  ) +
+  
+  
+  # Add labels
+  geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
+                 group = name),
+             position = position_dodge2(width = .9,reverse = T),
+             fill = "white",
+             label.size = 0,label.padding = unit(1.5,"bigpts"),
+             label.r = grid::unit(0,"lines"),
+             hjust = -.02) +
+    # Add geom_blank for positioning
+  geom_blank(aes(x = blank)) +
 
-read_docx() %>% 
-  body_add_flextable(value = average_resident_t1a) %>% 
-  print(target = "average_resident_t1a.docx")
+  # Add CMAP theme
+  theme_cmap(gridlines = "v",vline = 0,
+             xlab = "Average behavior for residents who traveled",
+             strip.text.x = element_text(family = "Whitney Semibold",
+                                         hjust = 0.5,vjust = 1),
+             strip.text.y = element_blank()) +
+  cmap_fill_discrete(palette = "legislation") +
+  # scale_color_discrete(type = "black") +
+  
+  # # Reorder legends
+  # guides(color = guide_legend(order = 2),fill = guide_legend(order = 1))  +
+  
+  # Add regional labels
+  geom_label(data = regional_averages %>%
+               filter(name != "Percent traveling"),
+             mapping = aes(x = value * .05,
+                           y = 20,
+                           label = paste0("Regional avg. (",
+                                          round(value,1),")")),
+             hjust = 0,
+             label.size = 0,
+             label.r = grid::unit(0,"lines"),
+             fill = "light gray"
+             #  x = -0.001 + (regional_averages %>% 
+             #                filter(name == "Trips/day") %>% 
+             #                select(value) %>% 
+             #                as.numeric()),
+             # y = 20,
+             # label = paste0("Regional average (",
+             #                round(100*(regional_averages %>% 
+             #                             filter(name == "Trips/day") %>% 
+             #                             select(value) %>% 
+             #                             as.numeric())),
+             #                "%)"),
+             # vjust = 0.5,
+             # hjust = 1,
+             # fill = "white",
+             # label.size = 0
+  ) +
+  facet_grid(~name,
+             scales = "free"
+  )
+
+  # # Add faceting
+  # facet_grid(factor(type,
+  #                   levels = c("Race and ethnicity","Household income",
+  #                              "Age","Sex"))~name,
+  #            # ncol = 3,
+  #            scales = "free",
+  #            )
+
+# Export finalized graphic
+finalize_plot(average_resident_p1,
+              "Average travel patterns vary significantly based on demographic
+              characteristics.",
+              caption = paste0(
+              # "Note: Figures are calculated based only on individuals
+              # who traveled and thus exclude individuals with zero trips.
+              # Non-travelers are disproportionately low-income, non-white,
+              # between 18 and 29 or older than 70 years old, and/or have a disability.
+              # <br><br>
+              # Includes trips by travelers age 5 and older who live in the
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake,
+              # McHenry, and Will), as well as Grundy and DeKalb.
+              # For comparability with Travel Tracker survey results,
+              # only includes trips within that region and between that region and
+              # the Indiana counties of Lake, LaPorte, and Porter.
+              # Distances are calculated as point-to-point ('haversine') and do
+              # not account for additional distance traveled along the route.
+              # 'Latino' includes respondents who identified as Latino or Hispanic,
+              # regardless of racial category. Other categories are non-Latino.
+              # For the categorization by sex, the survey only asked respondents
+              # whether they were male or female. A small number of respondents
+              # chose not to answer, either because the available options were not
+              # sufficient or for some other reason. Due to low sample sizes and
+              # weighting concerns, average travel behavior statistics are
+              # unavailable for this population.
+              "Note: Figures are calculated based only on individuals
+              who traveled and thus exclude individuals with zero trips.
+              Includes trips by travelers age 5 and older who live in the
+              CMAP seven county region, Grundy, and DeKalb.
+              Distances are point-to-point and do not account for additional 
+              distance traveled along the route.
+              See 'About the data' for more information on race, ethnicity, and sex.
+              <br><br>
+              Sample size: Figures are based on a total of ",
+                     format(nrow(distinct_daily_travelers_mdt),big.mark = ","),
+                     " travelers.
+              Across all categories, travelers with an 'Other' race and
+              ethnicity have the lowest sample size, with ",
+                     format(
+                       distinct_daily_travelers_mdt %>%
+                         filter(race_eth == "other") %>%
+                         count() %>%
+                         select(n) %>%
+                         as.numeric(),
+                       big.mark = ","),
+                     " individual travelers.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
+              Daily Travel data."),
+              filename = "average_resident_p1",
+              # sidebar_width = 0,
+              mode = c("png","pdf"),
+              # height = 8,
+              height = 5.35,
+              overwrite = T)
+
+
+# Identify sample sizes ("Other" race/eth has the lowest)
+
+distinct_daily_travelers_mdt %>% count(age_bin)
+distinct_daily_travelers_mdt %>% count(income_c)
+distinct_daily_travelers_mdt %>% count(race_eth)
+distinct_daily_travelers_mdt %>% count(sex)
+
+################################################################################
+# Table of trips and distances by demographic characteristics for MDT
+################################################################################
+# 
+# travel_overall_mdt <-
+#   travel_overall %>% 
+#   filter(survey == "mdt") %>% 
+#   select(trips_per_capita,
+#          avg_trip_length,
+#          avg_trip_time)
+# 
+# 
+# average_resident_t1 <-
+#   # Get data
+#   travel_summaries %>%
+#   # Keep MDT
+#   filter(survey == "mdt") %>%
+#   # Exclude total distances
+#   filter(name %in% c("trips_per_capita",
+#                      "avg_trip_length",
+#                      "avg_trip_time")) %>%
+#   # Reverse factors
+#   mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>%
+# 
+#     # Rename variables we are keeping
+#   # mutate(name = recode_factor(factor(name,levels = c("trips_per_capita",
+#   #                                                    "avg_trip_length",
+#   #                                                    "avg_trip_time")),
+#   #                      "trips_per_capita" = "Trips/day",
+#   #                      "avg_trip_length" = "Distance/trip (mi.)",
+#   #                      "avg_trip_time" = "Time/trip (min.)")) %>%
+#   # Exclude overall and geography
+#   filter(!(type %in% c("Home jurisdiction"))) %>% 
+#   ungroup() %>% 
+#   select(-survey) %>% 
+#   arrange(subtype) %>% 
+#   map_df(rev) %>% 
+#   pivot_wider(names_from = name, values_from = value) %>% 
+#   group_by(type) %>% 
+#   mutate(max_trips_per_capita = trips_per_capita == max(trips_per_capita),
+#          max_avg_trip_time = avg_trip_time == max(avg_trip_time),
+#          max_avg_trip_length = avg_trip_length == max(avg_trip_length)) %>% 
+#   mutate(across(max_trips_per_capita:max_avg_trip_length, 
+#                 ~ case_when(subtype == "Overall" ~ FALSE,
+#                             TRUE ~ .)))
+# 
+# average_resident_t1a <-
+#   flextable(average_resident_t1,
+#             col_keys = c("type","subtype","trips_per_capita",
+#                          "avg_trip_length","avg_trip_time")) %>% 
+#   colformat_double(digits = 1) %>% 
+#   set_header_labels(type = "Category",subtype = "",
+#                     trips_per_capita = "Trips/Person",
+#                     avg_trip_length = "Distance/Trip (mi.)",
+#                     avg_trip_time = "Time/Trip (min.)") %>% 
+#   set_table_properties(width = 0.65,layout = "autofit") %>%
+#   fontsize(size = 10) %>% 
+#   footnote(i = 1, j = 1, 
+#            value = as_paragraph("Note: Shaded cells have the highest value within their comparison group. Figures in blue text are greater than regional averages. "),
+#            ref_symbols = "") %>%
+#   footnote(i = 1, j = 1,
+#            value = as_paragraph("Source: Chicago Metropolitan Agency for Planning analysis of My Daily Travel data."),
+#            ref_symbols = "") %>% 
+#   fontsize(size = 8, part = "footer") %>% 
+#   font(fontname = "Whitney Book", part = "all") %>% 
+#   font(fontname = "Whitney Semibold",part = "header") %>% 
+#                     
+#   color(~ trips_per_capita > travel_overall_mdt$trips_per_capita, 
+#         color = "#00b0f0", ~ trips_per_capita) %>% 
+#   color(~ avg_trip_time > travel_overall_mdt$avg_trip_time, 
+#         color = "#00b0f0", ~ avg_trip_time) %>% 
+#   color(~ avg_trip_length > travel_overall_mdt$avg_trip_length, 
+#         color = "#00b0f0", ~ avg_trip_length) %>% 
+#   bg(~ max_trips_per_capita == T, bg = "light gray", ~ trips_per_capita) %>% 
+#   bg(~ max_avg_trip_time == T, bg = "light gray", ~ avg_trip_time) %>% 
+#   bg(~ max_avg_trip_length == T, bg = "light gray", ~ avg_trip_length) %>% 
+#   italic(i = 1) %>% 
+#   border_outer() %>% 
+#   border_inner() %>% 
+#   border_inner_v() %>% 
+#   merge_v(j = c("type","subtype")) %>%
+#   merge_h(i = 1) %>%
+#   theme_vanilla()
+# 
+# read_docx() %>% 
+#   body_add_flextable(value = average_resident_t1a) %>% 
+#   print(target = "average_resident_t1a.docx")
 
 ################################################################################
 # Plot of percent traveling for MDT
@@ -669,17 +756,18 @@ average_resident_p2 <-
   mutate(name = "Percent traveling") %>% 
   
   # Create ggplot object
-  ggplot(aes(x = 1 - value, y = str_wrap_factor(subtype,18), fill = type)) +
+  ggplot(aes(x = 1 - value, y = subtype, fill = type)) +
   # Add columns
   geom_col(width = .8) +
   
   # Add lines for average trips per day and average distance per trip
   geom_vline(data = travel_summaries_vlines %>% 
                filter(survey == "mdt") %>%
-               filter(name == "Percent traveling") %>% 
-               mutate(color = paste0("Regional average (",round(100*(1-value[1])),"%)")),
+               filter(name == "Percent traveling"),# %>% 
+               # mutate(color = paste0("Regional average (",round(100*(1-value[1])),"%)")),
              mapping = aes(xintercept = 1 - value,
-                           color = color),
+                           # color = color
+                           ),
              linetype = "dashed",
              size = .33
   ) +
@@ -687,15 +775,43 @@ average_resident_p2 <-
   # Add labels
   geom_label(aes(label = scales::label_percent(accuracy = 1)(1 - value),
                  group = name),
-             position = position_dodge2(width = .9,reverse = T),
              fill = "white",
              label.size = 0,label.padding = unit(1.5,"bigpts"),
+             label.r = grid::unit(0,"lines"),
              hjust = -.02) +
+  
+  # Add regional label
+  annotate(geom = "label",
+           x = 0.001 + (1 - regional_averages %>% 
+             filter(name == "Percent traveling") %>% 
+             select(value) %>% distinct() %>% 
+             as.numeric()),
+           y = 19,
+           label = paste0("Regional average (",
+                          round(100*(1- regional_averages %>% 
+                                       filter(name == "Percent traveling") %>% 
+                                       select(value) %>% distinct() %>% 
+                                       as.numeric())),
+                          "%)"),
+           vjust = 0.5,
+           hjust = 0,
+           fill = "light gray",
+           label.size = 0,
+           label.r = grid::unit(0,"lines")
+           ) +
   
   # Adjust scale
   scale_x_continuous(limits = c(0,.18),
                      labels = scales::label_percent(accuracy = 1),
-                     breaks = c(0,.05,.1,.15,.2)) +
+                     breaks = c(0,.05,.1,.15,.2),
+                     expand = expansion(mult = c(0.05,0))) +
+  scale_y_discrete(limits = c("Female","Male", 
+                              "",
+                              "70 and above","50 to 69","30 to 49","18 to 29","5 to 17",
+                              "",
+                              "$100K or more","$60K to $99K","$35K to $59K","Less than $35K",
+                              "",
+                              "Other","Latino","Black","Asian","White")) +
   
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
@@ -718,24 +834,31 @@ average_resident_p2 <-
 finalize_plot(average_resident_p2,
               "Lower-income, non-White, and older residents were the least 
               likely to travel on a weekday.",
-              caption = 
-              paste0("Note: Figures are based on the travel behavior of 
-              residents age 5 or older of the CMAP seven county region (Cook, 
-              DuPage, Kane, Kendall, Lake, McHenry, and Will), as well as Grundy 
-              and DeKalb.
-              Individuals were counted as 'traveling' if they had at least one 
-              trip on their assigned travel day, no matter whether that trip was 
-              in the CMAP region. 
-              'Latino' includes respondents who identified as Latino or Hispanic, 
-              regardless of racial category. Other categories are non-Latino.
-              For the categorization by sex, the survey only asked respondents 
-              whether they were male or female.",
-                     #A small number of respondents 
+              caption = paste0(
+              # "Note: Figures are based on the travel behavior of 
+              # residents age 5 or older of the CMAP seven county region (Cook, 
+              # DuPage, Kane, Kendall, Lake, McHenry, and Will), as well as Grundy 
+              # and DeKalb.
+              # Individuals were counted as 'traveling' if they had at least one 
+              # trip on their assigned travel day, no matter whether that trip was 
+              # in the CMAP region. 
+              # 'Latino' includes respondents who identified as Latino or Hispanic, 
+              # regardless of racial category. Other categories are non-Latino.
+              # For the categorization by sex, the survey only asked respondents 
+              # whether they were male or female.
+              # A small number of respondents 
               # chose not to answer, either because the available options were not 
               # sufficient or for some other reason. Due to low sample sizes and 
               # weighting concerns, average travel behavior statistics are 
               # unavailable for this population.
-              "<br><br>
+                "Note: Figures are based on the travel behavior of
+              residents age 5 or older of the CMAP seven county region, Grundy, 
+              and DeKalb.
+              Individuals were counted as 'traveling' if they had at least one 
+              trip on their assigned travel day, no matter whether that trip was 
+              in the CMAP region.
+              See 'About the data' for more information on race, ethnicity, and sex.
+              <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(distinct_residents_mdt),big.mark = ","),
                      " residents. 
@@ -750,7 +873,7 @@ finalize_plot(average_resident_p2,
               filename = "average_resident_p2",
               mode = c("png","pdf"),
               # sidebar_width = 3,
-              height = 6.75,
+              height = 5.25,
               overwrite = T)
 
 
@@ -801,6 +924,7 @@ average_resident_p3 <-
                               pattern_fill = "white",
                               pattern_angle = 45,
                               pattern_density = 0.125,
+                              pattern_size = 0.2,
                               pattern_spacing = 0.02,
                               # pattern_key_scale_factor = 0.6,
                               position = position_dodge2(reverse = T),
@@ -817,6 +941,7 @@ average_resident_p3 <-
              position = position_dodge2(width = .8,reverse = T),
              fill = "white",
              label.size = 0,label.padding = unit(1.5,"bigpts"),
+             label.r = grid::unit(0,"lines"),
              hjust = -.02) +
   
   # facet_wrap(~type,ncol = 3,scales = "free_y",dir = "v") +
@@ -857,7 +982,7 @@ finalize_plot(average_resident_p3,
               # that should be compared to the next-highest household income 
               # category (but cannot be due to available survey responses).
               # <br><br>
-              "Note: Includes trips by travelers age 5 and older who live in the 
+              "Note: Includes trips by residents age 5 and older of the
               CMAP seven county region, Grundy, and DeKalb. 
               Household incomes are not adjusted for 
               inflation, and so there may be some households from Travel Tracker 
@@ -937,6 +1062,7 @@ average_resident_p4 <-
              position = position_dodge2(width = .9,reverse = T),
              fill = "white",
              label.size = 0,
+             label.r = grid::unit(0,"lines"),
              # label.padding = unit(1.5,"bigpts"),
              vjust = -.02) +
   
@@ -958,14 +1084,17 @@ finalize_plot(average_resident_p4,
               "Residents with disabilities were less likely to travel than were
               others in the region.",
               caption = 
-              paste0("Note: Includes trips by travelers age 16 and older who live in the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb. 
-              These figures do not include residents younger than 16 because
-              they were not asked about their disability status.
-              Individuals were counted as 'traveling' if they had at least one 
-              trip on their assigned travel day, no matter whether that trip was 
-              in the CMAP region.
+              paste0(
+              # "Note: Includes trips by residents age 16 and older of the
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              # McHenry, and Will), as well as Grundy and DeKalb. 
+              # These figures do not include residents younger than 16 because
+              # they were not asked about their disability status.
+              # Individuals were counted as 'traveling' if they had at least one 
+              # trip on their assigned travel day, no matter whether that trip was 
+              # in the CMAP region.
+                "Note: Includes trips by residents age 16 and older of the
+              CMAP seven county region, Grundy, and DeKalb.
               <br><br>
               Sample size: 
               <br>- Without disability (",
@@ -980,6 +1109,6 @@ finalize_plot(average_resident_p4,
               # sidebar_width = 0,
               filename = "average_resident_p4",
               mode = c("png","pdf"),
-              # height = 6,
+              height = 3.25,
               overwrite = T)
 

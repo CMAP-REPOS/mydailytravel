@@ -291,6 +291,7 @@ mode_share_p1 <-
                               pattern_fill = "white",
                               pattern_angle = 45,
                               pattern_density = 0.125,
+                              pattern_size = 0.2,
                               pattern_spacing = 0.02,
                               # pattern_key_scale_factor = 0.6,
                               position = position_stack(reverse = T),
@@ -305,6 +306,7 @@ mode_share_p1 <-
   #                x = label, y = home_county_chi),
   #            label.size = 0,
   #            hjust = -.02,
+  #            label.r = grid::unit(0,"lines"),
   #            fill = "white") +
 
   # Add CMAP style
@@ -317,7 +319,8 @@ mode_share_p1 <-
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
                      labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
-                     limits = c(-1,.5)
+                     limits = c(-1,.5),
+                     expand = expansion(mult = c(.05,0))
                      ) +
 
   # Adjust legend for formatting
@@ -332,12 +335,16 @@ finalize_plot(mode_share_p1,
               title = "Residents of Chicago and Cook County had by far the highest non-car 
               mode share in the CMAP region.",
               caption = 
-              paste0("Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              paste0(
+              #   "Note: Includes trips by residents age 5 and older of the 
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              # McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              # trips that were within, to, and/or from one of those counties.
+              # Residents of Grundy and DeKalb counties are not shown but are 
+              # included in regional averages.
+              "Note: Includes trips by residents age 5 and older of the 
+              CMAP seven county region, Grundy, and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
-              Residents of Grundy and DeKalb counties are not shown but are 
-              included in regional averages.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(mode_share_base_mdt),big.mark = ","),
@@ -351,7 +358,7 @@ finalize_plot(mode_share_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "mode_share_p1",
-              height = 5,
+              height = 4,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -411,6 +418,7 @@ finalize_plot(mode_share_p1,
 #                  x = label, y = mileage_bin),
 #              label.size = 0,
 #              hjust = -.02,
+#              label.r = grid::unit(0,"lines"),
 #              fill = "white") +
 #   
 #   # Add CMAP style
@@ -527,6 +535,7 @@ mode_share_p2a <-
             color = "white") +
   geom_label(aes(label = scales::label_percent(accuracy = 1)(label),y = label),
              vjust = -.04,label.size = 0,
+             label.r = grid::unit(0,"lines"),
              fill = "white") +
   
   # Add CMAP style
@@ -579,12 +588,18 @@ finalize_plot(mode_share_p2a,
               title = "Travelers relied most on non-car modes for the shortest trips.",
               caption = 
                 paste0(
-              "<br>Note: Includes trips by residents age 5 and older of the
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake,
-              McHenry, and Will), as well as Grundy and DeKalb. Includes only
+              # "Note: Includes trips by residents age 5 and older of the
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake,
+              # McHenry, and Will), as well as Grundy and DeKalb. Includes only
+              # trips that were within, to, and/or from one of those counties.
+              # Distances are 'network distances' and
+              # capture the total distance traveled along the route, not just the
+              # distance from origin to destination. Unlabeled bars have less than
+              # five percent mode share.
+              "Note: Includes trips by residents age 5 and older of the
+              CMAP seven county region, Grundy, and DeKalb. Includes only
               trips that were within, to, and/or from one of those counties.
-              Distances are 'network distances' and
-              capture the total distance traveled along the route, not just the
+              Distances capture the total distance traveled along the route, not just the
               distance from origin to destination. Unlabeled bars have less than
               five percent mode share.
               <br><br>
@@ -601,7 +616,7 @@ finalize_plot(mode_share_p2a,
               Daily Travel data."),
               filename = "mode_share_p2a",
               # sidebar_width = 0,
-              height = 5.5,
+              height = 4.6,
               # width = 6,
               mode = c("png","pdf"),
               overwrite = T)
@@ -670,6 +685,7 @@ mode_share_p3 <-
                               pattern_fill = "white",
                               pattern_angle = 45,
                               pattern_density = 0.125,
+                              pattern_size = 0.2,
                               pattern_spacing = 0.02,
                               # pattern_key_scale_factor = 0.6,
                               position = position_stack(reverse = T),
@@ -683,6 +699,7 @@ mode_share_p3 <-
   # geom_label(aes(label = scales::label_percent(accuracy = 1)(label),
   #                x = label, y = race_eth),
   #            label.size = 0,
+  #            label.r = grid::unit(0,"lines"),
   #            hjust = -.02,
   #            fill = "white") +
   
@@ -696,7 +713,8 @@ mode_share_p3 <-
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
                      labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
-                     limits = c(-1,.5))+
+                     limits = c(-1,.5),
+                     expand = expansion(mult = c(.05,0)))+
   
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 7,
@@ -709,12 +727,18 @@ finalize_plot(mode_share_p3,
               title = "White residents of the region were the likeliest to rely 
               on personal automobiles for their transportation.",
               caption = 
-              paste0("Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
-              trips that were within, to, and/or from one of those counties.
-              'Latino' includes respondents who identified as 
-              Latino or Hispanic, regardless of racial category. Other categories are non-Latino. 
+              paste0(
+              # "Note: Includes trips by residents age 5 and older of the 
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              # McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              # trips that were within, to, and/or from one of those counties.
+              # 'Latino' includes respondents who identified as 
+              # Latino or Hispanic, regardless of racial category. Other categories 
+              # are non-Latino. 
+                "Note: Includes trips by residents age 5 and older of the 
+              CMAP seven county region, Grundy, and DeKalb. Includes only 
+              trips that were within, to, and/or from one of those counties. 
+              See 'About the data' for more information on race and ethnicity.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(mode_share_base_mdt),big.mark = ","),
@@ -728,7 +752,7 @@ finalize_plot(mode_share_p3,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "mode_share_p3",
-              height = 5.25,
+              height = 4.5,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -776,6 +800,7 @@ mode_share_p4 <-
                               pattern_fill = "white",
                               pattern_angle = 45,
                               pattern_density = 0.125,
+                              pattern_size = 0.2,
                               pattern_spacing = 0.02,
                               # pattern_key_scale_factor = 0.6,
                               position = position_stack(reverse = T),
@@ -789,6 +814,7 @@ mode_share_p4 <-
   # geom_label(aes(label = scales::label_percent(accuracy = 1)(label),
   #                x = label, y = hhinc_c),
   #            label.size = 0,
+  #            label.r = grid::unit(0,"lines"),
   #            hjust = -.02,
   #            fill = "white") +
   
@@ -802,7 +828,8 @@ mode_share_p4 <-
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
                      labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
-                     limits = c(-1,.5))+
+                     limits = c(-1,.5),
+                     expand = expansion(mult = c(.05,0)))+
   
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 7,
@@ -816,9 +843,13 @@ finalize_plot(mode_share_p4,
               reliant  on non-car modes, but the highest-income households also
               neared the regional average.",
               caption = 
-              paste0("Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              paste0(
+              # "Note: Includes trips by residents age 5 and older of the
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake,
+              # McHenry, and Will), as well as Grundy and DeKalb. Includes only
+              # trips that were within, to, and/or from one of those counties.
+                "Note: Includes trips by residents age 5 and older of the
+              CMAP seven county region, Grundy, and DeKalb. Includes only
               trips that were within, to, and/or from one of those counties.
               <br><br>
               Sample size: Figures are based on a total of ",
@@ -835,7 +866,7 @@ finalize_plot(mode_share_p4,
               Daily Travel data."),
               filename = "mode_share_p4",
               mode = c("png","pdf"),
-              height = 5,
+              height = 4.5,
               overwrite = T)
 
 ################################################################################
@@ -902,7 +933,8 @@ mode_share_p4a <-
   cmap_fill_discrete(palette = "friday") +
   
   # Adjust axis
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1))
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+                     expand = expansion(mult = c(.05,0)))
 
 mode_share_p4a_samplesize <-
   transit_chain_income_mdt %>% 
@@ -914,11 +946,15 @@ finalize_plot(mode_share_p4a,
               "Travelers from low-income households use transit for a much wider 
               range of trips than those from other households.",
               paste0(
+              #   "Note: Includes trips by residents age 5 and older of the 
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              # McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              # trips that were within, to, and/or from one of those counties. 
+              # Unlabeled bars have less than five percent mode share.
                 "Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              CMAP seven county region, Grundy, and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties. 
-              Unlabeled bars are less than 5%.
+              Unlabeled bars have less than five percent mode share.
               <br><br>
               Sample size:
               <br>- <$15K (",
@@ -943,7 +979,7 @@ finalize_plot(mode_share_p4a,
                 Source: Chicago Metropolitan Agency for Planning analysis of My 
                 Daily Travel data."),
               filename = "mode_share_p4a",
-              height = 5,
+              height = 4.5,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -993,6 +1029,7 @@ mode_share_p5 <-
                               pattern_fill = "white",
                               pattern_angle = 45,
                               pattern_density = 0.125,
+                              pattern_size = 0.2,
                               pattern_spacing = 0.02,
                               # pattern_key_scale_factor = 0.6,
                               position = position_stack(reverse = T),
@@ -1006,6 +1043,7 @@ mode_share_p5 <-
   # geom_label(aes(label = scales::label_percent(accuracy = 1)(label),
   #                x = label, y = age_bin),
   #            label.size = 0,
+  #            label.r = grid::unit(0,"lines"),
   #            hjust = -.02,
   #            fill = "white") +
 
@@ -1019,7 +1057,8 @@ mode_share_p5 <-
   # Adjust axis
   scale_x_continuous(breaks = seq(-1,.5,by = .25), 
                      labels = scales::label_percent()(abs(seq(-1,.5,by = .25))),
-                     limits = c(-1,.5))+
+                     limits = c(-1,.5),
+                     expand = expansion(mult = c(.05,0)))+
   
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 7,
@@ -1030,9 +1069,13 @@ mode_share_p5 <-
 finalize_plot(mode_share_p5,
               title = "Children and young adults relied more on non-car modes.",
               caption = 
-              paste0("Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              paste0(
+              # "Note: Includes trips by residents age 5 and older of the 
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              # McHenry, and Will), as well as Grundy and DeKalb. Includes only 
+              # trips that were within, to, and/or from one of those counties.
+                "Note: Includes trips by residents age 5 and older of the 
+              CMAP seven county region, Grundy, and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
               <br><br>
               Sample size: Figures are based on a total of ",
@@ -1042,12 +1085,12 @@ finalize_plot(mode_share_p5,
                      format(mode_age_mdt %>% 
                               filter(age_bin == "70 and above") %>% 
                               select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
-                     " records.
-              <br><br>
+                     " records. 
+              <br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "mode_share_p5",
-              height = 4.25,
+              height = 3.75,
               mode = c("png","pdf"),
               overwrite = T)
 

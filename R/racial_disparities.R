@@ -139,6 +139,7 @@ racial_disparities_p1 <-
   ggplot(aes(x = race_eth, y = travtime, fill = race_eth)) +
   geom_col() +
   geom_label(aes(label = scales::label_number(accuracy = 1)(travtime)),
+             label.r = grid::unit(0,"lines"),
              vjust = -.03, label.size = 0, fill = "white") +
   
   # Add CMAP style
@@ -149,7 +150,8 @@ racial_disparities_p1 <-
                  asian = "Asian", other = "Other") +
   
   # Adjust axes
-  scale_y_continuous(limits = c(0,46)) +
+  scale_y_continuous(limits = c(0,46),
+                     breaks = c(0,20,40)) +
   
   # Add faceting by trip purpose
   facet_wrap(~tpurp_disp,ncol = 1,scales = "free_x")
@@ -169,8 +171,7 @@ finalize_plot(racial_disparities_p1,
               # more than two and a half hours are excluded. 
               "Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region, Grundy, and DeKalb. 
-              'Latino' includes respondents who identified as Latino or Hispanic, 
-              regardless of racial category. Other categories are non-Latino.
+              See 'About the data' for more information on race and ethnicity.
               <br><br>
               Sample size (Black/Other/Latino/ Asian/White): 
               <br>- Work (",
@@ -243,6 +244,7 @@ finalize_plot(racial_disparities_p1,
               "Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "racial_disparities_p1",
-              # mode = c("png","pdf"),
+              height = 4.75,
+              mode = c("png","pdf"),
               # sidebar_width = 3,
               overwrite = T)

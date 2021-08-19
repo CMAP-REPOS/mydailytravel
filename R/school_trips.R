@@ -163,6 +163,7 @@ school_trips_p1 <-
   ggplot(aes(x = race_eth, y = stat, fill = race_eth)) +
   geom_col() +
   geom_label(aes(label = scales::label_number(accuracy = 1)(stat)),
+             label.r = grid::unit(0,"lines"),
              vjust = -.03, label.size = 0, fill = "white") +
   
   # # Facet for high school (archived)
@@ -194,14 +195,14 @@ finalize_plot(school_trips_p1,
               # Grundy and DeKalb. Excludes trips to non-school locations, trips
               # longer than two and a half hours, and any trips that did not start
               # or end between 7:00 A.M. and 9:00 A.M.
-              "Note: Includes school trips for travelers enrolled in K-8, at
-              least 5 years old, and residents of the CMAP seven county region,
-              Grundy, and DeKalb. Excludes trips to non-school locations, 
-              longer than two and a half hours, and that did not start
-              or end between 7:00 A.M. and 9:00 A.M.
-              <br><br>
-              'Latino' includes respondents who identified as Latino or Hispanic, 
-              regardless of racial category. Other categories are non-Latino.
+                # <br><br>
+                #   'Latino' includes respondents who identified as Latino or Hispanic, 
+                # regardless of racial category. Other categories are non-Latino.
+              "Note: Includes school trips for residents of the CMAP seven county region,
+              Grundy, and DeKalb who are enrolled in K-8 and age 5 or older. 
+              Excludes trips to non-school locations, longer than two and a half 
+              hours, and that did not start or end between 7:00am and 9:00am.
+              See 'About the data' for more information on race and ethnicity.
               <br><br>
               Sample size: 
               <br>- Black (",
@@ -223,7 +224,8 @@ finalize_plot(school_trips_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "school_trips_p1",
-              # mode = c("png","pdf"),
+              mode = c("png","pdf"),
+              height = 5,
               # sidebar_width = 2.5,
               overwrite = T)
 

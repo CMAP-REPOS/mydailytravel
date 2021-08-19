@@ -191,6 +191,7 @@ mode_analysis_p1 <-
              vjust = 0,
              label.size = 0,
              fill = "white",
+             label.r = grid::unit(0,"lines"),
              show.legend = FALSE) +
   
   # Adjust axis
