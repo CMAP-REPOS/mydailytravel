@@ -144,13 +144,13 @@ racial_disparities_p1 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "h", legend.position = "None",
-             ylab = "Mean travel times for various trip purposes (minutes)",
+             ylab = "Mean travel time (minutes)",
              strip.text = element_text(family = "Whitney Semibold",hjust = 0.5,vjust = 1)) +
   cmap_fill_race(white = "White", black = "Black", hispanic = "Latino", 
                  asian = "Asian", other = "Other") +
   
   # Adjust axes
-  scale_y_continuous(limits = c(0,46),
+  scale_y_continuous(limits = c(0,50),
                      breaks = c(0,20,40)) +
   
   # Add faceting by trip purpose
@@ -187,7 +187,7 @@ finalize_plot(racial_disparities_p1,
                        "/",
                        work_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "asian") %>% select(n) %>% as.numeric(),
-                       "/ ",
+                       "/",
                        work_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "white") %>% select(n) %>% as.numeric()),
                        "); 
@@ -230,7 +230,7 @@ finalize_plot(racial_disparities_p1,
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "asian",tpurp == "Shopped (routine like grocery, clothing)") %>% 
                          select(n) %>% as.numeric(),
-                       "/ ",
+                       "/",
                        other_time_race_mdt %>% ungroup() %>%  
                          filter(race_eth == "white",tpurp == "Shopped (routine like grocery, clothing)") %>% 
                          select(n) %>% as.numeric()),
@@ -244,7 +244,7 @@ finalize_plot(racial_disparities_p1,
               "Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "racial_disparities_p1",
-              height = 4.75,
+              height = 4.5,
               mode = c("png","pdf"),
               # sidebar_width = 3,
               overwrite = T)

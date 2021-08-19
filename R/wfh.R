@@ -408,7 +408,7 @@ wfh_p1 <-
              hjust = -0.02) +
   
   # Adjust axes
-  scale_x_continuous(limits = c(0,.21),
+  scale_x_continuous(limits = c(0,.23),
                      # limits = c(0,.26), 
                      labels = scales::label_percent(accuracy = 1),
                      expand = expansion(mult =)) +
@@ -510,8 +510,8 @@ finalize_plot(wfh_p1,
               # height = 4.5,
               # width = 8,
               # sidebar_width = 1.9,
-              # sidebar_width = 3,
-              height = 4.25,
+              # sidebar_width = 2,
+              height = 5.5,
               overwrite = T)
 
 # Identify sample sizes ("Other" race/eth has the lowest)
@@ -616,7 +616,7 @@ wfh_p2 <-
              position = position_dodge2(width= 0.9, reverse = T)) +
   
   # Adjust axis
-  scale_x_continuous(limits = c(0,56),
+  scale_x_continuous(limits = c(0,58),
                      expand = expansion(mult = c(0.05,0))) +
   
   # Add CMAP style
@@ -907,7 +907,7 @@ wfh_p4 <-
              hjust = -.02) +
   
   # Adjust axis
-  scale_x_continuous(limits = c(0,49),
+  scale_x_continuous(limits = c(0,51),
                      expand = expansion(mult = c(0.05,0))) +
   
   # Add CMAP style
@@ -987,7 +987,7 @@ finalize_plot(wfh_p4,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "wfh_p4",
-              height = 5,
+              height = 4.5,
               mode = c("png","pdf"),
               overwrite = T)
 

@@ -383,6 +383,7 @@ finalize_plot(tpurp_analysis_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               overwrite = T,
+              height = 4.75,
               mode = c("png","pdf"),
               filename = "tpurp_analysis_p2")
 

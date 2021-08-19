@@ -110,11 +110,22 @@ trip_times_chain_c_mdt <-
                  criteria = "chain_c",
                  weights = "weight")
 
-# Trips in motion by trip chain and mode category (25 minute rolling average)
-trip_times_mode_c_and_chain_c_mdt <-
-  tim_calculator(data = tim_wip_mdt,
-                 criteria = c("mode_c","chain_c"),
-                 weights = "weight")
+# Health trips
+tim_health_mdt <-
+  tim_wip_mdt %>% # 97224 records
+  # Filter to just the purpose in question
+  filter(tpurp == "Health care visit for self") # 1440 records
+
+# Bike trips
+tim_bike_mdt <-
+  tim_wip_mdt %>% # 97224 records
+  # Filter to just the purpose in question
+  filter(mode == "personal bike") %>% # 1513 records
+  # Recode chains to just be work and other
+  mutate(chain_c = recode_factor(chain_c,
+                                 "work" = "Work",
+                                 "shop" = "Other",
+                                 "other" = "Other")) 
 
 # Trips in motion by trip chain and purpose (25 minute rolling average)
 trip_times_tpurp_c_chain_c_mdt <-
@@ -162,7 +173,7 @@ trips_in_motion_p1 <-
   geom_area(aes(fill = mode_c), position = position_stack(reverse = TRUE)) +
   
   # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%l:%M%p", # Time without leading zero
+  scale_x_datetime(labels = scales::date_format("%l%p", # Time without leading zero
                                                 tz = "America/Chicago"),
                    breaks = tim_breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
@@ -175,8 +186,9 @@ trips_in_motion_p1 <-
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
              legend.max.columns = 7,
+             # axis.text = element_text(size = 11),
              xlab = "Time of day",
-             ylab = "Trips in motion on an average weekday by mode")
+             ylab = "Weekday trips in motion")
 
 finalize_plot(trips_in_motion_p1,
               "The morning and evening peaks in travel demand were very 
@@ -203,7 +215,7 @@ finalize_plot(trips_in_motion_p1,
               filename = "trips_in_motion_p1",
               mode = c("png","pdf"),
               # sidebar_width = 2.3,
-              height = 4.25,
+              height = 4.5,
               # width = 8,
               overwrite = TRUE
               )
@@ -265,7 +277,7 @@ trips_in_motion_p2 <-
   geom_line(aes(color = chain_c)) +
   
   # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%l:%M%p", # Time without leading zero
+  scale_x_datetime(labels = scales::date_format("%l%p", # Time without leading zero
                                                 tz = "America/Chicago"),
                    breaks = tim_breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
@@ -274,8 +286,9 @@ trips_in_motion_p2 <-
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray",),
              legend.max.columns = 7,
+             # axis.text = element_text(size = 11),
              xlab = "Time of day",
-             ylab = "Trips in motion on an average weekday by trip chain type") +
+             ylab = "Weekday trips in motion") +
   
   cmap_color_discrete(palette = "friday")
 
@@ -425,7 +438,7 @@ finalize_plot(trips_in_motion_p2a,
                                     peak == "Peak") %>% 
                              select(n) %>% 
                              as.numeric(),
-                           "/ ",
+                           "/",
                            trips_in_motion_p2a_samplesize %>% 
                              filter(chain_c == "Other", 
                                     peak == "Peak") %>% 
@@ -438,7 +451,7 @@ finalize_plot(trips_in_motion_p2a,
                                     peak == "Off-peak") %>% 
                              select(n) %>% 
                              as.numeric(),
-                            "/ ",
+                            "/",
                            trips_in_motion_p2a_samplesize %>% 
                              filter(chain_c == "Shopping", 
                                     peak == "Off-peak") %>% 
@@ -456,18 +469,13 @@ finalize_plot(trips_in_motion_p2a,
               Daily Travel trip diaries."),
               filename = "trips_in_motion_p2a",
               height = 4.5,
-              # sidebar_width = 2.7,
-              mode = c("png","pdf"),
+              sidebar_width = 2,
+              # mode = c("png","pdf"),
               overwrite = T)
 
 ################################################################################
 # Health
 ################################################################################
-
-tim_health_mdt <-
-  tim_wip_mdt %>% # 97224 records
-  # Filter to just the purpose in question
-  filter(tpurp == "Health care visit for self") # 1440 records
 
 trip_times_health_and_mode_mdt <-
   tim_calculator(data = tim_health_mdt,
@@ -499,7 +507,7 @@ trips_in_motion_p3 <-
   geom_area(aes(fill = mode_c),position = position_stack(reverse = T)) +
   
   # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%l:%M%p", # Time without leading zero
+  scale_x_datetime(labels = scales::date_format("%l%p", # Time without leading zero
                                                 tz = "America/Chicago"),
                    breaks = tim_breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
@@ -513,7 +521,7 @@ trips_in_motion_p3 <-
              panel.grid.major.x = element_line(color = "light gray"),
              legend.max.columns = 6,
              xlab = "Time of day",
-             ylab = "Trips in motion for personal health care on an average weekday")
+             ylab = "Weekday personal healthcare trips in motion")
 
 finalize_plot(trips_in_motion_p3,
               "Personal health care trips also have a morning and afternoon peak, but
@@ -548,28 +556,16 @@ finalize_plot(trips_in_motion_p3,
 # Bikes (personal)
 ################################################################################
 
-tim_bike_mdt <-
-  tim_wip_mdt %>% # 97224 records
-  # Filter to just the purpose in question
-  filter(mode == "personal bike") %>% # 1513 records
-  # Recode chains to just be work and other
-  mutate(chain = recode_factor(chain,
-                               "Work trip" = "Work trip",
-                               "Return home (work)" = "Work trip",
-                               "Shopping trip" = "Other trip",
-                               "Return home (shopping)" = "Other trip",
-                               "Other trip" = "Other trip")) 
-
-trip_times_bike_and_chain_mdt <-
+trip_times_bike_and_chain_c_mdt <-
   tim_calculator(data = tim_bike_mdt,
                  weights = "weight",
-                 criteria = "chain",
+                 criteria = "chain_c",
                  rolling_window = 85)
 
 # Graph output of trips in motion by purpose for bike trips (personal bike only)
 trips_in_motion_p4 <-
   # Get data
-  trip_times_bike_and_chain_mdt %>%
+  trip_times_bike_and_chain_c_mdt %>%
   # Sort chains for ordering
   # mutate(chain = factor(chain, levels = c("Work trip","Return home (work)",
   #                                         "Shopping trip",
@@ -578,14 +574,13 @@ trips_in_motion_p4 <-
   
   # Create ggplot object
   ggplot(aes(x = time_band,y = rolling_count)) +
-  geom_area(aes(fill = chain), position = position_stack(reverse = T)) +
+  geom_area(aes(fill = chain_c), position = position_stack(reverse = T)) +
   
   # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%l:%M%p", # Time without leading zero
+  scale_x_datetime(labels = scales::date_format("%l%p", # Time without leading zero
                                                 tz = "America/Chicago"),
                    breaks = tim_breaks) +
-  scale_y_continuous(label = scales::comma,breaks = c(0,3000,6000,9000,12000,15000),
-                     limits = c(0,15000),expand = expansion(mult = c(.05,.01))) +
+  scale_y_continuous(label = scales::comma) +
   
   # Add colors
   scale_fill_discrete(type = c("#72cae5","#3d6600")) +
@@ -597,7 +592,7 @@ trips_in_motion_p4 <-
   theme_cmap(gridlines = "hv",legend.max.columns = 3,
              panel.grid.major.x = element_line(color = "light gray"),
              xlab = "Time of day",
-             ylab = "Personal bike trips in motion on an average weekday")
+             ylab = "Weekday personal bike trips in motion")
 
 finalize_plot(trips_in_motion_p4,
               "Overall personal bike usage was highest during the AM peak, although work 
@@ -616,7 +611,7 @@ finalize_plot(trips_in_motion_p4,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries.",
               filename = "trips_in_motion_p4",
-              height = 3.5,
+              height = 4.5,
               mode = c("png","pdf"),
               overwrite = TRUE,
               # height = 2.25,

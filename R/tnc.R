@@ -269,7 +269,7 @@ tnc_p1 <-
                      ) +
   
   # Add CMAP themes
-  theme_cmap(gridlines = "v",
+  theme_cmap(gridlines = "v",vline = 0,
              xlab = "Work travel                              Non-work travel\nTypical reason for using a TNC") +
   scale_fill_manual(values = c("#8c0000","#efa7a7","#00093f","#006b8c"),
                     labels = c("Daytime (work)","Commute (whole or part)",
@@ -318,7 +318,7 @@ finalize_plot(tnc_p1,
               Source: Chicago Metropolitan Agency for Planning 
               Analysis of My Daily Travel data."),
               filename = "tnc_p1",
-              height = 4.25,
+              height = 4.5,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -409,7 +409,7 @@ tnc_p2 <-
   cmap_fill_highlight(home_usage$home_county_chi,"CMAP region") +
   
   # Adjust axes
-  scale_x_continuous(limits = c(0,.85),
+  scale_x_continuous(limits = c(0,.87),
                      expand = expansion(mult = c(0.05,0)))
 
 finalize_plot(tnc_p2,
@@ -456,7 +456,7 @@ finalize_plot(tnc_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "tnc_p2",
-              height = 4.5,
+              height = 5,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -527,7 +527,7 @@ tnc_p3 <-
   scale_x_continuous(expand = expansion(mult = c(0.05,0))) +
   
   # Add CMAP style
-  theme_cmap(gridlines = "v",hline = 0,legend.position = "none",
+  theme_cmap(gridlines = "v",vline = 0,legend.position = "none",
              panel.spacing.x = unit(30,"bigpts"),
              xlab = "TNC usage characteristics by age",
              strip.text = element_text(family = "Whitney Semibold",
@@ -576,7 +576,7 @@ finalize_plot(tnc_p3,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "tnc_p3",
-              height = 4,
+              height = 4.5,
               mode = c("png","pdf"),
               overwrite = T)
 
