@@ -378,11 +378,25 @@ wfh_p1 <-
   geom_col(width = .8) +
   # Add lines for average trips per day and average distance per trip
   geom_vline(data = tc_summaries_vlines,
-             mapping = aes(xintercept = value, 
-                           color = paste0("Dashed lines represent regional share (",
-                           round(100*value[1]),"%)")),
+             mapping = aes(xintercept = value), 
+                           # color = paste0("Dashed lines represent regional share (",
+                           # round(100*value[1]),"%)")),
              linetype = "dashed",
              size = .33
+  ) +
+  
+  # Add regional label
+  geom_label(data = tc_summaries_vlines %>% mutate(subtype = "Overall"),
+             mapping = aes(x = value * 1.02,
+                           label = paste0("Regional average (",
+                                          round(100*value),
+                                          "%)"),
+                           y = 15.5),
+           vjust = 0.5,
+           hjust = 0,
+           fill = "light gray",
+           label.size = 0,
+           label.r = grid::unit(0,"lines")
   ) +
   
   # Add labels
@@ -390,19 +404,28 @@ wfh_p1 <-
                  group = name),
              fill = "white",
              label.size = 0,label.padding = unit(1.5,"bigpts"),
+             label.r = grid::unit(0,"lines"),
              hjust = -0.02) +
   
   # Adjust axes
   scale_x_continuous(limits = c(0,.21),
                      # limits = c(0,.26), 
-                     labels = scales::label_percent(accuracy = 1)) +
+                     labels = scales::label_percent(accuracy = 1),
+                     expand = expansion(mult =)) +
+  scale_y_discrete(limits = c("Female","Male", 
+                              "",
+                              "70 and above","50 to 69","30 to 49","16 to 29",
+                              "",
+                              "$100K or more","$60K to $99K","$35K to $59K","Less than $35K",
+                              "",
+                              "Other","Latino","Black","Asian","White")) +
   
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
              xlab = "Share of residents who telecommute at least once a week",
              strip.text = element_text(hjust = 0.5,vjust = 1)) +
-  cmap_fill_discrete(palette = "legislation") +
-  scale_color_discrete(type = "#181f22") # +
+  cmap_fill_discrete(palette = "legislation") # +
+  # scale_color_discrete(type = "#181f22") # +
   
   # # Add faceting
   # facet_wrap(~type,ncol = 2,scales = "free_y")
@@ -430,12 +453,9 @@ finalize_plot(wfh_p1,
               # sufficient or for some other reason. Due to low sample sizes and
               # weighting concerns, average travel behavior statistics are
               # unavailable for this population.
-                "Note: Includes only employed residents age 16 and older from the CMAP seven 
-              county region, Grundy, and DeKalb.
-              'Latino' includes respondents who identified as Latino or Hispanic,
-              regardless of racial category. Other categories are non-Latino.
-              For the categorization by sex, the survey only asked respondents
-              whether they were male or female.
+                "Note: Includes only employed residents age 16 and older from 
+                the CMAP seven county region, Grundy, and DeKalb. See 'About the 
+                data' for more information on race, ethnicity, and sex.
               <br><br>",
               # Sample size:
               # <br>- <i>Age</i>: 16-29 (",
@@ -491,6 +511,7 @@ finalize_plot(wfh_p1,
               # width = 8,
               # sidebar_width = 1.9,
               # sidebar_width = 3,
+              height = 4.25,
               overwrite = T)
 
 # Identify sample sizes ("Other" race/eth has the lowest)
@@ -591,17 +612,19 @@ wfh_p2 <-
                  group = flag),
              hjust = -.02,
              label.size = 0,
+             label.r = grid::unit(0,"lines"),
              position = position_dodge2(width= 0.9, reverse = T)) +
   
   # Adjust axis
-  scale_x_continuous(limits = c(0,60)) +
+  scale_x_continuous(limits = c(0,56),
+                     expand = expansion(mult = c(0.05,0))) +
   
   # Add CMAP style
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
              legend.max.columns = 1,
              vline = 0,
-             ylab = "Home jurisdiction",
-             xlab = "Mean total miles traveled on work trips",
+             # ylab = "Home jurisdiction",
+             xlab = "Mean total miles traveled on work trips by home jurisdiction",
              # axis.title.x = element_text(hjust = 1)
              ) +
   cmap_fill_discrete(palette = "legislation")
@@ -727,14 +750,15 @@ wfh_p3 <-
             color = "white") +
   
   # Adjust axis
-  scale_x_continuous(labels = scales::label_percent(accuracy = 1)) +
+  scale_x_continuous(labels = scales::label_percent(accuracy = 1),
+                     expand = expansion(mult = c(0.05,0))) +
   
   # Add CMAP style
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
              legend.max.columns = 7,
              vline = 0,
-             ylab = "Telecommute status",
-             xlab = "Mode share for work trips by home location",
+             # ylab = "Telecommute status",
+             xlab = "Mode share for work trips by home location and telecommute status",
              axis.title.x = element_text(hjust = 0.5),
              strip.text = element_text(hjust = 0.5,vjust = 1,
                                        family = "Whitney Semibold")) +
@@ -764,13 +788,13 @@ finalize_plot(wfh_p3,
               # that included a work destination outside the home (both fixed and 
               # non-fixed). Excludes work trips for travelers that
               # telecommute 4+ days per week due to low sample sizes. 
-              # Unlabeled bars have less than 5% mode share.
+              # Unlabeled bars have less than five percent mode share.
                 "Note: Figures are for trips by employed residents age 16 and older from the 
               CMAP seven county region, Grundy, and DeKalb. Includes only 
               trips within, to, and/or from those counties. Mode share
               accounts for all work chain trips
               that included a non-home work destination. 
-              Unlabeled bars have less than 5% mode share.
+              Unlabeled bars have less than five percent mode share.
               <br><br>
               Sample size (Chicago/Suburban Cook/Collar and adjacent):
               <br>- 0 days/wk. (",
@@ -875,14 +899,16 @@ wfh_p4 <-
            position = position_dodge2(reverse = T,width = 0.9)) +
 
   # Add labels
-  geom_label(aes(label = scales::label_number(accuracy = .1)(distance_pg),
+  geom_label(aes(label = scales::label_number(accuracy = 1)(distance_pg),
                  group = flag),
              position = position_dodge2(reverse = T,width = 0.9),
              label.size = 0,
+             label.r = grid::unit(0,"lines"),
              hjust = -.02) +
   
   # Adjust axis
-  scale_x_continuous(limits = c(0,50)) +
+  scale_x_continuous(limits = c(0,49),
+                     expand = expansion(mult = c(0.05,0))) +
   
   # Add CMAP style
   theme_cmap(gridlines = "v",panel.spacing = unit(20,"bigpts"),
@@ -961,6 +987,7 @@ finalize_plot(wfh_p4,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "wfh_p4",
+              height = 5,
               mode = c("png","pdf"),
               overwrite = T)
 
