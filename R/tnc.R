@@ -1,5 +1,5 @@
 # This script analyzes TNC usage in MDT, using a combination of travel diary and
-# survey entries
+# survey entries. It is referenced in Policy Brief #4.
 
 #################################################
 #                                               #
@@ -11,7 +11,6 @@ library(tidyverse)
 library(cmapplot)
 library(ggpattern)
 library(lubridate)
-library(RSocrata)
 
 #################################################
 #                                               #
@@ -21,6 +20,7 @@ library(RSocrata)
 
 setwd("~/GitHub/mydailytravel")
 source("R/helper_fns.R")
+source("R/mdt_dates.R")
 source("R/data_cleaning.R")
 
 # Calculate the number of trips taken by travelers on active modes like transit,
@@ -32,7 +32,7 @@ active_travel <-
   # Exclude trips with no travel distance.
   filter(distance_pg > 0) %>%        # 97316
   # Group data by the traveler level
-  group_by(sampno,perno) %>%
+  group_by(sampno,perno) %>% # 24790
   # Create flags for transit, biking, walking, and tnc trips
   summarize(takes_transit = sum(mode_c == "transit",na.rm = TRUE),
             takes_bike = sum(mode_c == "bike",na.rm = TRUE),
@@ -66,43 +66,18 @@ tnc <-
   # Add 0s for people with no trips (who otherwise are NAs)
   mutate(across(starts_with("takes_"),~replace(.,is.na(.),0))) %>%
   # Create dummy variables for analysis
-  mutate(n = 1,
-         county = as.character(home_county),
-         white = case_when(
-           race_eth == "white" ~ 1,
-           TRUE ~ 0
-         ),
-         black = case_when(
-           race_eth == "black" ~ 1,
-           TRUE ~ 0
-         ),
-         asian = case_when(
-           race_eth == "asian" ~ 1,
-           TRUE ~ 0
-         ),
-         hispa = case_when(
-           race_eth == "latino" ~ 1,
-           TRUE ~ 0
-         ),
-         other = case_when(
-           race_eth == "other" ~ 1,
-           TRUE ~ 0
-         ),
-         high_income = case_when(
+  mutate(high_income = case_when(
            income_c %in% c("high","middle-high") ~ 1,
-           TRUE ~ 0
-         )) %>% 
+           TRUE ~ 0),
+         cook = case_when(
+           home_county == 31 ~ 1,
+           TRUE ~ 0)
+         ) %>% 
   mutate(age_bin = cut(age, breaks = age_breaks_tnc,
-                       labels = age_labels_tnc))
-
-# Reshape data to add flags for each county as individual columns
-tnc_wide <- tnc %>%
-  pivot_wider(
-    names_from = county,
-    id_cols = c(sampno:takes_active,white:age_bin),
-    values_from = n,
-    names_prefix = 'county_',
-    values_fill = list(n = 0))
+                       labels = age_labels_tnc),
+         race_eth = factor(race_eth,
+                           levels = c("other","white","asian",
+                                      "black","latino","missing")))
 
 #################################################
 #                                               #
@@ -117,7 +92,7 @@ tnc_wide <- tnc %>%
 # Run linear regression
 tnc_use_lm <-
   # Get data
-  tnc_wide %>%
+  tnc %>%
   # Filter out respondents who don't have an answer for...
     # TNC use
     filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
@@ -142,16 +117,12 @@ tnc_use_lm <-
        takes_transit + # How many times did they take transit on their travel day?
        takes_bike + # How many times did they bike on their travel day?
        takes_walk + # How many times did they walk on their travel day?
-       county_31 + # Is their home in Cook County?
+       cook + # Is their home in Cook County?
        high_income + # Is their household income above $60,000/year?
        hhveh + # How many household vehicles do they have?
        smrtphn + # Do they have a smartphone?
        pertrips + # How many trips did they take on their travel day?
-       # Are they: 
-       white + # White (non-Latino)?
-       black + # Black?
-       hispa + # Latino (of any race)?
-       asian, # Asian?
+       race_eth,
       .,
       # We use the weights to better represent the regional trends (vs. raw
       # responses)
@@ -243,7 +214,6 @@ tnc_p1 <-
                               pattern_angle = 45,
                               pattern_density = 0.125,
                               pattern_spacing = 0.02,
-                              # pattern_key_scale_factor = 0.6,
                               position = position_stack(reverse = T),
                               width = 0.8) +  
   # Re-assign patterns manually
@@ -251,19 +221,9 @@ tnc_p1 <-
                                   "0" = "none"),
                        guide = "none") +
   
-  # # Add labels
-  # geom_label(aes(label = scales::label_percent(accuracy = 1)(label),
-  #                x = label, y = race_eth),
-  #            label.size = 0,
-  #            hjust = -.02,
-  #            label.r = grid::unit(0,"lines"),
-  #            fill = "white") +
-  
-  
   # Adjust axis
   scale_x_continuous(breaks = seq(-.5,.75,by = .25), 
                      labels = scales::label_percent()(abs(seq(-.5,.75,by = .25))),
-                     # limits = c(-.5,.85)
                      limits = c(-.5,.75),
                      expand = expansion(mult = c(0.05,0))
                      ) +
@@ -352,19 +312,10 @@ write.csv(tnc_purpose_homeloc,"tnc_t1.csv")
 # Usage and cost
 ################################################################################
 
-
-# # Helper for month conversions (from weeks)
-# converter <- 
-#   (365/7) / # Number of weeks in a year
-#   12 # Divided by the number of months in a year
-
-# Placeholder for converter (if not going from weeks to something else)
-converter <- 1
-
 overall_usage <-
   tnc_wide %>%
   filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
-  summarize(tnc_use = converter*weighted.mean(tnc_use,weight, na.rm = TRUE),
+  summarize(tnc_use = weighted.mean(tnc_use,weight, na.rm = TRUE),
             n = n())
 
 overall_cost <-
@@ -385,7 +336,7 @@ home_usage <-
   # are included in regional averages.
   filter(home_county %in% cmap_seven_counties) %>%
   group_by(home_county_chi) %>%
-  summarize(tnc_use = converter*weighted.mean(tnc_use,weight, na.rm = TRUE),
+  summarize(tnc_use = weighted.mean(tnc_use,weight, na.rm = TRUE),
             n = n()) %>% 
   rbind(overall_usage %>% mutate(home_county_chi = "CMAP region"))
 
@@ -416,12 +367,6 @@ finalize_plot(tnc_p2,
               "Usage of Transportation Network Companies (TNCs) was greatest by 
               residents of Chicago and suburban Cook County.",
               paste0(
-              # "Note: These figures are based on survey responses and not 
-              # trip diaries. The CMAP region average includes usage by residents 
-              # of the seven county region (Cook, DuPage, 
-              # Kane, Kendall, Lake, McHenry, and Will), as well as residents of 
-              # Grundy and DeKalb. Excludes travelers age 18 and younger, who were 
-              # not asked about TNC usage. 
                 "Note: These figures are based on survey responses and not 
               trip diaries. 
               Excludes travelers age 18 and younger, who were 
@@ -456,7 +401,7 @@ finalize_plot(tnc_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "tnc_p2",
-              height = 5,
+              height = 4.8,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -470,7 +415,7 @@ age_usage <-
   filter(!(tnc_use %in% c(-9,-8,-7,-1)),
          !(is.na(age_bin))) %>%
   group_by(age_bin) %>%
-  summarize(tnc_use = converter*weighted.mean(tnc_use,weight, na.rm = TRUE),
+  summarize(tnc_use = weighted.mean(tnc_use,weight, na.rm = TRUE),
             n = n())
 
 # Cost by age
@@ -510,7 +455,8 @@ tnc_p3 <-
   )) %>% 
   
   # Create ggplot object
-  ggplot(aes(x = value, y = factor(age_bin,levels = rev(levels(age_bin))), fill = age_bin)) +
+  ggplot(aes(x = value, y = factor(age_bin,levels = rev(levels(age_bin))), 
+             fill = age_bin)) +
   geom_col() +
   geom_label(aes(label = ifelse(name == "Average weekly trips",
                                 scales::label_number(accuracy = 0.1)(value),
@@ -584,12 +530,10 @@ finalize_plot(tnc_p3,
 # Chicago TNC trips
 ################################################################################
 
-source("R/mdt_dates.R")
-
 # Load trip totals sourced from the following url:
 # https://data.cityofchicago.org/d/m6dm-c72p/visualization .The City of
-# Chicago's visualization tool allows total trips to be grouped by day. I
-# filtered data to the desired time period and copied and pasted the totals into
+# Chicago's visualization tool allows total trips to be grouped by day. Data
+# were filtered to the desired time period and copied and pasted the totals into
 # the CSV included in `source`. Note that these totals are from midnight to
 # midnight, and not from 3am to 3am, which could skew ridership down slightly
 # (since it does not include early morning trips on Saturdays before 3am, and
@@ -616,56 +560,5 @@ tnc_daily_totals %>%
 
 # The average of daily TNC rides in Chicago from November to May during the MDT
 # survey period was ~300,000 trips for non-holiday weekdays (and excluding the
-# weeks of holidays documented in `mdt_dates.R`.)
+# weeks of holidays documented in 'mdt_dates.R'.)
 
-
-# # Load TNC Trips during the My Daily Travel period (September 4, 2018 to May 9,
-# # 2019 - the dates begin and end at 3am Central Time). The City of Chicago only
-# # began releasing TNP data as of November 1, 2019, so the beginning date is
-# # coded as November 1st. NOTE: This will take a long time to download, even
-# # using these restricted dates. It will be archived because of long data
-# # processing times.
-# 
-# mdt_socrata_dates <-
-#   tibble(date =
-#            c(seq.Date(from = as.Date("2018-11-01"),
-#                         to = as.Date("2019-05-09"),
-#                         by = "1 day"))) %>%
-#   # Identify the day of the week of the trip using the `wday` function from the
-#   # lubridate package.
-#   mutate(wday = wday(date)) %>%
-#   # Keep out trips that are either Saturday (7) or Sunday (1)
-#   filter(!(wday %in% c(1,7))) %>%
-#   # Remove holidays (individually - note that %within% does not currently work
-#   # on a list of time intervals)
-#   filter(!(date %within% int_shift(mlk,duration(hours = -3)) |
-#              date %within% int_shift(pres,duration(hours = -3)) |
-#              date %within% int_shift(columbus,duration(hours = -3)) |
-#              date %within% int_shift(vets,duration(hours = -3)) |
-#              date %within% int_shift(xgiving,duration(hours = -3)) |
-#              date %within% int_shift(xmas,duration(hours = -3)) |
-#              date %within% int_shift(springb,duration(hours = -3)))) %>%
-#   mutate(next_day = date + 1) %>%
-#   mutate(socrata = paste0("'",date,"T03:00:00' and '",next_day,"T02:59:59'"))
-# 
-# actual_tnc_trips_1_to_40 <-
-#   map_dfr(mdt_socrata_dates$socrata[1:40],
-#           ~read.socrata(
-#             paste0("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between ",
-#                    .)))
-# 
-# actual_tnc_trips_41_to_80 <-
-#   map_dfr(mdt_socrata_dates$socrata[41:80],
-#           ~read.socrata(
-#             paste0("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between ",
-#                    .)))
-# 
-# actual_tnc_trips_81_to_116 <-
-#   map_dfr(mdt_socrata_dates$socrata[81:116],
-#           ~read.socrata(
-#             paste0("https://data.cityofchicago.org/resource/m6dm-c72p.json?$select= trip_start_timestamp, pickup_community_area,dropoff_community_area&$where= trip_start_timestamp between ",
-#                    .)))
-# 
-# write_csv(actual_tnc_trips_1_to_40,"outputs/mdt_tnc_1.csv")
-# write_csv(actual_tnc_trips_41_to_80,"outputs/mdt_tnc_2.csv")
-# write_csv(actual_tnc_trips_81_to_116,"outputs/mdt_tnc_3.csv")

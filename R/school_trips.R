@@ -1,4 +1,5 @@
-# This script produces analyses on school trips in the CMAP region.
+# This script produces analyses on school trips in the CMAP region. It is
+# referenced in Policy Brief #2.
 
 #################################################
 #                                               #
@@ -49,39 +50,6 @@ school_base_mdt <-
   # start time and/or an end time with 7 or 8 as their hour.)
   filter(lubridate::hour(arrtime_pg) %in% c(7,8) |  # 3531 records
            lubridate::hour(start_times_pg) %in% c(7,8)) %>%
-  
-  # # Exclude Kendall County (for validation purposes only - not run in published
-  # # graphics)
-  # filter(!(state_fips == 17 & county_fips == 93)) %>%
-  
-  # # Archived code to exclude high and low weight households, by zone. Note that
-  # # we explored this because of a sampling concern - there appears to be an
-  # # over-representation of weighted (and unweighted) school trips in Kendall
-  # # County, and an under-representation of trips in Cook County, which may be a
-  # # result of particular schools having high efficacy in recruiting their
-  # # students' households to participate in the MDT survey. There is archived
-  # # code below that allows the user to understand the distribution of these
-  # # school trips. Note that there are some ties in record weighting, so dropped
-  # # trips should be examined and treated with caution to ensure that changes are
-  # # not due to systematic sorting. The below code handles ties by excluding 
-  # # all tied values.
-  # ungroup() %>%
-  # group_by(cluster) %>%
-  # arrange(cluster,weight) %>%
-  # # Identify the ranked order of this record by weight
-  # mutate(rank = row_number()) %>%
-  # # Find the total number of records in the cluster
-  # mutate(max_rank = max(rank)) %>%
-  # # Divide the row's rank by the total
-  # mutate(pct_rank = rank / max_rank) %>%
-  # ungroup() %>% 
-  # # Since there are ties in weights, find the highest and lowest percent for a
-  # # given weight
-  # group_by(cluster,weight) %>% 
-  # mutate(max_wt_pct = max(pct_rank),
-  #        min_wt_pct = min(pct_rank)) %>% 
-  # filter(min_wt_pct >= 0.05,
-  #        max_wt_pct <= 0.95) %>%      # 3179 records
   ungroup()
 
 #################################################
@@ -117,17 +85,7 @@ school_time_race_person_level_mdt <-
 school_time_race_mdt <-
   school_time_race_person_level_mdt %>% # 3518
   filter(k12 != "High school") %>% # 2619
-  # # Archived code - enables taking a random subset
-  # sample_frac(.5) %>% 
   group_by(race_eth) %>% 
-  # # Commented code allows for faceting by home jurisdiction
-  # group_by(race_eth,home_county_chi) %>% 
-  # # Commented code allows for graphing of high school
-  # mutate(race_eth = case_when(
-  #   k12 == "High school" & race_eth != "white" ~ "Non-white",
-  #   TRUE ~ race_eth
-  # )) %>% 
-  # group_by(race_eth,k12) %>% 
   # Summarize travel time by race/ethnicity and school enrollment
   summarize(travtime25 = MetricsWeighted::weighted_quantile(x = travtime_pg_calc, probs = .25, w = weight),
             travtime50 = MetricsWeighted::weighted_median(x = travtime_pg_calc, w = weight),
@@ -166,12 +124,6 @@ school_trips_p1 <-
              label.r = grid::unit(0,"lines"),
              vjust = -.03, label.size = 0, fill = "white") +
   
-  # # Facet for high school (archived)
-  # facet_wrap(~k12,scales = "free_x") +
-  
-  # # Facet for geography
-  # facet_wrap(~home_county_chi, scales = "free_x") +
-  
   # Add CMAP style
   theme_cmap(gridlines = "h",legend.position = "None",
              ylab = "Mean travel time to school (minutes)") +
@@ -180,24 +132,13 @@ school_trips_p1 <-
                                "#e77272", # Asian
                                "#607b88", # Other
                                "#75a5d8"  # White
-                               # "#77008c", # Non-white (archived for high school)
                                )) 
-  # scale_y_continuous(limits = c(0,16))
 
 finalize_plot(school_trips_p1,
               "Black elementary and middle school students had longer trips to 
               school than those of other children.",
               caption = 
               paste0(
-              # "Note: Includes school trips for travelers enrolled in K-8, at
-              # least 5 years old, and residents of the CMAP seven county region
-              # (Cook, DuPage, Kane, Kendall, Lake, McHenry, and Will), as well as
-              # Grundy and DeKalb. Excludes trips to non-school locations, trips
-              # longer than two and a half hours, and any trips that did not start
-              # or end between 7:00 A.M. and 9:00 A.M.
-                # <br><br>
-                #   'Latino' includes respondents who identified as Latino or Hispanic, 
-                # regardless of racial category. Other categories are non-Latino.
               "Note: Includes school trips for residents of the CMAP seven county region,
               Grundy, and DeKalb who are enrolled in K-8 and age 5 or older. 
               Excludes trips to non-school locations, longer than two and a half 
@@ -225,8 +166,7 @@ finalize_plot(school_trips_p1,
               Daily Travel data."),
               filename = "school_trips_p1",
               mode = c("png","pdf"),
-              height = 5,
-              # sidebar_width = 2.5,
+              height = 4.9,
               overwrite = T)
 
 # Backup - differences over a month (for prose)
@@ -315,18 +255,6 @@ school_base_mdt_lm <-
          travtime_lm > 0,
          schol == 3) %>%
   mutate(
-    white = case_when(
-      race_eth == "white" ~ 1,
-      TRUE ~ 0),
-    black = case_when(
-      race_eth == "black" ~ 1,
-      TRUE ~0),
-    asian = case_when(
-      race_eth == "asian" ~ 1,
-      TRUE ~ 0),
-    latino = case_when(
-      race_eth == "latino" ~ 1,
-      TRUE ~ 0),
     high_inc = case_when(
       income_c == "high" | income_c == "middle-high" ~ 1,
       TRUE ~ 0),
@@ -347,11 +275,13 @@ school_base_mdt_lm <-
       TRUE ~ 0),
     chicago = case_when(
       home_county_chi == "Chicago" ~ 1,
-      TRUE ~ 0))
+      TRUE ~ 0)) %>% 
+  filter(race_eth != "missing") %>% 
+  mutate(race_eth = factor(race_eth,levels = c("other","white","black","asian","latino")))
 
 school_trips_regression <-
   lm(travtime_lm ~ 
-       white + black + asian + latino +
+       race_eth +
        high_inc +
        distance_pg + chicago + car_trip + school_bus + transit +
        walk + bike ,
@@ -359,8 +289,3 @@ school_trips_regression <-
      weights = weight)
 
 summary(school_trips_regression)
-
-# Box plot of trip times
-school_base_mdt_lm %>%
-  ggplot(aes(x = travtime_lm, y = race_eth)) +
-  geom_boxplot()

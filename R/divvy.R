@@ -1,6 +1,7 @@
 # This script downloads and analyzes Divvy ridership data from the same time
 # period as the My Daily Travel survey to produce a trips-in-motion chart for
-# Divvy trips over the course of an average weekday.
+# Divvy trips over the course of an average weekday. It is referenced in Policy
+# Brief #4.
 
 #################################################
 #                                               #
@@ -128,7 +129,6 @@ trip_times_divvy_counts <-
 # Define breaks
 divvy_breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 06:00:00"),
                      to = as.POSIXct("2020-01-02 03:00:00"),
-                     # by = "6 hours"
                      by = "3 hours"
                      )
 # Create chart
@@ -148,13 +148,11 @@ divvy_p1 <-
   scale_x_datetime(labels = scales::date_format("%l%p", # Time without leading zero
                                                 tz = "America/Chicago"),
                     breaks = divvy_breaks) +
-  # scale_y_continuous(limits = c(0,500),expand = expansion(mult = c(.05,.01))) +
 
   # Add CMAP style
   scale_fill_discrete(type = c("#475c66","#ac8c00")) +
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
-             # xlab = "Divvy trips"
              xlab = "Time of day",
              ylab = "Weekday Divvy trips in motion"
              )
@@ -176,14 +174,8 @@ finalize_plot(divvy_p1,
               Dec. 24, Dec. 31, and Apr. 15).",
               filename = "divvy_p1",
               height = 4.5,
-              # sidebar_width = 0,
-              # caption_align = 1,
               mode = c("png","pdf"),
-              # height = 2.25,
-              # width = 8,
-              # overrides = list(margin_plot_l = 30),
               overwrite = T)
-
 
 ################################################################################
 # Backup

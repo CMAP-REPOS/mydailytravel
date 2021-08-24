@@ -1,4 +1,5 @@
-# This script analyzes average travel behavior in MDT and TT
+# This script analyzes average travel behavior in My Daily Travel and Travel
+# Tracker. It is referenced in Policy Brief #2.
 
 #################################################
 #                                               #
@@ -209,7 +210,7 @@ total_traveler_universe_tt <-
 # ALL RESIDENTS
 # Find the number of residents (including ineligible travelers)
 distinct_residents_tt <-
-  avgtravel_all_respondents_tt %>% #22
+  avgtravel_all_respondents_tt %>%
   # Add age bins
   mutate(age_bin=cut(AGE,breaks=age_breaks_avg_res,labels=age_labels_avg_res)) %>%
   mutate(survey = "tt",
@@ -232,6 +233,7 @@ total_travel_universe <-
   rbind(total_traveler_universe_mdt,
         total_traveler_universe_tt)
 
+# Distinct residents from both surveys
 distinct_residents <-
   rbind(distinct_residents_mdt,
         distinct_residents_tt)
@@ -248,7 +250,7 @@ distinct_residents <-
 ################################################################################
 
 # NOTE: The primary distance variable in MDT was "network distance." The code
-# below uses the haversine distance to enable comparability wiht TT. If you want
+# below uses the haversine distance to enable comparability with TT. If you want
 # to just look at total distance traveled, that will require changing the calls
 # to distance variables to use the dist variants and modifying the exclusion of
 # nonzero distance trips above.
@@ -535,10 +537,6 @@ average_resident_p1 <-
                                          hjust = 0.5,vjust = 1),
              strip.text.y = element_blank()) +
   cmap_fill_discrete(palette = "legislation") +
-  # scale_color_discrete(type = "black") +
-  
-  # # Reorder legends
-  # guides(color = guide_legend(order = 2),fill = guide_legend(order = 1))  +
   
   # Add regional labels
   geom_label(data = regional_averages %>%
@@ -551,60 +549,17 @@ average_resident_p1 <-
              label.size = 0,
              label.r = grid::unit(0,"lines"),
              fill = "light gray"
-             #  x = -0.001 + (regional_averages %>% 
-             #                filter(name == "Trips/day") %>% 
-             #                select(value) %>% 
-             #                as.numeric()),
-             # y = 20,
-             # label = paste0("Regional average (",
-             #                round(100*(regional_averages %>% 
-             #                             filter(name == "Trips/day") %>% 
-             #                             select(value) %>% 
-             #                             as.numeric())),
-             #                "%)"),
-             # vjust = 0.5,
-             # hjust = 1,
-             # fill = "white",
-             # label.size = 0
   ) +
+  
   facet_grid(~name,
              scales = "free"
   )
-
-  # # Add faceting
-  # facet_grid(factor(type,
-  #                   levels = c("Race and ethnicity","Household income",
-  #                              "Age","Sex"))~name,
-  #            # ncol = 3,
-  #            scales = "free",
-  #            )
 
 # Export finalized graphic
 finalize_plot(average_resident_p1,
               "Average travel patterns vary significantly based on demographic
               characteristics.",
               caption = paste0(
-              # "Note: Figures are calculated based only on individuals
-              # who traveled and thus exclude individuals with zero trips.
-              # Non-travelers are disproportionately low-income, non-white,
-              # between 18 and 29 or older than 70 years old, and/or have a disability.
-              # <br><br>
-              # Includes trips by travelers age 5 and older who live in the
-              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake,
-              # McHenry, and Will), as well as Grundy and DeKalb.
-              # For comparability with Travel Tracker survey results,
-              # only includes trips within that region and between that region and
-              # the Indiana counties of Lake, LaPorte, and Porter.
-              # Distances are calculated as point-to-point ('haversine') and do
-              # not account for additional distance traveled along the route.
-              # 'Latino' includes respondents who identified as Latino or Hispanic,
-              # regardless of racial category. Other categories are non-Latino.
-              # For the categorization by sex, the survey only asked respondents
-              # whether they were male or female. A small number of respondents
-              # chose not to answer, either because the available options were not
-              # sufficient or for some other reason. Due to low sample sizes and
-              # weighting concerns, average travel behavior statistics are
-              # unavailable for this population.
               "Note: Figures are calculated based only on individuals
               who traveled and thus exclude individuals with zero trips.
               Includes trips by travelers age 5 and older who live in the
@@ -633,7 +588,6 @@ finalize_plot(average_resident_p1,
               sidebar_width = 1.75,
               mode = c("png","pdf"),
               height = 6.5,
-              # height = 5.35,
               overwrite = T)
 
 
@@ -738,22 +692,6 @@ finalize_plot(average_resident_p2,
               "Lower-income, non-White, and older residents were the least 
               likely to travel on a weekday.",
               caption = paste0(
-              # "Note: Figures are based on the travel behavior of 
-              # residents age 5 or older of the CMAP seven county region (Cook, 
-              # DuPage, Kane, Kendall, Lake, McHenry, and Will), as well as Grundy 
-              # and DeKalb.
-              # Individuals were counted as 'traveling' if they had at least one 
-              # trip on their assigned travel day, no matter whether that trip was 
-              # in the CMAP region. 
-              # 'Latino' includes respondents who identified as Latino or Hispanic, 
-              # regardless of racial category. Other categories are non-Latino.
-              # For the categorization by sex, the survey only asked respondents 
-              # whether they were male or female.
-              # A small number of respondents 
-              # chose not to answer, either because the available options were not 
-              # sufficient or for some other reason. Due to low sample sizes and 
-              # weighting concerns, average travel behavior statistics are 
-              # unavailable for this population.
                 "Note: Figures are based on the travel behavior of
               residents age 5 or older of the CMAP seven county region, Grundy, 
               and DeKalb.
@@ -769,14 +707,13 @@ finalize_plot(average_resident_p2,
               ethnicity have the lowest sample size, with ",
                      (distinct_residents_mdt %>% 
                         count(race_eth) %>% 
-                        filter(race_eth == "other"))$n," individual residents.
+                        filter(race_eth == "other"))$n,
+                        " individual residents.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
               filename = "average_resident_p2",
               mode = c("png","pdf"),
-              # sidebar_width = 3,
-              # height = 5.25,
               overwrite = T)
 
 
@@ -827,7 +764,6 @@ average_resident_p3 <-
                               pattern_density = 0.125,
                               pattern_size = 0.2,
                               pattern_spacing = 0.02,
-                              # pattern_key_scale_factor = 0.6,
                               position = position_dodge2(reverse = T),
                               width = 0.8) +  
   
@@ -865,18 +801,6 @@ finalize_plot(average_resident_p3,
               travelers reported more travel in 2019 than in 2008.",
               caption = 
               paste0(
-              #   "Note: Includes trips by travelers age 5 and older who live in the 
-              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              # McHenry, and Will), as well as Grundy and (for My Daily Travel 
-              # only) DeKalb. Only includes trips within that region and between 
-              # that region and the Indiana counties of Lake, LaPorte, and Porter. 
-              # Distances are calculated as point-to-point ('haversine') and do 
-              # not account for additional distance traveled along the route. 
-              # Household incomes are not adjusted for 
-              # inflation, and so there may be some households from Travel Tracker 
-              # that should be compared to the next-highest household income 
-              # category (but cannot be due to available survey responses).
-              # <br><br>
               "Note: Includes trips by residents age 5 and older of the
               CMAP seven county region, Grundy, and DeKalb. 
               Household incomes are not adjusted for 
@@ -902,7 +826,6 @@ finalize_plot(average_resident_p3,
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel and Travel Tracker data."),
               filename = "average_resident_p3",
-              # sidebar_width = 3,
               mode = c("png","pdf"),
               height = 5,
               overwrite = T)
@@ -956,12 +879,10 @@ average_resident_p4 <-
              fill = "white",
              label.size = 0,
              label.r = grid::unit(0,"lines"),
-             # label.padding = unit(1.5,"bigpts"),
              vjust = -.02) +
   
   # Adjust scale
   scale_y_continuous(limits = c(0,0.21),
-                     # limits = c(0,.23),
                      labels = scales::label_percent(accuracy = 1),
                      breaks = c(0,.05,.1,.15,.2)) +
   
@@ -978,14 +899,6 @@ finalize_plot(average_resident_p4,
               others in the region.",
               caption = 
               paste0(
-              # "Note: Includes trips by residents age 16 and older of the
-              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              # McHenry, and Will), as well as Grundy and DeKalb. 
-              # These figures do not include residents younger than 16 because
-              # they were not asked about their disability status.
-              # Individuals were counted as 'traveling' if they had at least one 
-              # trip on their assigned travel day, no matter whether that trip was 
-              # in the CMAP region.
                 "Note: Includes trips by residents age 16 and older of the
               CMAP seven county region, Grundy, and DeKalb.
               <br><br>
@@ -999,9 +912,7 @@ finalize_plot(average_resident_p4,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              # sidebar_width = 0,
               filename = "average_resident_p4",
               mode = c("png","pdf"),
               height = 4,
               overwrite = T)
-

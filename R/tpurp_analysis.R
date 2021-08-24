@@ -1,5 +1,6 @@
 # This script produces charts and graphs to better understand the modes used to
-# travel for specific purposes (e.g., how do people get to healthcare).
+# travel for specific purposes (e.g., how do people get to healthcare). It is
+# referenced in Policy Brief #1.
 
 #################################################
 #                                               #
@@ -168,13 +169,6 @@ finalize_plot(tpurp_analysis_p1,
               Chicago residents.",
               caption = 
               paste0(
-              # "Note: Includes trips made by residents age 5 or older of the 
-              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              # McHenry, and Will), as well as Grundy and DeKalb.
-              # 'By car' includes trips as either a driver of a passenger of a personal 
-              # vehicle (not including services like taxis or TNCs). 'Other modes' 
-              # includes all other modes, including paratransit, private shuttles, 
-              # and bicycles. Unlabeled bars have less than five percent mode share.
                 "Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region, Grundy, and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
@@ -202,9 +196,6 @@ finalize_plot(tpurp_analysis_p1,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data. "),
-              # width = 8,
-              # height = 4.5,
-              # sidebar_width = 2.6,
               filename = "tpurp_analysis_p1",
               mode = c("png","pdf"),
               height = 5,
@@ -341,12 +332,6 @@ finalize_plot(tpurp_analysis_p2,
               "Walking and other non-car modes were significantly more common for 
               trips to socialize with friends than with relatives.",
               paste0(
-              # "Note: Includes trips made by residents age 5 or older of the 
-              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              # McHenry, and Will), as well as Grundy and DeKalb. 
-              # 'By car' includes trips as either a driver of a passenger
-              # of a personal vehicle (not including services like taxis or TNCs).
-              # Unlabeled bars have less than five percent mode share.
                 "Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region, Grundy, and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.

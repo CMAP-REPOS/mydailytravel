@@ -44,27 +44,3 @@ number_of_weekdays <-
   5 - # for Thanksgiving week
   10 - # for Christmas/New Year's weeks
   5   # for Spring Break week
-
-
-####### ARCHIVE OF ALL 2019 HOLIDAYS
-
-# mlk <-      interval(ymd_hms("2019-01-21 03:00:00",tz = "America/Chicago"),
-#                      ymd_hms("2019-01-22 02:59:59",tz = "America/Chicago"))
-# pres <-     interval(ymd_hms("2019-02-18 03:00:00",tz = "America/Chicago"),
-#                      ymd_hms("2019-02-19 02:59:59",tz = "America/Chicago"))
-# memorial <- interval(ymd_hms("2019-05-27 03:00:00",tz = "America/Chicago"),
-#                      ymd_hms("2019-05-28 02:59:59",tz = "America/Chicago"))
-# july4 <-    interval(ymd_hms("2019-07-04 03:00:00",tz = "America/Chicago"),
-#                      ymd_hms("2019-07-05 02:59:59",tz = "America/Chicago"))
-# labor <-    interval(ymd_hms("2019-09-02 03:00:00",tz = "America/Chicago"),
-#                      ymd_hms("2019-09-03 02:59:59",tz = "America/Chicago"))
-# columbus <- interval(ymd_hms("2019-10-14 03:00:00",tz = "America/Chicago"),
-#                      ymd_hms("2019-10-15 02:59:59",tz = "America/Chicago"))
-# vets <-     interval(ymd_hms("2019-11-11 03:00:00",tz = "America/Chicago"),
-#                      ymd_hms("2019-11-12 02:59:59",tz = "America/Chicago"))
-# xgiving <-  interval(ymd_hms("2019-11-28 03:00:00",tz = "America/Chicago"),
-#                      ymd_hms("2019-11-29 02:59:59",tz = "America/Chicago"))
-# blackfri <- interval(ymd_hms("2019-11-29 03:00:00",tz = "America/Chicago"),
-#                      ymd_hms("2019-11-30 02:59:59",tz = "America/Chicago"))
-# xmas <-     interval(ymd_hms("2019-12-25 03:00:00",tz = "America/Chicago"),
-#                      ymd_hms("2019-12-26 02:59:59",tz = "America/Chicago"))

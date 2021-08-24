@@ -1,5 +1,5 @@
 # This script produces analyses on racial disparities in trip times in the CMAP
-# region.
+# region. It is referenced in Policy Brief #2.
 
 #################################################
 #                                               #
@@ -163,12 +163,6 @@ finalize_plot(racial_disparities_p1,
               other residents.",
               caption = 
               paste0(
-              # "Note: Includes trips by residents age 5 and older of the 
-              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              # McHenry, and Will), as well as Grundy and DeKalb. Includes only 
-              # trips that were within, to, and/or from one of those counties. 
-              # In all categories, trips with no travel time and those lasting 
-              # more than two and a half hours are excluded. 
               "Note: Includes trips by residents age 5 and older of the 
               CMAP seven county region, Grundy, and DeKalb. 
               See 'About the data' for more information on race and ethnicity.
@@ -236,15 +230,12 @@ finalize_plot(racial_disparities_p1,
                          select(n) %>% as.numeric()),
                      ").
               <br><br>",
-              # Although sample sizes for 'Other' and 'Asian' health care trips 
-              # are lower than desired, the estimates are similar for both
-              # weighted and unweighted totals and are consistent with broader 
-              # trends.
-              # <br><br>
-              "Source: Chicago Metropolitan Agency for Planning analysis of My
+              "Although sample sizes for 'Other' and 'Asian' health trips are 
+              low, the estimates are similar for weighted and unweighted totals.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "racial_disparities_p1",
-              height = 4.5,
+              height = 5,
               mode = c("png","pdf"),
-              # sidebar_width = 3,
               overwrite = T)

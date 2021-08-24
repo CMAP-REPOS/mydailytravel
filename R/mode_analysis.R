@@ -1,5 +1,5 @@
 # This script produces analyses and charts on the trip purposes of trips made by
-# specific modes, e.g., ridesharing.
+# specific modes, e.g., ridesharing. It is referenced in Policy Brief #4.
 
 #################################################
 #                                               #
@@ -91,62 +91,23 @@ mode_analysis_base_tt <-
 # survey predates the widespread adoption of those services. We thus use taxis
 # as the closest proxy for comparison.
 
-## Create totals for trips by purpose category (within universe of rideshare
-## trips)
+# Extract 2008 total for taxis as a baseline
+all_taxi_tt <- 
+  mode_analysis_base_tt %>% 
+  filter(mode == "taxi") %>% 
+  summarize(n = n(),
+            n_wt = sum(weight))
 
-### Calculate proportions for TT
-all_tnc_tpurp_c_tt <-
-  pct_calculator(mode_analysis_base_tt,
-                 subset = "taxi",
-                 subset_of = "mode",
-                 breakdown_by = "tpurp_c",
-                 weight = "weight",
-                 survey = "tt")
-
-### Calculate proportions for MDT
-all_tnc_tpurp_c_mdt <-
-  pct_calculator(mode_analysis_base_mdt %>% mutate(mode = recode_factor(mode,
-                                                          "rideshare" = "TNC",
-                                                          "shared rideshare" = "TNC")),
-                 subset = c("TNC","taxi"),
-                 subset_of = "mode",
-                 breakdown_by = "tpurp_c",
-                 weight = "weight",
-                 survey = "mdt")
-
-### Join MDT and TT
-total_tnc_tpurp_c <-
-  rbind(all_tnc_tpurp_c_tt,
-        all_tnc_tpurp_c_mdt) %>%
-  # Add mode flag to differentiate TT (taxi) from MDT (taxi + TNCs)
-  mutate(mode = case_when(
-    survey == "mdt" ~ "tnc (all)",
-    TRUE ~ "taxi"))
-
-
-### Calculate proportions for subcategories for rideshare in MDT (using the
-### "second_breakdown" argument of pct_calculator)
-detailed_tnc_tpurp_c_mdt <-
-  pct_calculator(mode_analysis_base_mdt %>%
-                   mutate(mode = recode_factor(mode,
-                                               "rideshare" = "TNC",
-                                               "shared rideshare" = "TNC")) %>% 
-                   # Collapse low-percentage modes into "all other" for chart
-                   mutate(tpurp_c =
-                            fct_collapse(tpurp_c,
-                                         "all other" = c("health","recreation/fitness",
-                                                         "school","transport",
-                                                         "transfer","other"))),
-                 subset = c("TNC","taxi"),
-                 subset_of = "mode",
-                 breakdown_by = "tpurp_c",
-                 second_breakdown = "mode",
-                 weight = "weight",
-                 survey = "mdt")
-
-all_tnc_tpurp_c <-
-  rbind(total_tnc_tpurp_c,
-        detailed_tnc_tpurp_c_mdt)
+### Calculate ridership for MDT
+all_tnc_taxi_mdt <-
+  mode_analysis_base_mdt %>% 
+  mutate(mode = recode_factor(mode,
+                              "rideshare" = "TNC",
+                              "shared rideshare" = "TNC")) %>% 
+  filter(mode %in% c("TNC","taxi")) %>% 
+  group_by(mode) %>% 
+  summarize(n = n(),
+            n_wt = sum(weight))
 
 ################################################################################
 # Chart of total TNC/taxi trips, MDT vs. TT
@@ -159,20 +120,12 @@ all_tnc_tpurp_c <-
 # regional trends.Thus, we use these figures to calculate the percentage
 # changes, rather than absolute figures.
 
-# Extract 2008 total for taxis as a baseline
-taxi_total_tt <- unique(all_tnc_tpurp_c_tt$total)
-
 # Create chart. 
 mode_analysis_p1 <-
   # Get data
-  all_tnc_tpurp_c %>%
-  # Exclude the 2008 taxi levels and the 2019 totals
-  filter(survey == "mdt",
-         mode != "tnc (all)") %>%
-  # Group into mode and survey categories to enable summaries (instead of by
-  # trip purpose category)
-  group_by(survey,mode) %>%
-  summarize(total = sum(breakdown_total)/taxi_total_tt) %>%
+  all_tnc_taxi_mdt %>%
+  # Summarize as a share of 2008 taxi ridership
+  mutate(total = n_wt/all_taxi_tt$n_wt) %>%
   
   # Add factor levels and format for chart ordering
   mutate(mode = recode_factor(factor(mode),
@@ -182,8 +135,7 @@ mode_analysis_p1 <-
   # Create ggplot object
   ggplot(aes(x = mode, y = total)) +
   
-  
-  geom_hline(yintercept = c(2,3),size = 0.3) +
+  geom_hline(yintercept = c(2,3),size = 0.25) +
   geom_col(aes(fill = mode)) +
   # Add labels above the bars
   geom_label(aes(label = scales::label_percent(accuracy = 1)(total)),
@@ -215,10 +167,11 @@ mode_analysis_p1 <-
   scale_fill_discrete(type = c("#3f0030","#36d8ca"))
 
 mode_analysis_p1_samplesize <-
-  all_tnc_tpurp_c %>% 
-  select(mode,survey,n = total_n) %>% 
-  ungroup() %>% 
-  distinct()
+  all_taxi_tt %>% 
+  mutate(survey = "tt",
+         mode = "taxi") %>% 
+  rbind(all_tnc_taxi_mdt %>% mutate(survey = "mdt")) %>% 
+  select(mode,survey,n)
 
 # Export finalized graphic
 finalize_plot(mode_analysis_p1,
@@ -226,20 +179,6 @@ finalize_plot(mode_analysis_p1,
               Transportation Network Company (TNC) trips more than made up the
               difference.",
               paste0(
-              # "Note: Includes trips by residents age 5 and older of the CMAP seven 
-              # county region (Cook, DuPage, Kane, Kendall, Lake, McHenry, and 
-              # Will), as well as Grundy and DeKalb. Includes only 
-              # trips that were within, to, and/or from one of those counties.
-              # 'TNC' includes trips reported as either 'rideshare'or 'shared 
-              # rideshare.' 
-              # <br><br> 
-              # The reported regional totals for both taxi and TNC trips in My
-              # Daily Travel are less than 
-              # those captured in the City of Chicago's data on TNC and taxi trips, 
-              # even though the My Daily Travel survey covers a larger universe 
-              # of trips (including trips in the region that do not start or end 
-              # in Chicago). This may be due to the exclusion of non-resident 
-              # trips and/or other survey design factors.
                 "Note: Includes 'rideshare' and 'shared rideshare' trips by residents 
                 age 5 and older of the CMAP seven county region, Grundy, and DeKalb. 
                 The reported regional totals for both taxi and TNC trips in My
@@ -262,10 +201,7 @@ finalize_plot(mode_analysis_p1,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel and Travel Tracker data."),
               filename = "mode_analysis_p1",
-              # sidebar_width = 3.25,
               mode = c("png","pdf"),
-              # height = 6.3,
-              # width = 11.3,
               overwrite = T)
 
 ################################################################################
@@ -323,3 +259,5 @@ detailed_bike_tpurp_c_mdt <-
                  # third_breakdown = "geog",
                  weight = "weight",
                  survey = "mdt")
+
+detailed_bike_tpurp_c_mdt
