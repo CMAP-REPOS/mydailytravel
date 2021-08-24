@@ -308,7 +308,7 @@ mode_share_p1 <-
 
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0,
-             xlab = "Driving                                Alternatives to Driving\nMode share by home jurisdiction") +
+             xlab = "Driving                                Alternatives to driving\nMode share by home jurisdiction") +
   # Add colors
   scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
                     labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
@@ -553,7 +553,7 @@ mode_share_p3 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,
-             xlab = "Driving                                Alternatives to Driving\nMode share by race and ethnicity") +
+             xlab = "Driving                                Alternatives to driving\nMode share by race and ethnicity") +
   # Add colors
   scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
                     labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
@@ -668,7 +668,7 @@ mode_share_p4 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,
-             xlab = "Driving                                Alternatives to Driving\nMode share by household income") +
+             xlab = "Driving                                Alternatives to driving\nMode share by household income") +
   # Add colors
   scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
                     labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
@@ -778,7 +778,7 @@ mode_share_p5 <-
   # Add CMAP theme
   theme_cmap(xlab = "Share of transit trips by household income and trip chain purpose",
              gridlines = "v") +
-  cmap_fill_discrete(palette = "friday") +
+  scale_fill_manual(values = c("#00093f","#475c66","#ac8c00")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),
@@ -820,14 +820,14 @@ finalize_plot(mode_share_p5,
               <br>- $100-149K (",
                 mode_share_p5_samplesize %>% filter(hhinc_c == "$100K to $149K") %>% select(n),
                 ")
-              <br>- >$150K (",
+              <br>- >=$150K (",
                 mode_share_p5_samplesize %>% filter(hhinc_c == "$150K or more") %>% select(n),
                 ")
                 <br><br>
                 Source: Chicago Metropolitan Agency for Planning analysis of My 
                 Daily Travel data."),
               filename = "mode_share_p5",
-              height = 5,
+              height = 4.8,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -897,7 +897,7 @@ mode_share_p6 <-
 
   # Add CMAP style
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,
-             xlab = "Driving                                Alternatives to Driving\nMode share by age") +
+             xlab = "Driving                                Alternatives to driving\nMode share by age") +
   # Add colors
   scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
                     labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +

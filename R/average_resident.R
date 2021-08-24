@@ -712,7 +712,8 @@ average_resident_p2 <-
   scale_x_continuous(limits = c(0,.18),
                      labels = scales::label_percent(accuracy = 1),
                      breaks = c(0,.05,.1,.15,.2),
-                     expand = expansion(mult = c(0.05,0))) +
+                     expand = expansion(mult = c(0.05,0))
+                     ) +
   scale_y_discrete(limits = c("Female","Male", 
                               "",
                               "70 and above","50 to 69","30 to 49","18 to 29","5 to 17",
@@ -729,12 +730,6 @@ average_resident_p2 <-
   cmap_fill_discrete(palette = "legislation") +
   scale_color_discrete(type = "black") +
 
-  # # Add faceting
-  # facet_wrap(~factor(type, 
-  #                    levels = c("Race and ethnicity","Household income","Age","Sex")),
-  #            ncol = 1,
-  #            scale = "free_y") +
-  
   # Reorder legends
   guides(color = guide_legend(order = 2),fill = guide_legend(order = 1))
 
@@ -802,10 +797,8 @@ average_resident_p3 <-
   travel_summaries %>%
   # Keep only total distances
   filter(name == "distance_per_capita") %>% 
-  # Keep overall, sex, age, and income
-  filter(type %in% c("Household income"#,
-                     # "Age"
-                     )) %>% 
+  # Keep only income
+  filter(type %in% c("Household income")) %>% 
   # Identify entries where MDT has a higher value than TT
   mutate(helper = ifelse(survey == "mdt", value,-1*value)) %>% 
   group_by(# type,
@@ -844,7 +837,7 @@ average_resident_p3 <-
                        guide = "none") +
   
   # Add labels
-  geom_label(aes(label = scales::label_number(accuracy = 0.1)(value),
+  geom_label(aes(label = scales::label_number(accuracy = 1)(value),
                  group = survey),
              position = position_dodge2(width = .8,reverse = T),
              fill = "white",
@@ -852,31 +845,24 @@ average_resident_p3 <-
              label.r = grid::unit(0,"lines"),
              hjust = -.02) +
   
-  # facet_wrap(~type,ncol = 3,scales = "free_y",dir = "v") +
-  
   # Adjust axes
-  scale_x_continuous(limits = c(0,25)) +
+  scale_x_continuous(limits = c(0,25),
+                     expand = expansion(mult = c(.05,0))
+                     ) +
   
   # Add CMAP theme
   theme_cmap(gridlines = "v",vline = 0,
              xlab = "Distance per day for residents who traveled (miles)",
              ylab = "Household income"
-             # strip.text = element_text(family = "Whitney Semibold",
-                                       # hjust = 0.5,vjust = 1)
              ) +
   cmap_fill_discrete(palette = "friday",reverse = T) +
   
   guides(fill = guide_legend(override.aes = list(pattern = "none")))
-  
-  # Adjust legend for formatting
-  # guides(pattern = guide_legend(order = 2,override.aes = list(fill = "white", color = "black")),
-         # fill = guide_legend(order = 1,override.aes = list(pattern = "none")))
 
 # Export finalized graphic
 finalize_plot(average_resident_p3,
               "In contrast to the overall regional decline, lower-income 
-              travelers and older travelers reported similar or greater travel in
-              2019 than in 2008.",
+              travelers reported more travel in 2019 than in 2008.",
               caption = 
               paste0(
               #   "Note: Includes trips by travelers age 5 and older who live in the 
@@ -902,11 +888,11 @@ finalize_plot(average_resident_p3,
                      format(nrow(distinct_daily_travelers_mdt),big.mark = ","),
                      " travelers for My Daily Travel and ",
                      format(nrow(distinct_daily_travelers_tt),big.mark = ","),
-                     " for Travel Tracker. Travelers age 70 and above in My Daily Travel 
-              have the lowest sample size, with ",
+                     " for Travel Tracker. Travelers with $35-59K in household 
+                     income in My Daily Travel have the lowest sample size, with ",
                      format(
                        distinct_daily_travelers %>% 
-                         filter(age_bin == "70 and above", survey == "mdt") %>% 
+                         filter(income_c == "middle-low", survey == "mdt") %>% 
                          count() %>% 
                          select(n) %>% 
                          as.numeric(),
@@ -918,13 +904,11 @@ finalize_plot(average_resident_p3,
               filename = "average_resident_p3",
               # sidebar_width = 3,
               mode = c("png","pdf"),
-              # height = 5.75,
+              height = 5,
               overwrite = T)
 
-# Identify sample sizes - 70 and above from MDT has the lowest
-distinct_daily_travelers %>% count(survey,age_bin)
-distinct_daily_travelers %>% count(survey,income_c)
-distinct_daily_travelers %>% count(survey,sex)
+# Identify sample sizes - $35-59K from MDT has the lowest
+distinct_daily_travelers %>% count(survey,income_c) %>% arrange(n)
 
 
 ################################################################################
