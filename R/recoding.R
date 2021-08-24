@@ -1,10 +1,8 @@
 # This file provides the recoding scheme for modes, trip purpose, income levels,
 # trip chains, and race and ethnicity for both My Daily Travel and Travel
-# Tracker. It is run as part of the call to data_cleaning.R. Any modifications
+# Tracker. It is run as part of the call to 'data_cleaning.R'. Any modifications
 # made to this scheme will propagate to all analyses that rely on
-# data_cleaning.R.
-
-
+# 'data_cleaning.R'.
 
 #################################################
 #                                               #
@@ -59,8 +57,8 @@ recode_mode_detailed_tt <-
     "12" = "taxi",
     "15" = "transit (many)",
     "97" = "other"
-    # Note the following codes are excluded because they did not appear in the
-    # data file (for CMAP trips)
+    # # Note the following codes are excluded because they did not appear in the
+    # # data file (for CMAP trips)
     # ,"14" = "local transit",
     # "98" = "missing",
     # "99" = "missing"
@@ -86,7 +84,7 @@ recode_mode_buckets_tt <-
     walk = "walk",
     bike = "bike",
     transit = c("CTA bus", "CTA train", "Pace", "Metra",
-                # Local transit is excluded because it did not appear in CMAP trips
+                # # Local transit is excluded because it was for non-CMAP areas
                 # "local transit",
                 "transit (many)"),
     driver = "personal auto (driver)",
@@ -94,7 +92,7 @@ recode_mode_buckets_tt <-
     schoolbus = "school bus",
     other = c("private shuttle", "paratransit",
               "taxi", "other")
-    # Similarly, "missing" does not appear in CMAP trips.
+    # # Similarly, "missing" does not appear in CMAP trips.
     # , missing = "missing"
     )
 
@@ -292,7 +290,9 @@ recode_income_detailed_mdt <-
     "-8" = "don't know",
     "-7" = "prefer not to answer")
 
-# These lists allow income codes to be recategorized into larger groups
+# These lists allow income codes to be recategorized into larger groups. Note
+# that dollars are in nominal amounts, meaning that direct comparisons between
+# surveys are not comparing the same real dollar values.
 recode_income_buckets_tt <-
   list(low = c("less than $20,000", "$20,000 to $34,999"),
        `middle-low` = c("$35,000 to $49,999", "$50,000 to $59,999"),

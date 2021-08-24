@@ -1,3 +1,11 @@
+# This file includes helper functions used in other scripts in this repo.
+
+#################################################
+#                                               #
+#                 Load libraries                #
+#                                               #
+#################################################
+
 library(tidyverse)
 library(lubridate)
 library(slider)
@@ -168,7 +176,7 @@ pct_calculator <- function(data,
 #           window, in minutes. Defaults to 25 minutes. The rolling average is
 #           calculated as a straddling rolling average, with the interval plus a
 #           symmetric window on either side. rolling_window should be a whole 
-#           number and a multiple of interval by an odd number.
+#           number and a multiple of 'interval' by an odd number.
 ################################################################################
 # Outputs: This function calculates the rolling average of trips in motion
 #          within a specified set of categories (e.g., by mode) over the course

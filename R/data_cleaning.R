@@ -8,7 +8,7 @@
 # start nor end in Cook, Kane, Kendall, McHenry, Lake, DuPage, Will, DeKalb, or
 # Grundy County are excluded. Trips greater than 100 miles are also excluded.
 # Mode, purpose, income, and race and ethnicity are added and recoded, using
-# lists and vectors from recoding.R where relevant.
+# lists and vectors from 'recoding.R' where relevant.
 #
 # - tt: this table represents the trips taken in the TT survey, with added
 # characteristics about the person, household, and location of the trip. Trips
@@ -16,12 +16,12 @@
 # that had two weekday trip diaries. Trips that neither start nor end in Cook,
 # Kane, Kendall, McHenry, Lake, DuPage, Will, DeKalb, or Grundy County are
 # excluded. Trips greater than 100 miles are also excluded. Mode, purpose, and
-# income are added and recoded, using lists and vectors from recoding.R where
+# income are added and recoded, using lists and vectors from 'recoding.R' where
 # relevant.
 #
 # - mdt_all_respondents and tt_all_respondents: these tables includes person and
 # household information for all respondents in the survey, whether or not they
-# traveled, with income recoded using the definitions from recoding.R.
+# traveled, with income recoded using the definitions from 'recoding.R'.
 
 
 
@@ -55,18 +55,22 @@ library(sf)
 setwd("~/GitHub/mydailytravel")
 source("R/recoding.R")
 
-# # Load My Daily Travel (download from internet)
+# # Load My Daily Travel (directly download from internet)
 # mdt_zip <- tempfile()
 # download.file("https://datahub.cmap.illinois.gov/dataset/02a047a1-e7b8-4ca7-b754-54f2b9bfeab6/resource/c9e82b87-0b4c-45ea-9c06-9cdebdb7071f/download/MyDailyTravelData.zip",mdt_zip,quiet = T)
 
-# Load My Daily Travel (from source)
+# Load My Daily Travel (download and place into source folder)
 mdt_zip <- "./source/MyDailyTravelData.zip"
 
-# Load final weights (from source, provided by RAP)
-mdt_weights <- read.csv("source/Final_MyDailyTravel_weights.csv")
+# Unzip My Daily Travel data
+unzip(mdt_zip,exdir = "./source/MDT",overwrite = T)
 
-# trips
-trips <- read.csv(unzip(mdt_zip,files = "place.csv")) %>%
+# Load final weights (from source, provided by RAP)
+mdt_weights <- read_csv("./source/Final_MyDailyTravel_weights.csv",
+                        show_col_types = FALSE)
+
+# Trips
+trips <- read.csv("./source/MDT/place.csv") %>%
   select(sampno, perno, locno, placeno, # Identifiers for the household (sampno),
                      # the person (perno), the destination of the trip (locno),
                      # and the order in which that place was visited in the
@@ -93,11 +97,11 @@ trips <- read.csv(unzip(mdt_zip,files = "place.csv")) %>%
 
          distance,   # The network distance of the trip.
          hdist       # The haversine distance of the trip (used for comparisons
-                     # with Travel Tracker)
+                     # with Travel Tracker).
          )
 
 # person info
-ppl <- read.csv(unzip(mdt_zip,files = "person.csv")) %>%
+ppl <- read.csv("./source/MDT/person.csv") %>%
   select(sampno, perno, # Identifiers for household (sampno) and person (perno)
 
          age,        # The age (in years) of the respondent.
@@ -135,35 +139,30 @@ ppl <- read.csv(unzip(mdt_zip,files = "person.csv")) %>%
          tnc_cost,   # How much do those trips usually cost?
          tnc_purp,   # For what type of trip do you use the service most?
          
-         
          orig_weight = wtperfin    # The original weight for the respondent.
          ) %>% 
   # Add revised weights
   left_join(mdt_weights, by = c("sampno","perno")) %>% rename(weight = wtperfin)
 
-veh <- read.csv(unzip(mdt_zip,files = "vehicle.csv")) %>% 
-  select(sampno,     # Household and vehicle identifiers
-         vehno,      
-         
-         fuel,       # Fuel type of vehicle
-         
-         parkd       # Location of vehicle parking
-         )
-
 # household info
-hh <- read.csv(unzip(mdt_zip,files = "household.csv")) %>%
+hh <- read.csv("./source/MDT/household.csv") %>%
   select(sampno,     # Identifier for the household.
+         
          hhinc,      # Household income (in dollars).
+         
          hhsize,     # Household size.
+         
          hhveh,      # Number of vehicles in the household.
-         wthhfin,    # Household weight (note this is the same as wtperfin)
+         
+         wthhfin,    # Household weight (note this is the same as wtperfin).
+         
          travday     # The day of the week for the household's travel diary.
   )
 
 # location file w/region flag
-location_raw <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
+location_raw <- read.csv("./source/MDT/location.csv") %>%
   select(sampno,locno, # Identifier for the household (sampno) and location
-                     # (locno)
+                     # (locno).
 
          loctype,    # The type of location (e.g., home, work, school).
 
@@ -172,36 +171,39 @@ location_raw <- read.csv(unzip(mdt_zip,files = "location.csv")) %>%
                      # and DeKalb Counties, Illinois).
 
          state_fips,county_fips,tract_fips, # The state, tract, and county FIPS
-                     # codes for the location
+                     # codes for the location.
 
          home,       # Whether the location is a designated home location.
 
          latitude, longitude # The lat/long coordinates of the place (which are 
-                     # anonymized as the centroids of the tract containing the
-                     # place).
+                     # typically anonymized as the centroids of the tract
+                     # containing the place).
   )
 
-file.remove("place.csv","person.csv","household.csv","location.csv","vehicle.csv")
-rm(mdt_zip,mdt_weights)
+# Remove references to zip file and weights
+rm(mdt_zip, mdt_weights)
 
 # Travel zones (provided by CMAP RAP staff).
-zones <- read_csv("source/zones.csv") %>%
+zones <- read_csv("source/zones.csv",show_col_types = FALSE) %>%
   select(sampno,     # The household identifier.
+         
          cluster)    # Designates the household's inclusion in one of 11 travel
                      # zones, used for weighting the overall survey.
 
 
 # Municipalities of location IDs (provided by CMAP RAP staff).
-munis <- read_csv("source/loc_city.csv") %>%
+munis <- read_csv("source/loc_city.csv",show_col_types = FALSE) %>%
   select(sampno,     # The household identifier
+         
          locno,      # The location identifier (unique with HH identifier)
+         
          city)       # The municipality of the location (if in an incorporated area)
 
 # Trip chains (provided by CMAP RAP staff). Chains represent continuous journeys
 # that may have more than one destination along a larger circuit (i.e., a
 # commute to work with a stop at a coffee shop in the morning, lunch at mid-day,
 # and a visit to the grocery store in the evening).
-chains <- read_csv("source/chains.csv") %>% 
+chains <- read_csv("source/chains.csv",show_col_types = FALSE) %>% 
   select(sampno,       # The household identifier
          perno,        # The person identifier
          placeno,      # The place number
@@ -222,7 +224,7 @@ chains <- read_csv("source/chains.csv") %>%
 location <- 
   location_raw %>% 
   # Add travel zones - note these correspond to the home location of the
-  # household, and not the location
+  # household, and not the location of travel
   left_join(zones, by = "sampno") %>% 
   # Add municipality names
   left_join(munis, by = c("sampno","locno")) %>% 
@@ -289,18 +291,18 @@ home <- home_wip %>%
   mutate(
     # Make everyone's home state Illinois.
     home_state = 17,
-    # Replace multi-county home households with 999
+    # Replace the multi-county home household with 999
     home_county = case_when(
       # The household with a home in Chicago and Suburban Cook
       sampno %in% two_homes ~ 999,
       # Otherwise, keep as before
       TRUE ~ as.double(home_county)),
-    # Replace multi-county home households with 999999 for the tract.
+    # Replace the multi-county home household with 999999 for the tract.
     home_tract = case_when(
       sampno %in% two_homes ~ 999999,
       TRUE ~ as.double(home_tract)
     )) %>%
-  # Select distinct rows to eliminate double counting of two-home households.
+  # Select distinct rows to eliminate double counting of the two-home household.
   distinct(sampno,home_county,.keep_all = TRUE) %>%
   # Create flag for home county with Chicago and suburban Cook
   mutate(home_county_chi = case_when(
@@ -434,13 +436,14 @@ mdt_wip2 <- mdt_wip1 %>%
     start_times_pg < ymd_hms("2017-01-01 00:00:00") ~ 0,
     # If the trip start time is after the arrival time, use original figure
     arrtime_pg < start_times_pg ~ travtime_pg,
-    # Otherwise, calculate travel time based on trip start time and trip arrival time
+    # Otherwise, calculate travel time based on trip start time and trip arrival
+    # time
     TRUE ~ as.numeric((arrtime_pg - start_times_pg)/60))) %>%
   # Remove unneeded variables
   select(-c(out_region_lag,outside_tt,outside_tt_lag))
 
-# # Confirm that trip times are being correctly assigned out of placeGroups, using
-# # hard-coded values from a trip that we examined in the data
+# # Confirm that trip times are being correctly assigned out of placeGroups, 
+# # using hard-coded values from a trip that we examined in the data
 # pg_validator <- 
 #   tibble(
 #     sampno = 20001516,
@@ -540,21 +543,25 @@ tt_ppl <- sqlFetch(con,"per_public") %>%
          AGE,        # Age (in years). 99 is "Don't know/refused."
          AGEB,       # Range of ages (for those who did not provide an age).
          
-         GEND,       # Gender (1 is Male, 2 is Female, 9 is Refused)
+         GEND,       # Gender (1 is Male, 2 is Female, 9 is Refused).
 
          SCHOL,      # Status of school enrollment.
          SMODE,      # Mode regularly used to get to school.
          
-         DISAB,      # Does this person have a disability? 1 is Yes, 2 is No
+         DISAB,      # Does this person have a disability? 1 is Yes, 2 is No.
          
-         EMPLY,      # Is this person employed? 1 is full-time, 2 is part-time
+         EMPLY,      # Is this person employed? 1 is full-time, 2 is part-time.
          WLOC,       # Work location?
          JOBS,       # How many jobs?
-         TELEW,      # Telecommute to work (only for respondents who work outside the home)
-         WHOME,      # How often does the respondent telecommute? 1 is almost every day, 2 is once a week or more
+         TELEW,      # Telecommute to work (only for respondents who work 
+                     # outside the home).
+         WHOME,      # How often does the respondent telecommute? 1 is almost 
+                     # every day, 2 is once a week or more.
          
-         RACE,       # The race of the respondent (note - only asked for head of household)
-         HISP,       # The Hispanic status of the respondent (note - only asked for head of household)
+         RACE,       # The race of the respondent (note - only asked for head of 
+                     # household).
+         HISP,       # The Hispanic status of the respondent (note - only asked 
+                     # for head of household).
 
          WGTP        # The weight for the respondent.
   )
@@ -633,9 +640,9 @@ tt_location <-
   mutate(county_chi_name = case_when(
     municipality == "Chicago" & FIPS == 17031  ~ "Chicago",
     FIPS == 17031 ~ "Suburban Cook",
+    FIPS == 17043 ~ "DuPage",
     FIPS == 17063 ~ "Grundy",
     FIPS == 17097 ~ "Lake",
-    FIPS == 17043 ~ "DuPage",
     FIPS == 17089 ~ "Kane",
     FIPS == 17093 ~ "Kendall",
     FIPS == 17111 ~ "McHenry",
