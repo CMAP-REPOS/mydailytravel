@@ -84,7 +84,7 @@ pct_calculator(tpurp_analysis_base_mdt,
   group_by(by_car,tpurp) %>% 
   summarize(pct = sum(pct)) %>% 
   filter(by_car == "Not by car") %>% 
-  arrange(-pct) %>% View()
+  arrange(-pct) # %>% View()
 
 ################################################################################
 # Table of all trips by mode
@@ -129,8 +129,8 @@ tpurp_analysis_p1 <-
                                 "passenger" = "By car",
                                 "transit" = "Transit",
                                 "walk" = "Walking",
-                                "other" = "Other modes",
-                                "bike" = "Other modes")) %>%
+                                "other" = "All other modes",
+                                "bike" = "All other modes")) %>%
   # Calculate new values based on collapsed groups
   group_by(mode_c,tpurp,geog) %>%
   summarize(pct = sum(pct)) %>%
@@ -150,7 +150,8 @@ tpurp_analysis_p1 <-
   scale_fill_discrete(type = c("#00665c","#6d8692","#36d8ca","#006b8c")) +
   
   # Adjust axis
-  scale_x_continuous(labels = scales::label_percent())
+  scale_x_continuous(labels = scales::label_percent(),
+                     expand = expansion(mult = c(.05,0)))
 
 # Find sample sizes
 tpurp_analysis_p1_samplesize <-
@@ -167,13 +168,20 @@ finalize_plot(tpurp_analysis_p1,
               Chicago residents.",
               caption = 
               paste0(
-              "Note: Includes trips made by residents age 5 or older of the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb.
+              # "Note: Includes trips made by residents age 5 or older of the 
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              # McHenry, and Will), as well as Grundy and DeKalb.
+              # 'By car' includes trips as either a driver of a passenger of a personal 
+              # vehicle (not including services like taxis or TNCs). 'Other modes' 
+              # includes all other modes, including paratransit, private shuttles, 
+              # and bicycles. Unlabeled bars have less than five percent mode share.
+                "Note: Includes trips by residents age 5 and older of the 
+              CMAP seven county region, Grundy, and DeKalb. Includes only 
+              trips that were within, to, and/or from one of those counties.
               'By car' includes trips as either a driver of a passenger of a personal 
-              vehicle (not including services like taxis or TNCs). 'Other modes' 
-              includes all other modes, including paratransit, private shuttles, 
-              and bicycles. Unlabeled bars have less than five percent mode share.
+              vehicle (not including services like taxis or TNCs). Unlabeled bars 
+              have less than five 
+              percent mode share.
               <br><br>
               Sample size:
               <br>- Chicago (",
@@ -199,6 +207,7 @@ finalize_plot(tpurp_analysis_p1,
               # sidebar_width = 2.6,
               filename = "tpurp_analysis_p1",
               mode = c("png","pdf"),
+              height = 5,
               overwrite = TRUE)
 
 
@@ -291,8 +300,8 @@ tpurp_analysis_p2 <-
                                 "passenger" = "By car",
                                 "walk" = "Walking",
                                 "transit" = "Transit",
-                                "other" = "Other modes",
-                                "bike" = "Other modes")) %>%
+                                "other" = "All other modes",
+                                "bike" = "All other modes")) %>%
   # Calculate new totals
   group_by(mode_c,tpurp,geog) %>%
   summarize(pct = sum(pct)) %>%
@@ -313,7 +322,8 @@ tpurp_analysis_p2 <-
   scale_fill_discrete(type = c("#00665c","#36d8ca","#6d8692","#006b8c")) +
   
   # Adjust axis
-  scale_x_continuous(labels = scales::label_percent()) +
+  scale_x_continuous(labels = scales::label_percent(),
+                     expand = expansion(mult = c(.05,0))) +
   
   # Add faceting
   facet_wrap(~geog,ncol = 1)
@@ -331,11 +341,18 @@ finalize_plot(tpurp_analysis_p2,
               "Walking and other non-car modes were significantly more common for 
               trips to socialize with friends than with relatives.",
               paste0(
-              "Note: Includes trips made by residents age 5 or older of the 
-              CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
-              McHenry, and Will), as well as Grundy and DeKalb. 
+              # "Note: Includes trips made by residents age 5 or older of the 
+              # CMAP seven county region (Cook, DuPage, Kane, Kendall, Lake, 
+              # McHenry, and Will), as well as Grundy and DeKalb. 
+              # 'By car' includes trips as either a driver of a passenger
+              # of a personal vehicle (not including services like taxis or TNCs).
+              # Unlabeled bars have less than five percent mode share.
+                "Note: Includes trips by residents age 5 and older of the 
+              CMAP seven county region, Grundy, and DeKalb. Includes only 
+              trips that were within, to, and/or from one of those counties.
               'By car' includes trips as either a driver of a passenger
               of a personal vehicle (not including services like taxis or TNCs).
+              Unlabeled bars have less than five percent mode share.
               <br><br>
               Sample size (Chicago/Suburban Cook/Collar and adjacent): 
               <br>- Friends (",
@@ -366,6 +383,7 @@ finalize_plot(tpurp_analysis_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               overwrite = T,
+              height = 4.75,
               mode = c("png","pdf"),
               filename = "tpurp_analysis_p2")
 
