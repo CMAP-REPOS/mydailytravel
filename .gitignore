@@ -65,3 +65,11 @@ wfh_t1.csv
 tnc_t1.csv
 mode_share_t1.csv
 R/archive_divvy.R
+source/MDT/data_dictionary.xlsx
+source/MDT/gps_day.csv
+source/MDT/gps_place.csv
+source/MDT/household.csv
+source/MDT/location.csv
+source/MDT/person.csv
+source/MDT/place.csv
+source/MDT/place_transit.csv
