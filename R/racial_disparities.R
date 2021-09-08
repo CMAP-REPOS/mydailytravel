@@ -237,5 +237,6 @@ finalize_plot(racial_disparities_p1,
               Daily Travel data."),
               filename = "racial_disparities_p1",
               height = 5,
+              sidebar_width = 2.5,
               mode = c("png","pdf"),
               overwrite = T)
