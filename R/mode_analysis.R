@@ -164,7 +164,7 @@ mode_analysis_p1 <-
              gridlines = "none",
              ylab = "2019 ridership as a share of 2008 taxi ridership") +
   # Manually include CMAP colors
-  scale_fill_discrete(type = c("#3f0030","#36d8ca"))
+  scale_fill_discrete(type = c("#D8BA37","#2C2B7F"))
 
 mode_analysis_p1_samplesize <-
   all_taxi_tt %>% 

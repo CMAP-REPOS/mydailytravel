@@ -176,8 +176,8 @@ trips_in_motion_p1 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
   
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
-                               "#efa7a7","#3d6600","#0084ac")) +
+  scale_fill_discrete(type = c("#2C2B7F","#38B2D8","#D8BA37","#43B649",
+                               "#D93636","#7451A1","#D88134")) +
   
   # Add CMAP style
   theme_cmap(gridlines = "hv",
@@ -235,8 +235,8 @@ trip_times_mode_c_mdt %>%
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 10) +
   
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
-                               "#efa7a7","#3d6600","#0084ac")) +
+  scale_fill_discrete(type = c("#2C2B7F","#38B2D8","#D8BA37","#43B649",
+                               "#D93636","#7451A1","#D88134")) +
   
   # Add faceting 
   facet_wrap(~mode_c,ncol = 2,scales = "free_y") +
@@ -277,7 +277,8 @@ trips_in_motion_p2 <-
              xlab = "Time of day",
              ylab = "Weekday trips in motion by chain type") +
   
-  scale_color_manual(values = c("#00093f","#475c66","#ac8c00"))
+  # Manually add colors
+  scale_color_discrete(type = c("#2C2B7F","#38B2D8","#43B649"))
   
 
 trips_in_motion_p2_samplesize <-
@@ -352,8 +353,8 @@ trips_in_motion_p3 <-
                            "passenger" = "Passenger",
                            "transit" = "Transit",
                            "walk" = "Walk",
-                           "schoolbus" = "School bus",
                            "bike" = "Bicycle",
+                           "schoolbus" = "School bus",
                            "other" = "Other")) %>% 
   # Create ggplot object
   ggplot(aes(x = pct, y = peak,
@@ -376,8 +377,9 @@ trips_in_motion_p3 <-
              strip.text = element_text(hjust = 0.5,vjust = 1,
                                        family = "Whitney Semibold")) +
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#36d8ca","#6d8692",
-                               "#efa7a7","#3d6600","#0084ac")) +
+  scale_fill_discrete(type = c("#2C2B7F","#38B2D8","#D8BA37","#43B649",
+                               "#D93636","#7451A1","#D88134")) +
+  
   
   
   # Add faceting
@@ -487,8 +489,8 @@ trips_in_motion_p4 <-
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
   
   # Manually add colors
-  scale_fill_discrete(type = c("#8c0000","#e5bd72","#6d8692","#36d8ca",
-                               "#efa7a7","#0084ac")) +
+  scale_fill_discrete(type = c("#2C2B7F","#38B2D8","#D8BA37","#43B649",
+                               "#D93636","#D88134")) +
   
   # Add CMAP style
   theme_cmap(gridlines = "hv",
@@ -544,7 +546,7 @@ trips_in_motion_p5 <-
   scale_y_continuous(label = scales::comma) +
   
   # Add colors
-  scale_fill_discrete(type = c("#72cae5","#3d6600")) +
+  scale_fill_discrete(type = c("#2C2B7F","#43B649")) +
   
   # Add CMAP style
   theme_cmap(gridlines = "hv",legend.max.columns = 3,

@@ -302,7 +302,7 @@ mode_share_p1 <-
   theme_cmap(gridlines = "v", vline = 0,
              xlab = "Driving                                Alternatives to driving\nMode share by home jurisdiction") +
   # Add colors
-  scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
+  scale_fill_manual(values = c("#38B2D8","#2C2B7F","#D8BA37","#43B649","#D93636","#7451A1","#D88134"),
                     labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
 
   # Adjust axis
@@ -314,9 +314,9 @@ mode_share_p1 <-
 
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 7,
-                             override.aes = list(fill = c("#8c0000","#e5bd72","#36d8ca",
-                                                          "#6d8692","#efa7a7","#3d6600",
-                                                          "#0084ac"),
+                             override.aes = list(fill = c("#2C2B7F","#38B2D8","#D8BA37",
+                                                          "#43B649","#D93636","#7451A1",
+                                                          "#D88134"),
                                                  pattern = "none")))
 
 # Export finalized graphic
@@ -400,7 +400,7 @@ mode_share_p2 <-
              xlab = "Mileage traveled from origin to destination",
              ylab = "Mode share\nDriving                Alternatives to driving") +
   # Add colors
-  scale_fill_discrete(type = c("#00665c","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac")) +
+  scale_fill_discrete(type = c("#2C2B7F","#D8BA37","#43B649","#D93636","#7451A1","#D88134")) +
   
   # Adjust axis
   scale_y_continuous(breaks = seq(-1,.75,by = .25), 
@@ -514,7 +514,7 @@ mode_share_p3 <-
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,
              xlab = "Driving                                Alternatives to driving\nMode share by race and ethnicity") +
   # Add colors
-  scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
+  scale_fill_manual(values = c("#38B2D8","#2C2B7F","#D8BA37","#43B649","#D93636","#7451A1","#D88134"),
                     labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
   
   # Adjust axis
@@ -525,9 +525,9 @@ mode_share_p3 <-
   
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 7,
-                             override.aes = list(fill = c("#8c0000","#e5bd72","#36d8ca",
-                                                          "#6d8692","#efa7a7","#3d6600",
-                                                          "#0084ac"),
+                             override.aes = list(fill = c("#2C2B7F","#38B2D8","#D8BA37",
+                                                          "#43B649","#D93636","#7451A1",
+                                                          "#D88134"),
                                                  pattern = "none")))
 # Export finalized graphic
 finalize_plot(mode_share_p3,
@@ -613,7 +613,7 @@ mode_share_p4 <-
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,
              xlab = "Driving                                Alternatives to driving\nMode share by household income") +
   # Add colors
-  scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
+  scale_fill_manual(values = c("#38B2D8","#2C2B7F","#D8BA37","#43B649","#D93636","#7451A1","#D88134"),
                     labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
   
   # Adjust axis
@@ -624,9 +624,9 @@ mode_share_p4 <-
   
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 7,
-                             override.aes = list(fill = c("#8c0000","#e5bd72","#36d8ca",
-                                                          "#6d8692","#efa7a7","#3d6600",
-                                                          "#0084ac"),
+                             override.aes = list(fill = c("#2C2B7F","#38B2D8","#D8BA37",
+                                                          "#43B649","#D93636","#7451A1",
+                                                          "#D88134"),
                                                  pattern = "none")))
 # Export finalized graphic
 finalize_plot(mode_share_p4,
@@ -720,7 +720,7 @@ mode_share_p5 <-
   # Add CMAP theme
   theme_cmap(xlab = "Share of transit trips by household income and trip chain purpose",
              gridlines = "v") +
-  scale_fill_manual(values = c("#00093f","#475c66","#ac8c00")) +
+  scale_fill_manual(values = c("#2C2B7F","#38B2D8","#43B649")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),
@@ -825,7 +825,7 @@ mode_share_p6 <-
   theme_cmap(gridlines = "v", vline = 0, legend.max.columns = 6,
              xlab = "Driving                                Alternatives to driving\nMode share by age") +
   # Add colors
-  scale_fill_manual(values = c("#e5bd72","#8c0000","#36d8ca","#6d8692","#efa7a7","#3d6600","#0084ac"),
+  scale_fill_manual(values = c("#38B2D8","#2C2B7F","#D8BA37","#43B649","#D93636","#7451A1","#D88134"),
                     labels = c("Driver","Passenger","Walk","Transit","Bike","School bus","Other")) +
   
   # Adjust axis
@@ -836,9 +836,9 @@ mode_share_p6 <-
   
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 7,
-                             override.aes = list(fill = c("#8c0000","#e5bd72","#36d8ca",
-                                                          "#6d8692","#efa7a7","#3d6600",
-                                                          "#0084ac"),
+                             override.aes = list(fill = c("#2C2B7F","#38B2D8","#D8BA37",
+                                                          "#43B649","#D93636","#7451A1",
+                                                          "#D88134"),
                                                  pattern = "none")))
 finalize_plot(mode_share_p6,
               title = "Children and young adults relied more on non-car modes.",
@@ -894,3 +894,4 @@ pct_calculator(
   weight = "weight") %>% 
   mutate(pct = round(pct,4)) %>% 
   filter(mode %in% c("bike share","personal bike")) 
+

@@ -231,14 +231,14 @@ tnc_p1 <-
   # Add CMAP themes
   theme_cmap(gridlines = "v",vline = 0,
              xlab = "Work travel                              Non-work travel\nTypical reason for using a TNC") +
-  scale_fill_manual(values = c("#8c0000","#efa7a7","#00093f","#006b8c"),
+  scale_fill_manual(values = c("#43B649","#D8BA37","#2C2B7F","#38B2D8"),
                     labels = c("Daytime (work)","Commute (whole or part)",
                                "Daytime (non-work)","Late-night (non-work)")) +
   
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 3,
-                             override.aes = list(fill = c("#efa7a7","#8c0000",
-                                                          "#00093f","#006b8c"),
+                             override.aes = list(fill = c("#D8BA37","#43B649",
+                                                          "#2C2B7F","#38B2D8"),
                                                  pattern = "none")))
 
 tnc_p1_samplesize <-
@@ -357,7 +357,9 @@ tnc_p2 <-
   # Add CMAP style
   theme_cmap(gridlines = "v",vline = 0,legend.position = "none",
              xlab = "TNC usage per week by home jurisdiction") +
-  cmap_fill_highlight(home_usage$home_county_chi,"CMAP region") +
+  cmap_fill_highlight(home_usage$home_county_chi,
+                      "CMAP region",
+                      color_value = "#38B2D8") +
   
   # Adjust axes
   scale_x_continuous(limits = c(0,.87),
@@ -478,7 +480,9 @@ tnc_p3 <-
              xlab = "TNC usage characteristics by age",
              strip.text = element_text(family = "Whitney Semibold",
                                        hjust = 0.5,vjust = 1)) +
-  cmap_fill_highlight(age_cost_and_usage$age_bin,"CMAP region")
+  cmap_fill_highlight(age_cost_and_usage$age_bin,
+                      "CMAP region",
+                      color_value = "#38B2D8")
 
 tnc_p3_samplesize <-
   age_usage %>% select(age_bin,usage = n) %>% 

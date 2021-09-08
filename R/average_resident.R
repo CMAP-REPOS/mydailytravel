@@ -480,7 +480,7 @@ average_resident_p1 <-
   # Add blank for label positioning
   mutate(blank = case_when(
     name == "trips_per_capita" ~ 5.5,
-    name == "avg_trip_length" ~ 5.9,
+    name == "avg_trip_length" ~ 5.99,
     name == "avg_trip_time" ~ 36,
   )) %>%
   # Rename variables we are keeping
@@ -536,7 +536,7 @@ average_resident_p1 <-
              strip.text.x = element_text(family = "Whitney Semibold",
                                          hjust = 0.5,vjust = 1),
              strip.text.y = element_blank()) +
-  cmap_fill_discrete(palette = "legislation") +
+  scale_fill_discrete(type = c("#D8BA37","#D93636","#38B2D8","#7451A1")) +
   
   # Add regional labels
   geom_label(data = regional_averages %>%
@@ -681,7 +681,7 @@ average_resident_p2 <-
              xlab = "Percent of residents who did not travel",
              strip.text.x = element_blank(),
              strip.text.y = element_blank()) +
-  cmap_fill_discrete(palette = "legislation") +
+  scale_fill_discrete(type = c("#D8BA37","#D93636","#38B2D8","#7451A1")) +
   scale_color_discrete(type = "black") +
 
   # Reorder legends
@@ -791,7 +791,7 @@ average_resident_p3 <-
              xlab = "Distance per day for residents who traveled (miles)",
              ylab = "Household income"
              ) +
-  cmap_fill_discrete(palette = "friday",reverse = T) +
+  scale_fill_discrete(type = c("#2C2B7F","#43B649")) +
   
   guides(fill = guide_legend(override.aes = list(pattern = "none")))
 
@@ -892,8 +892,8 @@ average_resident_p4 <-
              legend.position = "none",
              legend.max.columns = 1) +
   
-  cmap_fill_discrete(palette = "blue_yellow")
-
+  scale_fill_discrete(type = c("#38B2D8","#D88134"))
+  
 finalize_plot(average_resident_p4,
               "Residents with disabilities were less likely to travel than were
               others in the region.",

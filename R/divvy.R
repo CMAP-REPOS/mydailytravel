@@ -150,7 +150,7 @@ divvy_p1 <-
                     breaks = divvy_breaks) +
 
   # Add CMAP style
-  scale_fill_discrete(type = c("#475c66","#ac8c00")) +
+  scale_fill_discrete(type = c("#38B2D8","#D8BA37")) +
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
              xlab = "Time of day",

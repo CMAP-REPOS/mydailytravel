@@ -148,7 +148,7 @@ tpurp_analysis_p1 <-
   theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
              xlab = "Mode share for personal health care trips by home jurisdiction",
              axis.title.x.bottom = element_text(hjust = .8 )) +
-  scale_fill_discrete(type = c("#00665c","#6d8692","#36d8ca","#006b8c")) +
+  scale_fill_discrete(type = c("#2C2B7F","#43B649","#D8BA37","#D88134")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent(),
@@ -310,7 +310,7 @@ tpurp_analysis_p2 <-
              xlab = "Mode share for socializing trips by home jurisdiction",
              strip.text = element_text(hjust = 0.5,vjust = 1,
                                        family = "Whitney Semibold")) +
-  scale_fill_discrete(type = c("#00665c","#36d8ca","#6d8692","#006b8c")) +
+  scale_fill_discrete(type = c("#2C2B7F","#43B649","#D8BA37","#D88134")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent(),

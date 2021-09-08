@@ -421,7 +421,7 @@ wfh_p1 <-
   theme_cmap(gridlines = "v",vline = 0,
              xlab = "Share of residents who telecommute at least once a week",
              strip.text = element_text(hjust = 0.5,vjust = 1)) +
-  cmap_fill_discrete(palette = "legislation")
+  scale_fill_discrete(type = c("#D8BA37","#D93636","#38B2D8","#7451A1"))
   
 
 wfh_p1_samplesize <-
@@ -564,7 +564,7 @@ wfh_p2 <-
              vline = 0,
              xlab = "Mean total miles traveled on work trips by home jurisdiction",
              ) +
-  cmap_fill_discrete(palette = "legislation")
+  scale_fill_discrete(type = c("#38B2D8","#43B649"))
 
 wfh_p2_samplesize <-
   wfh_worktrips_summary %>% 
@@ -689,8 +689,8 @@ wfh_p3 <-
              strip.text = element_text(hjust = 0.5,vjust = 1,
                                        family = "Whitney Semibold")) +
   # Manually add colors
-  scale_fill_discrete(type = c("#00665c","#6d8692","#36d8ca",
-                               "#efa7a7","#0084ac")) +
+  scale_fill_discrete(type = c("#2C2B7F","#43B649","#D8BA37",
+                               "#D93636","#D88134")) +
   
   
   # Add faceting
@@ -754,6 +754,7 @@ finalize_plot(wfh_p3,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "wfh_p3",
+              sidebar_width = 2.5,
               height = 5.25,
               mode = c("png","pdf"),
               overwrite = T
@@ -834,7 +835,7 @@ wfh_p4 <-
              strip.text = element_text(hjust = 0.5),
              xlab = "Mean total miles traveled by home jurisdiction",
              ) +
-  scale_fill_discrete(type = c("#00becc","#67ac00","#cc5f00"))
+  scale_fill_discrete(type = c("#38B2D8","#43B649","#D88134"))
 
 # Export finalized graphic
 finalize_plot(wfh_p4,
