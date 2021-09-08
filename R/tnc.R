@@ -313,13 +313,13 @@ write.csv(tnc_purpose_homeloc,"tnc_t1.csv")
 ################################################################################
 
 overall_usage <-
-  tnc_wide %>%
+  tnc %>%
   filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
   summarize(tnc_use = weighted.mean(tnc_use,weight, na.rm = TRUE),
             n = n())
 
 overall_cost <-
-  tnc_wide %>%
+  tnc %>%
   filter(tnc_cost > 0) %>% 
   summarize(tnc_cost = weighted.mean(tnc_cost,weight, na.rm = TRUE),
             n = n())
@@ -330,7 +330,7 @@ overall_cost <-
 
 # Usage by home county
 home_usage <- 
-  tnc_wide %>%
+  tnc %>%
   filter(!(tnc_use %in% c(-9,-8,-7,-1))) %>%
   # Limit to residents of the seven counties for presentation. Grundy and DeKalb
   # are included in regional averages.
@@ -413,7 +413,7 @@ finalize_plot(tnc_p2,
 
 ## Look at usage by age
 age_usage <-
-  tnc_wide %>%
+  tnc %>%
   filter(!(tnc_use %in% c(-9,-8,-7,-1)),
          !(is.na(age_bin))) %>%
   group_by(age_bin) %>%
@@ -422,7 +422,7 @@ age_usage <-
 
 # Cost by age
 age_cost <- 
-  tnc_wide %>%
+  tnc %>%
   filter(tnc_cost > 0,
          !(is.na(age_bin))) %>%
   group_by(age_bin) %>%
