@@ -253,7 +253,7 @@ finalize_plot(tnc_p1,
               caption = 
               paste0(
               "Note:
-              'Latino' includes respondents who identified as Latino or Hispanic, 
+              \"Latino\" includes respondents who identified as Latino or Hispanic, 
               regardless of racial category. Other categories are non-Latino.
               Excludes travelers age 18 and younger, who were not asked about 
               TNC usage.

@@ -148,7 +148,7 @@ tpurp_analysis_p1 <-
   theme_cmap(gridlines = "v",legend.max.columns = 4, vline = 0,
              xlab = "Mode share for personal health care trips by home jurisdiction",
              axis.title.x.bottom = element_text(hjust = .8 )) +
-  scale_fill_discrete(type = c("#2C2B7F","#43B649","#D8BA37","#D88134")) +
+  scale_fill_discrete(type = c("#38B2D8","#43B649","#D8BA37","#D88134")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent(),
@@ -170,12 +170,11 @@ finalize_plot(tpurp_analysis_p1,
               caption = 
               paste0(
                 "Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region, Grundy, and DeKalb. Includes only 
+              CMAP seven-county region, Grundy, and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
-              'By car' includes trips as either a driver of a passenger of a personal 
+              \"By car\" includes trips as either a driver or a passenger of a personal 
               vehicle (not including services like taxis or TNCs). Unlabeled bars 
-              have less than five 
-              percent mode share.
+              have less than 5 percent mode share.
               <br><br>
               Sample size:
               <br>- Chicago (",
@@ -310,7 +309,7 @@ tpurp_analysis_p2 <-
              xlab = "Mode share for socializing trips by home jurisdiction",
              strip.text = element_text(hjust = 0.5,vjust = 1,
                                        family = "Whitney Semibold")) +
-  scale_fill_discrete(type = c("#2C2B7F","#43B649","#D8BA37","#D88134")) +
+  scale_fill_discrete(type = c("#38B2D8","#D8BA37","#43B649","#D88134")) +
   
   # Adjust axis
   scale_x_continuous(labels = scales::label_percent(),
@@ -333,11 +332,11 @@ finalize_plot(tpurp_analysis_p2,
               trips to socialize with friends than with relatives.",
               paste0(
                 "Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region, Grundy, and DeKalb. Includes only 
+              CMAP seven-county region, Grundy, and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
-              'By car' includes trips as either a driver of a passenger
+              \"By car\" includes trips as either a driver or a passenger
               of a personal vehicle (not including services like taxis or TNCs).
-              Unlabeled bars have less than five percent mode share.
+              Unlabeled bars have less than 5 percent mode share.
               <br><br>
               Sample size (Chicago/Suburban Cook/Collar and adjacent): 
               <br>- Friends (",

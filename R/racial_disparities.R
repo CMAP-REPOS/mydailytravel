@@ -158,14 +158,14 @@ racial_disparities_p1 <-
 
 # Export finalized graphic
 finalize_plot(racial_disparities_p1,
-              "Black residents of the region had significantly longer trips to 
+              "Black residents in the region had significantly longer trips to 
               work, health care, and routine shopping than those of 
               other residents.",
               caption = 
               paste0(
               "Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region, Grundy, and DeKalb. 
-              See 'About the data' for more information on race and ethnicity.
+              CMAP seven-county region, Grundy, and DeKalb. 
+              See \"About the data\" for more information on race and ethnicity.
               <br><br>
               Sample size (Black/Other/Latino/ Asian/White): 
               <br>- Work (",
@@ -230,7 +230,7 @@ finalize_plot(racial_disparities_p1,
                          select(n) %>% as.numeric()),
                      ").
               <br><br>",
-              "Although sample sizes for 'Other' and 'Asian' health trips are 
+              "Although sample sizes for \"Other\" and \"Asian\" health trips are 
               low, the estimates are similar for weighted and unweighted totals.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My

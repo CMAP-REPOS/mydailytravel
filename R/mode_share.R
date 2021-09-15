@@ -282,7 +282,7 @@ mode_share_p1 <-
     type = ifelse(home_county_chi == "CMAP region","1","0")) %>%
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = reorder(home_county_chi,label))) +
+  ggplot(aes(x = pct, y = reorder(home_county_chi,label),group = mode_c)) +
   # Use "geom_col_pattern" to add texture to a subset of columns
   ggpattern::geom_col_pattern(aes(fill = mode_c,pattern = type),
                               pattern_color = "white",
@@ -326,7 +326,7 @@ finalize_plot(mode_share_p1,
               caption = 
               paste0(
               "Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region, Grundy, and DeKalb. Includes only 
+              CMAP seven-county region, Grundy, and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
               <br><br>
               Sample size: Figures are based on a total of ",
@@ -381,7 +381,7 @@ mode_share_p2 <-
   left_join(mode_share_p2_labels,by = c("mileage_bin")) %>% 
   
   # Create ggplot object
-  ggplot(aes(x = mileage_bin,y = pct,
+  ggplot(aes(x = mileage_bin,y = pct,group = mode_c,
          # Only label bars that are at least 5 percent
          label = ifelse(abs(pct) >=.05,scales::label_percent(accuracy = 1)(abs(pct)),""))) +
   geom_col(aes(fill = mode_c),
@@ -400,7 +400,7 @@ mode_share_p2 <-
              xlab = "Mileage traveled from origin to destination",
              ylab = "Mode share\nDriving                Alternatives to driving") +
   # Add colors
-  scale_fill_discrete(type = c("#2C2B7F","#D8BA37","#43B649","#D93636","#7451A1","#D88134")) +
+  scale_fill_discrete(type = c("#38B2D8","#D8BA37","#43B649","#D93636","#7451A1","#D88134")) +
   
   # Adjust axis
   scale_y_continuous(breaks = seq(-1,.75,by = .25), 
@@ -414,11 +414,12 @@ finalize_plot(mode_share_p2,
               caption = 
                 paste0(
               "Note: Includes trips by residents age 5 and older of the
-              CMAP seven county region, Grundy, and DeKalb. Includes only
+              CMAP seven-county region, Grundy, and DeKalb. Includes only
               trips that were within, to, and/or from one of those counties.
               Distances capture the total distance traveled along the route, not just the
               distance from origin to destination. Unlabeled bars have less than
-              five percent mode share.
+              5 percent mode share. \"By car\" includes trips as either a driver or a passenger
+              of a personal vehicle (not including services like taxis or TNCs).
               <br><br>
               Sample size: Figures are based on a total of ",
               format(nrow(mode_share_base_mdt),big.mark = ","),
@@ -432,7 +433,7 @@ finalize_plot(mode_share_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
               filename = "mode_share_p2",
-              sidebar_width = 2,
+              sidebar_width = 2.25,
               height = 5,
               mode = c("png","pdf"),
               overwrite = T)
@@ -494,7 +495,7 @@ mode_share_p3 <-
     type = ifelse(race_eth == "CMAP region","1","0")) %>%
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = reorder(str_wrap(race_eth,18),label))) +
+  ggplot(aes(x = pct, y = reorder(str_wrap(race_eth,18),label),group = mode_c)) +
   # Use "geom_col_pattern" to add texture to a subset of columns
   ggpattern::geom_col_pattern(aes(fill = mode_c,pattern = type),
                               pattern_color = "white",
@@ -531,19 +532,19 @@ mode_share_p3 <-
                                                  pattern = "none")))
 # Export finalized graphic
 finalize_plot(mode_share_p3,
-              title = "White residents of the region were the likeliest to rely 
+              title = "White residents in the region were the likeliest to rely 
               on personal automobiles for their transportation.",
               caption = 
               paste0(
                 "Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region, Grundy, and DeKalb. Includes only 
+              CMAP seven-county region, Grundy, and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties. 
-              See 'About the data' for more information on race and ethnicity.
+              See \"About the data\" for more information on race and ethnicity.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(mode_share_base_mdt),big.mark = ","),
                      " recorded trips. 
-              'Other' travelers have the lowest sample size, with ",
+              \"Other\" travelers have the lowest sample size, with ",
                      format(mode_race_mdt %>% 
                               filter(race_eth == "Other") %>% 
                               select(total_n) %>% distinct() %>% as.numeric(),big.mark = ","),
@@ -593,7 +594,7 @@ mode_share_p4 <-
     type = ifelse(hhinc_c == "CMAP region","1","0")) %>%
   
   # Create ggplot object
-  ggplot(aes(x = pct, y = hhinc_c)) +
+  ggplot(aes(x = pct, y = hhinc_c,group = mode_c)) +
   # Use "geom_col_pattern" to add texture to a subset of columns
   ggpattern::geom_col_pattern(aes(fill = mode_c,pattern = type),
                               pattern_color = "white",
@@ -636,7 +637,7 @@ finalize_plot(mode_share_p4,
               caption = 
               paste0(
                 "Note: Includes trips by residents age 5 and older of the
-              CMAP seven county region, Grundy, and DeKalb. Includes only
+              CMAP seven-county region, Grundy, and DeKalb. Includes only
               trips that were within, to, and/or from one of those counties.
               <br><br>
               Sample size: Figures are based on a total of ",
@@ -737,9 +738,9 @@ finalize_plot(mode_share_p5,
               range of trips than those from other households.",
               paste0(
                 "Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region, Grundy, and DeKalb. Includes only 
+              CMAP seven-county region, Grundy, and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties. 
-              Unlabeled bars have less than five percent mode share.
+              Unlabeled bars have less than 5 percent mode share.
               <br><br>
               Sample size:
               <br>- <$15K (",
@@ -845,7 +846,7 @@ finalize_plot(mode_share_p6,
               caption = 
               paste0(
                 "Note: Includes trips by residents age 5 and older of the 
-              CMAP seven county region, Grundy, and DeKalb. Includes only 
+              CMAP seven-county region, Grundy, and DeKalb. Includes only 
               trips that were within, to, and/or from one of those counties.
               <br><br>
               Sample size: Figures are based on a total of ",

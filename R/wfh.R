@@ -437,8 +437,8 @@ finalize_plot(wfh_p1,
               caption = 
               paste0(
                 "Note: Includes only employed residents age 16 and older from 
-                the CMAP seven county region, Grundy, and DeKalb. See 'About the 
-                data' for more information on race, ethnicity, and sex.
+                the CMAP seven-county region, Grundy, and DeKalb. See \"About the 
+                data\" for more information on race, ethnicity, and sex.
               <br><br>",
               "Sample size: Figures are based on a total of ",
               format(wfh_p1_samplesize %>% filter(subtype == "Overall") %>% 
@@ -579,7 +579,7 @@ finalize_plot(wfh_p2,
               worked outside the home.",
               paste0(
               "Note: Figures are for trips by employed residents age 16 and older from the 
-              CMAP seven county region, Grundy, and DeKalb. Includes only 
+              CMAP seven-county region, Grundy, and DeKalb. Includes only 
               trips within, to, and/or from those counties. Mean mileage 
               accounts for all trips associated with a work trip chain 
               that included a non-home work destination. 
@@ -689,7 +689,7 @@ wfh_p3 <-
              strip.text = element_text(hjust = 0.5,vjust = 1,
                                        family = "Whitney Semibold")) +
   # Manually add colors
-  scale_fill_discrete(type = c("#2C2B7F","#43B649","#D8BA37",
+  scale_fill_discrete(type = c("#38B2D8","#43B649","#D8BA37",
                                "#D93636","#D88134")) +
   
   
@@ -707,11 +707,11 @@ finalize_plot(wfh_p3,
               while those in Chicago were more likely to walk to work.",
               paste0(
                 "Note: Figures are for trips by employed residents age 16 and older from the 
-              CMAP seven county region, Grundy, and DeKalb. Includes only 
+              CMAP seven-county region, Grundy, and DeKalb. Includes only 
               trips within, to, and/or from those counties. Mode share
               accounts for all work chain trips
               that included a non-home work destination. 
-              Unlabeled bars have less than five percent mode share.
+              Unlabeled bars have less than 5 percent mode share.
               <br><br>
               Sample size (Chicago/Suburban Cook/Collar and adjacent):
               <br>- 0 days/wk. (",
@@ -843,7 +843,7 @@ finalize_plot(wfh_p4,
               traveled the greatest distances every day.",
               paste0(
               "Note: Figures are for trips by employed residents age 16 and older from the
-              CMAP seven county region, Grundy, and DeKalb. Includes only
+              CMAP seven-county region, Grundy, and DeKalb. Includes only
               trips within, to, and/or from those counties. Individuals who did 
               not travel are included as having zero travel distance.
               <br><br>

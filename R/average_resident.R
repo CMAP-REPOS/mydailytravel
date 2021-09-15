@@ -563,15 +563,15 @@ finalize_plot(average_resident_p1,
               "Note: Figures are calculated based only on individuals
               who traveled and thus exclude individuals with zero trips.
               Includes trips by travelers age 5 and older who live in the
-              CMAP seven county region, Grundy, and DeKalb.
+              CMAP seven-county region, Grundy, and DeKalb.
               Distances are point-to-point and do not account for additional 
               distance traveled along the route.
-              See 'About the data' for more information on race, ethnicity, and sex.
+              See \"About the data\" for more information on race, ethnicity, and sex.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(distinct_daily_travelers_mdt),big.mark = ","),
                      " travelers.
-              Across all categories, travelers with an 'Other' race and
+              Across all categories, travelers with an \"Other\" race and
               ethnicity have the lowest sample size, with ",
                      format(
                        distinct_daily_travelers_mdt %>%
@@ -689,21 +689,21 @@ average_resident_p2 <-
 
 # Export finalized graphic
 finalize_plot(average_resident_p2,
-              "Lower-income, non-White, and older residents were the least 
-              likely to travel on a weekday.",
+              "Residents from households with low income, non-white residents, 
+              and older residents were the least likely to travel on a weekday.",
               caption = paste0(
                 "Note: Figures are based on the travel behavior of
-              residents age 5 or older of the CMAP seven county region, Grundy, 
+              residents age 5 or older of the CMAP seven-county region, Grundy, 
               and DeKalb.
-              Individuals were counted as 'traveling' if they had at least one 
+              Individuals were counted as \"traveling\" if they had at least one 
               trip on their assigned travel day, no matter whether that trip was 
               in the CMAP region.
-              See 'About the data' for more information on race, ethnicity, and sex.
+              See \"About the data\" for more information on race, ethnicity, and sex.
               <br><br>
               Sample size: Figures are based on a total of ",
                      format(nrow(distinct_residents_mdt),big.mark = ","),
                      " residents. 
-              Across all categories, residents with an 'Other' race and 
+              Across all categories, residents with an \"Other\" race and 
               ethnicity have the lowest sample size, with ",
                      (distinct_residents_mdt %>% 
                         count(race_eth) %>% 
@@ -802,7 +802,7 @@ finalize_plot(average_resident_p3,
               caption = 
               paste0(
               "Note: Includes trips by residents age 5 and older of the
-              CMAP seven county region, Grundy, and DeKalb. 
+              CMAP seven-county region, Grundy, and DeKalb. 
               Household incomes are not adjusted for 
               inflation, and so there may be some households from Travel Tracker 
               that should be compared to the next-highest household income 
@@ -900,7 +900,7 @@ finalize_plot(average_resident_p4,
               caption = 
               paste0(
                 "Note: Includes trips by residents age 16 and older of the
-              CMAP seven county region, Grundy, and DeKalb.
+              CMAP seven-county region, Grundy, and DeKalb.
               <br><br>
               Sample size: 
               <br>- Without disability (",

@@ -179,8 +179,8 @@ finalize_plot(mode_analysis_p1,
               Transportation Network Company (TNC) trips more than made up the
               difference.",
               paste0(
-                "Note: Includes 'rideshare' and 'shared rideshare' trips by residents 
-                age 5 and older of the CMAP seven county region, Grundy, and DeKalb. 
+                "Note: Includes \"rideshare\" and \"shared rideshare\" trips by residents 
+                age 5 and older of the CMAP seven-county region, Grundy, and DeKalb. 
                 The reported regional totals for both taxi and TNC trips in My
               Daily Travel are less than 
               those captured in the City of Chicago's data on TNC and taxi trips. 

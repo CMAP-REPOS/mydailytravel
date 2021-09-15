@@ -170,7 +170,7 @@ trips_in_motion_p1 <-
   geom_area(aes(fill = mode_c), position = position_stack(reverse = TRUE)) +
   
   # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%l%p", # Time without leading zero
+  scale_x_datetime(labels = scales::date_format("%l%P", # Time without leading zero
                                                 tz = "America/Chicago"),
                    breaks = tim_breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
@@ -193,7 +193,7 @@ finalize_plot(trips_in_motion_p1,
               paste0(
                 "Note: Trips in motion are 25-minute rolling averages. Includes 
                 trips by residents age 5 and older 
-              of the CMAP seven county region, Grundy, and DeKalb. Includes
+              of the CMAP seven-county region, Grundy, and DeKalb. Includes
               only trips that were within, to, and/or from one of those counties.
               <br><br>
               Sample size: Figures are based on a total of ",
@@ -229,7 +229,7 @@ trip_times_mode_c_mdt %>%
   geom_area(aes(fill = mode_c)) +
   
   # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%l:%M%p", # Time without leading zero
+  scale_x_datetime(labels = scales::date_format("%l:%M%P", # Time without leading zero
                                                 tz = "America/Chicago"),
                    breaks = tim_breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 10) +
@@ -265,7 +265,7 @@ trips_in_motion_p2 <-
   geom_line(aes(color = chain_c)) +
   
   # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%l%p", # Time without leading zero
+  scale_x_datetime(labels = scales::date_format("%l%P", # Time without leading zero
                                                 tz = "America/Chicago"),
                    breaks = tim_breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 5) +
@@ -287,11 +287,11 @@ trips_in_motion_p2_samplesize <-
   count(chain_c)
 
 finalize_plot(trips_in_motion_p2,
-              "Travelers relied on substantially different modes for trips to and 
-              from work vs. other trip purposes.",
+              "While shopping trips were spread out across the day, work trips 
+              and other trips had strong morning and evening peaks.",
               paste0(
               "Note: Trips in motion are 25-minute rolling averages. Includes 
-              trips by residents age 5 and older of the CMAP seven county region, 
+              trips by residents age 5 and older of the CMAP seven-county region, 
               Grundy, and DeKalb. Includes only trips that were within, to, 
               and/or from one of those counties.
               <br><br>
@@ -309,7 +309,7 @@ finalize_plot(trips_in_motion_p2,
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries."),
               filename = "trips_in_motion_p2",
-              height = 4,
+              height = 4.25,
               mode = c("png","pdf"),
               overwrite = TRUE)
 
@@ -351,17 +351,17 @@ trips_in_motion_p3 <-
   mutate(mode_c = recode_factor(factor(mode_c,levels = mode_c_levels),
                            "driver" = "Driver",
                            "passenger" = "Passenger",
-                           "transit" = "Transit",
                            "walk" = "Walk",
+                           "transit" = "Transit",
                            "bike" = "Bicycle",
                            "schoolbus" = "School bus",
                            "other" = "Other")) %>% 
   # Create ggplot object
-  ggplot(aes(x = pct, y = peak,
+  ggplot(aes(x = pct, y = peak,group = mode_c,
              # Only label bars that round to at least 5 percent
              label = ifelse(pct >=.05,scales::label_percent(accuracy = 1)(pct),""))) +
   geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
-  geom_text(position = position_stack(vjust = 0.5),
+  geom_text(position = position_stack(vjust = 0.5,reverse = T),
             color = "white") +
   
   # Adjust axis
@@ -396,10 +396,11 @@ finalize_plot(trips_in_motion_p3,
               "Travel choices differ significantly between peak and off-peak trips.",
               paste0(
                 "Note: Includes trips by residents age 5 and older 
-              of the CMAP seven county region, Grundy, and DeKalb. Includes
+              of the CMAP seven-county region, Grundy, and DeKalb. Includes
               only trips that were within, to, and/or from one of those counties.
-              Peak trips include all trips that were in motion between 6:00PM 
-              and 9:00AM or between 3:00PM and 7:00PM. Unlabeled bars have less than five percent mode share.
+              Peak trips include all trips that were in motion between 6:00 a.m. 
+              and 9:00 a.m. or between 3:00 p.m. and 7:00 p.m. Unlabeled bars 
+              have less than 5 percent mode share.
               <br><br>
               Sample size (Work/Shopping/ Other):
               <br>- Peak (",
@@ -469,8 +470,8 @@ trips_in_motion_p4 <-
   mutate(mode_c = recode_factor(factor(mode_c,levels = mode_c_levels),
                                 "driver" = "Driver",
                                 "passenger" = "Passenger",
-                                "transit" = "Transit",
                                 "walk" = "Walk",
+                                "transit" = "Transit",
                                 "bike" = "Bicycle",
                                 "other" = "Other")) %>%
   group_by(mode_c,time_band) %>%
@@ -483,7 +484,7 @@ trips_in_motion_p4 <-
   geom_area(aes(fill = mode_c),position = position_stack(reverse = T)) +
   
   # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%l%p", # Time without leading zero
+  scale_x_datetime(labels = scales::date_format("%l%P", # Time without leading zero
                                                 tz = "America/Chicago"),
                    breaks = tim_breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
@@ -500,13 +501,13 @@ trips_in_motion_p4 <-
              ylab = "Weekday personal healthcare trips in motion")
 
 finalize_plot(trips_in_motion_p4,
-              "Personal health care trips also have a morning and afternoon peak, but
-              these are much more concentrated around, but not during, the
+              "Personal health care trips have a morning and afternoon peak, but
+              these are concentrated around, but not during, the
               lunch hour.",
               paste0(
                 "Note: Trips in motion are 55-minute rolling averages. Includes
                 weekday personal health care trips by residents age 5 and older 
-              of the CMAP seven county region, Grundy, and DeKalb. Includes
+              of the CMAP seven-county region, Grundy, and DeKalb. Includes
               only trips that were within, to, and/or from one of those counties.
               <br><br>
               Sample size: Figures are based on a total of ",
@@ -540,7 +541,7 @@ trips_in_motion_p5 <-
   geom_area(aes(fill = chain_c), position = position_stack(reverse = T)) +
   
   # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%l%p", # Time without leading zero
+  scale_x_datetime(labels = scales::date_format("%l%P", # Time without leading zero
                                                 tz = "America/Chicago"),
                    breaks = tim_breaks) +
   scale_y_continuous(label = scales::comma) +
@@ -559,7 +560,7 @@ finalize_plot(trips_in_motion_p5,
               trips have similar AM and PM peak profiles.",
               caption = paste0(
               "Note: Trips in motion are 85-minute rolling averages. Includes 
-              trips by residents age 5 and older of the CMAP seven county region, 
+              trips by residents age 5 and older of the CMAP seven-county region, 
               Grundy, and DeKalb. Includes only trips that were within, to, 
               and/or from one of those counties.
               <br><br>
@@ -611,7 +612,7 @@ trip_times_tpurp_c_chain_c_mdt %>%
   geom_area(aes(fill = tpurp_c), position = position_stack(reverse = T)) +
   
   # Adjust axes
-  scale_x_datetime(labels = scales::date_format("%l:%M%p", # Time without leading zero
+  scale_x_datetime(labels = scales::date_format("%l:%M%P", # Time without leading zero
                                                 tz = "America/Chicago"),
                    breaks = tim_breaks) +
   scale_y_continuous(label = scales::comma,breaks = waiver(), n.breaks = 6) +
@@ -622,7 +623,7 @@ trip_times_tpurp_c_chain_c_mdt %>%
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
              legend.max.columns = 3,
-             xlab = "Trip purposes for 'Other' trip chains by time of day") 
+             xlab = "Trip purposes for \"Other\" trip chains by time of day") 
 
 
 # Calculate the share of the morning peak taken up by School and Transporting others

@@ -139,11 +139,11 @@ finalize_plot(school_trips_p1,
               school than those of other children.",
               caption = 
               paste0(
-              "Note: Includes school trips for residents of the CMAP seven county region,
+              "Note: Includes school trips for residents of the CMAP seven-county region,
               Grundy, and DeKalb who are enrolled in K-8 and age 5 or older. 
               Excludes trips to non-school locations, longer than two and a half 
               hours, and that did not start or end between 7:00am and 9:00am.
-              See 'About the data' for more information on race and ethnicity.
+              See \"About the data\" for more information on race and ethnicity.
               <br><br>
               Sample size: 
               <br>- Black (",
@@ -166,7 +166,7 @@ finalize_plot(school_trips_p1,
               Daily Travel data."),
               filename = "school_trips_p1",
               mode = c("png","pdf"),
-              height = 4.9,
+              height = 5,
               overwrite = T)
 
 # Backup - differences over a month (for prose)

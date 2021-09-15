@@ -145,7 +145,7 @@ divvy_p1 <-
   geom_area(position = position_stack(reverse = TRUE)) +
   
   # Reformat axes
-  scale_x_datetime(labels = scales::date_format("%l%p", # Time without leading zero
+  scale_x_datetime(labels = scales::date_format("%l%P", # Time without leading zero
                                                 tz = "America/Chicago"),
                     breaks = divvy_breaks) +
 
