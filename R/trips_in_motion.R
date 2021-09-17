@@ -150,7 +150,7 @@ tim_breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 03:00:00"),
 ################################################################################
 
 # Graph output of trips in motion by mode
-trips_in_motion_p1 <-
+figure1_3 <-
   # Get data
   trip_times_mode_c_mdt %>%
   # Remove missing modes
@@ -186,7 +186,7 @@ trips_in_motion_p1 <-
              xlab = "Time of day",
              ylab = "Weekday trips in motion")
 
-finalize_plot(trips_in_motion_p1,
+finalize_plot(figure1_3,
               "The morning and evening peaks in travel demand were very 
               pronounced, although the COVID-19 pandemic's impact on these 
               travel patterns remains uncertain.",
@@ -202,7 +202,7 @@ finalize_plot(trips_in_motion_p1,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries."),
-              filename = "trips_in_motion_p1",
+              filename = "figure1_3",
               mode = c("png","pdf"),
               height = 4.5,
               overwrite = TRUE
@@ -251,7 +251,7 @@ trip_times_mode_c_mdt %>%
 # Trips in motion by trip chains and mode
 ################################################################################
 
-trips_in_motion_p2 <-
+figure1_4 <-
   # Get data
   trip_times_chain_c_mdt %>%
   # Capitalize for presentation
@@ -281,34 +281,46 @@ trips_in_motion_p2 <-
   scale_color_discrete(type = c("#2C2B7F","#38B2D8","#43B649"))
   
 
-trips_in_motion_p2_samplesize <-
+figure1_4_samplesize <-
   tim_wip_mdt %>% 
   ungroup() %>% 
   count(chain_c)
 
-finalize_plot(trips_in_motion_p2,
-              "While shopping trips were spread out across the day, work trips 
+finalize_plot(figure1_4,
+              title = "While shopping trips were spread out across the day, work trips 
               and other trips had strong morning and evening peaks.",
-              paste0(
-              "Note: Trips in motion are 25-minute rolling averages. Includes 
+              caption = 
+                paste0("Note: Trips in motion are 25-minute rolling averages. Includes 
               trips by residents age 5 and older of the CMAP seven-county region, 
               Grundy, and DeKalb. Includes only trips that were within, to, 
               and/or from one of those counties.
               <br><br>
               Sample size: 
               <br>- Work (",
-                     trips_in_motion_p2_samplesize %>% filter(chain_c == "work") %>% select(n),
-                     "); 
-              <br>- Shopping (",
-                     trips_in_motion_p2_samplesize %>% filter(chain_c == "shop") %>% select(n),
-                     "); 
-              <br>- Other (",
-                     trips_in_motion_p2_samplesize %>% filter(chain_c == "other") %>% select(n),
-                     ").
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries."),
-              filename = "trips_in_motion_p2",
+                format(figure1_4_samplesize %>%
+                         filter(chain_c == "work") %>%
+                         select(n) %>% 
+                         as.numeric(),
+                       big.mark = ","),
+                ");
+                <br>- Shopping (",
+                format(figure1_4_samplesize %>%
+                         filter(chain_c == "shop") %>%
+                         select(n) %>% 
+                         as.numeric(),
+                       big.mark = ","),
+                ");
+                <br>- Other (",
+                format(figure1_4_samplesize %>%
+                         filter(chain_c == "other") %>%
+                         select(n) %>% 
+                         as.numeric(),
+                       big.mark = ","),
+                ").
+                <br><br>
+                Source: Chicago Metropolitan Agency for Planning analysis of My
+                Daily Travel trip diaries."),
+              filename = "figure1_4",
               height = 4.25,
               mode = c("png","pdf"),
               overwrite = TRUE)
@@ -346,7 +358,7 @@ chain_peak_mode_share <-
          pct = round(pct, 4)) %>% 
   ungroup()
 
-trips_in_motion_p3 <-
+figure1_5 <-
   chain_peak_mode_share %>% 
   mutate(mode_c = recode_factor(factor(mode_c,levels = mode_c_levels),
                            "driver" = "Driver",
@@ -360,7 +372,7 @@ trips_in_motion_p3 <-
   ggplot(aes(x = pct, y = peak,group = mode_c,
              # Only label bars that round to at least 5 percent
              label = ifelse(pct >=.05,scales::label_percent(accuracy = 1)(pct),""))) +
-  geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
+  geom_col(aes(fill = mode_c), position = position_stack(reverse = T),width = 0.85) +
   geom_text(position = position_stack(vjust = 0.5,reverse = T),
             color = "white") +
   
@@ -385,14 +397,14 @@ trips_in_motion_p3 <-
   # Add faceting
   facet_wrap(~chain_c,ncol = 1)
 
-trips_in_motion_p3_samplesize <-
+figure1_5_samplesize <-
   chain_peak_mode_share %>% 
   group_by(chain_c,peak) %>% 
   summarize(n = sum(breakdown_n)) %>% 
   ungroup()
 
 # Export finalized graphic
-finalize_plot(trips_in_motion_p3,
+finalize_plot(figure1_5,
               "Travel choices differ significantly between peak and off-peak trips.",
               paste0(
                 "Note: Includes trips by residents age 5 and older 
@@ -404,47 +416,53 @@ finalize_plot(trips_in_motion_p3,
               <br><br>
               Sample size (Work/Shopping/ Other):
               <br>- Peak (",
-                     paste0(trips_in_motion_p3_samplesize %>% 
-                             filter(chain_c == "Work", 
-                                    peak == "Peak") %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                            "/",
-                           trips_in_motion_p3_samplesize %>% 
-                             filter(chain_c == "Shopping", 
-                                    peak == "Peak") %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                           "/",
-                           trips_in_motion_p3_samplesize %>% 
-                             filter(chain_c == "Other", 
-                                    peak == "Peak") %>% 
-                             select(n) %>% 
-                             as.numeric()),
-                     ");
+                paste(
+                  format(figure1_5_samplesize %>% 
+                           filter(chain_c == "Work", 
+                                  peak == "Peak") %>% 
+                           select(n) %>% 
+                           as.numeric(),
+                         big.mark = ","),
+                  format(figure1_5_samplesize %>% 
+                           filter(chain_c == "Shopping", 
+                                  peak == "Peak") %>% 
+                           select(n) %>% 
+                           as.numeric(),
+                         big.mark = ","),
+                  format(figure1_5_samplesize %>% 
+                           filter(chain_c == "Other", 
+                                  peak == "Peak") %>% 
+                           select(n) %>% 
+                           as.numeric(),
+                         big.mark = ","),
+                  sep = "/"),
+                ");
               <br>- Off-peak (",
-                     paste0(trips_in_motion_p3_samplesize %>% 
-                             filter(chain_c == "Work", 
-                                    peak == "Off-peak") %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                            "/",
-                           trips_in_motion_p3_samplesize %>% 
-                             filter(chain_c == "Shopping", 
-                                    peak == "Off-peak") %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                           "/",
-                           trips_in_motion_p3_samplesize %>% 
-                             filter(chain_c == "Other", 
-                                    peak == "Off-peak") %>% 
-                             select(n) %>% 
-                             as.numeric()),
+                paste(
+                  format(figure1_5_samplesize %>% 
+                           filter(chain_c == "Work", 
+                                  peak == "Off-peak") %>% 
+                           select(n) %>% 
+                           as.numeric(),
+                         big.mark = ","),
+                  format(figure1_5_samplesize %>% 
+                           filter(chain_c == "Shopping", 
+                                  peak == "Off-peak") %>% 
+                           select(n) %>% 
+                           as.numeric(),
+                         big.mark = ","),
+                  format(figure1_5_samplesize %>% 
+                           filter(chain_c == "Other", 
+                                  peak == "Off-peak") %>% 
+                           select(n) %>% 
+                           as.numeric(),
+                         big.mark = ","),
+                  sep = "/"),
                      ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel trip diaries."),
-              filename = "trips_in_motion_p3",
+              filename = "figure1_5",
               height = 4.5,
               sidebar_width = 2.25,
               mode = c("png","pdf"),
@@ -460,7 +478,7 @@ trip_times_health_and_mode_mdt <-
                  criteria = "mode_c",
                  rolling_window = 55)
 
-trips_in_motion_p4 <-
+figure1_7 <-
   trip_times_health_and_mode_mdt %>%
   # Collapse school buses into other and sum
   mutate(mode_c = as.character(mode_c)) %>%
@@ -500,7 +518,7 @@ trips_in_motion_p4 <-
              xlab = "Time of day",
              ylab = "Weekday personal healthcare trips in motion")
 
-finalize_plot(trips_in_motion_p4,
+finalize_plot(figure1_7,
               "Personal health care trips have a morning and afternoon peak, but
               these are concentrated around, but not during, the
               lunch hour.",
@@ -518,7 +536,7 @@ finalize_plot(trips_in_motion_p4,
               Daily Travel trip diaries."),
               mode = c("pdf","png"),
               height = 4.5,
-              filename = "trips_in_motion_p4",
+              filename = "figure1_7",
               overwrite = T)
 
 ################################################################################
@@ -532,7 +550,7 @@ trip_times_bike_and_chain_c_mdt <-
                  rolling_window = 85)
 
 # Graph output of trips in motion by purpose for bike trips (personal bike only)
-trips_in_motion_p5 <-
+figure4_5 <-
   # Get data
   trip_times_bike_and_chain_c_mdt %>%
   
@@ -555,9 +573,9 @@ trips_in_motion_p5 <-
              xlab = "Time of day",
              ylab = "Weekday personal bike trips in motion")
 
-finalize_plot(trips_in_motion_p5,
-              "Overall personal bike usage was highest during the AM peak, although work 
-              trips have similar AM and PM peak profiles.",
+finalize_plot(figure4_5,
+              "Overall personal bike usage was highest during the morning peak, 
+              although work trips have similar morning and evening peak profiles.",
               caption = paste0(
               "Note: Trips in motion are 85-minute rolling averages. Includes 
               trips by residents age 5 and older of the CMAP seven-county region, 
@@ -566,12 +584,12 @@ finalize_plot(trips_in_motion_p5,
               <br><br>
               Sample size: Figures are based on a total of ",
               format(nrow(tim_bike_mdt),big.mark = ","),
-              "records.
+              " records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries."),
-              filename = "trips_in_motion_p5",
-              height = 4.5,
+              Daily Travel data."),
+              filename = "figure4_5",
+              height = 4,
               mode = c("png","pdf"),
               overwrite = TRUE,
               )

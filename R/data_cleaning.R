@@ -310,14 +310,15 @@ home <- home_wip %>%
     TRUE ~ county_chi_name)) %>% 
   # Create flag for Chicago vs. Suburban Cook vs. Other
   mutate(geog = case_when(
-    home_county_chi %in% c("Chicago","Suburban Cook",
+    home_county_chi %in% c("Chicago",
                            "Homes in multiple jurisdictions (Chicago/Cook)") ~ home_county_chi,
-    # Assign the rest as "Collar and adjacent".
-    TRUE ~ "Collar and adjacent"
+    home_county_chi == "Suburban Cook" ~ "Suburban Cook County",
+    # Assign the rest as "Collar and adjacent counties".
+    TRUE ~ "Collar and adjacent counties"
   )) %>% 
   mutate(geog = factor(geog, 
-                       levels = c("Chicago","Suburban Cook",
-                                  "Collar and adjacent",
+                       levels = c("Chicago","Suburban Cook County",
+                                  "Collar and adjacent counties",
                                   "Homes in multiple jurisdictions (Chicago/Cook)"))) %>% 
   # Remove unnecessary variable
   select(-county_chi_name)
@@ -663,9 +664,9 @@ tt_home <- tt_location %>%
   # Create a flag for Chicago vs Suburban Cook vs other
   mutate(geog = case_when(
     home_county_chi == "Chicago" ~ "Chicago",
-    home_county_chi == "Suburban Cook" ~ "Suburban Cook",
+    home_county_chi == "Suburban Cook" ~ "Suburban Cook County",
     is.na(home_county_chi) ~ "Other - NA",
-    TRUE ~ "Collar and adjacent")) %>% 
+    TRUE ~ "Collar and adjacent counties")) %>% 
   # Extract FIPS for state from larger FIPS code
   mutate(home_state = as.integer(substr(FIPS,1,2))) %>%
   # Extract FIPS for county from larger FIPS code

@@ -121,7 +121,7 @@ all_tnc_taxi_mdt <-
 # changes, rather than absolute figures.
 
 # Create chart. 
-mode_analysis_p1 <-
+figure4_1 <-
   # Get data
   all_tnc_taxi_mdt %>%
   # Summarize as a share of 2008 taxi ridership
@@ -136,7 +136,7 @@ mode_analysis_p1 <-
   ggplot(aes(x = mode, y = total)) +
   
   geom_hline(yintercept = c(2,3),size = 0.25) +
-  geom_col(aes(fill = mode)) +
+  geom_col(aes(fill = mode),width = 0.85) +
   # Add labels above the bars
   geom_label(aes(label = scales::label_percent(accuracy = 1)(total)),
              hjust = 0.5,
@@ -164,9 +164,9 @@ mode_analysis_p1 <-
              gridlines = "none",
              ylab = "2019 ridership as a share of 2008 taxi ridership") +
   # Manually include CMAP colors
-  scale_fill_discrete(type = c("#D8BA37","#2C2B7F"))
+  scale_fill_discrete(type = c("#D8BA37","#38B2D8"))
 
-mode_analysis_p1_samplesize <-
+figure4_1_samplesize <-
   all_taxi_tt %>% 
   mutate(survey = "tt",
          mode = "taxi") %>% 
@@ -174,9 +174,9 @@ mode_analysis_p1_samplesize <-
   select(mode,survey,n)
 
 # Export finalized graphic
-finalize_plot(mode_analysis_p1,
-              "While taxi ridership fell significantly between 2008 and 2019, 
-              Transportation Network Company (TNC) trips more than made up the
+finalize_plot(figure4_1,
+              "Taxi ridership fell significantly between 2008 and 2019, but
+              transportation network company (TNC) trips more than made up the
               difference.",
               paste0(
                 "Note: Includes \"rideshare\" and \"shared rideshare\" trips by residents 
@@ -189,18 +189,26 @@ finalize_plot(mode_analysis_p1,
               <br><br>
               Sample size:
               <br>- Taxi, 2008 (",
-                     mode_analysis_p1_samplesize %>% filter(mode == "taxi" & survey == "tt") %>% select(n),
-                     ");
+                format(figure4_1_samplesize %>% 
+                         filter(mode == "taxi" & survey == "tt") %>% 
+                         select(n) %>% as.numeric(),
+                       big.mark = ","),
+                ");
               <br>- Taxi, 2019 (",
-                     mode_analysis_p1_samplesize %>% filter(mode == "taxi" & survey == "mdt") %>% select(n),
-                     ");
+                format(figure4_1_samplesize %>% 
+                         filter(mode == "taxi" & survey == "mdt") %>% 
+                         select(n) %>%  as.numeric(),
+                       big.mark = ","),
+                ");
               <br>- TNC, 2019 (",
-                     mode_analysis_p1_samplesize %>% filter(mode == "TNC") %>% select(n),
-                     ").
+                format(figure4_1_samplesize %>% filter(mode == "TNC") %>% 
+                         select(n) %>%  as.numeric(),
+                       big.mark = ","),
+                ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel and Travel Tracker data."),
-              filename = "mode_analysis_p1",
+              filename = "figure4_1",
               mode = c("png","pdf"),
               overwrite = T)
 

@@ -251,18 +251,18 @@ write.csv(mode_share_t1,"mode_share_t1.csv")
 ###### CHART
 
 # Create labels
-mode_share_p1_labels <-
+figure1_1_labels <-
   mode_counties_mdt %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(home_county_chi) %>%
   summarize(label = sum(pct))
 
 # Create plot
-mode_share_p1 <-
+figure1_1 <-
   # Get data
   mode_counties_mdt %>%
   # Add labels
-  left_join(mode_share_p1_labels, by = "home_county_chi") %>%
+  left_join(figure1_1_labels, by = "home_county_chi") %>%
   # Make changes for graphing
   mutate(
     # Reorder factors and capitalize
@@ -292,7 +292,7 @@ mode_share_p1 <-
                               pattern_size = 0.2,
                               pattern_spacing = 0.02,
                               position = position_stack(reverse = T),
-                              width = 0.8) +  
+                              width = 0.85) +  
   # Re-assign patterns manually
   scale_pattern_manual(values = c("1" = "stripe",
                                   "0" = "none"),
@@ -320,7 +320,7 @@ mode_share_p1 <-
                                                  pattern = "none")))
 
 # Export finalized graphic
-finalize_plot(mode_share_p1,
+finalize_plot(figure1_1,
               title = "Residents of Chicago and Cook County had by far the highest non-car 
               mode share in the CMAP region.",
               caption = 
@@ -340,8 +340,9 @@ finalize_plot(mode_share_p1,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              filename = "mode_share_p1",
-              height = 4,
+              filename = "figure1_1",
+              height = 3.75,
+              sidebar_width = 2.5,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -350,14 +351,14 @@ finalize_plot(mode_share_p1,
 ################################################################################
 
 # Create labels
-mode_share_p2_labels <-
+figure1_2_labels <-
   mode_mileage_mdt %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(mileage_bin) %>%
   summarize(label = sum(pct))
 
 # Create plot
-mode_share_p2 <-
+figure1_2 <-
   # Get data
   mode_mileage_mdt %>%
   # Make changes for graphing
@@ -378,14 +379,15 @@ mode_share_p2 <-
   summarize(pct = sum(pct)) %>% 
   mutate(pct = ifelse(mode_c == "By car",-1*pct,pct)) %>% 
   # Join labels
-  left_join(mode_share_p2_labels,by = c("mileage_bin")) %>% 
+  left_join(figure1_2_labels,by = c("mileage_bin")) %>% 
   
   # Create ggplot object
   ggplot(aes(x = mileage_bin,y = pct,group = mode_c,
          # Only label bars that are at least 5 percent
          label = ifelse(abs(pct) >=.05,scales::label_percent(accuracy = 1)(abs(pct)),""))) +
   geom_col(aes(fill = mode_c),
-           position = position_stack(reverse = T)) +
+           position = position_stack(reverse = T),
+           width = 0.85) +
   geom_text(aes(group = mode_c),
             position = position_stack(vjust = 0.5,reverse = T),
             color = "white") +
@@ -409,7 +411,7 @@ mode_share_p2 <-
   )
   
 # Export finalized graphic
-finalize_plot(mode_share_p2,
+finalize_plot(figure1_2,
               title = "Travelers relied most on non-car modes for the shortest trips.",
               caption = 
                 paste0(
@@ -432,7 +434,7 @@ finalize_plot(mode_share_p2,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              filename = "mode_share_p2",
+              filename = "figure1_2",
               sidebar_width = 2.25,
               height = 5,
               mode = c("png","pdf"),
@@ -463,18 +465,18 @@ detailed_transit_mileage <-
 ################################################################################
 
 # Create labels
-mode_share_p3_labels <-
+figure2_5_labels <-
   mode_race_mdt %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(race_eth) %>%
   summarize(label = sum(pct))
 
 # Create plot
-mode_share_p3 <-
+figure2_5 <-
   # Get data
   mode_race_mdt %>%
   # Add labels
-  left_join(mode_share_p3_labels, by = "race_eth") %>%
+  left_join(figure2_5_labels, by = "race_eth") %>%
   # Make changes for graphing
   mutate(
     # Reorder factors and capitalize
@@ -505,7 +507,7 @@ mode_share_p3 <-
                               pattern_size = 0.2,
                               pattern_spacing = 0.02,
                               position = position_stack(reverse = T),
-                              width = 0.8) +  
+                              width = 0.85) +  
   # Re-assign patterns manually
   scale_pattern_manual(values = c("1" = "stripe",
                                   "0" = "none"),
@@ -531,7 +533,7 @@ mode_share_p3 <-
                                                           "#D88134"),
                                                  pattern = "none")))
 # Export finalized graphic
-finalize_plot(mode_share_p3,
+finalize_plot(figure2_5,
               title = "White residents in the region were the likeliest to rely 
               on personal automobiles for their transportation.",
               caption = 
@@ -552,8 +554,9 @@ finalize_plot(mode_share_p3,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              filename = "mode_share_p3",
-              height = 4.25,
+              filename = "figure2_5",
+              height = 4,
+              sidebar_width = 2.5,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -562,18 +565,18 @@ finalize_plot(mode_share_p3,
 ################################################################################
 
 # Create labels
-mode_share_p4_labels <-
+figure2_6_labels <-
   mode_income_mdt %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(hhinc_c) %>%
   summarize(label = sum(pct))
 
 # Create plot
-mode_share_p4 <-
+figure2_6 <-
   # Get data
   mode_income_mdt %>%
   # Add labels
-  left_join(mode_share_p4_labels, by = "hhinc_c") %>%
+  left_join(figure2_6_labels, by = "hhinc_c") %>%
   # Make changes for graphing
   mutate(
     # Reorder factors and capitalize
@@ -604,7 +607,7 @@ mode_share_p4 <-
                               pattern_size = 0.2,
                               pattern_spacing = 0.02,
                               position = position_stack(reverse = T),
-                              width = 0.8) +   
+                              width = 0.85) +   
   # Re-assign patterns manually
   scale_pattern_manual(values = c("1" = "stripe",
                                   "0" = "none"),
@@ -630,7 +633,7 @@ mode_share_p4 <-
                                                           "#D88134"),
                                                  pattern = "none")))
 # Export finalized graphic
-finalize_plot(mode_share_p4,
+finalize_plot(figure2_6,
               title = "Households with less than $35,000 in income were the most
               reliant  on non-car modes, but the highest-income households also
               neared the regional average.",
@@ -652,9 +655,10 @@ finalize_plot(mode_share_p4,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              filename = "mode_share_p4",
+              filename = "figure2_6",
               mode = c("png","pdf"),
-              height = 5,
+              height = 4.5,
+              sidebar_width = 2.5,
               overwrite = T)
 
 ################################################################################
@@ -700,7 +704,7 @@ transit_chain_income_mdt <-
 
 
 # Create chart of transit use by income and trip chain
-mode_share_p5 <-
+figure2_7 <-
   # Get data
   transit_chain_income_mdt %>% 
   # Rename for presentation
@@ -713,7 +717,7 @@ mode_share_p5 <-
   ggplot(aes(x = pct, y = hhinc_c, fill = chain_c,
              # Only label bars that round to at least 5 percent
              label = ifelse(pct >=.05,scales::label_percent(accuracy = 1)(pct),""))) + 
-  geom_col(position = position_stack(reverse = T)) +
+  geom_col(position = position_stack(reverse = T), width = 0.85) +
   geom_text(aes(group = chain_c), 
             position = position_stack(reverse = T,vjust = 0.5),
             color = "white") +
@@ -727,13 +731,13 @@ mode_share_p5 <-
   scale_x_continuous(labels = scales::label_percent(accuracy = 1),
                      expand = expansion(mult = c(.05,0)))
 
-mode_share_p5_samplesize <-
+figure2_7_samplesize <-
   transit_chain_income_mdt %>% 
   ungroup() %>% 
   select(hhinc_c,n = total_n) %>% 
   distinct()
 
-finalize_plot(mode_share_p5,
+finalize_plot(figure2_7,
               "Travelers from low-income households use transit for a much wider 
               range of trips than those from other households.",
               paste0(
@@ -744,28 +748,53 @@ finalize_plot(mode_share_p5,
               <br><br>
               Sample size:
               <br>- <$15K (",
-                mode_share_p5_samplesize %>% filter(hhinc_c == "Less than $15K") %>% select(n),
+                format(figure2_7_samplesize %>% 
+                         filter(hhinc_c == "Less than $15K") %>% 
+                         select(n) %>% 
+                         as.numeric(),
+                       big.mark = ","),
                 ")
               <br>- $15-34K (",
-                mode_share_p5_samplesize %>% filter(hhinc_c == "$15K to $34K") %>% select(n),
+                format(figure2_7_samplesize %>% 
+                         filter(hhinc_c == "$15K to $34K") %>% 
+                         select(n) %>% 
+                         as.numeric(),
+                       big.mark = ","),
                 ")
               <br>- $35-59K (",
-                mode_share_p5_samplesize %>% filter(hhinc_c == "$35K to $59K") %>% select(n),
+                format(figure2_7_samplesize %>% 
+                         filter(hhinc_c == "$35K to $59K") %>% 
+                         select(n) %>% 
+                         as.numeric(),
+                       big.mark = ","),
                 ")
               <br>- $60-99K (",
-                mode_share_p5_samplesize %>% filter(hhinc_c == "$60K to $99K") %>% select(n),
+                format(figure2_7_samplesize %>% 
+                         filter(hhinc_c == "$60K to $99K") %>% 
+                         select(n) %>% 
+                         as.numeric(),
+                       big.mark = ","),
                 ")
               <br>- $100-149K (",
-                mode_share_p5_samplesize %>% filter(hhinc_c == "$100K to $149K") %>% select(n),
+                format(figure2_7_samplesize %>% 
+                         filter(hhinc_c == "$100K to $149K") %>% 
+                         select(n) %>% 
+                         as.numeric(),
+                       big.mark = ","),
                 ")
               <br>- >=$150K (",
-                mode_share_p5_samplesize %>% filter(hhinc_c == "$150K or more") %>% select(n),
+                format(figure2_7_samplesize %>% 
+                         filter(hhinc_c == "$150K or more") %>% 
+                         select(n) %>% 
+                         as.numeric(),
+                       big.mark = ","),
                 ")
                 <br><br>
                 Source: Chicago Metropolitan Agency for Planning analysis of My 
                 Daily Travel data."),
-              filename = "mode_share_p5",
-              height = 4.8,
+              filename = "figure2_7",
+              height = 4.5,
+              sidebar_width = 2.5,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -774,18 +803,18 @@ finalize_plot(mode_share_p5,
 ################################################################################
 
 # Create labels
-mode_share_p6_labels <-
+figure2_8_labels <-
   mode_age_mdt %>%
   filter(mode_c %in% c("walk","transit","bike","schoolbus","other")) %>%
   group_by(age_bin) %>%
   summarize(label = sum(pct))
 
 # Create plot
-mode_share_p6 <-
+figure2_8 <-
   # Get data
   mode_age_mdt %>%
   # Add labels
-  left_join(mode_share_p6_labels, by = "age_bin") %>%
+  left_join(figure2_8_labels, by = "age_bin") %>%
   # Make changes for graphing
   mutate(
     # Reorder factors and capitalize
@@ -816,7 +845,7 @@ mode_share_p6 <-
                               pattern_size = 0.2,
                               pattern_spacing = 0.02,
                               position = position_stack(reverse = T),
-                              width = 0.8) +  
+                              width = 0.85) +  
   # Re-assign patterns manually
   scale_pattern_manual(values = c("1" = "stripe",
                                   "0" = "none"),
@@ -841,7 +870,7 @@ mode_share_p6 <-
                                                           "#43B649","#D93636","#7451A1",
                                                           "#D88134"),
                                                  pattern = "none")))
-finalize_plot(mode_share_p6,
+finalize_plot(figure2_8,
               title = "Children and young adults relied more on non-car modes.",
               caption = 
               paste0(
@@ -860,8 +889,9 @@ finalize_plot(mode_share_p6,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              filename = "mode_share_p6",
-              height = 4,
+              filename = "figure2_8",
+              height = 3.5,
+              sidebar_width = 2.5,
               mode = c("png","pdf"),
               overwrite = T)
 

@@ -462,11 +462,138 @@ regional_averages <-
   distinct()
 
 ################################################################################
+# Plot of percent traveling for MDT
+################################################################################
+
+# Plot
+figure2_1 <-
+  # Get data
+  travel_summaries %>%
+  # Keep MDT
+  filter(survey == "mdt") %>% 
+  # Exclude total distances
+  filter(name %in% c("traveling_pct")) %>% 
+  # Reverse factors
+  mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>% 
+  # Exclude overall and geography
+  filter(!(type %in% c("Overall"))) %>%
+  # Mutate name to match
+  mutate(name = "Percent traveling") %>% 
+  
+  # Create ggplot object
+  ggplot(aes(x = 1 - value, y = subtype, fill = type)) +
+  # Add columns
+  geom_col(width = .85) +
+  
+  # Add lines for average trips per day and average distance per trip
+  geom_vline(data = travel_summaries_vlines %>% 
+               filter(survey == "mdt") %>%
+               filter(name == "Percent traveling"),# %>% 
+             # mutate(color = paste0("Regional average (",round(100*(1-value[1])),"%)")),
+             mapping = aes(xintercept = 1 - value,
+                           # color = color
+             ),
+             linetype = "dashed",
+             size = .33
+  ) +
+  
+  # Add labels
+  geom_label(aes(label = scales::label_percent(accuracy = 1)(1 - value),
+                 group = name),
+             fill = "white",
+             label.size = 0,label.padding = unit(1.5,"bigpts"),
+             label.r = grid::unit(0,"lines"),
+             hjust = -.02) +
+  
+  # Add regional label
+  annotate(geom = "label",
+           x = 0.001 + (1 - regional_averages %>% 
+                          filter(name == "Percent traveling") %>% 
+                          select(value) %>% distinct() %>% 
+                          as.numeric()),
+           y = 19,
+           label = paste0("Regional average (",
+                          round(100*(1- regional_averages %>% 
+                                       filter(name == "Percent traveling") %>% 
+                                       select(value) %>% distinct() %>% 
+                                       as.numeric())),
+                          "%)"),
+           vjust = 0.5,
+           hjust = 0,
+           fill = "light gray",
+           label.padding = grid::unit(2.5,"pt"),
+           label.size = 0,
+           label.r = grid::unit(0,"lines")
+  ) +
+  
+  # Adjust scale
+  scale_x_continuous(limits = c(0,.18),
+                     labels = scales::label_percent(accuracy = 1),
+                     breaks = c(0,.05,.1,.15,.2),
+                     expand = expansion(mult = c(0.05,0))
+  ) +
+  scale_y_discrete(limits = c("Female","Male", 
+                              "",
+                              "70 and above","50 to 69","30 to 49","18 to 29","5 to 17",
+                              "",
+                              "$100K or more","$60K to $99K","$35K to $59K","Less than $35K",
+                              "",
+                              "Other","Latino","Black","Asian","White")) +
+  
+  # Add CMAP theme
+  theme_cmap(gridlines = "v",vline = 0,
+             xlab = "Percent of residents who did not travel",
+             strip.text.x = element_blank(),
+             strip.text.y = element_blank()) +
+  scale_fill_discrete(type = c("#D8BA37","#D93636","#38B2D8","#7451A1")) +
+  scale_color_discrete(type = "black") +
+  
+  # Reorder legends
+  guides(color = guide_legend(order = 2),fill = guide_legend(order = 1))
+
+# Export finalized graphic
+finalize_plot(figure2_1,
+              "Residents from households with low income, non-white residents, 
+              and older residents were the least likely to travel on a weekday.",
+              caption = paste0(
+                "Note: Figures are based on the travel behavior of
+              residents age 5 or older of the CMAP seven-county region, Grundy, 
+              and DeKalb.
+              Individuals were counted as \"traveling\" if they had at least one 
+              trip on their assigned travel day, no matter whether that trip was 
+              in the CMAP region.
+              See \"About the data\" for more information on race, ethnicity, and sex.
+              <br><br>
+              Sample size: Figures are based on a total of ",
+                format(nrow(distinct_residents_mdt),big.mark = ","),
+                " residents. 
+              Across all categories, residents with an \"Other\" race and 
+              ethnicity have the lowest sample size, with ",
+                (distinct_residents_mdt %>% 
+                   count(race_eth) %>% 
+                   filter(race_eth == "other"))$n,
+                " individual residents.
+              <br><br>
+              Source: Chicago Metropolitan Agency for Planning analysis of My 
+              Daily Travel data."),
+              filename = "figure2_1",
+              mode = c("png","pdf"),
+              overwrite = T)
+
+
+# Identify sample sizes ("Other" race/eth has the lowest)
+
+distinct_residents_mdt %>% count(age_bin)
+distinct_residents_mdt %>% count(income_c)
+distinct_residents_mdt %>% count(race_eth)
+distinct_residents_mdt %>% count(sex)
+
+################################################################################
 # Plot of trips and distances by demographic characteristics for MDT
 ################################################################################
 
 # Plot
-average_resident_p1 <-
+figure2_2 <-
   # Get data
   travel_summaries %>%
   # Keep MDT
@@ -496,7 +623,7 @@ average_resident_p1 <-
   # Create ggplot object
   ggplot(aes(x = value, y = subtype, fill = type)) +
   # Add columns
-  geom_col(width = .8) +
+  geom_col(width = .85) +
   
   scale_y_discrete(limits = c("Female","Male", 
                               "",
@@ -556,7 +683,7 @@ average_resident_p1 <-
   )
 
 # Export finalized graphic
-finalize_plot(average_resident_p1,
+finalize_plot(figure2_2,
               "Average travel patterns vary significantly based on demographic
               characteristics.",
               caption = paste0(
@@ -584,7 +711,7 @@ finalize_plot(average_resident_p1,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              filename = "average_resident_p1",
+              filename = "figure2_2",
               sidebar_width = 1.75,
               mode = c("png","pdf"),
               height = 6.5,
@@ -599,137 +726,11 @@ distinct_daily_travelers_mdt %>% count(race_eth)
 distinct_daily_travelers_mdt %>% count(sex)
 
 ################################################################################
-# Plot of percent traveling for MDT
-################################################################################
-
-# Plot
-average_resident_p2 <-
-  # Get data
-  travel_summaries %>%
-  # Keep MDT
-  filter(survey == "mdt") %>% 
-  # Exclude total distances
-  filter(name %in% c("traveling_pct")) %>% 
-  # Reverse factors
-  mutate(subtype = factor(subtype,levels = rev(levels(subtype)))) %>% 
-  # Exclude overall and geography
-  filter(!(type %in% c("Overall"))) %>%
-  # Mutate name to match
-  mutate(name = "Percent traveling") %>% 
-  
-  # Create ggplot object
-  ggplot(aes(x = 1 - value, y = subtype, fill = type)) +
-  # Add columns
-  geom_col(width = .8) +
-  
-  # Add lines for average trips per day and average distance per trip
-  geom_vline(data = travel_summaries_vlines %>% 
-               filter(survey == "mdt") %>%
-               filter(name == "Percent traveling"),# %>% 
-               # mutate(color = paste0("Regional average (",round(100*(1-value[1])),"%)")),
-             mapping = aes(xintercept = 1 - value,
-                           # color = color
-                           ),
-             linetype = "dashed",
-             size = .33
-  ) +
-  
-  # Add labels
-  geom_label(aes(label = scales::label_percent(accuracy = 1)(1 - value),
-                 group = name),
-             fill = "white",
-             label.size = 0,label.padding = unit(1.5,"bigpts"),
-             label.r = grid::unit(0,"lines"),
-             hjust = -.02) +
-  
-  # Add regional label
-  annotate(geom = "label",
-           x = 0.001 + (1 - regional_averages %>% 
-             filter(name == "Percent traveling") %>% 
-             select(value) %>% distinct() %>% 
-             as.numeric()),
-           y = 19,
-           label = paste0("Regional average (",
-                          round(100*(1- regional_averages %>% 
-                                       filter(name == "Percent traveling") %>% 
-                                       select(value) %>% distinct() %>% 
-                                       as.numeric())),
-                          "%)"),
-           vjust = 0.5,
-           hjust = 0,
-           fill = "light gray",
-           label.size = 0,
-           label.r = grid::unit(0,"lines")
-           ) +
-  
-  # Adjust scale
-  scale_x_continuous(limits = c(0,.18),
-                     labels = scales::label_percent(accuracy = 1),
-                     breaks = c(0,.05,.1,.15,.2),
-                     expand = expansion(mult = c(0.05,0))
-                     ) +
-  scale_y_discrete(limits = c("Female","Male", 
-                              "",
-                              "70 and above","50 to 69","30 to 49","18 to 29","5 to 17",
-                              "",
-                              "$100K or more","$60K to $99K","$35K to $59K","Less than $35K",
-                              "",
-                              "Other","Latino","Black","Asian","White")) +
-  
-  # Add CMAP theme
-  theme_cmap(gridlines = "v",vline = 0,
-             xlab = "Percent of residents who did not travel",
-             strip.text.x = element_blank(),
-             strip.text.y = element_blank()) +
-  scale_fill_discrete(type = c("#D8BA37","#D93636","#38B2D8","#7451A1")) +
-  scale_color_discrete(type = "black") +
-
-  # Reorder legends
-  guides(color = guide_legend(order = 2),fill = guide_legend(order = 1))
-
-# Export finalized graphic
-finalize_plot(average_resident_p2,
-              "Residents from households with low income, non-white residents, 
-              and older residents were the least likely to travel on a weekday.",
-              caption = paste0(
-                "Note: Figures are based on the travel behavior of
-              residents age 5 or older of the CMAP seven-county region, Grundy, 
-              and DeKalb.
-              Individuals were counted as \"traveling\" if they had at least one 
-              trip on their assigned travel day, no matter whether that trip was 
-              in the CMAP region.
-              See \"About the data\" for more information on race, ethnicity, and sex.
-              <br><br>
-              Sample size: Figures are based on a total of ",
-                     format(nrow(distinct_residents_mdt),big.mark = ","),
-                     " residents. 
-              Across all categories, residents with an \"Other\" race and 
-              ethnicity have the lowest sample size, with ",
-                     (distinct_residents_mdt %>% 
-                        count(race_eth) %>% 
-                        filter(race_eth == "other"))$n,
-                        " individual residents.
-              <br><br>
-              Source: Chicago Metropolitan Agency for Planning analysis of My 
-              Daily Travel data."),
-              filename = "average_resident_p2",
-              mode = c("png","pdf"),
-              overwrite = T)
-
-
-# Identify sample sizes ("Other" race/eth has the lowest)
-
-distinct_residents_mdt %>% count(age_bin)
-distinct_residents_mdt %>% count(income_c)
-distinct_residents_mdt %>% count(race_eth)
-distinct_residents_mdt %>% count(sex)
-
-################################################################################
 # Plot of trips and distances for MDT vs. TT, comparing demographics
 ################################################################################
 
 # Plot
-average_resident_p3 <-
+figure2_3 <-
   # Get data
   travel_summaries %>%
   # Keep only total distances
@@ -765,7 +766,7 @@ average_resident_p3 <-
                               pattern_size = 0.2,
                               pattern_spacing = 0.02,
                               position = position_dodge2(reverse = T),
-                              width = 0.8) +  
+                              width = 0.85) +  
   
   # Re-assign patterns manually
   scale_pattern_manual(values = c("Increased travel" = "stripe",
@@ -775,7 +776,7 @@ average_resident_p3 <-
   # Add labels
   geom_label(aes(label = scales::label_number(accuracy = 1)(value),
                  group = survey),
-             position = position_dodge2(width = .8,reverse = T),
+             position = position_dodge2(width = .85,reverse = T),
              fill = "white",
              label.size = 0,label.padding = unit(1.5,"bigpts"),
              label.r = grid::unit(0,"lines"),
@@ -796,7 +797,7 @@ average_resident_p3 <-
   guides(fill = guide_legend(override.aes = list(pattern = "none")))
 
 # Export finalized graphic
-finalize_plot(average_resident_p3,
+finalize_plot(figure2_3,
               "In contrast to the overall regional decline, lower-income 
               travelers reported more travel in 2019 than in 2008.",
               caption = 
@@ -825,7 +826,7 @@ finalize_plot(average_resident_p3,
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel and Travel Tracker data."),
-              filename = "average_resident_p3",
+              filename = "figure2_3",
               mode = c("png","pdf"),
               height = 5,
               overwrite = T)
@@ -855,7 +856,7 @@ travel_disability <-
 
 
 # Create travel percentages
-average_resident_p4 <-
+figure2_4 <-
   # Get data
   travel_disability %>%
   # Keep MDT
@@ -870,7 +871,7 @@ average_resident_p4 <-
   # Create ggplot object
   ggplot(aes(y = 1 - value, x = str_wrap_factor(subtype,30), fill = subtype)) +
   # Add columns
-  geom_col(width = .8) +
+  geom_col(width = 0.85) +
   
   # Add labels
   geom_label(aes(label = scales::label_percent(accuracy = 1)(1 - value),
@@ -894,7 +895,7 @@ average_resident_p4 <-
   
   scale_fill_discrete(type = c("#38B2D8","#D88134"))
   
-finalize_plot(average_resident_p4,
+finalize_plot(figure2_4,
               "Residents with disabilities were less likely to travel than were
               others in the region.",
               caption = 
@@ -904,15 +905,26 @@ finalize_plot(average_resident_p4,
               <br><br>
               Sample size: 
               <br>- Without disability (",
-                avgtravel_all_respondents_mdt %>% count(disab) %>% filter(disab == 2) %>% select(n),
+                format(avgtravel_all_respondents_mdt %>% 
+                         count(disab) %>% 
+                         filter(disab == 2) %>% 
+                         select(n) %>% 
+                         as.numeric(),
+                       big.mark = ","),
                 "); 
                 <br>- With disability (",
-                avgtravel_all_respondents_mdt %>% count(disab) %>% filter(disab == 1) %>% select(n),
+                format(avgtravel_all_respondents_mdt %>% 
+                         count(disab) %>% 
+                         filter(disab == 1) %>% 
+                         select(n) %>% 
+                         as.numeric(),
+                       big.mark = ","),
                 ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              filename = "average_resident_p4",
+              filename = "figure2_4",
               mode = c("png","pdf"),
               height = 4,
               overwrite = T)
+

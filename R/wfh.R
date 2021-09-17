@@ -362,7 +362,7 @@ tc_summaries_vlines <-
 
 
 # Plot of trips and distances by demographic characteristics
-wfh_p1 <-
+figure3_1 <-
   # Get data
   tc_summaries %>%
   # Reverse factors
@@ -375,7 +375,7 @@ wfh_p1 <-
   # Create ggplot object
   ggplot(aes(x = value, y = subtype, fill = type)) +
   # Add columns
-  geom_col(width = .8) +
+  geom_col(width = .85) +
   # Add lines for average trips per day and average distance per trip
   geom_vline(data = tc_summaries_vlines,
              mapping = aes(xintercept = value),
@@ -424,16 +424,16 @@ wfh_p1 <-
   scale_fill_discrete(type = c("#D8BA37","#D93636","#38B2D8","#7451A1"))
   
 
-wfh_p1_samplesize <-
+figure3_1_samplesize <-
   tc_summaries %>% 
   filter(name == "n") %>% 
   select(subtype,n = value) %>% 
   ungroup()
 
 # Export finalized graphic
-finalize_plot(wfh_p1,
-              "Lower-income, Black, and Latino residents were the least likely 
-              to telecommute prior to COVID-19.",
+finalize_plot(figure3_1,
+              "Residents from low-income households and Black and Latino 
+              residents were the least likely to telecommute prior to COVID-19.",
               caption = 
               paste0(
                 "Note: Includes only employed residents age 16 and older from 
@@ -441,25 +441,25 @@ finalize_plot(wfh_p1,
                 data\" for more information on race, ethnicity, and sex.
               <br><br>",
               "Sample size: Figures are based on a total of ",
-              format(wfh_p1_samplesize %>% filter(subtype == "Overall") %>% 
+              format(figure3_1_samplesize %>% filter(subtype == "Overall") %>% 
                 select(n) %>% as.numeric(),big.mark =","),
               " residents. 
               Across all categories, residents age 70 and above have the lowest 
               sample size, with ",
-              format(wfh_p1_samplesize %>% filter(subtype == "70 and above") %>% 
+              format(figure3_1_samplesize %>% filter(subtype == "70 and above") %>% 
                        select(n) %>% as.numeric(),big.mark =","),
               " individual residents.
                  <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
-              filename = "wfh_p1",
+              filename = "figure3_1",
               mode = c("png","pdf"),
               height = 5,
               overwrite = T)
 
 # Identify sample sizes ("Other" race/eth has the lowest)
 
-wfh_p1_samplesize %>% 
+figure3_1_samplesize %>% 
   arrange(n)
 
 ################################################################################
@@ -527,7 +527,7 @@ wfh_worktrips_summary <-
 # the office today
 ################################################################################
 
-wfh_p2 <-
+figure3_2 <-
   # Get data
   wfh_worktrips_summary %>%
   # Filter out other trips
@@ -539,14 +539,16 @@ wfh_p2 <-
   mutate(flag = recode_factor(factor(flag),
                        "0" = "Does not regularly telecommute",
                        "1" = "Sometimes telecommutes (1-3 days/week)"),
-         geog = factor(geog, levels = c("Collar and adjacent",
-                                        "Suburban Cook",
+         geog = factor(geog, levels = c("Collar and adjacent counties",
+                                        "Suburban Cook County",
                                         "Chicago"))) %>%
   
   
   # Create ggplot object
-  ggplot(aes(x = distance_pg, str_wrap_factor(geog,18))) +
-  geom_col(aes(fill = flag), position = position_dodge2(reverse = T)) +
+  ggplot(aes(x = distance_pg, str_wrap_factor(geog,15))) +
+  geom_col(aes(fill = flag), 
+           position = position_dodge2(reverse = T),
+           width = 0.85) +
   geom_label(aes(label = scales::label_number(accuracy = 1)(distance_pg),
                  group = flag),
              hjust = -.02,
@@ -566,14 +568,14 @@ wfh_p2 <-
              ) +
   scale_fill_discrete(type = c("#38B2D8","#43B649"))
 
-wfh_p2_samplesize <-
+figure3_2_samplesize <-
   wfh_worktrips_summary %>% 
   ungroup() %>%
   filter(worktrip == 1) %>% 
   select(geog,flag,n)
 
 # Export finalized graphic
-finalize_plot(wfh_p2,
+finalize_plot(figure3_2,
               "Part-time telecommuters who lived outside Chicago had 
               significantly longer journeys to and from work on days when they 
               worked outside the home.",
@@ -586,45 +588,51 @@ finalize_plot(wfh_p2,
               <br><br>
               Sample size (Chicago/Suburban Cook/Collar and adjacent):
               <br>- Does not regularly telecommute (",
-                     paste(wfh_p2_samplesize %>%
+              paste(format(figure3_2_samplesize %>%
                              filter(geog == "Chicago",
                                     flag == 0) %>%
                              select(n) %>%
                              as.numeric(),
-                           wfh_p2_samplesize %>%
-                             filter(geog == "Suburban Cook",
+                           big.mark = ","),
+                    format(figure3_2_samplesize %>%
+                             filter(geog == "Suburban Cook County",
                                     flag == 0) %>%
                              select(n) %>%
                              as.numeric(),
-                           wfh_p2_samplesize %>%
-                             filter(geog == "Collar and adjacent",
+                           big.mark = ","),
+                    format(figure3_2_samplesize %>%
+                             filter(geog == "Collar and adjacent counties",
                                     flag == 0) %>%
                              select(n) %>%
                              as.numeric(),
-                           sep = "/"),
-                     ");
+                           big.mark = ","),
+                    sep = "/"),
+              ");
               <br>- Sometimes telecommutes (",
-                     paste(wfh_p2_samplesize %>%
+              paste(format(figure3_2_samplesize %>%
                              filter(geog == "Chicago",
                                     flag == 1) %>%
                              select(n) %>%
                              as.numeric(),
-                           wfh_p2_samplesize %>%
-                             filter(geog == "Suburban Cook",
+                           big.mark = ","),
+                    format(figure3_2_samplesize %>%
+                             filter(geog == "Suburban Cook County",
                                     flag == 1) %>%
                              select(n) %>%
                              as.numeric(),
-                           wfh_p2_samplesize %>%
-                             filter(geog == "Collar and adjacent",
+                           big.mark = ","),
+                    format(figure3_2_samplesize %>%
+                             filter(geog == "Collar and adjacent counties",
                                     flag == 1) %>%
                              select(n) %>%
                              as.numeric(),
-                           sep = "/"),
+                           big.mark = ","),
+                    sep = "/"),
                      ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              filename = "wfh_p2",
+              filename = "figure3_2",
               height = 5.25,
               mode = c("png","pdf"),
               overwrite = T)
@@ -651,7 +659,7 @@ wfh_mode_share <-
     third_breakdown = "geog",
     weight = "weight")
 
-wfh_p3 <-
+figure3_3 <-
   wfh_mode_share %>% 
   # Reformat and reorder
   mutate(tc_frequency = recode_factor(factor(tc_frequency,levels = c(0,1)),
@@ -672,7 +680,9 @@ wfh_p3 <-
   ggplot(aes(x = pct, y = tc_frequency,
          # Only label bars that round to at least 5 percent
          label = ifelse(pct >=.05,scales::label_percent(accuracy = 1)(pct),""))) +
-  geom_col(aes(fill = mode_c), position = position_stack(reverse = T)) +
+  geom_col(aes(fill = mode_c), 
+           position = position_stack(reverse = T),
+           width = 0.85) +
   geom_text(position = position_stack(vjust = 0.5),
             color = "white") +
   
@@ -696,12 +706,12 @@ wfh_p3 <-
   # Add faceting
   facet_wrap(~geog,ncol = 1)
 
-wfh_p3_samplesize <-
+figure3_3_samplesize <-
   wfh_mode_share %>% 
   ungroup()
 
 # Export finalized graphic
-finalize_plot(wfh_p3,
+finalize_plot(figure3_3,
               "Suburban part-time telecommuters were much more 
               likely to use transit on days when they worked outside the home, 
               while those in Chicago were more likely to walk to work.",
@@ -715,45 +725,47 @@ finalize_plot(wfh_p3,
               <br><br>
               Sample size (Chicago/Suburban Cook/Collar and adjacent):
               <br>- 0 days/wk. (",
-              paste(wfh_p3_samplesize %>% 
-                      filter(geog == "Chicago", 
-                             mode_c == "driver", tc_frequency == 0) %>% 
-                      select(total_n) %>% 
-                      as.numeric(),
-                    wfh_p3_samplesize %>% 
-                      filter(geog == "Suburban Cook", 
-                             mode_c == "driver", tc_frequency == 0) %>% 
-                      select(total_n) %>% 
-                      as.numeric(),
-                    wfh_p3_samplesize %>% 
-                      filter(geog == "Collar and adjacent", 
-                             mode_c == "driver", tc_frequency == 0) %>% 
-                      select(total_n) %>% 
-                      as.numeric(),
-                    sep = "/"),
-              ");
+                paste(
+                  format(figure3_3_samplesize %>% 
+                           filter(geog == "Chicago", 
+                                  mode_c == "driver", tc_frequency == 0) %>% 
+                           select(total_n) %>% as.numeric(),
+                         big.mark = ","),
+                  format(figure3_3_samplesize %>% 
+                           filter(geog == "Suburban Cook County", 
+                                  mode_c == "driver", tc_frequency == 0) %>% 
+                           select(total_n) %>% as.numeric(),
+                         big.mark = ","),
+                  format(figure3_3_samplesize %>% 
+                           filter(geog == "Collar and adjacent counties", 
+                                  mode_c == "driver", tc_frequency == 0) %>% 
+                           select(total_n) %>% as.numeric(),
+                         big.mark = ","),
+                  sep = "/"),
+                ");
               <br>- 1-3 days/wk. (",
-              paste(wfh_p3_samplesize %>% 
-                      filter(geog == "Chicago", 
-                             mode_c == "driver", tc_frequency == 1) %>% 
-                      select(total_n) %>% 
-                      as.numeric(),
-                    wfh_p3_samplesize %>% 
-                      filter(geog == "Suburban Cook", 
-                             mode_c == "driver", tc_frequency == 1) %>% 
-                      select(total_n) %>% 
-                      as.numeric(),
-                    wfh_p3_samplesize %>% 
-                      filter(geog == "Collar and adjacent", 
-                             mode_c == "driver", tc_frequency == 1) %>% 
-                      select(total_n) %>% 
-                      as.numeric(),
-                    sep = "/"),
+                paste(
+                  format(figure3_3_samplesize %>% 
+                           filter(geog == "Chicago", 
+                                  mode_c == "driver", tc_frequency == 1) %>% 
+                           select(total_n) %>% as.numeric(),
+                         big.mark = ","),
+                  format(figure3_3_samplesize %>% 
+                           filter(geog == "Suburban Cook County", 
+                                  mode_c == "driver", tc_frequency == 1) %>% 
+                           select(total_n) %>% as.numeric(),
+                         big.mark = ","),
+                  format(figure3_3_samplesize %>% 
+                           filter(geog == "Collar and adjacent counties", 
+                                  mode_c == "driver", tc_frequency == 1) %>% 
+                           select(total_n) %>% as.numeric(),
+                         big.mark = ","),
+                  sep = "/"),
               ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              filename = "wfh_p3",
+              filename = "figure3_3",
               sidebar_width = 2.5,
               height = 5.25,
               mode = c("png","pdf"),
@@ -796,7 +808,7 @@ wfh_alltraveler_trips_summary <-
   ungroup()
 
 # Create chart
-wfh_p4 <-
+figure3_4 <-
   # Get data
   wfh_alltraveler_trips_summary %>%
   # Reformat and reorder
@@ -805,8 +817,8 @@ wfh_p4 <-
                               "1" = "Sometimes telecommutes (1-3 days/week)",
                               "2" = "Almost always telecommutes (4+ days/week)"),
          
-         geog = factor(geog, levels = c("Collar and adjacent",
-                                        "Suburban Cook",
+         geog = factor(geog, levels = c("Collar and adjacent counties",
+                                        "Suburban Cook County",
                                         "Chicago"))) %>%
   
   
@@ -814,12 +826,13 @@ wfh_p4 <-
   ggplot(aes(x = distance_pg, y = str_wrap_factor(geog,18), 
              label = scales::label_number(accuracy = .1)(distance_pg))) +
   geom_col(aes(fill = flag),
-           position = position_dodge2(reverse = T,width = 0.9)) +
+           position = position_dodge2(reverse = T,width = 0.9),
+           width = 0.85) +
 
   # Add labels
   geom_label(aes(label = scales::label_number(accuracy = 1)(distance_pg),
                  group = flag),
-             position = position_dodge2(reverse = T,width = 0.9),
+             position = position_dodge2(reverse = T,width = 0.85),
              label.size = 0,
              label.r = grid::unit(0,"lines"),
              hjust = -.02) +
@@ -838,7 +851,7 @@ wfh_p4 <-
   scale_fill_discrete(type = c("#38B2D8","#43B649","#D88134"))
 
 # Export finalized graphic
-finalize_plot(wfh_p4,
+finalize_plot(figure3_4,
               "On average, part-time telecommuters living outside Chicago 
               traveled the greatest distances every day.",
               paste0(
@@ -849,54 +862,57 @@ finalize_plot(wfh_p4,
               <br><br>
               Sample size (Chicago/Suburban Cook/Collar and adjacent):
               <br>- Not regular (",
-                     paste(wfh_alltraveler_trips_summary %>% 
-                             filter(geog == "Chicago", flag == 0) %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                           wfh_alltraveler_trips_summary %>% 
-                             filter(geog == "Suburban Cook", flag == 0) %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                           wfh_alltraveler_trips_summary %>% 
-                             filter(geog == "Collar and adjacent", flag == 0) %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                           sep = "/"),
-                     ");
+              paste(
+                format(wfh_alltraveler_trips_summary %>% 
+                         filter(geog == "Chicago", flag == 0) %>% 
+                         select(n) %>% as.numeric(),
+                       big.mark = ","),
+                format(wfh_alltraveler_trips_summary %>% 
+                         filter(geog == "Suburban Cook County", flag == 0) %>% 
+                         select(n) %>% as.numeric(),
+                       big.mark = ","),
+                format(wfh_alltraveler_trips_summary %>% 
+                         filter(geog == "Collar and adjacent counties", flag == 0) %>% 
+                         select(n) %>% as.numeric(),
+                       big.mark = ","),
+                sep = "/"),
+              ");
               <br>- Sometimes (",
-                     paste(wfh_alltraveler_trips_summary %>% 
-                             filter(geog == "Chicago", flag == 1) %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                           wfh_alltraveler_trips_summary %>% 
-                             filter(geog == "Suburban Cook", flag == 1) %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                           wfh_alltraveler_trips_summary %>% 
-                             filter(geog == "Collar and adjacent", flag == 1) %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                           sep = "/"),
-                     ");
+              paste(
+                format(wfh_alltraveler_trips_summary %>% 
+                         filter(geog == "Chicago", flag == 1) %>% 
+                         select(n) %>% as.numeric(),
+                       big.mark = ","),
+                format(wfh_alltraveler_trips_summary %>% 
+                         filter(geog == "Suburban Cook County", flag == 1) %>% 
+                         select(n) %>% as.numeric(),
+                       big.mark = ","),
+                format(wfh_alltraveler_trips_summary %>% 
+                         filter(geog == "Collar and adjacent counties", flag == 1) %>% 
+                         select(n) %>% as.numeric(),
+                       big.mark = ","),
+                sep = "/"),
+              ");
               <br>- Almost always (",
-                     paste(wfh_alltraveler_trips_summary %>% 
-                             filter(geog == "Chicago", flag == 2) %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                           wfh_alltraveler_trips_summary %>% 
-                             filter(geog == "Suburban Cook", flag == 2) %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                           wfh_alltraveler_trips_summary %>% 
-                             filter(geog == "Collar and adjacent", flag == 2) %>% 
-                             select(n) %>% 
-                             as.numeric(),
-                           sep = "/"),
+              paste(
+                format(wfh_alltraveler_trips_summary %>% 
+                         filter(geog == "Chicago", flag == 2) %>% 
+                         select(n) %>% as.numeric(),
+                       big.mark = ","),
+                format(wfh_alltraveler_trips_summary %>% 
+                         filter(geog == "Suburban Cook County", flag == 2) %>% 
+                         select(n) %>% as.numeric(),
+                       big.mark = ","),
+                format(wfh_alltraveler_trips_summary %>% 
+                         filter(geog == "Collar and adjacent counties", flag == 2) %>% 
+                         select(n) %>% as.numeric(),
+                       big.mark = ","),
+                sep = "/"),
                      ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              filename = "wfh_p4",
+              filename = "figure3_4",
               height = 4.25,
               mode = c("png","pdf"),
               overwrite = T)

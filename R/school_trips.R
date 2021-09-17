@@ -96,13 +96,13 @@ school_time_race_mdt <-
             distance = MetricsWeighted::weighted_median(distance_pg, w = weight),
             n = n()) 
 
-school_trips_p1_samplesize <-
+figure2_10_samplesize <-
   school_time_race_mdt %>% 
   ungroup() %>% 
   select(race_eth,n)
 
 # Chart of travel time to school by household income
-school_trips_p1 <-
+figure2_10 <-
   # Get data
   school_time_race_mdt %>%
   # Rename desired statistic
@@ -119,7 +119,7 @@ school_trips_p1 <-
   
   # Create ggplot object
   ggplot(aes(x = race_eth, y = stat, fill = race_eth)) +
-  geom_col() +
+  geom_col(width = 0.85) +
   geom_label(aes(label = scales::label_number(accuracy = 1)(stat)),
              label.r = grid::unit(0,"lines"),
              vjust = -.03, label.size = 0, fill = "white") +
@@ -134,7 +134,7 @@ school_trips_p1 <-
                                "#75a5d8"  # White
                                )) 
 
-finalize_plot(school_trips_p1,
+finalize_plot(figure2_10,
               "Black elementary and middle school students had longer trips to 
               school than those of other children.",
               caption = 
@@ -147,24 +147,39 @@ finalize_plot(school_trips_p1,
               <br><br>
               Sample size: 
               <br>- Black (",
-                     school_trips_p1_samplesize %>% 
-                     filter(race_eth == "black") %>% select(n),");
+              format(figure2_10_samplesize %>% 
+                       filter(race_eth == "black") %>% 
+                       select(n) %>% as.numeric(),
+                     big.mark = ","),
+              ");
               <br>- Latino (",
-                     school_trips_p1_samplesize %>% 
-                       filter(race_eth == "latino") %>% select(n),");
+              format(figure2_10_samplesize %>% 
+                       filter(race_eth == "latino") %>% 
+                       select(n) %>% as.numeric(),
+                     big.mark = ","),
+              ");
               <br>- Asian (",
-                     school_trips_p1_samplesize %>% 
-                       filter(race_eth == "asian") %>% select(n),");
+              format(figure2_10_samplesize %>% 
+                       filter(race_eth == "asian") %>% 
+                       select(n) %>% as.numeric(),
+                     big.mark = ","),
+              ");
               <br>- Other (",
-                     school_trips_p1_samplesize %>% 
-                       filter(race_eth == "other") %>% select(n),");
+              format(figure2_10_samplesize %>% 
+                       filter(race_eth == "other") %>% 
+                       select(n) %>% as.numeric(),
+                     big.mark = ","),
+              ");
               <br>- White (",
-                     school_trips_p1_samplesize %>% 
-                       filter(race_eth == "white") %>% select(n),").
+              format(figure2_10_samplesize %>% 
+                       filter(race_eth == "white") %>% 
+                       select(n) %>% as.numeric(),
+                     big.mark = ","),
+              ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
               Daily Travel data."),
-              filename = "school_trips_p1",
+              filename = "figure2_10",
               mode = c("png","pdf"),
               height = 5,
               overwrite = T)

@@ -179,13 +179,13 @@ tnc_purpose_race <-
                            levels = c("black","asian","other","latino","white","CMAP region")))
 
 
-tnc_p1_labels <-
+figure4_2_labels <-
   tnc_purpose_race %>% 
   filter(tnc_purp %in% c("Late-night (non-work)","Daytime (non-work)")) %>% 
   group_by(race_eth) %>% 
   summarize(label = sum(pct))
 
-tnc_p1 <-
+figure4_2 <-
   # Get data
   tnc_purpose_race %>% 
   # Add flag for pattern
@@ -195,7 +195,7 @@ tnc_p1 <-
   mutate(pct = ifelse(!(tnc_purp %in% c("Late-night (non-work)","Daytime (non-work)")),
                       -1 * pct, pct)) %>% 
   # Add labels
-  left_join(tnc_p1_labels, by = "race_eth") %>% 
+  left_join(figure4_2_labels, by = "race_eth") %>% 
   # Capitalize
   mutate(race_eth = recode_factor(race_eth,
                                   "other" = "Other",
@@ -215,7 +215,7 @@ tnc_p1 <-
                               pattern_density = 0.125,
                               pattern_spacing = 0.02,
                               position = position_stack(reverse = T),
-                              width = 0.8) +  
+                              width = 0.85) +  
   # Re-assign patterns manually
   scale_pattern_manual(values = c("1" = "stripe",
                                   "0" = "none"),
@@ -241,15 +241,15 @@ tnc_p1 <-
                                                           "#2C2B7F","#38B2D8"),
                                                  pattern = "none")))
 
-tnc_p1_samplesize <-
+figure4_2_samplesize <-
   tnc_purpose_race %>% 
   ungroup() %>% 
   select(race_eth,n = total_n) %>% 
   distinct()
 
-finalize_plot(tnc_p1,
-              title = "Non-White travelers were much more likely to report using 
-              Transportation Network Companies (TNCs) for work-related trips.",
+finalize_plot(figure4_2,
+              title = "Non-white travelers were much more likely to report using 
+              transportation network companies (TNCs) for work-related trips.",
               caption = 
               paste0(
               "Note:
@@ -260,24 +260,39 @@ finalize_plot(tnc_p1,
               <br><br>
               Sample size:
               <br>- White (",
-                       tnc_p1_samplesize %>% filter(race_eth == "white") %>% select(n),
-                       ");
+              format(figure4_2_samplesize %>% 
+                       filter(race_eth == "white") %>% 
+                       select(n) %>% as.numeric(),
+                     big.mark = ","),
+              ");
               <br>- Asian (",
-                       tnc_p1_samplesize %>% filter(race_eth == "asian") %>% select(n),
-                       ");
+              format(figure4_2_samplesize %>% 
+                       filter(race_eth == "asian") %>% 
+                       select(n) %>% as.numeric(),
+                     big.mark = ","),
+              ");
               <br>- Latino (",
-                       tnc_p1_samplesize %>% filter(race_eth == "latino") %>% select(n),
-                       ");
+              format(figure4_2_samplesize %>% 
+                       filter(race_eth == "latino") %>% 
+                       select(n) %>% as.numeric(),
+                     big.mark = ","),
+              ");
               <br>- Other (",
-                       tnc_p1_samplesize %>% filter(race_eth == "other") %>% select(n),
-                       ");
+              format(figure4_2_samplesize %>% 
+                       filter(race_eth == "other") %>% 
+                       select(n) %>% as.numeric(),
+                     big.mark = ","),
+              ");
               <br>- Black (",
-                       tnc_p1_samplesize %>% filter(race_eth == "black") %>% select(n),
-                       ").
+              format(figure4_2_samplesize %>% 
+                       filter(race_eth == "black") %>% 
+                       select(n) %>% as.numeric(),
+                     big.mark = ","),
+              ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning 
               Analysis of My Daily Travel data."),
-              filename = "tnc_p1",
+              filename = "figure4_2",
               height = 4.5,
               mode = c("png","pdf"),
               overwrite = T)
@@ -341,13 +356,13 @@ home_usage <-
   rbind(overall_usage %>% mutate(home_county_chi = "CMAP region"))
 
 # Generate output chart for age
-tnc_p2 <-
+figure4_3 <-
   # Get data
   home_usage %>% 
   
   # Create ggplot object
   ggplot(aes(x = tnc_use, y = reorder(home_county_chi,tnc_use), fill = home_county_chi)) +
-  geom_col() +
+  geom_col(width = 0.85) +
   geom_label(aes(label = scales::label_number(accuracy = 0.1)(tnc_use)),
              hjust = -0.02,
              label.size = 0,
@@ -356,7 +371,7 @@ tnc_p2 <-
   
   # Add CMAP style
   theme_cmap(gridlines = "v",vline = 0,legend.position = "none",
-             xlab = "TNC usage per week by home jurisdiction") +
+             xlab = "TNC use per week by home jurisdiction") +
   cmap_fill_highlight(home_usage$home_county_chi,
                       "CMAP region",
                       color_value = "#38B2D8") +
@@ -365,45 +380,68 @@ tnc_p2 <-
   scale_x_continuous(limits = c(0,.87),
                      expand = expansion(mult = c(0.05,0)))
 
-finalize_plot(tnc_p2,
-              "Usage of Transportation Network Companies (TNCs) was greatest by 
+figure4_3_samplesize <-
+  home_usage %>% 
+  select(home_county_chi,
+         n) %>% 
+  mutate(n = format(n,big.mark = ",")) %>% 
+  mutate(n = gsub(" ","",n))
+
+finalize_plot(figure4_3,
+              "Use of transportation network companies (TNCs) was greatest by 
               residents of Chicago and suburban Cook County.",
               paste0(
                 "Note: These figures are based on survey responses and not 
               trip diaries. 
               Excludes travelers age 18 and younger, who were 
-              not asked about TNC usage. 
+              not asked about TNC use. 
               <br><br>
               Sample size:
               <br>- Chicago (",
-                     home_usage %>% filter(home_county_chi == "Chicago") %>% select(n),
-                     ");
+                figure4_3_samplesize %>% 
+                  filter(home_county_chi == "Chicago") %>% 
+                  select(n),
+                ");
               <br>- Suburban Cook (",
-                     home_usage %>% filter(home_county_chi == "Suburban Cook") %>% select(n),
-                     ");
+                figure4_3_samplesize %>% 
+                  filter(home_county_chi == "Suburban Cook") %>% 
+                  select(n),
+                ");
               <br>- DuPage (",
-                     home_usage %>% filter(home_county_chi == "DuPage") %>% select(n),
-                     ");
+                figure4_3_samplesize %>% 
+                  filter(home_county_chi == "DuPage") %>% 
+                  select(n),
+                ");
               <br>- Lake (",
-                     home_usage %>% filter(home_county_chi == "Lake") %>% select(n),
-                     ");
+                figure4_3_samplesize %>% 
+                  filter(home_county_chi == "Lake") %>% 
+                  select(n),
+                ");
               <br>- Kane (",
-                     home_usage %>% filter(home_county_chi == "Kane") %>% select(n),
-                     ");
+                figure4_3_samplesize %>% 
+                  filter(home_county_chi == "Kane") %>% 
+                  select(n),
+                ");
               <br>- Will (",
-                     home_usage %>% filter(home_county_chi == "Will") %>% select(n),
-                     "); 
+                figure4_3_samplesize %>% 
+                  filter(home_county_chi == "Will") %>% 
+                  select(n),
+                "); 
               <br>- McHenry (",
-                     home_usage %>% filter(home_county_chi == "McHenry") %>% select(n),
-                     ");
+                figure4_3_samplesize %>% 
+                  filter(home_county_chi == "McHenry") %>% 
+                  select(n),
+                ");
               <br>- Kendall (",
-                     home_usage %>% filter(home_county_chi == "Kendall") %>% select(n),
-                     ").
+                figure4_3_samplesize %>% 
+                  filter(home_county_chi == "Kendall") %>% 
+                  select(n),
+                ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
-              filename = "tnc_p2",
-              height = 4.8,
+              filename = "figure4_3",
+              height = 4.55,
               mode = c("png","pdf"),
               overwrite = T)
 
@@ -443,7 +481,7 @@ age_cost_and_usage <-
   mutate(age_bin = relevel(age_bin,"CMAP region"))
 
 # Generate output chart for age
-tnc_p3 <-
+figure4_4 <-
   # Get data
   age_cost_and_usage %>% 
   # Reformat
@@ -459,7 +497,7 @@ tnc_p3 <-
   # Create ggplot object
   ggplot(aes(x = value, y = factor(age_bin,levels = rev(levels(age_bin))), 
              fill = age_bin)) +
-  geom_col() +
+  geom_col(width = 0.85) +
   geom_label(aes(label = ifelse(name == "Average weekly trips",
                                 scales::label_number(accuracy = 0.1)(value),
                                 scales::label_dollar(accuracy = 1)(value))),
@@ -477,56 +515,57 @@ tnc_p3 <-
   # Add CMAP style
   theme_cmap(gridlines = "v",vline = 0,legend.position = "none",
              panel.spacing.x = unit(30,"bigpts"),
-             xlab = "TNC usage characteristics by age",
+             xlab = "TNC use characteristics by age",
              strip.text = element_text(family = "Whitney Semibold",
                                        hjust = 0.5,vjust = 1)) +
   cmap_fill_highlight(age_cost_and_usage$age_bin,
                       "CMAP region",
                       color_value = "#38B2D8")
 
-tnc_p3_samplesize <-
+figure4_4_samplesize <-
   age_usage %>% select(age_bin,usage = n) %>% 
   left_join(age_cost %>% select(age_bin,cost = n), by = "age_bin") %>% 
-  ungroup()
+  ungroup() %>% 
+  mutate(across(c(usage,cost),~gsub(" ","",format(.,big.mark = ","))))
 
-finalize_plot(tnc_p3,
-              "Usage of Transportation Network Companies (TNCs) decreased by age, 
+finalize_plot(figure4_4,
+              "Use of transportation network companies (TNCs) decreased by age, 
               while the average cost per trip increased with age.",
-              paste0("Note: These figures are based on survey responses and are 
-              not derived from trip diaries. Excludes travelers age 18 and younger, 
-              as they were not asked about TNC usage.
+              paste0("Note: These figures are based on survey responses and not 
+              trip diaries. Excludes travelers age 18 and younger, as they were 
+              not asked about TNC use.
               <br><br>
-              Sample size (Usage/Cost): 
+              Sample size (Use/Cost): 
               <br>- 19-29 (",
-              paste(tnc_p3_samplesize %>% filter(age_bin == "19 to 29") %>% select(usage),
-                    tnc_p3_samplesize %>% filter(age_bin == "19 to 29") %>% select(cost),
+              paste(figure4_4_samplesize %>% filter(age_bin == "19 to 29") %>% select(usage),
+                    figure4_4_samplesize %>% filter(age_bin == "19 to 29") %>% select(cost),
                     sep = "/"),
                     "); 
               <br>- 30-39 (",
-              paste(tnc_p3_samplesize %>% filter(age_bin == "30 to 39") %>% select(usage),
-                    tnc_p3_samplesize %>% filter(age_bin == "30 to 39") %>% select(cost),
+              paste(figure4_4_samplesize %>% filter(age_bin == "30 to 39") %>% select(usage),
+                    figure4_4_samplesize %>% filter(age_bin == "30 to 39") %>% select(cost),
                     sep = "/"),
                     "); 
               <br>- 40-49 (",
-              paste(tnc_p3_samplesize %>% filter(age_bin == "40 to 49") %>% select(usage),
-                    tnc_p3_samplesize %>% filter(age_bin == "40 to 49") %>% select(cost),
+              paste(figure4_4_samplesize %>% filter(age_bin == "40 to 49") %>% select(usage),
+                    figure4_4_samplesize %>% filter(age_bin == "40 to 49") %>% select(cost),
                     sep = "/"),
                     "); 
               <br>- 50-59 (",
-              paste(tnc_p3_samplesize %>% filter(age_bin == "50 to 59") %>% select(usage),
-                    tnc_p3_samplesize %>% filter(age_bin == "50 to 59") %>% select(cost),
+              paste(figure4_4_samplesize %>% filter(age_bin == "50 to 59") %>% select(usage),
+                    figure4_4_samplesize %>% filter(age_bin == "50 to 59") %>% select(cost),
                     sep = "/"),
                     "); 
               <br>- 60+ (",
-              paste(tnc_p3_samplesize %>% filter(age_bin == "60 and above") %>% select(usage),
-                    tnc_p3_samplesize %>% filter(age_bin == "60 and above") %>% select(cost),
+              paste(figure4_4_samplesize %>% filter(age_bin == "60 and above") %>% select(usage),
+                    figure4_4_samplesize %>% filter(age_bin == "60 and above") %>% select(cost),
                     sep = "/"),
                     ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My 
               Daily Travel data."),
-              filename = "tnc_p3",
-              height = 4.5,
+              filename = "figure4_4",
+              height = 4.25,
               mode = c("png","pdf"),
               overwrite = T)
 

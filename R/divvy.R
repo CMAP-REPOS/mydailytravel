@@ -132,7 +132,7 @@ divvy_breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 06:00:00"),
                      by = "3 hours"
                      )
 # Create chart
-divvy_p1 <-
+figure4_6 <-
   # Get data
   trip_times_divvy_counts %>%
   # Relevel user type
@@ -158,22 +158,22 @@ divvy_p1 <-
              )
 
 # Export plot
-finalize_plot(divvy_p1,
+finalize_plot(figure4_6,
               title = "Divvy ridership was significantly higher in the PM peak, 
               especially for non-subscribers.",
               caption = "Note: Trips in motion are 25-minute rolling averages.
               \"One-time user\" refers to Divvy customers that purchased a
-              single ride or a day pass. Trips that were in motion as of 2:55AM 
-              and ended after 3:00AM are captured only on the right side
+              single ride or a day pass. Trips that were in motion as of 2:55 a.m. 
+              and ended after 3:00 a.m. are captured only on the right side
               of the graph.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of Divvy
               ridership data for weekdays during the My Daily Travel survey
-              collection period, between September 4, 2018 and May 9, 2019
-              (excluding all federal holidays and the weeks of Nov. 19,
-              Dec. 24, Dec. 31, and Apr. 15).",
-              filename = "divvy_p1",
-              height = 4.5,
+              collection period, between Sept. 4, 2018, and May 9, 2019,
+              excluding all federal holidays and the weeks of Nov. 19,
+              Dec. 24, Dec. 31, and Apr. 15.",
+              filename = "figure4_6",
+              height = 4,
               mode = c("png","pdf"),
               overwrite = T)
 
