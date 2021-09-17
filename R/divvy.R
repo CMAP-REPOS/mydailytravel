@@ -150,7 +150,7 @@ figure4_6 <-
                     breaks = divvy_breaks) +
 
   # Add CMAP style
-  scale_fill_discrete(type = c("#38B2D8","#D8BA37")) +
+  scale_fill_discrete(type = c("#38B2D8","#D88134")) +
   theme_cmap(gridlines = "hv",
              panel.grid.major.x = element_line(color = "light gray"),
              xlab = "Time of day",
@@ -159,8 +159,8 @@ figure4_6 <-
 
 # Export plot
 finalize_plot(figure4_6,
-              title = "Divvy ridership was significantly higher in the PM peak, 
-              especially for non-subscribers.",
+              title = "Divvy ridership was significantly higher in the afternoon
+              peak, especially for non-subscribers.",
               caption = "Note: Trips in motion are 25-minute rolling averages.
               \"One-time user\" refers to Divvy customers that purchased a
               single ride or a day pass. Trips that were in motion as of 2:55 a.m. 
@@ -168,8 +168,7 @@ finalize_plot(figure4_6,
               of the graph.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of Divvy
-              ridership data for weekdays during the My Daily Travel survey
-              collection period, between Sept. 4, 2018, and May 9, 2019,
+              ridership data for weekdays between Sept. 4, 2018, and May 9, 2019,
               excluding all federal holidays and the weeks of Nov. 19,
               Dec. 24, Dec. 31, and Apr. 15.",
               filename = "figure4_6",
