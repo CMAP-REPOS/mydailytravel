@@ -160,7 +160,7 @@ tnc_for_purposes <-
                            "1" = "Commute (whole or part)",
                            "2" = "Commute (whole or part)",
                            "4" = "Daytime (non-work)",
-                           "5" = "Late-night (non-work)"))
+                           "5" = "Late night (non-work)"))
 
 tnc_purpose_overall <-
   pct_calculator(tnc_for_purposes,
@@ -181,7 +181,7 @@ tnc_purpose_race <-
 
 figure4_2_labels <-
   tnc_purpose_race %>% 
-  filter(tnc_purp %in% c("Late-night (non-work)","Daytime (non-work)")) %>% 
+  filter(tnc_purp %in% c("Late night (non-work)","Daytime (non-work)")) %>% 
   group_by(race_eth) %>% 
   summarize(label = sum(pct))
 
@@ -192,7 +192,7 @@ figure4_2 <-
   mutate(type = case_when(race_eth == "CMAP region" ~ "1",
                           TRUE ~ "0" )) %>% 
   # Adjust values for shift around 0 axis
-  mutate(pct = ifelse(!(tnc_purp %in% c("Late-night (non-work)","Daytime (non-work)")),
+  mutate(pct = ifelse(!(tnc_purp %in% c("Late night (non-work)","Daytime (non-work)")),
                       -1 * pct, pct)) %>% 
   # Add labels
   left_join(figure4_2_labels, by = "race_eth") %>% 
@@ -233,7 +233,7 @@ figure4_2 <-
              xlab = "Work travel                              Non-work travel\nTypical reason for using a TNC") +
   scale_fill_manual(values = c("#43B649","#D8BA37","#2C2B7F","#38B2D8"),
                     labels = c("Daytime (work)","Commute (whole or part)",
-                               "Daytime (non-work)","Late-night (non-work)")) +
+                               "Daytime (non-work)","Late night (non-work)")) +
   
   # Adjust legend for formatting
   guides(fill = guide_legend(ncol = 3,
@@ -314,7 +314,7 @@ tnc_purpose_homeloc <-
   rename(Jurisdiction = home_county_chi,
          "Sample size" = total_n) %>% 
   mutate(work_total = .$'Commute (whole or part)' + .$'Daytime (work)',
-         nonwork_total = .$'Late-night (non-work)' + .$'Daytime (non-work)') %>% 
+         nonwork_total = .$'Late night (non-work)' + .$'Daytime (non-work)') %>% 
   arrange(desc(work_total)) %>% 
   mutate(across("Commute (whole or part)":nonwork_total,
                 ~scales::percent(.,accuracy = 0.1))) %>% 
