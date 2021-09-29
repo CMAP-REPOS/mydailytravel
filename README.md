@@ -29,11 +29,11 @@ This repo includes several helper scripts that import, recode, and clean the dat
 - [data_cleaning.R](/R/data_cleaning.R): This script imports and cleans data for both MDT and TT.
 - [recoding.R](/R/recoding.R): This script includes lists of trip purposes, modes, household income buckets, and geographies. These lists are leveraged by the data cleaning script to recode data into larger categories for analysis.
 - [helper_fns.R](/R/helper_fns.R): This script includes three helper functions that are used across the repo.
+- [mdt_dates.R](/R/mdt_dates.R): This script includes date intervals used to filter non-household travel survey data for comparability with MDT (e.g., analyses of Divvy).
 
-There are also individuals scripts that support various analyses and graphics in the Policy Briefs:
+There are also individuals scripts that support various analyses and graphics in the policy briefs:
 - [average_resident.R](/R/average_resident.R): This script calculates average travel behavior for MDT and TT. It includes general figures and breakdowns by demographic characteristics.
 - [divvy.R](/R/divvy.R): This script produces a trips-in-motion graph for Divvy ridership during the MDT survey period.
-- [mdt_dates.R](/R/mdt_dates.R): This script includes date intervals used to filter non-household travel survey data for comparability with MDT (e.g., analyses of Divvy).
 - [mode_analysis.R](/R/tpurps_of_modes.R): This script analyzes the trip purpose patterns of specific modes.
 - [mode_share.R](/R/mode_share.R): This script calculates the mode share in the CMAP region by home location and demographic characteristics.
 - [racial_disparities.R](/R/racial_disparities.R): This script analyzes racial disparities in travel times in the region.
