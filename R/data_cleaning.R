@@ -65,7 +65,9 @@ mdt_zip <- "./source/MyDailyTravelData.zip"
 # Unzip My Daily Travel data
 unzip(mdt_zip,exdir = "./source/MDT",overwrite = T)
 
-# Load final weights (from source, provided by RAP)
+# Load final weights (note that the weights currently included on the CMAP Data 
+# Hub are an earlier iteration of the final weighting and are not accurate. This 
+# code will be updated once that file has been appropriately revised).
 mdt_weights <- read_csv("./source/Final_MyDailyTravel_weights.csv",
                         show_col_types = FALSE)
 
