@@ -1,10 +1,10 @@
 # My Daily Travel Analysis
  
-This repo includes the code supporting an upcoming series of Policy Briefs by the Chicago Metropolitan Agency for Planning (CMAP). The series reviews the findings from CMAP's most recent travel survey, [My Daily Travel](https://www.cmap.illinois.gov/data/transportation/travel-survey).
+This repo includes the code supporting an upcoming series of policy briefs by the Chicago Metropolitan Agency for Planning (CMAP). The series reviews the findings from CMAP's most recent travel survey, [My Daily Travel](https://www.cmap.illinois.gov/data/transportation/travel-survey).
 
 ## Data sources
 
-The primary data sources for these Policy Briefs are the trip diaries and survey results from:
+The primary data sources for these policy briefs are the trip diaries and survey results from:
 - [My Daily Travel](https://datahub.cmap.illinois.gov/dataset/mydailytravel-2018-2019-public) (MDT), CMAP's 2019 travel survey. This dataset is automatically extracted by the scripts but can also be accessed at the posted link.
 - [Travel Tracker](https://datahub.cmap.illinois.gov/dataset/traveltracker0708/resource/092af96e-9c7a-4182-a1e1-ecff588a9de0?inner_span=True) (TT), CMAP's prior travel survey (conducted in 2008). If you are interested in replicating or building on these analyses, **this dataset must be downloaded and placed into the appropriate working directory before running the scripts.**
 
