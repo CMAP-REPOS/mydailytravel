@@ -182,6 +182,16 @@ location_raw <- read.csv("./source/MDT/location.csv") %>%
                      # containing the place).
   )
 
+# Pull vehicle data
+veh <- read.csv("./source/MDT/vehicle.csv") %>% 
+  select(sampno,     # Household and vehicle identifiers
+         vehno,      
+         
+         fuel,       # Fuel type of vehicle
+         
+         parkd       # Location of vehicle parking
+  )
+
 # Remove references to zip file and weights
 rm(mdt_zip, mdt_weights)
 
