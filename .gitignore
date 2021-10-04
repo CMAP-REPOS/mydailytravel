@@ -34,6 +34,8 @@ vignettes/*.pdf
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
+
+# Other exclusions
 *.png
 tc13.csv
 *.Rproj
@@ -73,3 +75,4 @@ source/MDT/location.csv
 source/MDT/person.csv
 source/MDT/place.csv
 source/MDT/place_transit.csv
+archive/
