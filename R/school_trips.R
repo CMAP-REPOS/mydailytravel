@@ -142,7 +142,7 @@ finalize_plot(figure2_10,
               "Note: Includes school trips for residents of the CMAP seven-county region,
               Grundy, and DeKalb who are enrolled in K-8 and age 5 or older. 
               Excludes trips to non-school locations, longer than two and a half 
-              hours, and that did not start or end between 7:00am and 9:00am.
+              hours, and that did not start or end between 7:00 a.m. and 9:00 a.m.
               See \"About the data\" for more information on race and ethnicity.
               <br><br>
               Sample size: 

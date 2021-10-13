@@ -721,6 +721,8 @@ finalize_plot(figure3_3,
               trips within, to, and/or from those counties. Mode share
               accounts for all work chain trips
               that included a non-home work destination. 
+              \"By car\" includes trips as either a driver or a passenger
+              of a personal vehicle (not including taxis or TNCs).
               Unlabeled bars have less than 5 percent mode share.
               <br><br>
               Sample size (Chicago/Suburban Cook/Collar and adjacent):
@@ -767,7 +769,7 @@ finalize_plot(figure3_3,
               Daily Travel data."),
               filename = "figure3_3",
               sidebar_width = 2.5,
-              height = 5.25,
+              height = 5.35,
               mode = c("png","pdf"),
               overwrite = T
               )

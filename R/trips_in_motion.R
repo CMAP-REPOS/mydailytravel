@@ -201,7 +201,7 @@ finalize_plot(figure1_3,
                      " records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries."),
+              Daily Travel data."),
               filename = "figure1_3",
               mode = c("png","pdf"),
               height = 4.5,
@@ -319,7 +319,7 @@ finalize_plot(figure1_4,
                 ").
                 <br><br>
                 Source: Chicago Metropolitan Agency for Planning analysis of My
-                Daily Travel trip diaries."),
+                Daily Travel data."),
               filename = "figure1_4",
               height = 4.25,
               mode = c("png","pdf"),
@@ -461,7 +461,7 @@ finalize_plot(figure1_5,
                      ").
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries."),
+              Daily Travel data."),
               filename = "figure1_5",
               height = 4.5,
               sidebar_width = 2.25,
@@ -533,7 +533,7 @@ finalize_plot(figure1_7,
                      " records.
               <br><br>
               Source: Chicago Metropolitan Agency for Planning analysis of My
-              Daily Travel trip diaries."),
+              Daily Travel data."),
               mode = c("pdf","png"),
               height = 4.5,
               filename = "figure1_7",
