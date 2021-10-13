@@ -251,7 +251,39 @@ health_mode_c_vehs_mdt <-
 # Display outputs
 health_mode_c_vehs_mdt %>% arrange(hhveh,pct) %>% 
   View()
-
+# 
+# # Examine differences in vehicle ownership among transit and non-transit users
+# health_and_vehs <-
+#   tpurp_analysis_base_mdt %>% 
+#   filter(tpurp == "Health care visit for self") %>% 
+#   mutate(behavior = case_when(
+#     mode_c == "transit" ~ 1,
+#     TRUE ~ 0)) %>% 
+#   distinct(sampno,perno,behavior,.keep_all = TRUE) %>% 
+#   group_by(sampno,perno) %>% 
+#   mutate(n = n()) %>% 
+#   # Keep the users who had both transit and non-transit trips as transit users
+#   filter(!(n > 1 & behavior == 0)) %>% 
+#   ungroup()
+# 
+# health_and_vehs_transit <-
+#   health_and_vehs %>% 
+#   filter(behavior == 1) %>% 
+#   filter(geog == "Collar and adjacent counties") 
+# 
+# health_veh_weight <-
+#   health_and_vehs %>% 
+#   filter(geog == "Collar and adjacent counties") %>% 
+#   dplyr::summarize(veh = weighted.mean(hhveh,weight)) %>% 
+#   as.numeric()
+# 
+# weights::wtd.t.test(
+#   x = health_and_vehs_transit$hhveh,
+#   y = health_and_vehs$hhveh,
+#   samedata = T,
+#   weight = health_and_vehs_transit$weight,
+#   weighty = health_and_vehs$weight,
+#   bootse = T)
 
 ################################################################################
 # Backup - detail on "other" mode share for healthcare
