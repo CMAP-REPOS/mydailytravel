@@ -127,7 +127,7 @@ trip_times_divvy_counts <-
     criteria = "usertype")
 
 # Define breaks
-divvy_breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 06:00:00"),
+divvy_breaks <- seq.POSIXt(from = as.POSIXct("2020-01-01 03:00:00"),
                      to = as.POSIXct("2020-01-02 03:00:00"),
                      by = "3 hours"
                      )
