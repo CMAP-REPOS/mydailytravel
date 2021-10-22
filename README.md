@@ -1,6 +1,6 @@
 # My Daily Travel Analysis
  
-This repo includes the code supporting an upcoming series of policy briefs by the Chicago Metropolitan Agency for Planning (CMAP). The series reviews the findings from CMAP's most recent travel survey, [My Daily Travel](https://www.cmap.illinois.gov/data/transportation/travel-survey).
+This repo includes the code supporting a series of [policy briefs](https://www.cmap.illinois.gov/data/transportation/travel-survey/my-daily-travel) by the Chicago Metropolitan Agency for Planning (CMAP). The series reviews the findings from CMAP's most recent travel survey, [My Daily Travel](https://www.cmap.illinois.gov/data/transportation/travel-survey).
 
 ## Data sources
 
